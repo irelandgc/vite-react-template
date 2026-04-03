@@ -1,8 +1,13 @@
 // ══════════════════════════════════════════════════════════════
 //  CRR Criteria API — Hono Worker for Cloudflare
 //  Serves published criteria to both Viewer and Triage Advisor
-//  Version: v1.0.0
+//  Version: v2.0.0
+// Changelog:
+// v2.0.0 — streaming extract-pdf, region KV endpoints, ADMIN_KEY auth, rollback, triage proxy
+// v1.0.0 — initial release
 // ══════════════════════════════════════════════════════════════
+
+const WORKER_VERSION = '2.0.0';
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
@@ -598,7 +603,7 @@ app.get('/api/health', (c) => {
   return c.json({
     status: 'ok',
     service: 'crr-criteria-api',
-    version: '1.0.0',
+    version: WORKER_VERSION,
     timestamp: new Date().toISOString(),
   });
 });

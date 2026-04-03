@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CRR Triage Advisor v2.0.0 — Decoupled</title>
+<title>CRR Triage Advisor v2.1.0</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -258,7 +258,7 @@ textarea.note::placeholder{color:#aab8c2}
     <span class="logo">CRR</span>
     <div>
       <div class="hd-title">CRR Triage Advisor</div>
-      <div class="hd-sub">Community Referred Radiology — AI Triage Assessment &nbsp;·&nbsp; <button onclick="openProvenanceModal()" style="background:none;border:none;color:#8ab4c8;font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:inherit;opacity:.8" title="Criteria provenance and version information">v2.0.0</button></div>
+      <div class="hd-sub">Community Referred Radiology — AI Triage Assessment &nbsp;·&nbsp; <button id="verBtn" onclick="openProvenanceModal()" style="background:none;border:none;color:#8ab4c8;font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:inherit;opacity:.8" title="Criteria provenance and version information">v2.1.0</button></div>
     </div>
   </div>
   <div class="hd-right">
@@ -438,7 +438,7 @@ textarea.note::placeholder{color:#aab8c2}
         <div style="background:var(--lite);border-radius:3px;padding:10px 12px;border:1px solid var(--rule)">
           <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:5px">Tool &amp; criteria version</div>
           <table style="width:100%;border-collapse:collapse;font-size:12px">
-            <tr><td style="padding:2px 0;color:var(--mid);width:55%">Tool version</td><td style="font-weight:600;color:var(--navy)">v2.0.0</td></tr>
+            <tr><td style="padding:2px 0;color:var(--mid);width:55%">Tool version</td><td id="provToolVer" style="font-weight:600;color:var(--navy)">v2.1.0</td></tr>
             <tr><td style="padding:2px 0;color:var(--mid)">Criteria data</td><td style="font-weight:600;color:var(--navy)">Aug 2025 reissue 3</td></tr>
             <tr><td style="padding:2px 0;color:var(--mid)">Adult updated</td><td style="font-weight:600;color:var(--navy)">March 2026</td></tr>
             <tr><td style="padding:2px 0;color:var(--mid)">Paediatric updated</td><td style="font-weight:600;color:var(--navy)">March 2026</td></tr>
@@ -567,9 +567,23 @@ textarea.note::placeholder{color:#aab8c2}
 <script>
 // ══════════════════════════════════════════════════════════════
 //  CRR TRIAGE ADVISOR — DECOUPLED
-//  Version: v2.0.0
+//  Version: v2.1.0
 //  Data source: API endpoint (with embedded fallback)
 // ══════════════════════════════════════════════════════════════
+
+var VER = "v2.1.0";
+var BUILD = "2026-04-03"; // bump on each deployment
+
+// Changelog:
+// v2.1.0 — API key proxy (key removed from browser), wide provenance modal, single-source VER
+// v2.0.0 — decoupled from viewer, loads criteria from API
+
+// Wire version into DOM elements (they also have inline fallback text above)
+document.addEventListener('DOMContentLoaded', function() {
+  var vb = document.getElementById('verBtn'); if (vb) vb.textContent = VER;
+  var pv = document.getElementById('provToolVer'); if (pv) pv.textContent = VER + ' · ' + BUILD;
+  document.title = 'CRR Triage Advisor ' + VER;
+});
 
 // ── CONFIGURATION ────────────────────────────────────────────
 var API_BASE = "";  // e.g. "https://crr-criteria.your-domain.workers.dev"
@@ -1808,7 +1822,7 @@ function submitQaEntry() {
   var r = lastAiResult;
   var entry = {
     tool: 'CRR Triage Advisor',
-    tool_version: 'v1.2.3.002',
+    tool_version: VER,
     datetime: new Date().toISOString(),
     reviewer_name: (document.getElementById('qaReviewerName').value || '').trim() || null,
     reviewer_role: (document.getElementById('qaReviewerRole').value || '').trim() || null,

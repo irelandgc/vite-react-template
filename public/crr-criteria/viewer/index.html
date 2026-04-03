@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CRR Criteria Viewer v4.0.0</title>
+<title>CRR Criteria Viewer v4.1.0</title>
 <style>
 
 /* ═══ RESET & BASE ═══════════════════════════════════════ */
@@ -396,11 +396,19 @@ input,textarea,select,button { font-family:inherit; }
 <script>
 // ══════════════════════════════════════════════════════════════
 //  CRR CRITERIA VIEWER — DECOUPLED
-//  Version: v4.0.0
+//  Version: v4.1.0
 //  Data source: API endpoint (with embedded fallback)
 // ══════════════════════════════════════════════════════════════
 
-var VERSION = { label: "v4.0.0 — Decoupled" };
+var VER = "v4.1.0";
+var BUILD = "2026-04-03"; // bump on each deployment
+
+// Changelog:
+// v4.1.0 — single-source VER constant; no functional changes
+// v4.0.0 — decoupled from static data, loads from API
+
+var VERSION = { label: VER + " — Decoupled" };
+document.title = "CRR Criteria Viewer " + VER;
 
 // ── CONFIGURATION ────────────────────────────────────────────
 // Set API_BASE to your Cloudflare Worker URL for live data
