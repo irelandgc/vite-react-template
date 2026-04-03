@@ -382,10 +382,19 @@ app.post('/api/admin/extract-pdf', requireAccess, async (c) => {
   const pdfBase64 = body.pdf;
   const currentCriteria = body.currentCriteria || '';
   const chunkInfo = body.chunkInfo || '';
+  const mode = body.mode === 'replace' ? 'replace' : 'diff';
 
   if (!pdfBase64) return c.json({ error: 'pdf field required' }, 400);
 
-  const chunkNote = chunkInfo ? `\n\nNote: ${chunkInfo} Extract all criteria changes visible in this portion.` : '';
+  const chunkNote = chunkInfo ? `\n\nNote: ${chunkInfo}` : '';
+
+  const prompt = mode === 'replace'
+    ? `Extract ALL radiology referral criteria from this NZ CRR document.${chunkNote}
+Output ONLY valid JSON:
+{"documentTitle":"...","exams":[{"id":"snake_case_id","title":"Exam title","modality":"CT|MRI|US|XR|NM|IR|FL","type":"singlesite|multisite","population":"adult|paediatric","inlineGuidance":"...","healthPathwaysUrl":"","groups":[{"title":"Priority group label","mandatory":false,"items":[{"type":"cb","id":"unique_id","label":"Full criteria text","shortLabel":"3-5 word label","mandatory":false}]}]}]}
+For multisite exams use "sites" array instead of "groups": "sites":[{"id":"examid_site","label":"Site name","groups":[...]}]
+Include every complete exam/site you can see. Omit healthPathwaysUrl (leave empty string).`
+    : `Analyze this NZ CRR criteria document. Compare against current exam/site list:\n\n${currentCriteria}${chunkNote}\n\nRespond ONLY with JSON:\n{"documentTitle":"...","changes":[{"id":"1","type":"added"|"removed"|"changed","examSite":"...","priorityGroup":"...","currentText":null,"newText":"...","shortLabel":"...","reason":"..."}],"summary":"..."}`;
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -396,12 +405,12 @@ app.post('/api/admin/extract-pdf', requireAccess, async (c) => {
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 8000,
+      max_tokens: mode === 'replace' ? 32000 : 8000,
       messages: [{
         role: 'user',
         content: [
           { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdfBase64 } },
-          { type: 'text', text: `Analyze this NZ CRR criteria document. Compare against current:\n\n${currentCriteria}${chunkNote}\n\nRespond ONLY with JSON:\n{"documentTitle":"...","changes":[{"id":"1","type":"added"|"removed"|"changed","examSite":"...","priorityGroup":"...","currentText":null,"newText":"...","shortLabel":"...","reason":"..."}],"summary":"..."}` },
+          { type: 'text', text: prompt },
         ],
       }],
     }),
