@@ -10,6 +10,7 @@ import { cors } from 'hono/cors';
 type Bindings = {
   KV: KVNamespace;
   DB: D1Database;
+  ANTHROPIC_API_KEY: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -367,6 +368,57 @@ app.get('/api/admin/audit', requireAccess, async (c) => {
   }
 });
 
+
+// POST /api/admin/extract-pdf — Server-side PDF processing via Anthropic API
+// Accepts { pdf: base64string, currentCriteria: string }
+// Returns { documentTitle, changes, summary }
+app.post('/api/admin/extract-pdf', requireAccess, async (c) => {
+  const apiKey = c.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return c.json({ error: 'ANTHROPIC_API_KEY not configured — run: npx wrangler secret put ANTHROPIC_API_KEY' }, 500);
+  }
+
+  const body = await c.req.json();
+  const pdfBase64 = body.pdf;
+  const currentCriteria = body.currentCriteria || '';
+
+  if (!pdfBase64) return c.json({ error: 'pdf field required' }, 400);
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 8000,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdfBase64 } },
+          { type: 'text', text: `Analyze this NZ CRR criteria document. Compare against current:\n\n${currentCriteria}\n\nRespond ONLY with JSON:\n{"documentTitle":"...","changes":[{"id":"1","type":"added"|"removed"|"changed","examSite":"...","priorityGroup":"...","currentText":null,"newText":"...","shortLabel":"...","reason":"..."}],"summary":"..."}` },
+        ],
+      }],
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    return c.json({ error: 'Anthropic API error: ' + errText }, 502);
+  }
+
+  const result: any = await response.json();
+  const text = (result.content || []).map((b: any) => b.text || '').join('');
+
+  try {
+    const parsed = JSON.parse(text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim());
+    return c.json(parsed);
+  } catch (_) {
+    return c.json({ error: 'Failed to parse Claude response', raw: text.substring(0, 500) }, 500);
+  }
+});
 
 // ── Transform Functions ──────────────────────────────────
 

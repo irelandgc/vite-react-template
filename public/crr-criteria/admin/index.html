@@ -195,7 +195,7 @@ function CRRAdmin() {
       {/* Content */}
       <div style={{flex:1,overflow:"hidden"}}>
         {tab==="editor" && <EditorTab criteria={criteria} selected={selected} setSelected={setSelected} dirty={dirty} setDirty={setDirty} show={show} updateCriteriaItem={updateCriteriaItem} />}
-        {tab==="import" && <ImportTab criteria={criteria} show={show} />}
+        {tab==="import" && <ImportTab criteria={criteria} show={show} updateCriteriaItem={updateCriteriaItem} setDirty={setDirty} />}
         {tab==="regions" && <RegionsTab criteria={criteria} show={show} />}
         {tab==="versions" && <VersionsTab show={show} pubVer={pubVer} handlePublish={handlePublish} />}
         {tab==="audit" && <AuditTab />}
@@ -455,10 +455,9 @@ function Field({label,value,onChange,multi,lc}){
 //  PDF IMPORT TAB
 // ══════════════════════════════════════════════════════════
 
-function ImportTab({criteria,show}){
+function ImportTab({criteria,show,updateCriteriaItem,setDirty}){
   const [file,setFile]=React.useState(null);
   const [fileData,setFileData]=React.useState(null);
-  const [apiKey,setApiKey]=React.useState("");
   const [processing,setProcessing]=React.useState(false);
   const [progress,setProgress]=React.useState("");
   const [changes,setChanges]=React.useState(null);
@@ -468,21 +467,65 @@ function ImportTab({criteria,show}){
   function handleFile(e){const f=e.target.files[0];if(!f)return;setFile(f);setChanges(null);const r=new FileReader();r.onload=ev=>setFileData(ev.target.result.split(",")[1]);r.readAsDataURL(f);}
 
   async function processDocument(){
-    if(!fileData||!apiKey){show("Upload PDF and set API key","warn");return;}
-    setProcessing(true);setProgress("Sending to Claude…");
+    if(!fileData){show("Upload a PDF first","warn");return;}
+    setProcessing(true);setProgress("Sending to worker…");
     try{
       const summary=criteria.slice(0,15).map(c=>{const items=(c.data.groups||[]).flatMap(g=>(g.items||[]).map(it=>`  [${g.title}] ${it.shortLabel||it.label}`));return `${c.title}:\n${items.join("\n")}`;}).join("\n\n");
-      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:8000,messages:[{role:"user",content:[{type:"document",source:{type:"base64",media_type:"application/pdf",data:fileData}},{type:"text",text:`Analyze this NZ CRR criteria document. Compare against current:\n\n${summary}\n\nRespond ONLY with JSON:\n{"documentTitle":"...","changes":[{"id":"1","type":"added"|"removed"|"changed","examSite":"...","priorityGroup":"...","currentText":null,"newText":"...","shortLabel":"...","reason":"..."}],"summary":"..."}`}]}]})
-      });
-      const result=await res.json();setProgress("Parsing…");
-      const text=result.content?.map(b=>b.text||"").join("")||"";
-      const parsed=JSON.parse(text.replace(/```json\s*/g,"").replace(/```\s*/g,"").trim());
-      setChanges(parsed);
-      const acc={};(parsed.changes||[]).forEach((_,i)=>{acc[i]=true;});setAccepted(acc);
-      show(`Found ${(parsed.changes||[]).length} changes`,"ok");
+      const res=await api("/api/admin/extract-pdf",{method:"POST",body:JSON.stringify({pdf:fileData,currentCriteria:summary})});
+      if(res.error){show("Failed: "+res.error,"error");return;}
+      setProgress("Parsing…");
+      setChanges(res);
+      const acc={};(res.changes||[]).forEach((_,i)=>{acc[i]=true;});setAccepted(acc);
+      show(`Found ${(res.changes||[]).length} changes`,"ok");
     }catch(e){show("Failed: "+e.message,"error");console.error(e);}
     finally{setProcessing(false);setProgress("");}
+  }
+
+  function applyChanges(){
+    const selected=(changes.changes||[]).filter((_,i)=>accepted[i]);
+    if(!selected.length){show("No changes selected","warn");return;}
+    // Group by examSite so we only call updateCriteriaItem once per item
+    const bySite={};
+    for(const ch of selected){
+      if(!bySite[ch.examSite])bySite[ch.examSite]=[];
+      bySite[ch.examSite].push(ch);
+    }
+    let applied=0;
+    for(const[examSite,siteChanges]of Object.entries(bySite)){
+      const esl=examSite.toLowerCase();
+      const item=criteria.find(c=>c.title.toLowerCase().includes(esl)||esl.includes(c.title.toLowerCase()));
+      if(!item)continue;
+      const newData=JSON.parse(JSON.stringify(item.data));
+      for(const ch of siteChanges){
+        if(ch.type==="added"){
+          const pgl=(ch.priorityGroup||"").toLowerCase();
+          let grp=(newData.groups||[]).find(g=>g.title.toLowerCase().includes(pgl)||pgl.includes(g.title.toLowerCase()));
+          if(!grp){if(!newData.groups)newData.groups=[];grp={title:ch.priorityGroup||"General",mandatory:false,items:[]};newData.groups.push(grp);}
+          grp.items.push({type:"cb",id:`imp_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,label:ch.newText||"",shortLabel:ch.shortLabel||"",mandatory:false});
+          applied++;
+        }else if(ch.type==="removed"){
+          outer:for(const g of newData.groups||[]){
+            for(let j=0;j<g.items.length;j++){
+              if(g.items[j].label===ch.currentText||g.items[j].shortLabel===ch.currentText){g.items.splice(j,1);applied++;break outer;}
+            }
+          }
+        }else if(ch.type==="changed"){
+          outer:for(const g of newData.groups||[]){
+            for(const it of g.items){
+              if(it.label===ch.currentText||it.shortLabel===ch.currentText){
+                if(ch.newText)it.label=ch.newText;
+                if(ch.shortLabel)it.shortLabel=ch.shortLabel;
+                applied++;break outer;
+              }
+            }
+          }
+        }
+      }
+      updateCriteriaItem(item.id,newData);
+    }
+    setDirty(true);
+    show(`Applied ${applied} change${applied!==1?"s":""} to working copy — publish via Versions tab to go live`,"ok");
+    setChanges(null);setAccepted({});setFile(null);setFileData(null);
   }
 
   const cc={added:{bg:C.addBg,fg:C.add,icon:"+"},removed:{bg:C.delBg,fg:C.del,icon:"−"},changed:{bg:C.chgBg,fg:C.chg,icon:"~"}};
@@ -490,20 +533,13 @@ function ImportTab({criteria,show}){
   return (
     <div style={{padding:20,maxWidth:900,margin:"0 auto",overflowY:"auto",height:"calc(100vh - 95px)"}}>
       <h2 style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:4}}>Import Guideline Document</h2>
-      <p style={{fontSize:12,color:C.mid,marginBottom:16,lineHeight:1.5}}>Upload a PDF. Claude extracts criteria, compares against current database, shows additions/removals/modifications for review.</p>
-      <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3,padding:14,marginBottom:14}}>
-        <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:0.4,color:C.mid,marginBottom:6}}>API Key</div>
-        <div style={{display:"flex",gap:8}}>
-          <input type="password" value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder="sk-ant-..." style={{flex:1,padding:"6px 10px",border:`1px solid ${C.rule}`,borderRadius:2,fontSize:12,fontFamily:mono,outline:"none"}} />
-          <span style={{fontSize:11,color:apiKey?C.pass:C.fail,fontWeight:600,display:"flex",alignItems:"center"}}>{apiKey?"✓":"Required"}</span>
-        </div>
-      </div>
+      <p style={{fontSize:12,color:C.mid,marginBottom:16,lineHeight:1.5}}>Upload a PDF. Claude extracts criteria server-side, compares against current database, shows additions/removals/modifications for review.</p>
       <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3,padding:14,marginBottom:14}}>
         <div style={{display:"flex",gap:10,alignItems:"center"}}>
           <input ref={fileRef} type="file" accept=".pdf" onChange={handleFile} style={{display:"none"}} />
           <button onClick={()=>fileRef.current?.click()} style={{padding:"8px 16px",background:C.lite,border:`1px solid ${C.rule}`,borderRadius:2,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:font,color:C.navy}}>Choose PDF…</button>
           {file && <span style={{fontSize:12,color:C.navy,fontWeight:600}}>{file.name}</span>}
-          <button onClick={processDocument} disabled={!fileData||!apiKey||processing} style={{padding:"8px 16px",background:fileData&&apiKey&&!processing?C.teal:C.rule,color:fileData&&apiKey?"#fff":C.mid,border:"none",borderRadius:2,fontSize:12,fontWeight:700,cursor:fileData&&apiKey?"pointer":"default",fontFamily:font,marginLeft:"auto"}}>
+          <button onClick={processDocument} disabled={!fileData||processing} style={{padding:"8px 16px",background:fileData&&!processing?C.teal:C.rule,color:fileData?"#fff":C.mid,border:"none",borderRadius:2,fontSize:12,fontWeight:700,cursor:fileData?"pointer":"default",fontFamily:font,marginLeft:"auto"}}>
             {processing?"Processing…":"🔍 Analyze"}
           </button>
         </div>
@@ -535,8 +571,8 @@ function ImportTab({criteria,show}){
             );})}
           </div>
           <div style={{padding:"12px 14px",borderTop:`1px solid ${C.rule}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <span style={{fontSize:12,color:C.mid}}>{Object.values(accepted).filter(Boolean).length} selected</span>
-            <button onClick={()=>show(`${Object.values(accepted).filter(Boolean).length} changes queued — publish via Versions tab`,"ok")} style={{padding:"8px 16px",background:C.teal,color:"#fff",border:"none",borderRadius:2,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:font}}>Apply Selected</button>
+            <span style={{fontSize:12,color:C.mid}}>{Object.values(accepted).filter(Boolean).length} of {(changes.changes||[]).length} selected</span>
+            <button onClick={applyChanges} style={{padding:"8px 16px",background:C.teal,color:"#fff",border:"none",borderRadius:2,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:font}}>Apply Selected</button>
           </div>
         </div>
       )}
