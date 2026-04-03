@@ -490,70 +490,62 @@ function ImportTab({criteria,show,updateCriteriaItem,setDirty,handleReplaceAll})
   function reset(){setResult(null);setAccepted({});setFile(null);setFileData(null);}
   function handleFile(e){const f=e.target.files[0];if(!f)return;setFile(f);setResult(null);const r=new FileReader();r.onload=ev=>setFileData(ev.target.result.split(",")[1]);r.readAsDataURL(f);}
 
-  async function splitPdfChunks(base64,chunkSize=95){
-    const bytes=Uint8Array.from(atob(base64),c=>c.charCodeAt(0));
-    const src=await PDFLib.PDFDocument.load(bytes);
-    const total=src.getPageCount();
-    if(total<=chunkSize)return[{base64,pages:total,chunkLabel:`pages 1–${total}`}];
-    const chunks=[];
-    for(let start=0;start<total;start+=chunkSize){
-      const end=Math.min(start+chunkSize,total);
-      const doc=await PDFLib.PDFDocument.create();
-      const indices=Array.from({length:end-start},(_,i)=>start+i);
-      const copied=await doc.copyPages(src,indices);
-      copied.forEach(p=>doc.addPage(p));
-      const out=await doc.save();
-      let binary="";const CHUNK=8192;
-      for(let i=0;i<out.length;i+=CHUNK)binary+=String.fromCharCode(...out.subarray(i,i+CHUNK));
-      chunks.push({base64:btoa(binary),pages:end-start,chunkLabel:`pages ${start+1}–${end} of ${total}`});
-    }
-    return chunks;
-  }
-
   async function processDocument(){
     if(!fileData){show("Upload a PDF first","warn");return;}
     setProcessing(true);
     try{
-      setProgress("Checking page count…");
-      const chunks=await splitPdfChunks(fileData);
+      setProgress("Loading PDF…");
+      const bytes=Uint8Array.from(atob(fileData),c=>c.charCodeAt(0));
+      const srcDoc=await PDFLib.PDFDocument.load(bytes);
+      const totalPages=srcDoc.getPageCount();
+      const summary=mode==="diff"?criteria.map(c=>c.title).join("\n"):"";
+
+      async function extractRange(start,end){
+        const doc=await PDFLib.PDFDocument.create();
+        const copied=await doc.copyPages(srcDoc,Array.from({length:end-start},(_,i)=>start+i));
+        copied.forEach(p=>doc.addPage(p));
+        const out=await doc.save();
+        let bin="";const SZ=8192;
+        for(let i=0;i<out.length;i+=SZ)bin+=String.fromCharCode(...out.subarray(i,i+SZ));
+        return btoa(bin);
+      }
+
+      // Recursively process a page range — if too long, halve and retry
+      const allResults=[];
+      async function processRange(start,end){
+        setProgress(`Processing pages ${start+1}–${end} of ${totalPages}…`);
+        const base64=await extractRange(start,end);
+        const chunkInfo=totalPages>(end-start)?`Pages ${start+1} to ${end} of ${totalPages}.`:undefined;
+        const res=await api("/api/admin/extract-pdf",{method:"POST",body:JSON.stringify({mode,pdf:base64,currentCriteria:summary,chunkInfo})});
+        if(res.error&&res.error.includes("prompt is too long")&&end-start>1){
+          const mid=Math.floor((start+end)/2);
+          await processRange(start,mid);
+          await processRange(mid,end);
+          return;
+        }
+        if(res.error)throw new Error(`Pages ${start+1}–${end}: ${res.error}`);
+        allResults.push(res);
+      }
+
+      for(let s=0;s<totalPages;s+=80)await processRange(s,Math.min(s+80,totalPages));
+
       let docTitle="";
-
       if(mode==="diff"){
-        const summary=criteria.map(c=>c.title).join("\n");
-        const allChanges=[];const summaries=[];
-        for(let i=0;i<chunks.length;i++){
-          const{base64,chunkLabel}=chunks[i];
-          setProgress(chunks.length>1?`Diff — chunk ${i+1}/${chunks.length} (${chunkLabel})…`:"Analysing changes…");
-          const res=await api("/api/admin/extract-pdf",{method:"POST",body:JSON.stringify({mode:"diff",pdf:base64,currentCriteria:summary,chunkInfo:chunks.length>1?`Chunk ${i+1} of ${chunks.length} (${chunkLabel}).`:undefined})});
-          if(res.error){show(`Chunk ${i+1} failed: ${res.error}`,"error");return;}
-          if(res.documentTitle)docTitle=res.documentTitle;
-          if(res.summary)summaries.push(res.summary);
-          allChanges.push(...(res.changes||[]));
+        const allChanges=[],summaries=[];
+        for(const r of allResults){
+          if(r.documentTitle)docTitle=r.documentTitle;
+          if(r.summary)summaries.push(r.summary);
+          allChanges.push(...(r.changes||[]));
         }
-        const merged={documentTitle:docTitle,changes:allChanges,summary:summaries.join(" | ")};
-        setResult({type:"diff",data:merged});
+        setResult({type:"diff",data:{documentTitle:docTitle,changes:allChanges,summary:summaries.join(" | ")}});
         const acc={};allChanges.forEach((_,i)=>{acc[i]=true;});setAccepted(acc);
-        show(`Found ${allChanges.length} changes${chunks.length>1?` across ${chunks.length} chunks`:""}`, "ok");
-
-      } else {
-        // Replace mode — each chunk returns {exams:[...]}
+        show(`Found ${allChanges.length} changes`,"ok");
+      }else{
         const allExams=[];
-        for(let i=0;i<chunks.length;i++){
-          const{base64,chunkLabel}=chunks[i];
-          setProgress(chunks.length>1?`Extracting — chunk ${i+1}/${chunks.length} (${chunkLabel})…`:"Extracting full criteria…");
-          const res=await api("/api/admin/extract-pdf",{method:"POST",body:JSON.stringify({mode:"replace",pdf:base64,chunkInfo:chunks.length>1?`Chunk ${i+1} of ${chunks.length} (${chunkLabel}). Extract all complete exam/site criteria visible in this section.`:undefined})});
-          if(res.error){show(`Chunk ${i+1} failed: ${res.error}`,"error");return;}
-          if(res.documentTitle)docTitle=res.documentTitle;
-          allExams.push(...(res.exams||[]));
-        }
-        // Deduplicate by id — last occurrence wins (handles exams split across chunk boundaries)
-        const byId={};
-        for(const exam of allExams)byId[exam.id]=exam;
+        for(const r of allResults){if(r.documentTitle)docTitle=r.documentTitle;allExams.push(...(r.exams||[]));}
+        const byId={};for(const e of allExams)byId[e.id]=e;
         const deduped=Object.values(byId);
-
-        // Merge preserved fields from existing criteria into extracted entries
-        const existingById={};
-        for(const c of criteria)existingById[c.id]=c.data;
+        const existingById={};for(const c of criteria)existingById[c.id]=c.data;
         const PRESERVED=['healthPathwaysUrl','inlineGuidance','guidance','alternativeManagement','notFundedDetail','outOfCriteriaNote','guidanceNarrative','footnotes'];
         function mergeFields(node,eid){
           const old=existingById[eid];
@@ -562,16 +554,10 @@ function ImportTab({criteria,show,updateCriteriaItem,setDirty,handleReplaceAll})
         }
         let mergedCount=0,newCount=0;
         for(const exam of deduped){
-          if(exam.type==="multisite"){
-            for(const site of exam.sites||[]){mergeFields(site,site.id);if(site._merged)mergedCount++;else newCount++;}
-          }else{mergeFields(exam,exam.id);if(exam._merged)mergedCount++;else newCount++;}
+          if(exam.type==="multisite"){for(const site of exam.sites||[]){mergeFields(site,site.id);if(site._merged)mergedCount++;else newCount++;}}
+          else{mergeFields(exam,exam.id);if(exam._merged)mergedCount++;else newCount++;}
         }
-
-        const newFullData={
-          exams:deduped.filter(e=>e.population!=="paediatric"),
-          paedExams:deduped.filter(e=>e.population==="paediatric"),
-        };
-        setResult({type:"replace",data:newFullData,docTitle,mergedCount,newCount});
+        setResult({type:"replace",data:{exams:deduped.filter(e=>e.population!=="paediatric"),paedExams:deduped.filter(e=>e.population==="paediatric")},docTitle,mergedCount,newCount});
         show(`Extracted ${deduped.length} entries — ${mergedCount} matched (URLs/guidance retained), ${newCount} new`,"ok");
       }
     }catch(e){show("Failed: "+e.message,"error");console.error(e);}
