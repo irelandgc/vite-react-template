@@ -398,5 +398,34 @@ app.get('/api/debug/seed', async (c) => {
   }
 });
 
+// Seed endpoint — POST data directly into KV through the worker
+// Usage: curl -X POST ".../api/seed?key=published" -d @kv-published.json
+app.post('/api/seed', async (c) => {
+  const kv = c.env.KV;
+  const keyParam = c.req.query('key');
+  const keyMap: Record<string, string> = {
+    'published': 'criteria:published',
+    'match-data': 'criteria:match-data',
+    'version': 'criteria:version',
+  };
+  const kvKey = keyMap[keyParam || ''];
+  if (!kvKey) {
+    return c.json({ error: 'Invalid key. Use: published, match-data, or version' }, 400);
+  }
+  try {
+    const body = await c.req.text();
+    await kv.put(kvKey, body);
+    const check = await kv.get(kvKey);
+    return c.json({ 
+      success: true, 
+      key: kvKey, 
+      size: body.length,
+      verified: !!check 
+    });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
 
 export default app;
