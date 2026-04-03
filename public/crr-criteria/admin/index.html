@@ -313,18 +313,10 @@ function EditorTab({criteria,selected,setSelected,dirty,setDirty,show,updateCrit
     if(!editData||!selItem)return;
     setSaving(true);
     try {
-      // Save via PUT admin endpoint
-      const res = await api(`/api/admin/criteria/${selItem.id}`, {
-        method:"PUT",
-        body:JSON.stringify({data:editData,updatedBy:"admin"}),
-      });
-      if(res.success){
-        updateCriteriaItem(selItem.id, editData);
-        show("✓ Saved to working copy","ok");
-        setDirty(false);
-      } else {
-        show("Save failed: "+(res.error||"unknown"),"error");
-      }
+      // Save to local working copy — publish writes everything to KV
+      updateCriteriaItem(selItem.id, editData);
+      show("✓ Saved to working copy — publish to make live","ok");
+      setDirty(false);
     } catch(e){ show("Save failed: "+e.message,"error"); }
     finally { setSaving(false); }
   }

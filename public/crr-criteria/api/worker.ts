@@ -340,10 +340,12 @@ app.post('/api/admin/publish', requireAccess, async (c) => {
         n + (e.type === 'multisite' ? (e.sites || []).length : 1), 0),
     }));
 
-    // Audit log
-    await db.prepare(
-      'INSERT INTO audit_log (action, entity_type, entity_id, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
-    ).bind('publish', 'version', versionLabel, email, now).run();
+    // Audit log (best-effort — don't fail publish if table missing)
+    try {
+      await db.prepare(
+        'INSERT INTO audit_log (action, entity_type, entity_id, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
+      ).bind('publish', 'version', versionLabel, email, now).run();
+    } catch (_) { /* audit_log table may not exist yet */ }
 
     return c.json({ success: true, version: versionLabel, publishedAt: now });
   } catch (e: any) {
@@ -355,10 +357,14 @@ app.post('/api/admin/publish', requireAccess, async (c) => {
 app.get('/api/admin/audit', requireAccess, async (c) => {
   const db = c.env.DB;
   const limit = parseInt(c.req.query('limit') || '50');
-  const rows = await db.prepare(
-    'SELECT * FROM audit_log ORDER BY id DESC LIMIT ?'
-  ).bind(limit).all();
-  return c.json({ entries: rows.results });
+  try {
+    const rows = await db.prepare(
+      'SELECT * FROM audit_log ORDER BY id DESC LIMIT ?'
+    ).bind(limit).all();
+    return c.json({ entries: rows.results });
+  } catch (_) {
+    return c.json({ entries: [], note: 'audit_log table not yet created — run schema.sql' });
+  }
 });
 
 
