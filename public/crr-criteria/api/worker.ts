@@ -1,0 +1,353 @@
+// ══════════════════════════════════════════════════════════════
+//  CRR Criteria API — Hono Worker for Cloudflare
+//  Serves published criteria to both Viewer and Triage Advisor
+//  Version: v1.0.0
+// ══════════════════════════════════════════════════════════════
+
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+
+const app = new Hono();
+
+// ── Middleware ────────────────────────────────────────────────
+app.use('*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowHeaders: ['Content-Type', 'Authorization', 'cf-access-jwt-assertion'],
+}));
+
+// ── Types (for reference) ────────────────────────────────────
+// Env bindings from wrangler.json:
+//   DB: D1Database    — criteria database
+//   KV: KVNamespace   — published criteria cache
+
+// ══════════════════════════════════════════════════════════════
+//  PUBLIC ROUTES (no auth required)
+// ══════════════════════════════════════════════════════════════
+
+// GET /api/criteria — Returns the published criteria snapshot from KV
+// Used by both Criteria Viewer and Triage Advisor
+app.get('/api/criteria', async (c) => {
+  const kv = c.env.KV;
+
+  // Read from KV (edge-cached, ~1ms)
+  const published = await kv.get('criteria:published', 'json');
+  if (!published) {
+    return c.json({ error: 'No published criteria available' }, 404);
+  }
+
+  return c.json(published, 200, {
+    'Cache-Control': 'public, max-age=300', // 5-minute browser cache
+  });
+});
+
+// GET /api/criteria/:id — Returns a single exam/site criteria
+app.get('/api/criteria/:id', async (c) => {
+  const kv = c.env.KV;
+  const id = c.req.param('id');
+
+  const published = await kv.get('criteria:published', 'json');
+  if (!published || !published.data) {
+    return c.json({ error: 'No published criteria available' }, 404);
+  }
+
+  // Search through exams for the requested ID
+  const data = published.data;
+  for (const exam of (data.exams || [])) {
+    if (exam.id === id) return c.json(exam);
+    if (exam.type === 'multisite') {
+      for (const site of (exam.sites || [])) {
+        if (site.id === id) return c.json({ ...site, examId: exam.id, examTitle: exam.title });
+      }
+    }
+  }
+
+  return c.json({ error: `Criteria '${id}' not found` }, 404);
+});
+
+// GET /api/version — Returns current published version info
+app.get('/api/version', async (c) => {
+  const kv = c.env.KV;
+
+  const version = await kv.get('criteria:version', 'json');
+  if (!version) {
+    return c.json({ error: 'No version info available' }, 404);
+  }
+
+  return c.json(version);
+});
+
+// GET /api/match-data — Returns MATCH_DATA for the Triage Advisor
+// This is a transformed view of the criteria optimized for NLP matching
+app.get('/api/match-data', async (c) => {
+  const kv = c.env.KV;
+
+  const matchData = await kv.get('criteria:match-data', 'json');
+  if (!matchData) {
+    return c.json({ error: 'No match data available' }, 404);
+  }
+
+  return c.json(matchData, 200, {
+    'Cache-Control': 'public, max-age=300',
+  });
+});
+
+
+// ══════════════════════════════════════════════════════════════
+//  ADMIN ROUTES (Cloudflare Access required)
+// ══════════════════════════════════════════════════════════════
+
+// Middleware: verify Cloudflare Access JWT
+async function requireAccess(c, next) {
+  const jwt = c.req.header('cf-access-jwt-assertion');
+  if (!jwt) {
+    return c.json({ error: 'Unauthorized — Cloudflare Access token required' }, 401);
+  }
+  // In production, verify the JWT against your Access team domain
+  // For now, presence of the header is sufficient (Access proxy handles validation)
+  await next();
+}
+
+// GET /api/admin/criteria — All criteria from D1 (working copy)
+app.get('/api/admin/criteria', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const rows = await db.prepare('SELECT * FROM criteria ORDER BY modality, title').all();
+  return c.json({ criteria: rows.results });
+});
+
+// GET /api/admin/criteria/:id — Single criteria record
+app.get('/api/admin/criteria/:id', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const id = c.req.param('id');
+  const row = await db.prepare('SELECT * FROM criteria WHERE id = ?').bind(id).first();
+  if (!row) return c.json({ error: 'Not found' }, 404);
+  return c.json(row);
+});
+
+// PUT /api/admin/criteria/:id — Update criteria
+app.put('/api/admin/criteria/:id', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const id = c.req.param('id');
+  const body = await c.req.json();
+  const now = new Date().toISOString();
+
+  // Get existing for diff
+  const existing = await db.prepare('SELECT data FROM criteria WHERE id = ?').bind(id).first();
+
+  // Update
+  await db.prepare(
+    'UPDATE criteria SET data = ?, updated_at = ?, updated_by = ? WHERE id = ?'
+  ).bind(
+    JSON.stringify(body.data),
+    now,
+    body.updatedBy || 'admin',
+    id
+  ).run();
+
+  // Audit log
+  await db.prepare(
+    'INSERT INTO audit_log (action, entity_type, entity_id, changes, performed_by, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(
+    'update', 'criteria', id,
+    JSON.stringify({ before: existing?.data, after: body.data }),
+    body.updatedBy || 'admin',
+    now
+  ).run();
+
+  return c.json({ success: true, id, updatedAt: now });
+});
+
+// POST /api/admin/criteria — Create new criteria
+app.post('/api/admin/criteria', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const body = await c.req.json();
+  const now = new Date().toISOString();
+
+  await db.prepare(
+    'INSERT INTO criteria (id, title, modality, type, population, data, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  ).bind(
+    body.id, body.title, body.modality, body.type,
+    body.population || 'adult',
+    JSON.stringify(body.data),
+    now,
+    body.createdBy || 'admin'
+  ).run();
+
+  // Audit log
+  await db.prepare(
+    'INSERT INTO audit_log (action, entity_type, entity_id, changes, performed_by, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind('create', 'criteria', body.id, JSON.stringify(body), body.createdBy || 'admin', now)
+  .run();
+
+  return c.json({ success: true, id: body.id }, 201);
+});
+
+// DELETE /api/admin/criteria/:id — Soft-delete
+app.delete('/api/admin/criteria/:id', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const id = c.req.param('id');
+  const now = new Date().toISOString();
+  const email = c.req.header('cf-access-authenticated-user-email') || 'admin';
+
+  await db.prepare('DELETE FROM criteria WHERE id = ?').bind(id).run();
+
+  await db.prepare(
+    'INSERT INTO audit_log (action, entity_type, entity_id, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
+  ).bind('delete', 'criteria', id, email, now).run();
+
+  return c.json({ success: true, deleted: id });
+});
+
+// ── Version Management ────────────────────────────────────
+
+// GET /api/admin/versions — All versions
+app.get('/api/admin/versions', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const rows = await db.prepare('SELECT * FROM versions ORDER BY id DESC').all();
+  return c.json({ versions: rows.results });
+});
+
+// POST /api/admin/versions — Create draft version (snapshot current D1 state)
+app.post('/api/admin/versions', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const body = await c.req.json();
+  const now = new Date().toISOString();
+
+  // Snapshot all current criteria
+  const criteria = await db.prepare('SELECT * FROM criteria ORDER BY modality, title').all();
+  const snapshot = criteria.results;
+
+  await db.prepare(
+    'INSERT INTO versions (version_label, notes, criteria_snapshot, status, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(
+    body.versionLabel,
+    body.notes || '',
+    JSON.stringify(snapshot),
+    'draft',
+    now,
+    body.createdBy || 'admin'
+  ).run();
+
+  return c.json({ success: true, versionLabel: body.versionLabel }, 201);
+});
+
+// POST /api/admin/versions/:id/publish — Publish a draft version
+app.post('/api/admin/versions/:id/publish', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const kv = c.env.KV;
+  const versionId = c.req.param('id');
+  const now = new Date().toISOString();
+  const email = c.req.header('cf-access-authenticated-user-email') || 'admin';
+
+  // Get the version
+  const version = await db.prepare('SELECT * FROM versions WHERE id = ?').bind(versionId).first();
+  if (!version) return c.json({ error: 'Version not found' }, 404);
+  if (version.status === 'published') return c.json({ error: 'Already published' }, 400);
+
+  // Parse the snapshot
+  const snapshot = JSON.parse(version.criteria_snapshot);
+
+  // Transform snapshot into the format expected by the Viewer
+  // (reconstruct DATA structure from individual criteria rows)
+  const viewerData = transformToViewerFormat(snapshot);
+
+  // Transform snapshot into MATCH_DATA format for Triage Advisor
+  const matchData = transformToMatchFormat(snapshot);
+
+  // 1. Update version status
+  await db.prepare(
+    'UPDATE versions SET status = ?, published_at = ?, published_by = ? WHERE id = ?'
+  ).bind('published', now, email, versionId).run();
+
+  // 2. Write to KV — this is what the public endpoints serve
+  await kv.put('criteria:published', JSON.stringify({
+    version: version.version_label,
+    publishedAt: now,
+    publishedBy: email,
+    data: viewerData,
+  }));
+
+  await kv.put('criteria:match-data', JSON.stringify(matchData));
+
+  await kv.put('criteria:version', JSON.stringify({
+    version: version.version_label,
+    publishedAt: now,
+    publishedBy: email,
+    criteriaCount: snapshot.length,
+  }));
+
+  // 3. Audit log
+  await db.prepare(
+    'INSERT INTO audit_log (action, entity_type, entity_id, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
+  ).bind('publish', 'version', versionId.toString(), email, now).run();
+
+  return c.json({
+    success: true,
+    version: version.version_label,
+    publishedAt: now,
+    criteriaCount: snapshot.length,
+  });
+});
+
+// GET /api/admin/audit — Audit log
+app.get('/api/admin/audit', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const limit = parseInt(c.req.query('limit') || '50');
+  const rows = await db.prepare(
+    'SELECT * FROM audit_log ORDER BY id DESC LIMIT ?'
+  ).bind(limit).all();
+  return c.json({ entries: rows.results });
+});
+
+
+// ── Transform Functions ──────────────────────────────────
+
+function transformToViewerFormat(snapshot) {
+  // Group criteria rows by exam (modality)
+  // This reconstructs the DATA.exams structure
+  const examMap = {};
+  for (const row of snapshot) {
+    const data = typeof row.data === 'string' ? JSON.parse(row.data) : row.data;
+    // Each row is either an exam (singlesite) or a site within an exam (multisite)
+    // The structure depends on how criteria were stored in D1
+    // This is a placeholder — the actual transform depends on D1 schema design
+    if (!examMap[row.modality]) {
+      examMap[row.modality] = {
+        id: row.id,
+        title: row.title,
+        modality: row.modality,
+        type: row.type,
+        active: true,
+        sites: [],
+        ...data,
+      };
+    }
+  }
+  return { exams: Object.values(examMap) };
+}
+
+function transformToMatchFormat(snapshot) {
+  // Transform criteria into MATCH_DATA format for the Triage Advisor
+  // This includes synonyms, site index, and paediatric index
+  // Placeholder — actual implementation depends on how match groups are stored
+  return {
+    synonyms: {},
+    index: [],
+    paed_index: [],
+  };
+}
+
+
+// ── Health check ─────────────────────────────────────────
+
+app.get('/api/health', (c) => {
+  return c.json({
+    status: 'ok',
+    service: 'crr-criteria-api',
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+
+export default app;

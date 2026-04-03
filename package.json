@@ -12,7 +12,7 @@
 		"publish": true
 	},
 	"dependencies": {
-		"hono": "4.11.1",
+		"hono": "^4.11.1",
 		"react": "19.2.1",
 		"react-dom": "19.2.1"
 	},
@@ -42,5 +42,18 @@
 		"lint": "eslint .",
 		"preview": "npm run build && vite preview"
 	},
-	"type": "module"
+	"type": "module",
+	"version": "1.0.0",
+	"main": "eslint.config.js",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/irelandgc/vite-react-template.git"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/irelandgc/vite-react-template/issues"
+	},
+	"homepage": "https://github.com/irelandgc/vite-react-template#readme"
 }

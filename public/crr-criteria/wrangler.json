@@ -1,0 +1,18 @@
+{
+  "name": "crr-criteria-api",
+  "compatibility_date": "2026-04-01",
+  "main": "api/worker.ts",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "crr-criteria",
+      "database_id": "1a8307f9-69e9-4315-a8f3-7f6737dd9c55"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "d8e1a512828d4dd7981d7b241213f396"
+    }
+  ],
+}
