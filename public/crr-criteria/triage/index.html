@@ -275,10 +275,6 @@ textarea.note::placeholder{color:#aab8c2}
     <button onclick="exportQaLog()" title="Download QA log as JSON" id="qaExportBtn" style="display:none;background:none;border:1px solid rgba(255,165,0,0.4);color:#f0a020;padding:4px 10px;border-radius:2px;font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;margin-right:4px">
       &#9733; QA Log
     </button>
-    <button class="btn-key" onclick="openKeyModal()">
-      <span class="key-dot unset" id="keyDot"></span>
-      <span id="keyLbl">Set AI Key</span>
-    </button>
   </div>
 </div>
 
@@ -420,71 +416,78 @@ textarea.note::placeholder{color:#aab8c2}
 
 <!-- PROVENANCE MODAL -->
 <div class="modal-bg" id="provModal">
-  <div class="modal" style="width:540px;max-width:96vw">
-    <div class="modal-hd" style="display:flex;justify-content:space-between;align-items:center">
-      <span>&#128196; Criteria Provenance</span>
+  <div class="modal" style="width:820px;max-width:96vw;max-height:88vh;overflow-y:auto">
+    <div class="modal-hd" style="display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#003B5C;z-index:1">
+      <span>&#128196; Criteria Provenance &amp; AI Settings</span>
       <button onclick="closeProvenanceModal()" style="background:none;border:none;color:#8ab4c8;font-size:16px;cursor:pointer;padding:0 4px">&#10005;</button>
     </div>
-    <div class="modal-bd" style="font-size:13px;line-height:1.6">
+    <div class="modal-bd" style="font-size:12px;line-height:1.5">
 
-      <div style="background:var(--lite);border-radius:3px;padding:12px 14px;border:1px solid var(--rule);margin-bottom:14px">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:6px">Source document</div>
-        <div style="font-weight:700;color:var(--navy);margin-bottom:2px">National Primary Care Referral Criteria for Imaging</div>
-        <div style="color:var(--mid)">Phase 1 &nbsp;·&nbsp; August 2025 reissue (reissue 3) &nbsp;·&nbsp; Health New Zealand | Te Whatu Ora</div>
-        <div style="margin-top:8px;font-size:12px;color:var(--mid)">
-          <span style="font-weight:600">Criteria embedded:</span> 247 items across 25 adult exam/site combinations<br>
-          <span style="font-weight:600">Paediatric criteria:</span> 89 items across 14 paediatric exam/site combinations<br>
-          <span style="font-weight:600">Page references:</span> August 2025 reissue (p10–p111)
+      <!-- Row 1: Source doc + Version side by side -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div style="background:var(--lite);border-radius:3px;padding:10px 12px;border:1px solid var(--rule)">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:5px">Source document</div>
+          <div style="font-weight:700;color:var(--navy);margin-bottom:2px">National Primary Care Referral Criteria for Imaging</div>
+          <div style="color:var(--mid);margin-bottom:6px">Phase 1 · August 2025 reissue (reissue 3) · Health New Zealand | Te Whatu Ora</div>
+          <div style="color:var(--mid)">
+            <span style="font-weight:600">Adult:</span> 247 items, 25 exam/site combinations<br>
+            <span style="font-weight:600">Paediatric:</span> 89 items, 14 exam/site combinations<br>
+            <span style="font-weight:600">Pages:</span> p10–p111
+          </div>
+        </div>
+        <div style="background:var(--lite);border-radius:3px;padding:10px 12px;border:1px solid var(--rule)">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:5px">Tool &amp; criteria version</div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <tr><td style="padding:2px 0;color:var(--mid);width:55%">Tool version</td><td style="font-weight:600;color:var(--navy)">v2.0.0</td></tr>
+            <tr><td style="padding:2px 0;color:var(--mid)">Criteria data</td><td style="font-weight:600;color:var(--navy)">Aug 2025 reissue 3</td></tr>
+            <tr><td style="padding:2px 0;color:var(--mid)">Adult updated</td><td style="font-weight:600;color:var(--navy)">March 2026</td></tr>
+            <tr><td style="padding:2px 0;color:var(--mid)">Paediatric updated</td><td style="font-weight:600;color:var(--navy)">March 2026</td></tr>
+            <tr><td style="padding:2px 0;color:var(--mid)">AI model</td><td style="font-weight:600;color:var(--navy)">Claude Sonnet 4</td></tr>
+          </table>
         </div>
       </div>
 
-      <div style="margin-bottom:14px">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:6px">Tool &amp; criteria version</div>
-        <table style="width:100%;border-collapse:collapse;font-size:12px">
-          <tr><td style="padding:3px 0;color:var(--mid);width:40%">Tool version</td><td style="font-weight:600;color:var(--navy)">v2.0.0</td></tr>
-          <tr><td style="padding:3px 0;color:var(--mid)">Criteria data version</td><td style="font-weight:600;color:var(--navy)">August 2025 reissue 3</td></tr>
-          <tr><td style="padding:3px 0;color:var(--mid)">Adult criteria last updated</td><td style="font-weight:600;color:var(--navy)">March 2026 (structured from August 2025 document)</td></tr>
-          <tr><td style="padding:3px 0;color:var(--mid)">Paediatric criteria last updated</td><td style="font-weight:600;color:var(--navy)">March 2026 (structured from August 2025 document)</td></tr>
-          <tr><td style="padding:3px 0;color:var(--mid)">AI model</td><td style="font-weight:600;color:var(--navy)">Claude Sonnet 4 (Anthropic)</td></tr>
-        </table>
-      </div>
-
-      <div style="margin-bottom:14px">
+      <!-- Row 2: AI settings (compact 2-col table) -->
+      <div style="margin-bottom:12px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:6px">AI assessment settings</div>
         <table style="width:100%;border-collapse:collapse;font-size:12px">
           <tr style="border-bottom:1px solid var(--rule)">
-            <td style="padding:5px 0;color:var(--mid);width:40%;vertical-align:top">Model</td>
-            <td style="padding:5px 0;color:var(--ink)"><strong style="color:var(--navy)">Claude Sonnet 4</strong> &nbsp;(claude-sonnet-4-20250514, Anthropic)</td>
+            <td style="padding:5px 8px 5px 0;color:var(--mid);width:22%;vertical-align:top;white-space:nowrap">Model</td>
+            <td style="padding:5px 0;color:var(--ink)"><strong style="color:var(--navy)">Claude Sonnet 4</strong> (claude-sonnet-4-20250514, Anthropic)</td>
           </tr>
           <tr style="border-bottom:1px solid var(--rule)">
-            <td style="padding:5px 0;color:var(--mid);vertical-align:top">Temperature</td>
-            <td style="padding:5px 0;color:var(--ink)"><strong style="color:var(--navy)">0.3</strong> &mdash; Controls how consistent the AI&rsquo;s responses are. At 0, the model always gives the same answer for the same input. At 1 (the default), it varies more. Set to 0.3 to reduce verdict variability on repeated assessments of the same note, while retaining the flexibility needed for clinical reasoning.</td>
+            <td style="padding:5px 8px 5px 0;color:var(--mid);vertical-align:top">Temperature</td>
+            <td style="padding:5px 0;color:var(--ink)"><strong style="color:var(--navy)">0.3</strong> &mdash; Reduces verdict variability while retaining clinical reasoning flexibility. 0 = always identical; 1 = most variable.</td>
           </tr>
           <tr style="border-bottom:1px solid var(--rule)">
-            <td style="padding:5px 0;color:var(--mid);vertical-align:top">Documentation standard</td>
-            <td style="padding:5px 0;color:var(--ink)"><strong style="color:var(--navy)">Strict</strong> &mdash; only explicitly stated facts count, mirroring how a triage radiologist reads a referral cold. <strong style="color:var(--navy)">Inferred</strong> &mdash; reasonable clinical context is allowed (e.g. &ldquo;No AF&rdquo; &mdash; no atrial fibrillation &mdash; suggests anticoagulation for AF is less likely, though other indications may exist). Selectable per assessment.</td>
+            <td style="padding:5px 8px 5px 0;color:var(--mid);vertical-align:top">Doc standard</td>
+            <td style="padding:5px 0;color:var(--ink)"><strong style="color:var(--navy)">Strict</strong> &mdash; only explicitly stated facts count. <strong style="color:var(--navy)">Inferred</strong> &mdash; reasonable clinical context allowed (e.g. &ldquo;No AF&rdquo; implies anticoagulation less likely). Selectable per assessment.</td>
           </tr>
           <tr>
-            <td style="padding:5px 0;color:var(--mid);vertical-align:top">Prompt caching</td>
-            <td style="padding:5px 0;color:var(--ink)">The ~21,000-token criteria block is cached server-side after the first call of a session, reducing cost and latency on subsequent calls within that session.</td>
+            <td style="padding:5px 8px 5px 0;color:var(--mid);vertical-align:top">Prompt caching</td>
+            <td style="padding:5px 0;color:var(--ink)">The ~21,000-token criteria block is cached server-side after the first call, reducing latency on subsequent calls within the session.</td>
           </tr>
         </table>
       </div>
 
-      <div style="margin-bottom:14px">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:6px">Important limitations</div>
-        <ul style="font-size:12px;color:var(--ink);line-height:1.6;padding-left:16px">
-          <li>This tool is a <strong>prototype</strong>. It has not been validated for clinical use.</li>
-          <li>Criteria reflect the August 2025 reissue. If the national document is updated, this tool must be updated separately — it does not update automatically.</li>
-          <li>AI assessments are probabilistic and may occasionally produce different results for the same note.</li>
-          <li>Always verify against the source document before submitting a referral.</li>
-          <li style="color:#c07800"><strong>Do not enter identifiable patient information</strong> &mdash; note text is sent to the Anthropic API for assessment.</li>
-        </ul>
-      </div>
-
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:6px">Criteria update process</div>
-      <div style="font-size:12px;color:var(--ink);line-height:1.6;margin-bottom:14px;background:var(--lite);border-radius:3px;padding:10px 12px;border:1px solid var(--rule)">
-        <strong>Criteria updates are the responsibility of Health New Zealand | Te Whatu Ora.</strong> When the national criteria document is revised, HNZ must initiate an update to this tool by providing the updated PDF to the tool developer. The structured criteria data will then be re-extracted, diffed against the current version for clinical review and approval by HNZ, and a new tool version will be produced. The UI and AI assessment logic are independent of the criteria data &mdash; a criteria update does not require rebuilding the tool. The criteria version and date are always shown in this panel.
+      <!-- Row 3: Limitations + Update process side by side -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:5px">Important limitations</div>
+          <ul style="font-size:12px;color:var(--ink);line-height:1.6;padding-left:16px;margin:0">
+            <li>This tool is a <strong>prototype</strong> not validated for clinical use.</li>
+            <li>Criteria reflect the August 2025 reissue and must be updated separately if the document changes.</li>
+            <li>AI assessments are probabilistic — results may vary for the same note.</li>
+            <li>Always verify against the source document before submitting.</li>
+            <li style="color:#c07800"><strong>Do not enter identifiable patient information.</strong></li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:5px">Criteria update process</div>
+          <div style="font-size:12px;color:var(--ink);line-height:1.6;background:var(--lite);border-radius:3px;padding:8px 10px;border:1px solid var(--rule)">
+            <strong>Updates are the responsibility of Health New Zealand.</strong> When the national document is revised, HNZ provides the updated PDF to the tool developer. Criteria are re-extracted, diffed, reviewed clinically, and a new tool version produced. The UI and AI logic are independent of the criteria data.
+          </div>
+        </div>
       </div>
 
       <div style="display:flex;justify-content:flex-end">
@@ -560,21 +563,6 @@ textarea.note::placeholder{color:#aab8c2}
 </div>
 
 <!-- MODAL -->
-<div class="modal-bg" id="keyModal">
-  <div class="modal">
-    <div class="modal-hd">Anthropic API Key — AI Assessment</div>
-    <div class="modal-bd">
-      <p>Enter your Anthropic API key to enable the optional AI assessment feature. The key is stored locally in your browser and sent only to the Anthropic API.</p>
-      <input type="password" id="keyInput" placeholder="sk-ant-..." autocomplete="off">
-      <div class="modal-warn">&#9888; This key is stored in localStorage and sent directly to the Anthropic API from your browser. Use only on a trusted network.</div>
-      <div class="modal-acts">
-        <button class="btn-mc" onclick="closeKeyModal()">Cancel</button>
-        <button class="btn-md" onclick="clearKey()">Clear Key</button>
-        <button class="btn-ms" onclick="saveKey()">Save Key</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 <script>
 // ══════════════════════════════════════════════════════════════
@@ -912,18 +900,6 @@ function runCheck() {
   document.getElementById('methodBadge').textContent = 'Assessing\u2026';
   document.getElementById('methodBadge').className = 'method-badge method-ai';
 
-  // Check API key — if missing, prompt and abort
-  if (!getKey()) {
-    document.getElementById('aiPanel').innerHTML =
-      '<div class="panel"><div class="ai-col-empty" style="padding:24px 14px">' +
-      '<button class="btn-run-ai" onclick="openKeyModal()">Set API key to assess ›</button>' +
-      '<p style="font-size:11px;color:var(--mid);margin-top:8px">An Anthropic API key is required. Keys are stored locally in your browser.</p>' +
-      '</div></div>';
-    document.getElementById('methodBadge').textContent = 'API key needed';
-    return;
-  }
-
-  // Run AI directly
   runAI();
 }
 
@@ -1087,7 +1063,6 @@ function clearAll() {
 // ═══════════════════════════════════════════════
 //  AI ESCALATION
 // ═══════════════════════════════════════════════
-var LS_API_KEY   = 'crr_triage_api_key';
 var LS_USAGE_KEY = 'crr_usage_log';
 var NZD_RATE     = 1.65;
 
@@ -1218,34 +1193,6 @@ function clearUsageLog() {
   }
 }
 
-function getKey() {
-  try { return localStorage.getItem(LS_API_KEY) || ''; } catch(e){ return ''; }
-}
-function setKeyUI(k) {
-  var dot = document.getElementById('keyDot');
-  var lbl = document.getElementById('keyLbl');
-  if (k) { dot.className = 'key-dot set'; lbl.textContent = 'AI Key \u2713'; }
-  else   { dot.className = 'key-dot unset'; lbl.textContent = 'Set AI Key'; }
-}
-function openKeyModal() {
-  document.getElementById('keyInput').value = getKey();
-  document.getElementById('keyModal').classList.add('open');
-}
-function closeKeyModal() { document.getElementById('keyModal').classList.remove('open'); }
-function saveKey() {
-  var k = document.getElementById('keyInput').value.trim();
-  try { localStorage.setItem(LS_API_KEY, k); } catch(e){}
-  setKeyUI(k);
-  closeKeyModal();
-  var aiBtn = document.getElementById('aiBtn');
-  if (aiBtn) aiBtn.textContent = k ? 'Check with AI \u203a' : 'Set API key & check \u203a';
-}
-function clearKey() {
-  try { localStorage.removeItem(LS_API_KEY); } catch(e){}
-  document.getElementById('keyInput').value = '';
-  setKeyUI('');
-  closeKeyModal();
-}
 
 function buildCriteriaBlock() {
   var isPaed = detectPaediatric();
@@ -1360,8 +1307,6 @@ function hasCorrectionChanges(original, corrected) {
 // ── Main AI flow ─────────────────────────────────────────────────────────────
 
 function runAI() {
-  var key = getKey();
-  if (!key) { openKeyModal(); return; }
   if (!lastNote) { lastNote = getEffectiveNote(); }
   if (!lastNote) { return; }
 
@@ -1394,15 +1339,9 @@ function runAI() {
   document.getElementById('methodBadge').textContent = 'Assessing\u2026';
   document.getElementById('methodBadge').className = 'method-badge method-ai';
 
-  fetch('https://api.anthropic.com/v1/messages', {
+  fetch('https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/triage/assess', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-      'anthropic-beta': 'prompt-caching-2024-07-31',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 2400,
@@ -1978,8 +1917,6 @@ function closeCompLogModal() { document.getElementById('compLogModal').classList
 
 // Call both models simultaneously using the exact same buildSystemPrompt()
 function runComparison() {
-  var key = localStorage.getItem('crr_triage_api_key') || '';
-  if (!key) { openKeyModal(); return; }
   var note = lastNote;
   if (!note) { return; }
 
@@ -2006,30 +1943,24 @@ function runComparison() {
     }
   }
 
-  callModelForComp(SONNET_MODEL, note, key, 'sCompBody', 'sCompCost', false, function(r, err) {
+  callModelForComp(SONNET_MODEL, note, 'sCompBody', 'sCompCost', false, function(r, err) {
     sRes = r; sErr = err; checkDone();
   });
-  callModelForComp(OPUS_MODEL, note, key, 'oCompBody', 'oCompCost', true, function(r, err) {
+  callModelForComp(OPUS_MODEL, note, 'oCompBody', 'oCompCost', true, function(r, err) {
     oRes = r; oErr = err; checkDone();
   });
 }
 
-function callModelForComp(model, note, key, bodyId, costId, isOpus, cb) {
+function callModelForComp(model, note, bodyId, costId, isOpus, cb) {
   var sys = buildSystemPrompt();
   var docModeStr = docMode === 'strict'
     ? 'Documentation standard: STRICT \u2014 only explicitly stated facts count.'
     : 'Documentation standard: INFERRED \u2014 reasonable clinical context allowed.';
   var userMsg = docModeStr + '\n\nNote: silently correct any obvious typos or voice-to-text errors in the note before assessing, and include the corrected version in your response as "interpreted_note".\n\nAssess this referral note:\n\n' + note;
 
-  fetch('https://api.anthropic.com/v1/messages', {
+  fetch('https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/triage/assess', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-      'anthropic-beta': 'prompt-caching-2024-07-31',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: model,
       max_tokens: 2400,
@@ -2288,9 +2219,7 @@ function exportCompLog() {
 // ═══════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════
-setKeyUI(getKey());
 updateStatsBadge();
-document.getElementById('keyModal').addEventListener('click', function(e){ if(e.target===this) closeKeyModal(); });
 document.getElementById('statsModal').addEventListener('click', function(e){ if(e.target===this) closeStatsModal(); });
 document.getElementById('provModal').addEventListener('click', function(e){ if(e.target===this) closeProvenanceModal(); });
 document.getElementById('qaModal').addEventListener('click', function(e){ if(e.target===this) closeQaModal(); });

@@ -420,6 +420,29 @@ app.post('/api/admin/versions/:id/rollback', requireAccess, async (c) => {
   return c.json({ success: true, version: restoredLabel, publishedAt: now, data });
 });
 
+// POST /api/triage/assess — Proxy Anthropic API calls for the Triage Advisor
+// No admin auth — public endpoint; API key kept server-side
+app.post('/api/triage/assess', async (c) => {
+  const apiKey = c.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return c.json({ error: 'ANTHROPIC_API_KEY not configured' }, 500);
+
+  const body = await c.req.json();
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-beta': 'prompt-caching-2024-07-31',
+    },
+    body: JSON.stringify(body),
+  });
+
+  const result: any = await response.json();
+  return c.json(result, response.ok ? 200 : (response.status as any));
+});
+
 // POST /api/admin/extract-pdf — Server-side PDF processing via Anthropic API
 // Accepts { pdf: base64string, currentCriteria: string }
 // Returns { documentTitle, changes, summary }
