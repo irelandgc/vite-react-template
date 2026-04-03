@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:13px;background:#f2f6f8;color:#0d1f2d;min-height:100vh}
@@ -466,17 +467,48 @@ function ImportTab({criteria,show,updateCriteriaItem,setDirty}){
 
   function handleFile(e){const f=e.target.files[0];if(!f)return;setFile(f);setChanges(null);const r=new FileReader();r.onload=ev=>setFileData(ev.target.result.split(",")[1]);r.readAsDataURL(f);}
 
+  async function splitPdfChunks(base64,chunkSize=95){
+    const bytes=Uint8Array.from(atob(base64),c=>c.charCodeAt(0));
+    const src=await PDFLib.PDFDocument.load(bytes);
+    const total=src.getPageCount();
+    if(total<=chunkSize)return[{base64,pages:total,chunkLabel:`pages 1–${total}`}];
+    const chunks=[];
+    for(let start=0;start<total;start+=chunkSize){
+      const end=Math.min(start+chunkSize,total);
+      const doc=await PDFLib.PDFDocument.create();
+      const indices=Array.from({length:end-start},(_,i)=>start+i);
+      const copied=await doc.copyPagesFrom(src,indices);
+      copied.forEach(p=>doc.addPage(p));
+      const out=await doc.save();
+      // base64-encode in 8 KB slices to avoid stack overflow
+      let binary="";const CHUNK=8192;
+      for(let i=0;i<out.length;i+=CHUNK)binary+=String.fromCharCode(...out.subarray(i,i+CHUNK));
+      chunks.push({base64:btoa(binary),pages:end-start,chunkLabel:`pages ${start+1}–${end} of ${total}`});
+    }
+    return chunks;
+  }
+
   async function processDocument(){
     if(!fileData){show("Upload a PDF first","warn");return;}
-    setProcessing(true);setProgress("Sending to worker…");
+    setProcessing(true);
     try{
+      setProgress("Checking page count…");
+      const chunks=await splitPdfChunks(fileData);
       const summary=criteria.slice(0,15).map(c=>{const items=(c.data.groups||[]).flatMap(g=>(g.items||[]).map(it=>`  [${g.title}] ${it.shortLabel||it.label}`));return `${c.title}:\n${items.join("\n")}`;}).join("\n\n");
-      const res=await api("/api/admin/extract-pdf",{method:"POST",body:JSON.stringify({pdf:fileData,currentCriteria:summary})});
-      if(res.error){show("Failed: "+res.error,"error");return;}
-      setProgress("Parsing…");
-      setChanges(res);
-      const acc={};(res.changes||[]).forEach((_,i)=>{acc[i]=true;});setAccepted(acc);
-      show(`Found ${(res.changes||[]).length} changes`,"ok");
+      const allChanges=[];let docTitle="";const summaries=[];
+      for(let i=0;i<chunks.length;i++){
+        const{base64,chunkLabel}=chunks[i];
+        setProgress(chunks.length>1?`Processing chunk ${i+1} of ${chunks.length} (${chunkLabel})…`:"Sending to Claude…");
+        const res=await api("/api/admin/extract-pdf",{method:"POST",body:JSON.stringify({pdf:base64,currentCriteria:summary,chunkInfo:chunks.length>1?`This is chunk ${i+1} of ${chunks.length} (${chunkLabel}) from a larger document.`:undefined})});
+        if(res.error){show(`Chunk ${i+1} failed: ${res.error}`,"error");return;}
+        if(res.documentTitle)docTitle=res.documentTitle;
+        if(res.summary)summaries.push(res.summary);
+        allChanges.push(...(res.changes||[]));
+      }
+      const merged={documentTitle:docTitle,changes:allChanges,summary:summaries.join(" | ")};
+      setChanges(merged);
+      const acc={};allChanges.forEach((_,i)=>{acc[i]=true;});setAccepted(acc);
+      show(`Found ${allChanges.length} changes${chunks.length>1?` across ${chunks.length} chunks`:""}`, "ok");
     }catch(e){show("Failed: "+e.message,"error");console.error(e);}
     finally{setProcessing(false);setProgress("");}
   }

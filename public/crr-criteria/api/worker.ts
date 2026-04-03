@@ -381,8 +381,11 @@ app.post('/api/admin/extract-pdf', requireAccess, async (c) => {
   const body = await c.req.json();
   const pdfBase64 = body.pdf;
   const currentCriteria = body.currentCriteria || '';
+  const chunkInfo = body.chunkInfo || '';
 
   if (!pdfBase64) return c.json({ error: 'pdf field required' }, 400);
+
+  const chunkNote = chunkInfo ? `\n\nNote: ${chunkInfo} Extract all criteria changes visible in this portion.` : '';
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -398,7 +401,7 @@ app.post('/api/admin/extract-pdf', requireAccess, async (c) => {
         role: 'user',
         content: [
           { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdfBase64 } },
-          { type: 'text', text: `Analyze this NZ CRR criteria document. Compare against current:\n\n${currentCriteria}\n\nRespond ONLY with JSON:\n{"documentTitle":"...","changes":[{"id":"1","type":"added"|"removed"|"changed","examSite":"...","priorityGroup":"...","currentText":null,"newText":"...","shortLabel":"...","reason":"..."}],"summary":"..."}` },
+          { type: 'text', text: `Analyze this NZ CRR criteria document. Compare against current:\n\n${currentCriteria}${chunkNote}\n\nRespond ONLY with JSON:\n{"documentTitle":"...","changes":[{"id":"1","type":"added"|"removed"|"changed","examSite":"...","priorityGroup":"...","currentText":null,"newText":"...","shortLabel":"...","reason":"..."}],"summary":"..."}` },
         ],
       }],
     }),
