@@ -17,8 +17,8 @@ const app = new Hono<{ Bindings: Bindings }>();
 // ── Middleware ────────────────────────────────────────────────
 app.use('*', cors({
   origin: '*',
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowHeaders: ['Content-Type', 'Authorization', 'cf-access-jwt-assertion'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'cf-access-jwt-assertion', 'x-admin-key', 'x-admin-email'],
 }));
 
 // ── Types (for reference) ────────────────────────────────────
