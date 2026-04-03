@@ -7,7 +7,12 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
-const app = new Hono();
+type Bindings = {
+  KV: KVNamespace;
+  DB: D1Database;
+};
+
+const app = new Hono<{ Bindings: Bindings }>();
 
 // ── Middleware ────────────────────────────────────────────────
 app.use('*', cors({
@@ -30,15 +35,20 @@ app.use('*', cors({
 app.get('/api/criteria', async (c) => {
   const kv = c.env.KV;
 
-  // Read from KV (edge-cached, ~1ms)
-  const published = await kv.get('criteria:published', 'json');
-  if (!published) {
-    return c.json({ error: 'No published criteria available' }, 404);
-  }
+  try {
+    // Read from KV — try as string first, then parse
+    const raw = await kv.get('criteria:published');
+    if (!raw) {
+      return c.json({ error: 'No published criteria available', debug: 'KV key criteria:published returned null' }, 404);
+    }
 
-  return c.json(published, 200, {
-    'Cache-Control': 'public, max-age=300', // 5-minute browser cache
-  });
+    const published = JSON.parse(raw);
+    return c.json(published, 200, {
+      'Cache-Control': 'public, max-age=300',
+    });
+  } catch (e: any) {
+    return c.json({ error: 'Failed to read criteria', message: e.message }, 500);
+  }
 });
 
 // GET /api/criteria/:id — Returns a single exam/site criteria
@@ -69,12 +79,15 @@ app.get('/api/criteria/:id', async (c) => {
 app.get('/api/version', async (c) => {
   const kv = c.env.KV;
 
-  const version = await kv.get('criteria:version', 'json');
-  if (!version) {
-    return c.json({ error: 'No version info available' }, 404);
+  try {
+    const raw = await kv.get('criteria:version');
+    if (!raw) {
+      return c.json({ error: 'No version info available' }, 404);
+    }
+    return c.json(JSON.parse(raw));
+  } catch (e: any) {
+    return c.json({ error: 'Failed to read version', message: e.message }, 500);
   }
-
-  return c.json(version);
 });
 
 // GET /api/match-data — Returns MATCH_DATA for the Triage Advisor
@@ -82,14 +95,17 @@ app.get('/api/version', async (c) => {
 app.get('/api/match-data', async (c) => {
   const kv = c.env.KV;
 
-  const matchData = await kv.get('criteria:match-data', 'json');
-  if (!matchData) {
-    return c.json({ error: 'No match data available' }, 404);
+  try {
+    const raw = await kv.get('criteria:match-data');
+    if (!raw) {
+      return c.json({ error: 'No match data available' }, 404);
+    }
+    return c.json(JSON.parse(raw), 200, {
+      'Cache-Control': 'public, max-age=300',
+    });
+  } catch (e: any) {
+    return c.json({ error: 'Failed to read match data', message: e.message }, 500);
   }
-
-  return c.json(matchData, 200, {
-    'Cache-Control': 'public, max-age=300',
-  });
 });
 
 
@@ -347,6 +363,22 @@ app.get('/api/health', (c) => {
     version: '1.0.0',
     timestamp: new Date().toISOString(),
   });
+});
+
+// Debug endpoint — check KV bindings
+app.get('/api/debug', async (c) => {
+  const kv = c.env.KV;
+  try {
+    const keys = await kv.list();
+    const versionRaw = await kv.get('criteria:version');
+    return c.json({
+      kvBound: !!kv,
+      keys: keys.keys.map((k: any) => k.name),
+      versionRaw: versionRaw ? versionRaw.substring(0, 200) : null,
+    });
+  } catch (e: any) {
+    return c.json({ error: e.message, stack: e.stack }, 500);
+  }
 });
 
 
