@@ -510,12 +510,30 @@ function ImportTab({criteria,show,updateCriteriaItem,setDirty,handleReplaceAll})
         return btoa(bin);
       }
 
-      // Recursively process a page range — if too long, halve; if rate limited, wait and retry
+      // Rate limit: 30k input tokens/min — at ~2100 tokens/page, max ~12 pages/chunk
+      // Proactively pace requests: wait until 65s have passed since last request
+      const CHUNK_PAGES=12;
+      const RATE_MS=65000;
+      let lastSent=0;
+
+      async function waitForRateWindow(label){
+        const wait=RATE_MS-(Date.now()-lastSent);
+        if(lastSent>0&&wait>0){
+          const secs=Math.ceil(wait/1000);
+          for(let t=secs;t>0;t--){
+            setProgress(`Pacing ${label} — next chunk in ${t}s…`);
+            await new Promise(r=>setTimeout(r,1000));
+          }
+        }
+      }
+
       const allResults=[];
-      async function processRange(start,end,rateRetries=3){
+      async function processRange(start,end,rateRetries=2){
+        await waitForRateWindow(`pages ${start+1}–${end}`);
         setProgress(`Processing pages ${start+1}–${end} of ${totalPages}…`);
         const base64=await extractRange(start,end);
         const chunkInfo=totalPages>(end-start)?`Pages ${start+1} to ${end} of ${totalPages}.`:undefined;
+        lastSent=Date.now();
         const res=await api("/api/admin/extract-pdf",{method:"POST",body:JSON.stringify({mode,pdf:base64,currentCriteria:summary,chunkInfo})});
         if(res.error&&(res.error.includes("prompt is too long")||res.error.includes("exceed context limit"))&&end-start>1){
           const mid=Math.floor((start+end)/2);
@@ -524,6 +542,8 @@ function ImportTab({criteria,show,updateCriteriaItem,setDirty,handleReplaceAll})
           return;
         }
         if(res.error&&res.error.includes("rate_limit_error")&&rateRetries>0){
+          // Unexpected rate limit — force a full window wait and retry
+          lastSent=Date.now();
           for(let t=65;t>0;t--){
             setProgress(`Rate limit — retrying pages ${start+1}–${end} in ${t}s…`);
             await new Promise(r=>setTimeout(r,1000));
@@ -534,7 +554,10 @@ function ImportTab({criteria,show,updateCriteriaItem,setDirty,handleReplaceAll})
         allResults.push(res);
       }
 
-      for(let s=0;s<totalPages;s+=80)await processRange(s,Math.min(s+80,totalPages));
+      const totalChunks=Math.ceil(totalPages/CHUNK_PAGES);
+      setProgress(`PDF has ${totalPages} pages — processing in ${totalChunks} chunks (~${Math.round(totalChunks*65/60)} min)…`);
+      await new Promise(r=>setTimeout(r,1500)); // let user read the estimate
+      for(let s=0;s<totalPages;s+=CHUNK_PAGES)await processRange(s,Math.min(s+CHUNK_PAGES,totalPages));
 
       let docTitle="";
       if(mode==="diff"){
