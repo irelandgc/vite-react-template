@@ -381,5 +381,22 @@ app.get('/api/debug', async (c) => {
   }
 });
 
+// Debug write — test that KV binding can read and write
+app.get('/api/debug/seed', async (c) => {
+  const kv = c.env.KV;
+  try {
+    await kv.put('criteria:version', JSON.stringify({
+      version: 'v3.4.4',
+      publishedAt: '2026-04-03T00:00:00Z',
+      publishedBy: 'debug-seed',
+      criteriaCount: 40
+    }));
+    const check = await kv.get('criteria:version');
+    return c.json({ success: true, written: !!check, value: check });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
 
 export default app;
