@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CRR Criteria Admin v1.2.0</title>
+<title>CRR Criteria Admin v1.3.0</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
@@ -24,7 +24,14 @@ textarea,input,select,button{font-family:inherit}
 <script type="text/babel">
 
 const API = "https://crr-criteria-api.fk4dsrmq5r.workers.dev";
-const VER = "v1.2.0";
+const VER = "v1.3.0";
+const BUILD = "2026-04-03"; // bump on each deployment
+
+// Changelog:
+// v1.3.0 — error persistence, PDF error log, build date in header
+// v1.2.0 — admin key modal, region KV persistence, paed singlesite fix, pre-publish diff, D1 schema
+// v1.1.0 — diff/replace PDF modes, version history/rollback, triage proxy
+// v1.0.0 — initial release
 const C = {
   navy:"#003B5C",teal:"#008B8B",ink:"#0d1f2d",mist:"#f2f6f8",rule:"#d0dce4",
   mid:"#5a7a8a",lite:"#eaf2f7",bg:"#f8fafb",
@@ -120,7 +127,11 @@ function CRRAdmin() {
     })();
   }, []);
 
-  function show(msg,type="ok") { setToast({msg,type}); setTimeout(()=>setToast(null),4000); }
+  function show(msg,type="ok") {
+    setToast({msg,type});
+    // Errors persist until dismissed; ok/warn auto-dismiss after 4s
+    if(type!=="error") setTimeout(()=>setToast(null),4000);
+  }
 
   // Update criteria item data (called after save)
   function updateCriteriaItem(id, newData) {
@@ -223,7 +234,7 @@ function CRRAdmin() {
           {pubVer && <span style={{fontSize:10,background:"rgba(255,255,255,0.12)",color:"#8ab4c8",padding:"3px 8px",borderRadius:2}}>Published: {pubVer.version}</span>}
           {dirty && <span style={{fontSize:10,background:"#c07800",color:"#fff",padding:"3px 8px",borderRadius:2,fontWeight:700}}>UNSAVED</span>}
           <button onClick={()=>setShowKeyModal(true)} title="Change admin key" style={{fontSize:10,background:"rgba(255,255,255,0.12)",color:"#8ab4c8",border:"1px solid rgba(255,255,255,0.2)",padding:"2px 8px",borderRadius:2,cursor:"pointer",fontFamily:font}}>{ADMIN_KEY?"🔑 Key set":"🔓 Set key"}</button>
-          <span style={{fontSize:10,background:"rgba(255,255,255,0.15)",color:"#fff",padding:"2px 8px",borderRadius:2,fontWeight:600}}>{VER}</span>
+          <span title={`Build ${BUILD}`} style={{fontSize:10,background:"rgba(255,255,255,0.15)",color:"#fff",padding:"2px 8px",borderRadius:2,fontWeight:600,cursor:"default"}}>{VER} · {BUILD}</span>
         </div>
       </div>
       {/* Tabs */}
@@ -244,8 +255,9 @@ function CRRAdmin() {
       </div>
       {/* Toast */}
       {toast && (
-        <div style={{position:"fixed",bottom:20,right:20,padding:"10px 18px",borderRadius:4,background:toast.type==="ok"?C.passBg:toast.type==="error"?C.failBg:C.warnBg,color:toast.type==="ok"?C.pass:toast.type==="error"?C.fail:C.warn,fontSize:13,fontWeight:600,boxShadow:"0 4px 20px rgba(0,0,0,0.15)",zIndex:1000,border:`1px solid ${toast.type==="ok"?"#a8d8b8":toast.type==="error"?"#f0b0b0":"#f0c060"}`}}>
-          {toast.msg}
+        <div onClick={()=>setToast(null)} style={{position:"fixed",bottom:20,right:20,padding:"10px 18px",borderRadius:4,background:toast.type==="ok"?C.passBg:toast.type==="error"?C.failBg:C.warnBg,color:toast.type==="ok"?C.pass:toast.type==="error"?C.fail:C.warn,fontSize:13,fontWeight:600,boxShadow:"0 4px 20px rgba(0,0,0,0.15)",zIndex:1000,border:`1px solid ${toast.type==="ok"?"#a8d8b8":toast.type==="error"?"#f0b0b0":"#f0c060"}`,cursor:"pointer",display:"flex",alignItems:"flex-start",gap:10,maxWidth:420}}>
+          <span style={{flex:1,lineHeight:1.4}}>{toast.msg}</span>
+          <span style={{opacity:0.6,fontSize:15,lineHeight:1,flexShrink:0}}>✕</span>
         </div>
       )}
       {/* Admin key modal */}
@@ -529,7 +541,13 @@ function ImportTab({criteria,show,updateCriteriaItem,setDirty,handleReplaceAll})
   const [progress,setProgress]=React.useState("");
   const [result,setResult]=React.useState(null); // {type:"diff",data:{...}} | {type:"replace",data:{exams:[...]},docTitle}
   const [accepted,setAccepted]=React.useState({});
+  const [errorLog,setErrorLog]=React.useState([]); // [{ts, msg, detail}]
   const fileRef=React.useRef(null);
+
+  function logError(msg, detail=""){
+    const ts=new Date().toLocaleTimeString();
+    setErrorLog(prev=>[{ts,msg,detail},...prev.slice(0,19)]); // keep last 20
+  }
 
   function reset(){setResult(null);setAccepted({});setFile(null);setFileData(null);}
   function handleFile(e){const f=e.target.files[0];if(!f)return;setFile(f);setResult(null);const r=new FileReader();r.onload=ev=>setFileData(ev.target.result.split(",")[1]);r.readAsDataURL(f);}
@@ -554,11 +572,12 @@ function ImportTab({criteria,show,updateCriteriaItem,setDirty,handleReplaceAll})
         return btoa(bin);
       }
 
-      const CHUNK_PAGES=50;
+      const CHUNK_PAGES=30;
       const allResults=[];
 
-      // Recursively process a page range — if too long for context window, halve and retry
-      async function processRange(start,end){
+      // Recursively process a page range — if too long for context window, halve and retry;
+      // if rate-limited, wait 25s and retry once before failing
+      async function processRange(start,end,attempt=1){
         setProgress(totalPages>CHUNK_PAGES?`Processing pages ${start+1}–${end} of ${totalPages}…`:`Sending to Claude…`);
         const base64=await extractRange(start,end);
         const chunkInfo=totalPages>(end-start)?`Pages ${start+1} to ${end} of ${totalPages}.`:undefined;
@@ -570,7 +589,13 @@ function ImportTab({criteria,show,updateCriteriaItem,setDirty,handleReplaceAll})
           return;
         }
         if(res.error&&res.error.includes("rate_limit_error")){
-          throw new Error(`Rate limit reached — your Anthropic account allows 30k tokens/min. Wait 60 seconds and try again, or process a shorter document.`);
+          if(attempt>=2)throw new Error(`Pages ${start+1}–${end}: rate limit hit twice — wait a minute then retry.`);
+          const WAIT=25;
+          for(let t=WAIT;t>0;t--){
+            setProgress(`Rate limit hit — retrying pages ${start+1}–${end} in ${t}s…`);
+            await new Promise(r=>setTimeout(r,1000));
+          }
+          return processRange(start,end,attempt+1);
         }
         if(res.error)throw new Error(`Pages ${start+1}–${end}: ${res.error}`);
         allResults.push(res);
@@ -609,7 +634,12 @@ function ImportTab({criteria,show,updateCriteriaItem,setDirty,handleReplaceAll})
         setResult({type:"replace",data:{exams:deduped.filter(e=>e.population!=="paediatric"),paedExams:deduped.filter(e=>e.population==="paediatric")},docTitle,mergedCount,newCount});
         show(`Extracted ${deduped.length} entries — ${mergedCount} matched (URLs/guidance retained), ${newCount} new`,"ok");
       }
-    }catch(e){show("Failed: "+e.message,"error");console.error(e);}
+    }catch(e){
+      const detail=e.stack||"";
+      logError(e.message,detail);
+      show("Failed — see error log below","error");
+      console.error(e);
+    }
     finally{setProcessing(false);setProgress("");}
   }
 
@@ -702,6 +732,23 @@ function ImportTab({criteria,show,updateCriteriaItem,setDirty,handleReplaceAll})
         </div>
         {progress && <div style={{marginTop:8,fontSize:12,color:C.teal,fontStyle:"italic"}}>{progress}</div>}
       </div>
+
+      {/* Error log */}
+      {errorLog.length>0 && (
+        <div style={{background:"#fff",border:`1px solid #f0b0b0`,borderRadius:3,marginBottom:14}}>
+          <div style={{background:C.failBg,padding:"8px 14px",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid #f0b0b0"}}>
+            <span style={{color:C.fail}}>⚠ Error Log ({errorLog.length})</span>
+            <button onClick={()=>setErrorLog([])} style={{fontSize:10,padding:"2px 8px",background:"#fff",border:"1px solid #f0b0b0",borderRadius:2,cursor:"pointer",fontFamily:font,color:C.fail}}>Clear</button>
+          </div>
+          {errorLog.map((e,i)=>(
+            <div key={i} style={{padding:"8px 14px",borderBottom:i<errorLog.length-1?"1px solid #fde8e8":"none",display:"flex",gap:10,alignItems:"flex-start"}}>
+              <span style={{fontSize:10,color:C.mid,whiteSpace:"nowrap",paddingTop:2,flexShrink:0}}>{e.ts}</span>
+              <span style={{flex:1,fontSize:12,color:C.fail,lineHeight:1.5,wordBreak:"break-word"}}>{e.msg}</span>
+              <button onClick={()=>navigator.clipboard?.writeText(e.msg+(e.detail?"\n\n"+e.detail:"")).catch(()=>{})} title="Copy error" style={{fontSize:10,padding:"2px 7px",background:C.failBg,border:"1px solid #f0b0b0",borderRadius:2,cursor:"pointer",fontFamily:font,color:C.fail,flexShrink:0}}>Copy</button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Diff results */}
       {result?.type==="diff" && (()=>{const changes=result.data.changes||[];return(
