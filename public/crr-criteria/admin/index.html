@@ -512,7 +512,7 @@ function ImportTab({criteria,show,updateCriteriaItem,setDirty,handleReplaceAll})
 
       // Rate limit: 30k input tokens/min — at ~2100 tokens/page, max ~12 pages/chunk
       // Proactively pace requests: wait until 65s have passed since last request
-      const CHUNK_PAGES=12;
+      const CHUNK_PAGES=10;
       const RATE_MS=65000;
       let lastSent=0;
 
