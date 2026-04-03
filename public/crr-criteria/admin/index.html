@@ -477,7 +477,7 @@ function ImportTab({criteria,show,updateCriteriaItem,setDirty}){
       const end=Math.min(start+chunkSize,total);
       const doc=await PDFLib.PDFDocument.create();
       const indices=Array.from({length:end-start},(_,i)=>start+i);
-      const copied=await doc.copyPagesFrom(src,indices);
+      const copied=await doc.copyPages(src,indices);
       copied.forEach(p=>doc.addPage(p));
       const out=await doc.save();
       // base64-encode in 8 KB slices to avoid stack overflow
