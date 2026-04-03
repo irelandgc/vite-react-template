@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CRR Criteria Admin v1.5.2</title>
+<title>CRR Criteria Admin v1.5.4</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
@@ -24,11 +24,12 @@ textarea,input,select,button{font-family:inherit}
 <script type="text/babel">
 
 const API = "https://crr-criteria-api.fk4dsrmq5r.workers.dev";
-const VER = "v1.5.2";
+const VER = "v1.5.4";
 const BUILD = "2026-04-03"; // bump on each deployment
 
 // Changelog:
-// v1.5.2 — corrected HealthPathways regions (7 confirmed: aucklandregion, northland, midland, hawkesbay, 3d, canterbury, southern)
+// v1.5.4 — added Whanganui & MidCentral CHP (ccp) region; Auckland X-ray URLs + 3D/HB/CCP region overrides seeded to KV
+// v1.5.3 — corrected HealthPathways regions (7 confirmed: aucklandregion, northland, midland, hawkesbay, 3d, canterbury, southern)
 // v1.5.1 — population-aware title matching (adult/paed entries don't cross-match)
 // v1.5.0 — fuzzy title matching in Replace mode preserves URLs when Claude generates different IDs
 // v1.4.0 — streaming PDF extraction (fixes Cloudflare 524 timeout on large PDFs)
@@ -54,7 +55,7 @@ const REGIONS = {
   "3d":{label:"Central (3D)",domain:"3d.communityhealthpathways.org"},
   canterbury:{label:"Waitaha Canterbury",domain:"canterbury.communityhealthpathways.org"},
   southern:{label:"Southern",domain:"southern.communityhealthpathways.org"},
-  // Add further regions here as discovered (key = domain prefix)
+  ccp:{label:"Whanganui & MidCentral CHP",domain:"ccp.communityhealthpathways.org"},
 };
 
 // Admin key — stored in sessionStorage, never hardcoded
@@ -688,39 +689,53 @@ function ImportTab({criteria,show,updateCriteriaItem,setDirty,handleReplaceAll})
         const deduped=Object.values(byId);
         const existingById={};for(const c of criteria)existingById[c.id]=c.data;
 
-        // Normalize a title for fuzzy matching:
-        // strips trailing population suffix, collapses dashes/punctuation, lowercases
-        function normT(s){
-          return(s||'')
+        // ── Title similarity matching ─────────────────────────────────────
+        // Uses Jaccard word-set similarity so variations like:
+        //   "CT Chest, Abdomen and Pelvis" vs "CT Chest/Abdomen/Pelvis"
+        //   "CT Intravenous Urogram (IVU)" vs "CT IVU / CT Renal"
+        //   "Ultrasound Musculoskeletal" vs "Ultrasound MSK (incl. Shoulder)"
+        //   "CT Colonography (or Colonoscopy)" vs "CT Colonography (CTC)"
+        // …all score high enough to match.
+
+        // Stop words stripped before comparison (don't affect similarity)
+        const TSTOP=new Set(['and','or','the','a','an','of','incl','including','paediatric','paed','pediatric','adult']);
+
+        function titleWords(s){
+          const t=(s||'')
             .toLowerCase()
-            .replace(/\s*[-—–]\s*(adult|paediatric|paed|pediatric)\s*$/,'')
-            .replace(/[-—–]/g,' ')
-            .replace(/[^a-z0-9 ]/g,' ')
-            .replace(/\s+/g,' ')
-            .trim();
+            .replace(/\s*[-—–]\s*(adult|paediatric|paed|pediatric)\s*$/,'') // strip pop suffix
+            .replace(/[-—–\/,().]/g,' ')   // punctuation → space
+            .replace(/[^a-z0-9 ]/g,'')
+            .replace(/\s+/g,' ').trim();
+          return new Set(t.split(' ').filter(w=>w&&!TSTOP.has(w)));
         }
 
-        // Build title lookup keyed by normTitle|population so adult and paed entries
-        // with the same exam name don't cross-match each other.
-        // Also index without population as a last-resort fallback.
-        const existingByTitle={};
-        for(const c of criteria){
-          const pop=c.population||'adult';
-          const nt=normT(c.title);
-          const full=nt+'|'+pop;
-          if(!existingByTitle[full])existingByTitle[full]=c.data;
-          if(!existingByTitle[nt])existingByTitle[nt]=c.data; // fallback
+        function jaccard(a,b){
+          const inter=[...a].filter(w=>b.has(w)).length;
+          const union=new Set([...a,...b]).size;
+          return union?inter/union:0;
+        }
+
+        // Returns data for the best-scoring existing criterion in same population
+        // Only accepts if Jaccard >= 0.4 (avoids cross-modality false positives)
+        function findBestMatch(fullTitle,pop){
+          const wt=titleWords(fullTitle);
+          const p=pop||'adult';
+          let best=null,bestScore=0;
+          for(const c of criteria){
+            if((c.population||'adult')!==p)continue;
+            const s=jaccard(wt,titleWords(c.title));
+            if(s>bestScore){bestScore=s;best=c.data;}
+          }
+          return bestScore>=0.4?best:null;
         }
 
         const PRESERVED=['healthPathwaysUrl','inlineGuidance','guidance','alternativeManagement','notFundedDetail','outOfCriteriaNote','guidanceNarrative','footnotes'];
 
-        // mergeFields: try exact ID → normTitle+population → normTitle only
+        // mergeFields: exact ID first, then best Jaccard title match within same population
         function mergeFields(node,eid,fullTitle,pop){
           let old=existingById[eid];
-          if(!old&&fullTitle){
-            const nt=normT(fullTitle);
-            old=existingByTitle[nt+'|'+(pop||'adult')] || existingByTitle[nt];
-          }
+          if(!old&&fullTitle)old=findBestMatch(fullTitle,pop);
           if(old){for(const f of PRESERVED)if(old[f]&&!node[f])node[f]=old[f];node._merged=true;}
           else node._new=true;
         }
