@@ -485,6 +485,7 @@ Include every complete exam/site you can see. Omit healthPathwaysUrl (leave empt
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: mode === 'replace' ? 32000 : 8000,
+      stream: true,
       messages: [{
         role: 'user',
         content: [
@@ -500,15 +501,17 @@ Include every complete exam/site you can see. Omit healthPathwaysUrl (leave empt
     return c.json({ error: 'Anthropic API error: ' + errText }, 502);
   }
 
-  const result: any = await response.json();
-  const text = (result.content || []).map((b: any) => b.text || '').join('');
-
-  try {
-    const parsed = JSON.parse(text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim());
-    return c.json(parsed);
-  } catch (_) {
-    return c.json({ error: 'Failed to parse Claude response', raw: text.substring(0, 500) }, 500);
-  }
+  // Stream SSE back to client immediately — prevents Cloudflare 524 timeout
+  // Client accumulates content_block_delta events and parses the completed JSON
+  return new Response(response.body, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'X-Accel-Buffering': 'no',
+      'Access-Control-Allow-Origin': '*',
+    },
+  });
 });
 
 // ── Transform Functions ──────────────────────────────────

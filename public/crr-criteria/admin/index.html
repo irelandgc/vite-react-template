@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CRR Criteria Admin v1.3.0</title>
+<title>CRR Criteria Admin v1.4.0</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
@@ -24,11 +24,12 @@ textarea,input,select,button{font-family:inherit}
 <script type="text/babel">
 
 const API = "https://crr-criteria-api.fk4dsrmq5r.workers.dev";
-const VER = "v1.3.0";
+const VER = "v1.4.0";
 const BUILD = "2026-04-03"; // bump on each deployment
 
 // Changelog:
-// v1.3.0 — error persistence, PDF error log, build date in header
+// v1.4.0 — streaming PDF extraction (fixes Cloudflare 524 timeout on large PDFs)
+// v1.3.0 — error persistence, PDF error log, 25s rate-limit retry, build date in header
 // v1.2.0 — admin key modal, region KV persistence, paed singlesite fix, pre-publish diff, D1 schema
 // v1.1.0 — diff/replace PDF modes, version history/rollback, triage proxy
 // v1.0.0 — initial release
@@ -64,6 +65,68 @@ async function api(path, opts={}) {
     headers:{"Content-Type":"application/json","x-admin-key":ADMIN_KEY,...opts.headers}, ...opts
   });
   return res.json();
+}
+
+// Streaming fetch for extract-pdf — reads SSE from Anthropic via the worker proxy,
+// accumulates content_block_delta text, then parses and returns the completed JSON.
+// onProgress(charsReceived) called periodically so the UI can show activity.
+async function extractPdfStreaming(payload, onProgress) {
+  const res = await fetch(`${API}/api/admin/extract-pdf`, {
+    method: 'POST',
+    headers: {"Content-Type":"application/json","x-admin-key":ADMIN_KEY},
+    body: JSON.stringify(payload),
+  });
+
+  // Non-200 responses are JSON errors (bad auth, missing key, etc.)
+  if (!res.ok) {
+    try { return await res.json(); } catch(_) { return { error: `HTTP ${res.status}` }; }
+  }
+
+  const contentType = res.headers.get('Content-Type') || '';
+
+  // If the worker returned JSON directly (e.g. error before streaming started)
+  if (contentType.includes('application/json')) {
+    return await res.json();
+  }
+
+  // Read the SSE stream
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '';
+  let text = '';
+  let errorEvent = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const lines = buf.split('\n');
+    buf = lines.pop(); // hold last incomplete line
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const data = line.slice(6).trim();
+      if (!data || data === '[DONE]') continue;
+      try {
+        const ev = JSON.parse(data);
+        if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
+          text += ev.delta.text;
+          onProgress && onProgress(text.length);
+        }
+        if (ev.type === 'error') {
+          errorEvent = ev.error?.message || JSON.stringify(ev.error);
+        }
+      } catch(_) {}
+    }
+  }
+
+  if (errorEvent) return { error: errorEvent };
+
+  // Parse accumulated JSON
+  try {
+    return JSON.parse(text.replace(/^```json\s*/,'').replace(/```\s*$/,'').trim());
+  } catch(_) {
+    return { error: 'Failed to parse Claude response', raw: text.substring(0, 500) };
+  }
 }
 
 function priColor(t) {
@@ -578,10 +641,13 @@ function ImportTab({criteria,show,updateCriteriaItem,setDirty,handleReplaceAll})
       // Recursively process a page range — if too long for context window, halve and retry;
       // if rate-limited, wait 25s and retry once before failing
       async function processRange(start,end,attempt=1){
-        setProgress(totalPages>CHUNK_PAGES?`Processing pages ${start+1}–${end} of ${totalPages}…`:`Sending to Claude…`);
+        const label=totalPages>CHUNK_PAGES?`pages ${start+1}–${end} of ${totalPages}`:`document`;
+        setProgress(`Sending ${label} to Claude…`);
         const base64=await extractRange(start,end);
         const chunkInfo=totalPages>(end-start)?`Pages ${start+1} to ${end} of ${totalPages}.`:undefined;
-        const res=await api("/api/admin/extract-pdf",{method:"POST",body:JSON.stringify({mode,pdf:base64,currentCriteria:summary,chunkInfo})});
+        const res=await extractPdfStreaming({mode,pdf:base64,currentCriteria:summary,chunkInfo},(chars)=>{
+          setProgress(`Receiving ${label}… (${(chars/1000).toFixed(1)}k chars)`);
+        });
         if(res.error&&(res.error.includes("prompt is too long")||res.error.includes("exceed context limit"))&&end-start>1){
           const mid=Math.floor((start+end)/2);
           await processRange(start,mid);
