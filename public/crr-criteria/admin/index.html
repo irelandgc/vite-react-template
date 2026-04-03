@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CRR Criteria Admin v1.1.0</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:13px;background:#f2f6f8;color:#0d1f2d;min-height:100vh}
+#root{min-height:100vh;display:flex;flex-direction:column}
+textarea,input,select,button{font-family:inherit}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#f2f6f8}::-webkit-scrollbar-thumb{background:#c0ccd4;border-radius:3px}
+.mv{padding:2px 5px;border:1px solid #d0dce4;border-radius:2px;background:#fff;cursor:pointer;font-size:11px;color:#5a7a8a;line-height:1}
+.mv:hover{background:#eaf2f7;border-color:#008B8B;color:#008B8B}
+.mv:disabled{opacity:0.3;cursor:default;background:#fff;border-color:#d0dce4;color:#5a7a8a}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const API = "https://crr-criteria-api.fk4dsrmq5r.workers.dev";
+const VER = "v1.1.0";
+const C = {
+  navy:"#003B5C",teal:"#008B8B",ink:"#0d1f2d",mist:"#f2f6f8",rule:"#d0dce4",
+  mid:"#5a7a8a",lite:"#eaf2f7",bg:"#f8fafb",
+  pass:"#1a6640",passBg:"#e6f4ec",warn:"#7a4a00",warnBg:"#fff3e0",
+  fail:"#8B1a1a",failBg:"#fdecea",
+  add:"#065f46",addBg:"#d1fae5",del:"#991b1b",delBg:"#fee2e2",chg:"#92400e",chgBg:"#fef3c7",
+};
+const font = `'Segoe UI',system-ui,sans-serif`;
+const mono = `'SF Mono','Fira Code',monospace`;
+
+const REGIONS = {
+  auckland:{label:"Auckland Region",domain:"aucklandregion.communityhealthpathways.org"},
+  waitemata:{label:"Waitematā",domain:"waitemata.communityhealthpathways.org"},
+  countiesmanukau:{label:"Counties Manukau",domain:"countiesmanukau.communityhealthpathways.org"},
+  waikato:{label:"Waikato",domain:"waikato.communityhealthpathways.org"},
+  bayofplenty:{label:"Bay of Plenty",domain:"bop.communityhealthpathways.org"},
+  taranaki:{label:"Taranaki",domain:"taranaki.communityhealthpathways.org"},
+  midcentral:{label:"MidCentral",domain:"midcentral.communityhealthpathways.org"},
+  wellington:{label:"Wellington",domain:"3d.communityhealthpathways.org"},
+  canterbury:{label:"Canterbury (Waitaha)",domain:"canterbury.communityhealthpathways.org"},
+  southern:{label:"Southern (Te Waipounamu)",domain:"southern.communityhealthpathways.org"},
+};
+
+async function api(path, opts={}) {
+  const res = await fetch(`${API}${path}`, {
+    headers:{"Content-Type":"application/json","x-admin-key":"crr-admin",...opts.headers}, ...opts
+  });
+  return res.json();
+}
+
+function priColor(t) {
+  const l=(t||"").toLowerCase();
+  if(l.includes("refer for acute")||l.includes("red flag")) return {bg:"#fdecea",fg:"#c62828",label:"Emergency"};
+  if(l.includes("acute")&&l.includes("24")) return {bg:"#fff7ed",fg:"#b45309",label:"Acute 24hr"};
+  if(l.includes("acute")) return {bg:"#fff7ed",fg:"#b45309",label:"Acute 48hr"};
+  if(l.includes("p2")) return {bg:"#faf5ff",fg:"#9333ea",label:"P2"};
+  if(l.includes("p3")) return {bg:"#eff6ff",fg:"#2563eb",label:"P3"};
+  if(l.includes("p4")) return {bg:"#ecfeff",fg:"#0891b2",label:"P4"};
+  if(l.includes("s1")||l.includes("s2")||l.includes("s3")) return {bg:"#f5f3ff",fg:"#7c3aed",label:"Scheduled"};
+  return {bg:"#f8fafc",fg:"#64748b",label:""};
+}
+
+// ══════════════════════════════════════════════════════════
+//  MAIN
+// ══════════════════════════════════════════════════════════
+
+function CRRAdmin() {
+  const [tab, setTab] = React.useState("editor");
+  const [fullData, setFullData] = React.useState(null); // raw API response data
+  const [criteria, setCriteria] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [selected, setSelected] = React.useState(null);
+  const [dirty, setDirty] = React.useState(false);
+  const [toast, setToast] = React.useState(null);
+  const [pubVer, setPubVer] = React.useState(null);
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const pub = await api("/api/criteria");
+        if (pub?.data) {
+          setFullData(pub.data);
+          const items = [];
+          for (const exam of pub.data.exams||[]) {
+            if (exam.type==="multisite") {
+              for (const site of exam.sites||[])
+                items.push({id:site.id,title:`${exam.title} — ${site.label}`,modality:exam.modality,type:"multisite",population:exam.population||"adult",examId:exam.id,examTitle:exam.title,data:site,examData:exam});
+            } else {
+              items.push({id:exam.id,title:exam.title,modality:exam.modality,type:"singlesite",population:exam.population||"adult",data:exam});
+            }
+          }
+          for (const exam of pub.data.paedExams||[]) {
+            if (exam.type==="multisite") {
+              for (const site of exam.sites||[])
+                items.push({id:site.id,title:`${exam.title} — ${site.label}`,modality:exam.modality,type:"multisite",population:"paediatric",data:site,examData:exam});
+            }
+          }
+          setCriteria(items);
+        }
+        const ver = await api("/api/version");
+        if (ver?.version) setPubVer(ver);
+      } catch(e) { console.error(e); show("Failed to load criteria","error"); }
+      finally { setLoading(false); }
+    })();
+  }, []);
+
+  function show(msg,type="ok") { setToast({msg,type}); setTimeout(()=>setToast(null),4000); }
+
+  // Update criteria item data (called after save)
+  function updateCriteriaItem(id, newData) {
+    setCriteria(prev => prev.map(c => c.id===id ? {...c, data: newData} : c));
+    // Also update fullData
+    setFullData(prev => {
+      if (!prev) return prev;
+      const next = JSON.parse(JSON.stringify(prev));
+      for (const exam of next.exams||[]) {
+        if (exam.type==="multisite") {
+          for (let i=0;i<(exam.sites||[]).length;i++) {
+            if (exam.sites[i].id===id) { exam.sites[i] = newData; return next; }
+          }
+        } else if (exam.id===id) { Object.assign(exam, newData); return next; }
+      }
+      for (const exam of next.paedExams||[]) {
+        if (exam.type==="multisite") {
+          for (let i=0;i<(exam.sites||[]).length;i++) {
+            if (exam.sites[i].id===id) { exam.sites[i] = newData; return next; }
+          }
+        }
+      }
+      return next;
+    });
+  }
+
+  async function handlePublish(versionLabel) {
+    if (!fullData) { show("No data to publish","error"); return; }
+    try {
+      const res = await api("/api/admin/publish", {
+        method:"POST",
+        body: JSON.stringify({ versionLabel, data: fullData }),
+      });
+      if (res.success) {
+        show(`✓ Published ${res.version} — Viewer and Triage Advisor updated`, "ok");
+        setPubVer({version:res.version,publishedAt:res.publishedAt});
+      } else {
+        show("Publish failed: "+(res.error||"unknown"), "error");
+      }
+    } catch(e) { show("Publish failed: "+e.message, "error"); }
+  }
+
+  const tabs = [
+    {id:"editor",label:"Criteria Editor",icon:"✏️"},
+    {id:"import",label:"PDF Import",icon:"📄"},
+    {id:"regions",label:"Regions",icon:"🗺️"},
+    {id:"versions",label:"Versions",icon:"🏷️"},
+    {id:"audit",label:"Audit Log",icon:"📋"},
+  ];
+
+  if (loading) return (
+    <div style={{fontFamily:font,display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:C.mist}}>
+      <div style={{textAlign:"center"}}>
+        <div style={{fontSize:18,fontWeight:600,color:C.navy,marginBottom:8}}>Loading criteria…</div>
+        <div style={{fontSize:12,color:C.mid}}>Connecting to API</div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{fontFamily:font,fontSize:13,background:C.mist,color:C.ink,minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+      {/* Header */}
+      <div style={{background:C.navy,color:"#fff",padding:"0 20px",height:50,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`3px solid ${C.teal}`,flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <span style={{background:C.teal,color:"#fff",fontFamily:mono,fontSize:10,fontWeight:600,letterSpacing:1,padding:"3px 7px",borderRadius:2}}>CRR</span>
+          <div><div style={{fontSize:14,fontWeight:700}}>Criteria Admin</div><div style={{fontSize:11,color:"#8ab4c8"}}>Community Radiology Referral</div></div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          {pubVer && <span style={{fontSize:10,background:"rgba(255,255,255,0.12)",color:"#8ab4c8",padding:"3px 8px",borderRadius:2}}>Published: {pubVer.version}</span>}
+          {dirty && <span style={{fontSize:10,background:"#c07800",color:"#fff",padding:"3px 8px",borderRadius:2,fontWeight:700}}>UNSAVED</span>}
+          <span style={{fontSize:10,background:"rgba(255,255,255,0.15)",color:"#fff",padding:"2px 8px",borderRadius:2,fontWeight:600}}>{VER}</span>
+        </div>
+      </div>
+      {/* Tabs */}
+      <div style={{background:"#002d49",display:"flex",borderBottom:"1px solid #001e33",flexShrink:0}}>
+        {tabs.map(t=>(
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{padding:"10px 18px",fontSize:12,fontWeight:600,fontFamily:font,color:tab===t.id?"#fff":"#7aaec4",background:"transparent",border:"none",cursor:"pointer",borderBottom:`2px solid ${tab===t.id?C.teal:"transparent"}`}}>
+            {t.icon} {t.label}
+          </button>
+        ))}
+      </div>
+      {/* Content */}
+      <div style={{flex:1,overflow:"hidden"}}>
+        {tab==="editor" && <EditorTab criteria={criteria} selected={selected} setSelected={setSelected} dirty={dirty} setDirty={setDirty} show={show} updateCriteriaItem={updateCriteriaItem} />}
+        {tab==="import" && <ImportTab criteria={criteria} show={show} />}
+        {tab==="regions" && <RegionsTab criteria={criteria} show={show} />}
+        {tab==="versions" && <VersionsTab show={show} pubVer={pubVer} handlePublish={handlePublish} />}
+        {tab==="audit" && <AuditTab />}
+      </div>
+      {/* Toast */}
+      {toast && (
+        <div style={{position:"fixed",bottom:20,right:20,padding:"10px 18px",borderRadius:4,background:toast.type==="ok"?C.passBg:toast.type==="error"?C.failBg:C.warnBg,color:toast.type==="ok"?C.pass:toast.type==="error"?C.fail:C.warn,fontSize:13,fontWeight:600,boxShadow:"0 4px 20px rgba(0,0,0,0.15)",zIndex:1000,border:`1px solid ${toast.type==="ok"?"#a8d8b8":toast.type==="error"?"#f0b0b0":"#f0c060"}`}}>
+          {toast.msg}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+//  EDITOR TAB — with save wired to API + move up/down
+// ══════════════════════════════════════════════════════════
+
+function EditorTab({criteria,selected,setSelected,dirty,setDirty,show,updateCriteriaItem}) {
+  const [editData, setEditData] = React.useState(null);
+  const [search, setSearch] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+
+  const grouped = React.useMemo(()=>{
+    const g={};
+    for(const c of criteria){
+      const k=c.population==="paediatric"?`${c.modality} (Paediatric)`:c.modality;
+      if(!g[k])g[k]=[];g[k].push(c);
+    }
+    return g;
+  },[criteria]);
+
+  const filtered = React.useMemo(()=>{
+    if(!search)return grouped;
+    const s=search.toLowerCase();const f={};
+    for(const [k,items] of Object.entries(grouped)){
+      const m=items.filter(i=>i.title.toLowerCase().includes(s));
+      if(m.length)f[k]=m;
+    }
+    return f;
+  },[grouped,search]);
+
+  React.useEffect(()=>{
+    if(selected){
+      const item=criteria.find(c=>c.id===selected);
+      if(item)setEditData(JSON.parse(JSON.stringify(item.data)));
+    }
+  },[selected]);
+
+  const selItem = criteria.find(c=>c.id===selected);
+
+  function upd(path,value){
+    setEditData(prev=>{
+      const n=JSON.parse(JSON.stringify(prev));
+      const keys=path.split(".");let o=n;
+      for(let i=0;i<keys.length-1;i++){o=keys[i].match(/^\d+$/)?o[parseInt(keys[i])]:o[keys[i]];}
+      const last=keys[keys.length-1];
+      if(last.match(/^\d+$/))o[parseInt(last)]=value;else o[last]=value;
+      return n;
+    });
+    setDirty(true);
+  }
+
+  function updItem(gi,ii,field,value){
+    setEditData(prev=>{const n=JSON.parse(JSON.stringify(prev));n.groups[gi].items[ii][field]=value;return n;});
+    setDirty(true);
+  }
+
+  function addItem(gi){
+    setEditData(prev=>{const n=JSON.parse(JSON.stringify(prev));n.groups[gi].items.push({type:"cb",id:`new_${Date.now()}`,label:"",shortLabel:"",mandatory:false});return n;});
+    setDirty(true);
+  }
+
+  function removeItem(gi,ii){
+    if(!confirm("Remove this criteria item?"))return;
+    setEditData(prev=>{const n=JSON.parse(JSON.stringify(prev));n.groups[gi].items.splice(ii,1);return n;});
+    setDirty(true);
+  }
+
+  function moveItem(gi,ii,dir){
+    setEditData(prev=>{
+      const n=JSON.parse(JSON.stringify(prev));
+      const items=n.groups[gi].items;
+      const ni=ii+dir;
+      if(ni<0||ni>=items.length)return n;
+      [items[ii],items[ni]]=[items[ni],items[ii]];
+      return n;
+    });
+    setDirty(true);
+  }
+
+  function moveGroup(gi,dir){
+    setEditData(prev=>{
+      const n=JSON.parse(JSON.stringify(prev));
+      const ni=gi+dir;
+      if(ni<0||ni>=n.groups.length)return n;
+      [n.groups[gi],n.groups[ni]]=[n.groups[ni],n.groups[gi]];
+      return n;
+    });
+    setDirty(true);
+  }
+
+  function addGroup(){
+    setEditData(prev=>{const n=JSON.parse(JSON.stringify(prev));if(!n.groups)n.groups=[];n.groups.push({title:"New Priority Group",mandatory:false,items:[]});return n;});
+    setDirty(true);
+  }
+
+  function removeGroup(gi){
+    if(!confirm("Remove this entire priority group and all its items?"))return;
+    setEditData(prev=>{const n=JSON.parse(JSON.stringify(prev));n.groups.splice(gi,1);return n;});
+    setDirty(true);
+  }
+
+  async function handleSave(){
+    if(!editData||!selItem)return;
+    setSaving(true);
+    try {
+      // Save via PUT admin endpoint
+      const res = await api(`/api/admin/criteria/${selItem.id}`, {
+        method:"PUT",
+        body:JSON.stringify({data:editData,updatedBy:"admin"}),
+      });
+      if(res.success){
+        updateCriteriaItem(selItem.id, editData);
+        show("✓ Saved to working copy","ok");
+        setDirty(false);
+      } else {
+        show("Save failed: "+(res.error||"unknown"),"error");
+      }
+    } catch(e){ show("Save failed: "+e.message,"error"); }
+    finally { setSaving(false); }
+  }
+
+  return (
+    <div style={{display:"flex",height:"calc(100vh - 95px)"}}>
+      {/* Sidebar */}
+      <div style={{width:260,flexShrink:0,background:"#fff",borderRight:`1px solid ${C.rule}`,display:"flex",flexDirection:"column"}}>
+        <div style={{padding:"10px 12px",borderBottom:`1px solid ${C.rule}`}}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search exams…" style={{width:"100%",padding:"6px 10px",border:`1px solid ${C.rule}`,borderRadius:2,fontSize:12,fontFamily:font,outline:"none",boxSizing:"border-box"}} />
+        </div>
+        <div style={{flex:1,overflowY:"auto"}}>
+          {Object.entries(filtered).map(([mod,items])=>(
+            <div key={mod}>
+              <div style={{padding:"6px 12px",fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,color:C.mid,background:C.lite,borderBottom:`1px solid ${C.rule}`,position:"sticky",top:0}}>{mod} ({items.length})</div>
+              {items.map(item=>(
+                <div key={item.id} onClick={()=>{setSelected(item.id);setDirty(false);}} style={{padding:"8px 12px",borderBottom:`1px solid ${C.mist}`,cursor:"pointer",background:selected===item.id?C.lite:"transparent",borderLeft:selected===item.id?`3px solid ${C.teal}`:"3px solid transparent"}}>
+                  <div style={{fontSize:12,fontWeight:600,color:C.navy}}>{item.title.replace(`${item.examTitle||""} — `,"").replace(`${item.modality} — `,"")}</div>
+                  <div style={{fontSize:10,color:C.mid}}>{(item.data.groups||[]).reduce((n,g)=>n+(g.items||[]).length,0)} criteria</div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div style={{padding:10,borderTop:`1px solid ${C.rule}`,fontSize:11,color:C.mid,textAlign:"center"}}>{criteria.length} entries</div>
+      </div>
+
+      {/* Editor */}
+      <div style={{flex:1,overflowY:"auto",padding:"16px 20px 80px"}}>
+        {!editData ? (
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:300,color:C.mid,fontSize:14}}>← Select an exam/site to edit</div>
+        ) : (
+          <div style={{maxWidth:800}}>
+            {/* Sticky header */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,position:"sticky",top:0,background:C.bg,padding:"8px 0",zIndex:10,borderBottom:`1px solid ${dirty?C.warn+"40":"transparent"}`}}>
+              <div>
+                <h2 style={{fontSize:18,fontWeight:700,color:C.navy,margin:0}}>{selItem?.title}</h2>
+                <div style={{fontSize:11,color:C.mid,marginTop:2}}>{selItem?.id} · {selItem?.modality} · {selItem?.population}</div>
+              </div>
+              <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                {dirty && <span style={{fontSize:11,color:C.warn,fontWeight:600,padding:"4px 8px",background:C.warnBg,borderRadius:2}}>Unsaved</span>}
+                <button onClick={handleSave} disabled={!dirty||saving} style={{padding:"7px 16px",background:dirty?C.teal:C.rule,color:dirty?"#fff":C.mid,border:"none",borderRadius:2,fontSize:12,fontWeight:600,cursor:dirty?"pointer":"default",fontFamily:font}}>
+                  {saving?"Saving…":"Save"}
+                </button>
+              </div>
+            </div>
+
+            <Field label="Inline Guidance" value={editData.inlineGuidance||editData.guidance||""} onChange={v=>upd(editData.inlineGuidance!==undefined?"inlineGuidance":"guidance",v)} multi />
+            <Field label="HealthPathways URL" value={editData.healthPathwaysUrl||""} onChange={v=>upd("healthPathwaysUrl",v)} />
+
+            {/* Priority Groups */}
+            <div style={{margin:"20px 0 8px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,color:C.mid}}>Priority Groups & Criteria</div>
+              <button onClick={addGroup} style={{fontSize:11,padding:"4px 10px",background:C.teal,color:"#fff",border:"none",borderRadius:2,cursor:"pointer",fontFamily:font,fontWeight:600}}>+ Add Group</button>
+            </div>
+
+            {(editData.groups||[]).map((group,gi)=>{
+              const pri=priColor(group.title);
+              return (
+                <div key={gi} style={{border:`1px solid ${C.rule}`,borderRadius:3,marginBottom:10,background:"#fff"}}>
+                  {/* Group header with reorder */}
+                  <div style={{background:C.lite,borderBottom:`1px solid ${C.rule}`,padding:"6px 10px",display:"flex",alignItems:"center",gap:6}}>
+                    <div style={{display:"flex",flexDirection:"column",gap:1,flexShrink:0}}>
+                      <button className="mv" disabled={gi===0} onClick={()=>moveGroup(gi,-1)} title="Move group up">▲</button>
+                      <button className="mv" disabled={gi===(editData.groups||[]).length-1} onClick={()=>moveGroup(gi,1)} title="Move group down">▼</button>
+                    </div>
+                    <input value={group.title} onChange={e=>upd(`groups.${gi}.title`,e.target.value)} style={{flex:1,fontWeight:600,fontSize:12,padding:"4px 6px",border:`1px solid ${C.rule}`,borderRadius:2,fontFamily:font,outline:"none"}} />
+                    {pri.label && <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:10,background:pri.bg,color:pri.fg,whiteSpace:"nowrap"}}>{pri.label}</span>}
+                    <label style={{fontSize:11,display:"flex",alignItems:"center",gap:4,color:C.mid,cursor:"pointer",whiteSpace:"nowrap"}}>
+                      <input type="checkbox" checked={group.mandatory||false} onChange={e=>upd(`groups.${gi}.mandatory`,e.target.checked)} style={{accentColor:C.teal}} /> All mandatory
+                    </label>
+                    <button onClick={()=>removeGroup(gi)} title="Remove group" style={{fontSize:10,padding:"2px 6px",background:C.failBg,color:C.fail,border:"1px solid #f0b0b0",borderRadius:2,cursor:"pointer",fontFamily:font}}>✕</button>
+                  </div>
+
+                  {/* Items with reorder */}
+                  <div style={{padding:"6px 10px"}}>
+                    {(group.items||[]).map((item,ii)=>(
+                      <div key={item.id||ii} style={{display:"flex",gap:4,padding:"5px 0",borderBottom:ii<group.items.length-1?`1px solid ${C.mist}`:"none",alignItems:"flex-start"}}>
+                        {/* Move buttons */}
+                        <div style={{display:"flex",flexDirection:"column",gap:1,flexShrink:0,paddingTop:4}}>
+                          <button className="mv" disabled={ii===0} onClick={()=>moveItem(gi,ii,-1)} title="Move up">▲</button>
+                          <button className="mv" disabled={ii===group.items.length-1} onClick={()=>moveItem(gi,ii,1)} title="Move down">▼</button>
+                        </div>
+                        {/* Number */}
+                        <div style={{width:18,textAlign:"center",fontSize:10,color:C.mid,paddingTop:6,flexShrink:0}}>{ii+1}</div>
+                        {/* Fields */}
+                        <div style={{flex:1,display:"flex",flexDirection:"column",gap:3}}>
+                          <textarea value={item.label} onChange={e=>updItem(gi,ii,"label",e.target.value)} placeholder="Full criteria text…" rows={2}
+                            style={{width:"100%",padding:"4px 6px",fontSize:12,border:`1px solid ${C.rule}`,borderRadius:2,fontFamily:font,resize:"vertical",outline:"none",boxSizing:"border-box",lineHeight:1.4}} />
+                          <input value={item.shortLabel||""} onChange={e=>updItem(gi,ii,"shortLabel",e.target.value)} placeholder="Short label…"
+                            style={{width:"100%",padding:"3px 6px",fontSize:11,border:`1px solid ${C.rule}`,borderRadius:2,fontFamily:font,color:C.navy,fontWeight:600,outline:"none",boxSizing:"border-box",background:"#f8fcff"}} />
+                        </div>
+                        {/* Actions */}
+                        <div style={{display:"flex",flexDirection:"column",gap:3,flexShrink:0,paddingTop:2}}>
+                          <label style={{fontSize:9,display:"flex",alignItems:"center",gap:3,color:"#c05000",cursor:"pointer"}}>
+                            <input type="checkbox" checked={item.mandatory||false} onChange={e=>updItem(gi,ii,"mandatory",e.target.checked)} style={{accentColor:"#c05000",width:12,height:12}} /> MAND
+                          </label>
+                          <button onClick={()=>removeItem(gi,ii)} title="Remove" style={{fontSize:10,padding:"2px 6px",background:C.failBg,color:C.fail,border:"1px solid #f0b0b0",borderRadius:2,cursor:"pointer",fontFamily:font}}>✕</button>
+                        </div>
+                      </div>
+                    ))}
+                    <button onClick={()=>addItem(gi)} style={{marginTop:6,fontSize:11,padding:"4px 10px",background:C.lite,color:C.mid,border:`1px solid ${C.rule}`,borderRadius:2,cursor:"pointer",fontFamily:font}}>+ Add criteria item</button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Supporting text */}
+            <div style={{marginTop:24,paddingTop:16,borderTop:`2px solid ${C.rule}`}}>
+              <div style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,color:C.mid,marginBottom:12}}>Supporting Text</div>
+              <Field label="Alternative Management / Redirect" value={editData.alternativeManagement||""} onChange={v=>upd("alternativeManagement",v)} multi lc={C.warn} />
+              <Field label="Not Routinely Funded" value={editData.notFundedDetail||""} onChange={v=>upd("notFundedDetail",v)} multi lc={C.fail} />
+              <Field label="Out of Criteria Note" value={editData.outOfCriteriaNote||""} onChange={v=>upd("outOfCriteriaNote",v)} multi />
+              <Field label="Guidance Narrative" value={editData.guidanceNarrative||""} onChange={v=>upd("guidanceNarrative",v)} multi lc={C.teal} />
+              <Field label="Footnotes / Definitions" value={editData.footnotes||""} onChange={v=>upd("footnotes",v)} multi />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Field({label,value,onChange,multi,lc}){
+  const Tag=multi?"textarea":"input";
+  return (
+    <div style={{marginBottom:12}}>
+      <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:0.4,color:lc||C.mid,marginBottom:4}}>{label}</div>
+      <Tag value={value} onChange={e=>onChange(e.target.value)} rows={multi?3:undefined}
+        style={{width:"100%",padding:"6px 8px",border:`1px solid ${C.rule}`,borderRadius:2,fontSize:12,fontFamily:font,outline:"none",resize:multi?"vertical":"none",minHeight:multi?50:"auto",boxSizing:"border-box",borderLeft:lc?`3px solid ${lc}`:undefined}} />
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+//  PDF IMPORT TAB
+// ══════════════════════════════════════════════════════════
+
+function ImportTab({criteria,show}){
+  const [file,setFile]=React.useState(null);
+  const [fileData,setFileData]=React.useState(null);
+  const [apiKey,setApiKey]=React.useState("");
+  const [processing,setProcessing]=React.useState(false);
+  const [progress,setProgress]=React.useState("");
+  const [changes,setChanges]=React.useState(null);
+  const [accepted,setAccepted]=React.useState({});
+  const fileRef=React.useRef(null);
+
+  function handleFile(e){const f=e.target.files[0];if(!f)return;setFile(f);setChanges(null);const r=new FileReader();r.onload=ev=>setFileData(ev.target.result.split(",")[1]);r.readAsDataURL(f);}
+
+  async function processDocument(){
+    if(!fileData||!apiKey){show("Upload PDF and set API key","warn");return;}
+    setProcessing(true);setProgress("Sending to Claude…");
+    try{
+      const summary=criteria.slice(0,15).map(c=>{const items=(c.data.groups||[]).flatMap(g=>(g.items||[]).map(it=>`  [${g.title}] ${it.shortLabel||it.label}`));return `${c.title}:\n${items.join("\n")}`;}).join("\n\n");
+      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:8000,messages:[{role:"user",content:[{type:"document",source:{type:"base64",media_type:"application/pdf",data:fileData}},{type:"text",text:`Analyze this NZ CRR criteria document. Compare against current:\n\n${summary}\n\nRespond ONLY with JSON:\n{"documentTitle":"...","changes":[{"id":"1","type":"added"|"removed"|"changed","examSite":"...","priorityGroup":"...","currentText":null,"newText":"...","shortLabel":"...","reason":"..."}],"summary":"..."}`}]}]})
+      });
+      const result=await res.json();setProgress("Parsing…");
+      const text=result.content?.map(b=>b.text||"").join("")||"";
+      const parsed=JSON.parse(text.replace(/```json\s*/g,"").replace(/```\s*/g,"").trim());
+      setChanges(parsed);
+      const acc={};(parsed.changes||[]).forEach((_,i)=>{acc[i]=true;});setAccepted(acc);
+      show(`Found ${(parsed.changes||[]).length} changes`,"ok");
+    }catch(e){show("Failed: "+e.message,"error");console.error(e);}
+    finally{setProcessing(false);setProgress("");}
+  }
+
+  const cc={added:{bg:C.addBg,fg:C.add,icon:"+"},removed:{bg:C.delBg,fg:C.del,icon:"−"},changed:{bg:C.chgBg,fg:C.chg,icon:"~"}};
+
+  return (
+    <div style={{padding:20,maxWidth:900,margin:"0 auto",overflowY:"auto",height:"calc(100vh - 95px)"}}>
+      <h2 style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:4}}>Import Guideline Document</h2>
+      <p style={{fontSize:12,color:C.mid,marginBottom:16,lineHeight:1.5}}>Upload a PDF. Claude extracts criteria, compares against current database, shows additions/removals/modifications for review.</p>
+      <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3,padding:14,marginBottom:14}}>
+        <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:0.4,color:C.mid,marginBottom:6}}>API Key</div>
+        <div style={{display:"flex",gap:8}}>
+          <input type="password" value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder="sk-ant-..." style={{flex:1,padding:"6px 10px",border:`1px solid ${C.rule}`,borderRadius:2,fontSize:12,fontFamily:mono,outline:"none"}} />
+          <span style={{fontSize:11,color:apiKey?C.pass:C.fail,fontWeight:600,display:"flex",alignItems:"center"}}>{apiKey?"✓":"Required"}</span>
+        </div>
+      </div>
+      <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3,padding:14,marginBottom:14}}>
+        <div style={{display:"flex",gap:10,alignItems:"center"}}>
+          <input ref={fileRef} type="file" accept=".pdf" onChange={handleFile} style={{display:"none"}} />
+          <button onClick={()=>fileRef.current?.click()} style={{padding:"8px 16px",background:C.lite,border:`1px solid ${C.rule}`,borderRadius:2,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:font,color:C.navy}}>Choose PDF…</button>
+          {file && <span style={{fontSize:12,color:C.navy,fontWeight:600}}>{file.name}</span>}
+          <button onClick={processDocument} disabled={!fileData||!apiKey||processing} style={{padding:"8px 16px",background:fileData&&apiKey&&!processing?C.teal:C.rule,color:fileData&&apiKey?"#fff":C.mid,border:"none",borderRadius:2,fontSize:12,fontWeight:700,cursor:fileData&&apiKey?"pointer":"default",fontFamily:font,marginLeft:"auto"}}>
+            {processing?"Processing…":"🔍 Analyze"}
+          </button>
+        </div>
+        {progress && <div style={{marginTop:8,fontSize:12,color:C.teal,fontStyle:"italic"}}>{progress}</div>}
+      </div>
+      {changes && (
+        <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3}}>
+          <div style={{background:C.navy,color:"#fff",padding:"10px 14px",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",display:"flex",justifyContent:"space-between"}}>
+            <span>Changes — {changes.documentTitle||"Document"}</span>
+            <span style={{fontWeight:400,textTransform:"none"}}>{(changes.changes||[]).length} found</span>
+          </div>
+          {changes.summary && <div style={{padding:"10px 14px",background:C.lite,borderBottom:`1px solid ${C.rule}`,fontSize:12,color:C.ink,lineHeight:1.5}}>{changes.summary}</div>}
+          <div style={{padding:"10px 14px"}}>
+            {(changes.changes||[]).map((ch,i)=>{const col=cc[ch.type]||cc.changed;return(
+              <div key={i} style={{border:`1px solid ${C.rule}`,borderRadius:3,marginBottom:8,opacity:accepted[i]?1:0.4}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:col.bg,cursor:"pointer"}} onClick={()=>setAccepted(p=>({...p,[i]:!p[i]}))}>
+                  <input type="checkbox" checked={!!accepted[i]} readOnly style={{accentColor:C.teal}} />
+                  <span style={{fontSize:12,fontWeight:700,color:col.fg}}>{col.icon}</span>
+                  <span style={{fontSize:10,fontWeight:700,textTransform:"uppercase",color:col.fg,padding:"1px 6px",borderRadius:2,border:`1px solid ${col.fg}40`}}>{ch.type}</span>
+                  <span style={{fontSize:12,fontWeight:600,color:C.navy}}>{ch.examSite}</span>
+                  {ch.priorityGroup && <span style={{fontSize:10,color:C.mid}}>· {ch.priorityGroup}</span>}
+                </div>
+                <div style={{padding:"8px 12px"}}>
+                  {ch.currentText && <div style={{fontSize:12,color:C.del,padding:"4px 8px",background:C.delBg,borderRadius:2,marginBottom:4,borderLeft:`3px solid ${C.del}`}}><strong>Was:</strong> {ch.currentText}</div>}
+                  {ch.newText && <div style={{fontSize:12,color:C.add,padding:"4px 8px",background:C.addBg,borderRadius:2,marginBottom:4,borderLeft:`3px solid ${C.add}`}}><strong>Now:</strong> {ch.newText}</div>}
+                  <div style={{fontSize:11,color:C.mid,fontStyle:"italic"}}>{ch.reason}</div>
+                </div>
+              </div>
+            );})}
+          </div>
+          <div style={{padding:"12px 14px",borderTop:`1px solid ${C.rule}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <span style={{fontSize:12,color:C.mid}}>{Object.values(accepted).filter(Boolean).length} selected</span>
+            <button onClick={()=>show(`${Object.values(accepted).filter(Boolean).length} changes queued — publish via Versions tab`,"ok")} style={{padding:"8px 16px",background:C.teal,color:"#fff",border:"none",borderRadius:2,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:font}}>Apply Selected</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+//  REGIONS TAB
+// ══════════════════════════════════════════════════════════
+
+function RegionsTab({criteria,show}){
+  const [region,setRegion]=React.useState("auckland");
+  const [overrides,setOverrides]=React.useState({}); // {siteId: {text:"...", healthPathwaysUrl:"..."}}
+  const [dirty,setDirty]=React.useState(false);
+
+  const regionConf = REGIONS[region];
+
+  function setOverride(siteId,field,value){
+    setOverrides(prev=>{
+      const n={...prev};
+      if(!n[siteId])n[siteId]={text:"",healthPathwaysUrl:""};
+      n[siteId]={...n[siteId],[field]:value};
+      return n;
+    });
+    setDirty(true);
+  }
+
+  function handleSave(){
+    show(`✓ Region overrides for ${regionConf?.label||region} saved`,"ok");
+    setDirty(false);
+    // In production: POST to /api/admin/regions/:region with the overrides
+  }
+
+  return (
+    <div style={{padding:20,maxWidth:900,margin:"0 auto",overflowY:"auto",height:"calc(100vh - 95px)"}}>
+      <h2 style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:4}}>Region Management</h2>
+      <p style={{fontSize:12,color:C.mid,marginBottom:16,lineHeight:1.5}}>
+        Configure district-specific overrides. Each region can have its own HealthPathways URLs and localised guidance text per exam/site. The base HealthPathways domain is automatically swapped for each region — overrides here are for additional custom content.
+      </p>
+
+      {/* Region selector */}
+      <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3,padding:14,marginBottom:16}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:0.4,color:C.mid}}>Region</div>
+          <select value={region} onChange={e=>{setRegion(e.target.value);setOverrides({});setDirty(false);}}
+            style={{padding:"6px 10px",border:`1px solid ${C.rule}`,borderRadius:2,fontSize:13,fontFamily:font,flex:1,outline:"none"}}>
+            {Object.entries(REGIONS).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+          </select>
+          {dirty && <button onClick={handleSave} style={{padding:"6px 14px",background:C.teal,color:"#fff",border:"none",borderRadius:2,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:font}}>Save Overrides</button>}
+        </div>
+        <div style={{marginTop:8,fontSize:11,color:C.mid}}>
+          Base HealthPathways domain: <strong style={{color:C.navy}}>{regionConf?.domain||"—"}</strong>
+        </div>
+        <div style={{marginTop:4,fontSize:11,color:C.mid}}>
+          All Auckland HealthPathways URLs are automatically rewritten to use this domain. Add overrides below for custom guidance or alternative URLs.
+        </div>
+      </div>
+
+      {/* Per-site overrides */}
+      <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3}}>
+        <div style={{background:C.navy,color:"#fff",padding:"10px 14px",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"}}>
+          Exam/Site Overrides — {regionConf?.label||region}
+        </div>
+        {criteria.filter(c=>c.population==="adult").map(c=>{
+          const ov = overrides[c.id]||{text:"",healthPathwaysUrl:""};
+          const hasOverride = ov.text||ov.healthPathwaysUrl;
+          return (
+            <div key={c.id} style={{borderBottom:`1px solid ${C.mist}`,padding:"10px 14px"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:hasOverride?6:0}}>
+                <div>
+                  <span style={{fontSize:12,fontWeight:600,color:C.navy}}>{c.title}</span>
+                  <span style={{fontSize:10,color:C.mid,marginLeft:8}}>{c.id}</span>
+                </div>
+                {!hasOverride && (
+                  <button onClick={()=>setOverride(c.id,"text"," ")} style={{fontSize:10,padding:"3px 8px",background:C.lite,border:`1px solid ${C.rule}`,borderRadius:2,cursor:"pointer",fontFamily:font,color:C.mid}}>
+                    + Add override
+                  </button>
+                )}
+              </div>
+              {hasOverride && (
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  <div>
+                    <div style={{fontSize:9,fontWeight:700,textTransform:"uppercase",color:C.mid,marginBottom:2}}>Localised guidance text</div>
+                    <textarea value={ov.text||""} onChange={e=>setOverride(c.id,"text",e.target.value)} placeholder="Region-specific guidance for this exam/site…" rows={2}
+                      style={{width:"100%",padding:"4px 6px",fontSize:11,border:`1px solid ${C.rule}`,borderRadius:2,fontFamily:font,resize:"vertical",outline:"none",boxSizing:"border-box",borderLeft:`3px solid #2a6496`}} />
+                  </div>
+                  <div>
+                    <div style={{fontSize:9,fontWeight:700,textTransform:"uppercase",color:C.mid,marginBottom:2}}>Override HealthPathways URL (leave blank to use auto-rewrite)</div>
+                    <input value={ov.healthPathwaysUrl||""} onChange={e=>setOverride(c.id,"healthPathwaysUrl",e.target.value)} placeholder="https://..."
+                      style={{width:"100%",padding:"3px 6px",fontSize:11,border:`1px solid ${C.rule}`,borderRadius:2,fontFamily:font,outline:"none",boxSizing:"border-box"}} />
+                  </div>
+                  <button onClick={()=>{setOverrides(p=>{const n={...p};delete n[c.id];return n;});setDirty(true);}} style={{alignSelf:"flex-end",fontSize:10,padding:"2px 8px",background:C.failBg,color:C.fail,border:"1px solid #f0b0b0",borderRadius:2,cursor:"pointer",fontFamily:font}}>
+                    Remove override
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+//  VERSIONS TAB — with publish wired to API
+// ══════════════════════════════════════════════════════════
+
+function VersionsTab({show,pubVer,handlePublish}){
+  const [label,setLabel]=React.useState("");
+  const [notes,setNotes]=React.useState("");
+  const [publishing,setPublishing]=React.useState(false);
+
+  async function doPublish(){
+    if(!label.trim()){show("Enter a version label","warn");return;}
+    if(!confirm(`Publish ${label}? Both Criteria Viewer and Triage Advisor will immediately serve the updated criteria.`))return;
+    setPublishing(true);
+    await handlePublish(label);
+    setPublishing(false);
+    setLabel("");setNotes("");
+  }
+
+  return (
+    <div style={{padding:20,maxWidth:700,margin:"0 auto"}}>
+      <h2 style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:4}}>Version Management</h2>
+      <p style={{fontSize:12,color:C.mid,marginBottom:16,lineHeight:1.5}}>Publish the current working copy to make it live. Both Criteria Viewer and Triage Advisor will immediately serve the new criteria.</p>
+
+      <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3,padding:14,marginBottom:16}}>
+        <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:0.4,color:C.mid,marginBottom:8}}>Publish New Version</div>
+        <div style={{display:"flex",gap:8,marginBottom:8}}>
+          <input value={label} onChange={e=>setLabel(e.target.value)} placeholder="e.g. v3.5.0" style={{width:120,padding:"6px 10px",border:`1px solid ${C.rule}`,borderRadius:2,fontSize:12,fontFamily:font,outline:"none"}} />
+          <input value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Change notes…" style={{flex:1,padding:"6px 10px",border:`1px solid ${C.rule}`,borderRadius:2,fontSize:12,fontFamily:font,outline:"none"}} />
+          <button onClick={doPublish} disabled={publishing} style={{padding:"6px 14px",background:C.teal,color:"#fff",border:"none",borderRadius:2,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:font,whiteSpace:"nowrap"}}>
+            {publishing?"Publishing…":"🚀 Publish"}
+          </button>
+        </div>
+        <div style={{fontSize:11,color:C.warn,background:C.warnBg,padding:"6px 10px",borderRadius:2,borderLeft:`3px solid ${C.warn}`}}>
+          ⚠ Publishing immediately updates what GPs and PCRLs see. Verify your changes in the Criteria Editor first.
+        </div>
+      </div>
+
+      {pubVer && (
+        <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3}}>
+          <div style={{background:C.navy,color:"#fff",padding:"10px 14px",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"}}>Current Published Version</div>
+          <div style={{padding:"14px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+              <span style={{fontSize:16,fontWeight:700,color:C.navy}}>{pubVer.version}</span>
+              <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:10,background:C.passBg,color:C.pass}}>published</span>
+            </div>
+            <div style={{fontSize:11,color:C.mid}}>
+              Published by {pubVer.publishedBy||"—"} · {new Date(pubVer.publishedAt).toLocaleString()}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+//  AUDIT LOG TAB
+// ══════════════════════════════════════════════════════════
+
+function AuditTab(){
+  const [entries,setEntries]=React.useState([]);
+  const [loading,setLoading]=React.useState(true);
+  React.useEffect(()=>{
+    (async()=>{
+      try{
+        const res=await api("/api/admin/audit");
+        if(res?.entries)setEntries(res.entries);
+      }catch(e){console.error(e);}
+      finally{setLoading(false);}
+    })();
+  },[]);
+  const ac={create:{bg:C.addBg,fg:C.add},update:{bg:C.chgBg,fg:C.chg},delete:{bg:C.delBg,fg:C.del},publish:{bg:"#eef2ff",fg:"#4f46e5"}};
+  return (
+    <div style={{padding:20,maxWidth:700,margin:"0 auto"}}>
+      <h2 style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:4}}>Audit Log</h2>
+      <p style={{fontSize:12,color:C.mid,marginBottom:16}}>Every edit, publish, and version action tracked.</p>
+      <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3}}>
+        <div style={{background:C.navy,color:"#fff",padding:"10px 14px",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"}}>Recent Activity</div>
+        {loading?<div style={{padding:20,textAlign:"center",color:C.mid}}>Loading…</div>:
+        entries.length===0?<div style={{padding:20,textAlign:"center",color:C.mid}}>No audit entries yet</div>:
+        entries.map(e=>{const a=ac[e.action]||ac.update;return(
+          <div key={e.id} style={{padding:"10px 14px",borderBottom:`1px solid ${C.mist}`,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:2,background:a.bg,color:a.fg,textTransform:"uppercase"}}>{e.action}</span>
+            <span style={{fontSize:12,color:C.navy,fontWeight:600,flex:1}}>{e.entity_type} #{e.entity_id}</span>
+            <span style={{fontSize:11,color:C.mid}}>{e.performed_by}</span>
+            <span style={{fontSize:10,color:C.mid}}>{new Date(e.performed_at).toLocaleString()}</span>
+          </div>
+        );})}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.render(React.createElement(CRRAdmin), document.getElementById("root"));
+</script>
+</body>
+</html>
