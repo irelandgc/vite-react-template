@@ -341,12 +341,25 @@ app.post('/api/admin/publish', requireAccess, async (c) => {
         n + (e.type === 'multisite' ? (e.sites || []).length : 1), 0),
     }));
 
-    // Audit log (best-effort — don't fail publish if table missing)
+    // Store snapshot in versions table for history & rollback (best-effort)
+    try {
+      await db.prepare(
+        'INSERT INTO versions (version_label, notes, criteria_snapshot, status, created_at, created_by, published_at, published_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(
+        versionLabel,
+        body.notes || '',
+        JSON.stringify(body.data),
+        'published',
+        now, email, now, email
+      ).run();
+    } catch (_) { /* don't fail publish if versions table missing */ }
+
+    // Audit log (best-effort)
     try {
       await db.prepare(
         'INSERT INTO audit_log (action, entity_type, entity_id, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
       ).bind('publish', 'version', versionLabel, email, now).run();
-    } catch (_) { /* audit_log table may not exist yet */ }
+    } catch (_) {}
 
     return c.json({ success: true, version: versionLabel, publishedAt: now });
   } catch (e: any) {
@@ -368,6 +381,44 @@ app.get('/api/admin/audit', requireAccess, async (c) => {
   }
 });
 
+
+// POST /api/admin/versions/:id/rollback — Restore a past version to KV
+app.post('/api/admin/versions/:id/rollback', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const kv = c.env.KV;
+  const versionId = c.req.param('id');
+  const now = new Date().toISOString();
+  const email = c.req.header('x-admin-email') || 'admin';
+
+  const version = await db.prepare('SELECT * FROM versions WHERE id = ?').bind(versionId).first();
+  if (!version) return c.json({ error: 'Version not found' }, 404);
+
+  const data = JSON.parse(version.criteria_snapshot as string);
+  const restoredLabel = `${version.version_label} (restored)`;
+
+  await kv.put('criteria:published', JSON.stringify({
+    version: restoredLabel,
+    publishedAt: now,
+    publishedBy: email,
+    data,
+  }));
+
+  await kv.put('criteria:version', JSON.stringify({
+    version: restoredLabel,
+    publishedAt: now,
+    publishedBy: email,
+    criteriaCount: (data?.exams || []).reduce((n: number, e: any) =>
+      n + (e.type === 'multisite' ? (e.sites || []).length : 1), 0),
+  }));
+
+  try {
+    await db.prepare(
+      'INSERT INTO audit_log (action, entity_type, entity_id, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
+    ).bind('rollback', 'version', versionId.toString(), email, now).run();
+  } catch (_) {}
+
+  return c.json({ success: true, version: restoredLabel, publishedAt: now, data });
+});
 
 // POST /api/admin/extract-pdf — Server-side PDF processing via Anthropic API
 // Accepts { pdf: base64string, currentCriteria: string }

@@ -159,20 +159,28 @@ function CRRAdmin() {
     setDirty(true);
   }
 
-  async function handlePublish(versionLabel) {
+  async function handlePublish(versionLabel, notes="") {
     if (!fullData) { show("No data to publish","error"); return; }
     try {
       const res = await api("/api/admin/publish", {
         method:"POST",
-        body: JSON.stringify({ versionLabel, data: fullData }),
+        body: JSON.stringify({ versionLabel, notes, data: fullData }),
       });
       if (res.success) {
         show(`✓ Published ${res.version} — Viewer and Triage Advisor updated`, "ok");
         setPubVer({version:res.version,publishedAt:res.publishedAt});
+        setDirty(false);
       } else {
         show("Publish failed: "+(res.error||"unknown"), "error");
       }
     } catch(e) { show("Publish failed: "+e.message, "error"); }
+  }
+
+  function handleRollback(data, versionInfo) {
+    // Restore a past version into the working copy (already live via KV)
+    handleReplaceAll(data);
+    setDirty(false);
+    setPubVer(versionInfo);
   }
 
   const tabs = [
@@ -219,7 +227,7 @@ function CRRAdmin() {
         {tab==="editor" && <EditorTab criteria={criteria} selected={selected} setSelected={setSelected} dirty={dirty} setDirty={setDirty} show={show} updateCriteriaItem={updateCriteriaItem} />}
         {tab==="import" && <ImportTab criteria={criteria} show={show} updateCriteriaItem={updateCriteriaItem} setDirty={setDirty} handleReplaceAll={handleReplaceAll} />}
         {tab==="regions" && <RegionsTab criteria={criteria} show={show} />}
-        {tab==="versions" && <VersionsTab show={show} pubVer={pubVer} handlePublish={handlePublish} />}
+        {tab==="versions" && <VersionsTab show={show} pubVer={pubVer} handlePublish={handlePublish} handleRollback={handleRollback} />}
         {tab==="audit" && <AuditTab />}
       </div>
       {/* Toast */}
@@ -868,25 +876,59 @@ function RegionsTab({criteria,show}){
 //  VERSIONS TAB — with publish wired to API
 // ══════════════════════════════════════════════════════════
 
-function VersionsTab({show,pubVer,handlePublish}){
+function VersionsTab({show,pubVer,handlePublish,handleRollback}){
   const [label,setLabel]=React.useState("");
   const [notes,setNotes]=React.useState("");
   const [publishing,setPublishing]=React.useState(false);
+  const [versions,setVersions]=React.useState([]);
+  const [loadingV,setLoadingV]=React.useState(true);
+  const [rollingBack,setRollingBack]=React.useState(null);
+
+  React.useEffect(()=>{
+    (async()=>{
+      try{
+        const res=await api("/api/admin/versions");
+        if(res?.versions)setVersions(res.versions);
+      }catch(e){console.error(e);}
+      finally{setLoadingV(false);}
+    })();
+  },[]);
 
   async function doPublish(){
     if(!label.trim()){show("Enter a version label","warn");return;}
     if(!confirm(`Publish ${label}? Both Criteria Viewer and Triage Advisor will immediately serve the updated criteria.`))return;
     setPublishing(true);
-    await handlePublish(label);
+    await handlePublish(label,notes);
     setPublishing(false);
     setLabel("");setNotes("");
+    // Refresh version list
+    const res=await api("/api/admin/versions");
+    if(res?.versions)setVersions(res.versions);
   }
 
-  return (
-    <div style={{padding:20,maxWidth:700,margin:"0 auto"}}>
-      <h2 style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:4}}>Version Management</h2>
-      <p style={{fontSize:12,color:C.mid,marginBottom:16,lineHeight:1.5}}>Publish the current working copy to make it live. Both Criteria Viewer and Triage Advisor will immediately serve the new criteria.</p>
+  async function doRollback(v){
+    if(!confirm(`Restore ${v.version_label}?\n\nThis will immediately replace the live criteria with the snapshot from ${new Date(v.published_at||v.created_at).toLocaleString()}. The change goes live instantly.`))return;
+    setRollingBack(v.id);
+    try{
+      const res=await api(`/api/admin/versions/${v.id}/rollback`,{method:"POST"});
+      if(res.success){
+        handleRollback(res.data,{version:res.version,publishedAt:res.publishedAt});
+        show(`✓ Restored ${v.version_label} — now live`,"ok");
+      }else{
+        show("Rollback failed: "+(res.error||"unknown"),"error");
+      }
+    }catch(e){show("Rollback failed: "+e.message,"error");}
+    finally{setRollingBack(null);}
+  }
 
+  const currentLabel=pubVer?.version||"";
+
+  return (
+    <div style={{padding:20,maxWidth:780,margin:"0 auto",overflowY:"auto",height:"calc(100vh - 95px)"}}>
+      <h2 style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:4}}>Version Management</h2>
+      <p style={{fontSize:12,color:C.mid,marginBottom:16,lineHeight:1.5}}>Publish the current working copy to make it live. Past versions are snapshotted automatically and can be restored at any time.</p>
+
+      {/* Publish form */}
       <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3,padding:14,marginBottom:16}}>
         <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:0.4,color:C.mid,marginBottom:8}}>Publish New Version</div>
         <div style={{display:"flex",gap:8,marginBottom:8}}>
@@ -901,20 +943,38 @@ function VersionsTab({show,pubVer,handlePublish}){
         </div>
       </div>
 
-      {pubVer && (
-        <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3}}>
-          <div style={{background:C.navy,color:"#fff",padding:"10px 14px",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"}}>Current Published Version</div>
-          <div style={{padding:"14px"}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-              <span style={{fontSize:16,fontWeight:700,color:C.navy}}>{pubVer.version}</span>
-              <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:10,background:C.passBg,color:C.pass}}>published</span>
-            </div>
-            <div style={{fontSize:11,color:C.mid}}>
-              Published by {pubVer.publishedBy||"—"} · {new Date(pubVer.publishedAt).toLocaleString()}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Version history */}
+      <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3}}>
+        <div style={{background:C.navy,color:"#fff",padding:"10px 14px",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"}}>Version History</div>
+        {loadingV
+          ? <div style={{padding:20,textAlign:"center",color:C.mid,fontSize:12}}>Loading…</div>
+          : versions.length===0
+            ? <div style={{padding:20,textAlign:"center",color:C.mid,fontSize:12}}>No versions yet — publish to create the first snapshot.</div>
+            : versions.map((v,i)=>{
+                const isCurrent=v.version_label===currentLabel||v.version_label===currentLabel.replace(" (restored)","");
+                const isRolling=rollingBack===v.id;
+                return(
+                  <div key={v.id} style={{padding:"12px 14px",borderBottom:`1px solid ${C.mist}`,display:"flex",alignItems:"center",gap:10,background:isCurrent?C.lite:"#fff"}}>
+                    <div style={{flex:1}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
+                        <span style={{fontSize:13,fontWeight:700,color:C.navy}}>{v.version_label}</span>
+                        {isCurrent&&<span style={{fontSize:9,fontWeight:700,padding:"2px 7px",borderRadius:10,background:C.passBg,color:C.pass}}>LIVE</span>}
+                      </div>
+                      {v.notes&&<div style={{fontSize:11,color:C.ink,marginBottom:2}}>{v.notes}</div>}
+                      <div style={{fontSize:10,color:C.mid}}>
+                        {v.published_by||v.created_by} · {new Date(v.published_at||v.created_at).toLocaleString()}
+                      </div>
+                    </div>
+                    {!isCurrent&&(
+                      <button onClick={()=>doRollback(v)} disabled={!!rollingBack} style={{padding:"5px 12px",background:isRolling?C.rule:C.warnBg,color:isRolling?C.mid:C.warn,border:`1px solid ${isRolling?"#d0dce4":"#e0c060"}`,borderRadius:2,fontSize:11,fontWeight:600,cursor:rollingBack?"default":"pointer",fontFamily:font,whiteSpace:"nowrap"}}>
+                        {isRolling?"Restoring…":"↩ Restore"}
+                      </button>
+                    )}
+                  </div>
+                );
+              })
+        }
+      </div>
     </div>
   );
 }
