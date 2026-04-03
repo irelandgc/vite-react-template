@@ -11,6 +11,7 @@ type Bindings = {
   KV: KVNamespace;
   DB: D1Database;
   ANTHROPIC_API_KEY: string;
+  ADMIN_KEY: string;  // set via: npx wrangler secret put ADMIN_KEY
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -122,6 +123,10 @@ async function requireAccess(c: any, next: any) {
   const adminKey = c.req.header('x-admin-key');
   if (!jwt && !adminKey) {
     return c.json({ error: 'Unauthorized — set x-admin-key header or use Cloudflare Access' }, 401);
+  }
+  // When ADMIN_KEY secret is set, validate it; otherwise accept any non-empty value
+  if (adminKey && c.env.ADMIN_KEY && adminKey !== c.env.ADMIN_KEY) {
+    return c.json({ error: 'Unauthorized — invalid admin key' }, 401);
   }
   await next();
 }
@@ -543,6 +548,46 @@ function transformToMatchFormat(snapshot) {
   };
 }
 
+
+// ── Region Overrides ────────────────────────────────────
+
+// GET /api/regions — public; returns all region overrides from KV
+app.get('/api/regions', async (c) => {
+  const kv = c.env.KV;
+  try {
+    const raw = await kv.get('criteria:regions');
+    return c.json(raw ? JSON.parse(raw) : {}, 200, { 'Cache-Control': 'public, max-age=300' });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// GET /api/admin/regions — admin read of all region overrides
+app.get('/api/admin/regions', requireAccess, async (c) => {
+  const kv = c.env.KV;
+  try {
+    const raw = await kv.get('criteria:regions');
+    return c.json(raw ? JSON.parse(raw) : {});
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// PUT /api/admin/regions/:regionId — save overrides for one region
+app.put('/api/admin/regions/:regionId', requireAccess, async (c) => {
+  const kv = c.env.KV;
+  const regionId = c.req.param('regionId');
+  const body = await c.req.json();
+  try {
+    const raw = await kv.get('criteria:regions');
+    const all = raw ? JSON.parse(raw) : {};
+    all[regionId] = body.overrides || {};
+    await kv.put('criteria:regions', JSON.stringify(all));
+    return c.json({ success: true, regionId });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
 
 // ── Health check ─────────────────────────────────────────
 

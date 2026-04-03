@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CRR Criteria Admin v1.1.0</title>
+<title>CRR Criteria Admin v1.2.0</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
@@ -24,7 +24,7 @@ textarea,input,select,button{font-family:inherit}
 <script type="text/babel">
 
 const API = "https://crr-criteria-api.fk4dsrmq5r.workers.dev";
-const VER = "v1.1.0";
+const VER = "v1.2.0";
 const C = {
   navy:"#003B5C",teal:"#008B8B",ink:"#0d1f2d",mist:"#f2f6f8",rule:"#d0dce4",
   mid:"#5a7a8a",lite:"#eaf2f7",bg:"#f8fafb",
@@ -48,9 +48,13 @@ const REGIONS = {
   southern:{label:"Southern (Te Waipounamu)",domain:"southern.communityhealthpathways.org"},
 };
 
+// Admin key — stored in sessionStorage, never hardcoded
+let ADMIN_KEY = sessionStorage.getItem('crr-admin-key') || '';
+function setAdminKey(key) { ADMIN_KEY = key; sessionStorage.setItem('crr-admin-key', key); }
+
 async function api(path, opts={}) {
   const res = await fetch(`${API}${path}`, {
-    headers:{"Content-Type":"application/json","x-admin-key":"crr-admin",...opts.headers}, ...opts
+    headers:{"Content-Type":"application/json","x-admin-key":ADMIN_KEY,...opts.headers}, ...opts
   });
   return res.json();
 }
@@ -80,6 +84,8 @@ function CRRAdmin() {
   const [dirty, setDirty] = React.useState(false);
   const [toast, setToast] = React.useState(null);
   const [pubVer, setPubVer] = React.useState(null);
+  const [origData, setOrigData] = React.useState(null);
+  const [showKeyModal, setShowKeyModal] = React.useState(!ADMIN_KEY);
 
   React.useEffect(() => {
     (async () => {
@@ -87,6 +93,7 @@ function CRRAdmin() {
         const pub = await api("/api/criteria");
         if (pub?.data) {
           setFullData(pub.data);
+          setOrigData(pub.data);
           const items = [];
           for (const exam of pub.data.exams||[]) {
             if (exam.type==="multisite") {
@@ -100,6 +107,8 @@ function CRRAdmin() {
             if (exam.type==="multisite") {
               for (const site of exam.sites||[])
                 items.push({id:site.id,title:`${exam.title} — ${site.label}`,modality:exam.modality,type:"multisite",population:"paediatric",data:site,examData:exam});
+            } else {
+              items.push({id:exam.id,title:exam.title,modality:exam.modality,type:"singlesite",population:"paediatric",data:exam});
             }
           }
           setCriteria(items);
@@ -153,6 +162,8 @@ function CRRAdmin() {
       if (exam.type==="multisite") {
         for (const site of exam.sites||[])
           items.push({id:site.id,title:`${exam.title} — ${site.label}`,modality:exam.modality,type:"multisite",population:"paediatric",data:site,examData:exam});
+      } else {
+        items.push({id:exam.id,title:exam.title,modality:exam.modality,type:"singlesite",population:"paediatric",data:exam});
       }
     }
     setCriteria(items);
@@ -211,6 +222,7 @@ function CRRAdmin() {
         <div style={{display:"flex",alignItems:"center",gap:12}}>
           {pubVer && <span style={{fontSize:10,background:"rgba(255,255,255,0.12)",color:"#8ab4c8",padding:"3px 8px",borderRadius:2}}>Published: {pubVer.version}</span>}
           {dirty && <span style={{fontSize:10,background:"#c07800",color:"#fff",padding:"3px 8px",borderRadius:2,fontWeight:700}}>UNSAVED</span>}
+          <button onClick={()=>setShowKeyModal(true)} title="Change admin key" style={{fontSize:10,background:"rgba(255,255,255,0.12)",color:"#8ab4c8",border:"1px solid rgba(255,255,255,0.2)",padding:"2px 8px",borderRadius:2,cursor:"pointer",fontFamily:font}}>{ADMIN_KEY?"🔑 Key set":"🔓 Set key"}</button>
           <span style={{fontSize:10,background:"rgba(255,255,255,0.15)",color:"#fff",padding:"2px 8px",borderRadius:2,fontWeight:600}}>{VER}</span>
         </div>
       </div>
@@ -227,7 +239,7 @@ function CRRAdmin() {
         {tab==="editor" && <EditorTab criteria={criteria} selected={selected} setSelected={setSelected} dirty={dirty} setDirty={setDirty} show={show} updateCriteriaItem={updateCriteriaItem} />}
         {tab==="import" && <ImportTab criteria={criteria} show={show} updateCriteriaItem={updateCriteriaItem} setDirty={setDirty} handleReplaceAll={handleReplaceAll} />}
         {tab==="regions" && <RegionsTab criteria={criteria} show={show} />}
-        {tab==="versions" && <VersionsTab show={show} pubVer={pubVer} handlePublish={handlePublish} handleRollback={handleRollback} />}
+        {tab==="versions" && <VersionsTab show={show} pubVer={pubVer} handlePublish={handlePublish} handleRollback={handleRollback} criteria={criteria} origData={origData} dirty={dirty} />}
         {tab==="audit" && <AuditTab />}
       </div>
       {/* Toast */}
@@ -236,6 +248,30 @@ function CRRAdmin() {
           {toast.msg}
         </div>
       )}
+      {/* Admin key modal */}
+      {showKeyModal && <KeyModal onSave={key=>{setAdminKey(key);setShowKeyModal(false);}} onClose={()=>setShowKeyModal(false)} hasKey={!!ADMIN_KEY} />}
+    </div>
+  );
+}
+
+function KeyModal({onSave,onClose,hasKey}){
+  const [val,setVal]=React.useState('');
+  function submit(e){e.preventDefault();if(val.trim())onSave(val.trim());}
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,30,50,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:2000}} onClick={hasKey?onClose:undefined}>
+      <form onSubmit={submit} onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:4,padding:28,width:360,boxShadow:"0 8px 40px rgba(0,0,0,0.3)"}}>
+        <div style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:6}}>Admin Key</div>
+        <div style={{fontSize:12,color:C.mid,marginBottom:16,lineHeight:1.5}}>
+          Enter the admin key set via <code style={{background:C.lite,padding:"1px 4px",borderRadius:2,fontSize:11}}>wrangler secret put ADMIN_KEY</code>.<br/>
+          Stored in sessionStorage — clears when you close the browser.
+        </div>
+        <input autoFocus value={val} onChange={e=>setVal(e.target.value)} placeholder="Enter admin key…"
+          style={{width:"100%",padding:"8px 10px",border:`1px solid ${C.rule}`,borderRadius:2,fontSize:13,fontFamily:font,outline:"none",boxSizing:"border-box",marginBottom:12}} />
+        <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+          {hasKey && <button type="button" onClick={onClose} style={{padding:"7px 14px",background:"#fff",border:`1px solid ${C.rule}`,borderRadius:2,fontSize:12,cursor:"pointer",fontFamily:font,color:C.mid}}>Cancel</button>}
+          <button type="submit" disabled={!val.trim()} style={{padding:"7px 16px",background:val.trim()?C.teal:C.rule,color:val.trim()?"#fff":C.mid,border:"none",borderRadius:2,fontSize:12,fontWeight:700,cursor:val.trim()?"pointer":"default",fontFamily:font}}>Save Key</button>
+        </div>
+      </form>
     </div>
   );
 }
@@ -755,10 +791,29 @@ function ImportTab({criteria,show,updateCriteriaItem,setDirty,handleReplaceAll})
 
 function RegionsTab({criteria,show}){
   const [region,setRegion]=React.useState("auckland");
+  const [allRegions,setAllRegions]=React.useState({}); // {regionId: {siteId: {...}}}
   const [overrides,setOverrides]=React.useState({}); // {siteId: {text:"...", healthPathwaysUrl:"..."}}
   const [dirty,setDirty]=React.useState(false);
+  const [loadingR,setLoadingR]=React.useState(true);
+  const [saving,setSaving]=React.useState(false);
 
   const regionConf = REGIONS[region];
+
+  React.useEffect(()=>{
+    (async()=>{
+      try{
+        const res=await api("/api/admin/regions");
+        if(res&&typeof res==="object"&&!res.error){
+          setAllRegions(res);
+          setOverrides(res[region]||{});
+        }
+      }catch(e){console.error(e);}
+      finally{setLoadingR(false);}
+    })();
+  },[]);
+
+  // When region changes, load its overrides from allRegions
+  React.useEffect(()=>{setOverrides(allRegions[region]||{});setDirty(false);},[region,allRegions]);
 
   function setOverride(siteId,field,value){
     setOverrides(prev=>{
@@ -770,10 +825,19 @@ function RegionsTab({criteria,show}){
     setDirty(true);
   }
 
-  function handleSave(){
-    show(`✓ Region overrides for ${regionConf?.label||region} saved`,"ok");
-    setDirty(false);
-    // In production: POST to /api/admin/regions/:region with the overrides
+  async function handleSave(){
+    setSaving(true);
+    try{
+      const res=await api(`/api/admin/regions/${region}`,{method:"PUT",body:JSON.stringify({overrides})});
+      if(res.success){
+        setAllRegions(prev=>({...prev,[region]:overrides}));
+        show(`✓ Region overrides for ${regionConf?.label||region} saved`,"ok");
+        setDirty(false);
+      }else{
+        show("Save failed: "+(res.error||"unknown"),"error");
+      }
+    }catch(e){show("Save failed: "+e.message,"error");}
+    finally{setSaving(false);}
   }
 
   return (
@@ -787,11 +851,11 @@ function RegionsTab({criteria,show}){
       <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3,padding:14,marginBottom:16}}>
         <div style={{display:"flex",alignItems:"center",gap:12}}>
           <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:0.4,color:C.mid}}>Region</div>
-          <select value={region} onChange={e=>{setRegion(e.target.value);setOverrides({});setDirty(false);}}
+          <select value={region} onChange={e=>setRegion(e.target.value)} disabled={loadingR}
             style={{padding:"6px 10px",border:`1px solid ${C.rule}`,borderRadius:2,fontSize:13,fontFamily:font,flex:1,outline:"none"}}>
             {Object.entries(REGIONS).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
           </select>
-          {dirty && <button onClick={handleSave} style={{padding:"6px 14px",background:C.teal,color:"#fff",border:"none",borderRadius:2,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:font}}>Save Overrides</button>}
+          {dirty && <button onClick={handleSave} disabled={saving} style={{padding:"6px 14px",background:saving?C.rule:C.teal,color:saving?C.mid:"#fff",border:"none",borderRadius:2,fontSize:12,fontWeight:600,cursor:saving?"default":"pointer",fontFamily:font}}>{saving?"Saving…":"Save Overrides"}</button>}
         </div>
         <div style={{marginTop:8,fontSize:11,color:C.mid}}>
           Base HealthPathways domain: <strong style={{color:C.navy}}>{regionConf?.domain||"—"}</strong>
@@ -851,9 +915,28 @@ function RegionsTab({criteria,show}){
 //  VERSIONS TAB — with publish wired to API
 // ══════════════════════════════════════════════════════════
 
-function VersionsTab({show,pubVer,handlePublish,handleRollback}){
+function VersionsTab({show,pubVer,handlePublish,handleRollback,criteria,origData,dirty}){
   const [label,setLabel]=React.useState("");
   const [notes,setNotes]=React.useState("");
+
+  // Compute diff summary vs published version when working copy has changes
+  const diffSummary=React.useMemo(()=>{
+    if(!dirty||!origData||!criteria)return null;
+    const origIds=[];
+    for(const e of origData.exams||[]){if(e.type==="multisite"){for(const s of e.sites||[])origIds.push(s.id);}else origIds.push(e.id);}
+    for(const e of origData.paedExams||[]){if(e.type==="multisite"){for(const s of e.sites||[])origIds.push(s.id);}else origIds.push(e.id);}
+    const origSet=new Set(origIds);
+    const curIds=criteria.map(c=>c.id);
+    const curSet=new Set(curIds);
+    const added=curIds.filter(id=>!origSet.has(id));
+    const removed=origIds.filter(id=>!curSet.has(id));
+    const origItems=origIds.reduce((n,id)=>{
+      const c=criteria.find(x=>x.id===id)||{data:{groups:[]}};
+      return n+(c.data.groups||[]).reduce((m,g)=>m+(g.items||[]).length,0);
+    },0);
+    const curItems=criteria.reduce((n,c)=>n+(c.data.groups||[]).reduce((m,g)=>m+(g.items||[]).length,0),0);
+    return{added:added.length,removed:removed.length,addedLabels:added.slice(0,3),removedLabels:removed.slice(0,3),curItems,origItems,curEntries:criteria.length,origEntries:origIds.length};
+  },[dirty,origData,criteria]);
   const [publishing,setPublishing]=React.useState(false);
   const [versions,setVersions]=React.useState([]);
   const [loadingV,setLoadingV]=React.useState(true);
@@ -913,6 +996,14 @@ function VersionsTab({show,pubVer,handlePublish,handleRollback}){
             {publishing?"Publishing…":"🚀 Publish"}
           </button>
         </div>
+        {diffSummary && (
+          <div style={{background:C.lite,border:`1px solid ${C.rule}`,borderRadius:2,padding:"8px 10px",marginBottom:8,fontSize:11,color:C.ink,lineHeight:1.6}}>
+            <strong style={{color:C.navy}}>Changes vs published:</strong>{' '}
+            {diffSummary.curEntries} entries (was {diffSummary.origEntries}){diffSummary.added>0&&<span style={{color:C.add,fontWeight:600}}> +{diffSummary.added} new</span>}{diffSummary.removed>0&&<span style={{color:C.del,fontWeight:600}}> −{diffSummary.removed} removed</span>} · {diffSummary.curItems} criteria items (was {diffSummary.origItems})
+            {diffSummary.added===0&&diffSummary.removed===0&&diffSummary.curItems===diffSummary.origItems&&<span style={{color:C.mid}}> — criteria text edits only</span>}
+          </div>
+        )}
+        {!dirty && <div style={{fontSize:11,color:C.mid,padding:"6px 10px",marginBottom:8}}>No unsaved changes — working copy matches published version.</div>}
         <div style={{fontSize:11,color:C.warn,background:C.warnBg,padding:"6px 10px",borderRadius:2,borderLeft:`3px solid ${C.warn}`}}>
           ⚠ Publishing immediately updates what GPs and PCRLs see. Verify your changes in the Criteria Editor first.
         </div>
