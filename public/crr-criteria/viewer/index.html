@@ -503,28 +503,24 @@ async function loadCriteriaData() {
   // Hide loader
   document.getElementById("loaderOverlay").style.display = "none";
 
-  // Load region overrides from API
+  // Load region overrides from API, then populate dropdown from REGIONS constant
   if (API_BASE) {
     try {
-      var rResp = await fetch(API_BASE + "/api/regions");
-      if (rResp.ok) {
-        regionOverrides = await rResp.json();
-        var regionIds = Object.keys(regionOverrides);
-        if (regionIds.length > 0) {
-          var sel = document.getElementById("regionSelect");
-          regionIds.forEach(function(rid) {
-            var opt = document.createElement("option");
-            opt.value = rid;
-            opt.textContent = (REGIONS[rid] ? REGIONS[rid].label : rid);
-            if (rid === selectedRegion) opt.selected = true;
-            sel.appendChild(opt);
-          });
-          document.getElementById("regionBar").style.display = "flex";
-          updateRegionName();
-        }
-      }
+      var rResp = await fetch(API_BASE + "/api/regions", {cache: 'no-store'});
+      if (rResp.ok) regionOverrides = await rResp.json();
     } catch(e) { /* region overrides unavailable — proceed without */ }
   }
+  // Always show all regions defined in REGIONS, regardless of KV overrides
+  var sel = document.getElementById("regionSelect");
+  Object.keys(REGIONS).forEach(function(rid) {
+    var opt = document.createElement("option");
+    opt.value = rid;
+    opt.textContent = REGIONS[rid].label;
+    if (rid === selectedRegion) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  document.getElementById("regionBar").style.display = "flex";
+  updateRegionName();
 
   // Show paed toggle if paed data exists
   if (PAED_EXAMS.length > 0) {
@@ -616,11 +612,37 @@ function checkSafetyText(text) {
 }
 
 function getHealthPathwaysUrl(obj) {
-  return obj.healthPathwaysUrl || '';
+  var url = obj.healthPathwaysUrl || '';
+  if (!selectedRegion || !REGIONS[selectedRegion]) return url;
+  // Check for explicit KV override for this exam/site id
+  var ov = (regionOverrides[selectedRegion] || {})[obj.id];
+  if (ov && ov.healthPathwaysUrl) return ov.healthPathwaysUrl;
+  // Swap Auckland domain for selected region's domain
+  if (url) return url.replace('aucklandregion.communityhealthpathways.org', REGIONS[selectedRegion].domain);
+  return url;
 }
 
-function getLocalisedInfo(key) { return null; }
-function getRegionLabel() { return ''; }
+function getLocalisedInfo(key) {
+  if (!selectedRegion) return null;
+  var ov = (regionOverrides[selectedRegion] || {})[key];
+  return (ov && ov.text) ? ov.text : null;
+}
+
+function getRegionLabel() {
+  return (selectedRegion && REGIONS[selectedRegion]) ? REGIONS[selectedRegion].label : '';
+}
+
+function updateRegionName() {
+  var el = document.getElementById('regionName');
+  if (el) el.textContent = getRegionLabel();
+}
+
+function onRegionChange(value) {
+  selectedRegion = value;
+  localStorage.setItem('crr-region', value);
+  updateRegionName();
+  toolRender();
+}
 
 // ══════════════════════════════════════════════════════════════
 //  PAEDIATRIC MODE
