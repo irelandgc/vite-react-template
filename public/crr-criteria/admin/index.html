@@ -24,10 +24,11 @@ textarea,input,select,button{font-family:inherit}
 <script type="text/babel">
 
 const API = "https://crr-criteria-api.fk4dsrmq5r.workers.dev";
-const VER = "v1.5.4";
-const BUILD = "2026-04-03"; // bump on each deployment
+const VER = "v1.5.5";
+const BUILD = "2026-04-06"; // bump on each deployment
 
 // Changelog:
+// v1.5.5 — fix: cache: no-store on all API fetches; fix: api() no longer drops x-admin-key when caller passes headers
 // v1.5.4 — added Whanganui & MidCentral CHP (ccp) region; Auckland X-ray URLs + 3D/HB/CCP region overrides seeded to KV
 // v1.5.3 — corrected HealthPathways regions (7 confirmed: aucklandregion, northland, midland, hawkesbay, 3d, canterbury, southern)
 // v1.5.1 — population-aware title matching (adult/paed entries don't cross-match)
@@ -63,8 +64,11 @@ let ADMIN_KEY = sessionStorage.getItem('crr-admin-key') || '';
 function setAdminKey(key) { ADMIN_KEY = key; sessionStorage.setItem('crr-admin-key', key); }
 
 async function api(path, opts={}) {
+  const {headers:extraHeaders, ...rest} = opts;
   const res = await fetch(`${API}${path}`, {
-    headers:{"Content-Type":"application/json","x-admin-key":ADMIN_KEY,...opts.headers}, ...opts
+    cache: 'no-store',
+    headers:{"Content-Type":"application/json","x-admin-key":ADMIN_KEY,...extraHeaders},
+    ...rest
   });
   return res.json();
 }

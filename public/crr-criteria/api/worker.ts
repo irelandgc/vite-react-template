@@ -51,7 +51,7 @@ app.get('/api/criteria', async (c) => {
 
     const published = JSON.parse(raw);
     return c.json(published, 200, {
-      'Cache-Control': 'public, max-age=300',
+      'Cache-Control': 'no-store',
     });
   } catch (e: any) {
     return c.json({ error: 'Failed to read criteria', message: e.message }, 500);

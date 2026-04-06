@@ -458,7 +458,7 @@ async function loadCriteriaData() {
   if (API_BASE) {
     try {
       loaderSub.textContent = "Fetching from " + API_BASE + "…";
-      var resp = await fetch(API_BASE + "/api/criteria");
+      var resp = await fetch(API_BASE + "/api/criteria", {cache: 'no-store'});
       if (resp.ok) {
         var apiData = await resp.json();
         if (apiData && apiData.data) {
