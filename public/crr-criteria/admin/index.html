@@ -24,10 +24,13 @@ textarea,input,select,button{font-family:inherit}
 <script type="text/babel">
 
 const API = "https://crr-criteria-api.fk4dsrmq5r.workers.dev";
-const VER = "v1.5.5";
-const BUILD = "2026-04-06"; // bump on each deployment
+const VER = "v1.5.8";
+const BUILD = "2026-04-07c"; // bump on each deployment
 
 // Changelog:
+// v1.5.8 — fix: switch sessionStorage → localStorage so admin key persists across Safari sessions
+// v1.5.7 — fix: admin tabs re-fetch when key is saved (adminKeyVersion); clear auth error UI in Regions/Versions tabs instead of silent empty state
+// v1.5.6 — fix: Safari compat: default region "aucklandregion" (was "auckland" — broke select in WebKit); sessionStorage try/catch for private mode; no Content-Type on GET requests (reduces CORS preflights)
 // v1.5.5 — fix: cache: no-store on all API fetches; fix: api() no longer drops x-admin-key when caller passes headers
 // v1.5.4 — added Whanganui & MidCentral CHP (ccp) region; Auckland X-ray URLs + 3D/HB/CCP region overrides seeded to KV
 // v1.5.3 — corrected HealthPathways regions (7 confirmed: aucklandregion, northland, midland, hawkesbay, 3d, canterbury, southern)
@@ -59,15 +62,20 @@ const REGIONS = {
   ccp:{label:"Whanganui & MidCentral CHP",domain:"ccp.communityhealthpathways.org"},
 };
 
-// Admin key — stored in sessionStorage, never hardcoded
-let ADMIN_KEY = sessionStorage.getItem('crr-admin-key') || '';
-function setAdminKey(key) { ADMIN_KEY = key; sessionStorage.setItem('crr-admin-key', key); }
+// Admin key — stored in localStorage so it persists across browser sessions
+// Wrapped in try/catch: Safari private mode can throw on storage access
+let ADMIN_KEY = (() => { try { return localStorage.getItem('crr-admin-key') || ''; } catch(_) { return ''; } })();
+function setAdminKey(key) { ADMIN_KEY = key; try { localStorage.setItem('crr-admin-key', key); } catch(_) {} }
 
 async function api(path, opts={}) {
   const {headers:extraHeaders, ...rest} = opts;
+  const method = (rest.method || 'GET').toUpperCase();
+  // Don't send Content-Type on GET/HEAD — it's non-standard and triggers unnecessary
+  // CORS preflights that Safari handles more strictly than Chromium.
+  const ctHeader = (method !== 'GET' && method !== 'HEAD') ? {"Content-Type":"application/json"} : {};
   const res = await fetch(`${API}${path}`, {
     cache: 'no-store',
-    headers:{"Content-Type":"application/json","x-admin-key":ADMIN_KEY,...extraHeaders},
+    headers:{...ctHeader,"x-admin-key":ADMIN_KEY,...extraHeaders},
     ...rest
   });
   return res.json();
@@ -162,6 +170,7 @@ function CRRAdmin() {
   const [pubVer, setPubVer] = React.useState(null);
   const [origData, setOrigData] = React.useState(null);
   const [showKeyModal, setShowKeyModal] = React.useState(!ADMIN_KEY);
+  const [adminKeyVersion, setAdminKeyVersion] = React.useState(0); // increments each time key is saved → triggers tab refetches
 
   React.useEffect(() => {
     (async () => {
@@ -318,8 +327,8 @@ function CRRAdmin() {
       <div style={{flex:1,overflow:"hidden"}}>
         {tab==="editor" && <EditorTab criteria={criteria} selected={selected} setSelected={setSelected} dirty={dirty} setDirty={setDirty} show={show} updateCriteriaItem={updateCriteriaItem} />}
         {tab==="import" && <ImportTab criteria={criteria} show={show} updateCriteriaItem={updateCriteriaItem} setDirty={setDirty} handleReplaceAll={handleReplaceAll} />}
-        {tab==="regions" && <RegionsTab criteria={criteria} show={show} />}
-        {tab==="versions" && <VersionsTab show={show} pubVer={pubVer} handlePublish={handlePublish} handleRollback={handleRollback} criteria={criteria} origData={origData} dirty={dirty} />}
+        {tab==="regions" && <RegionsTab criteria={criteria} show={show} adminKeyVersion={adminKeyVersion} openKeyModal={()=>setShowKeyModal(true)} />}
+        {tab==="versions" && <VersionsTab show={show} pubVer={pubVer} handlePublish={handlePublish} handleRollback={handleRollback} criteria={criteria} origData={origData} dirty={dirty} adminKeyVersion={adminKeyVersion} openKeyModal={()=>setShowKeyModal(true)} />}
         {tab==="audit" && <AuditTab />}
       </div>
       {/* Toast */}
@@ -330,7 +339,7 @@ function CRRAdmin() {
         </div>
       )}
       {/* Admin key modal */}
-      {showKeyModal && <KeyModal onSave={key=>{setAdminKey(key);setShowKeyModal(false);}} onClose={()=>setShowKeyModal(false)} hasKey={!!ADMIN_KEY} />}
+      {showKeyModal && <KeyModal onSave={key=>{setAdminKey(key);setShowKeyModal(false);setAdminKeyVersion(v=>v+1);}} onClose={()=>setShowKeyModal(false)} hasKey={!!ADMIN_KEY} />}
     </div>
   );
 }
@@ -961,28 +970,33 @@ function ImportTab({criteria,show,updateCriteriaItem,setDirty,handleReplaceAll})
 //  REGIONS TAB
 // ══════════════════════════════════════════════════════════
 
-function RegionsTab({criteria,show}){
-  const [region,setRegion]=React.useState("auckland");
+function RegionsTab({criteria,show,adminKeyVersion,openKeyModal}){
+  const [region,setRegion]=React.useState("aucklandregion");
   const [allRegions,setAllRegions]=React.useState({}); // {regionId: {siteId: {...}}}
   const [overrides,setOverrides]=React.useState({}); // {siteId: {text:"...", healthPathwaysUrl:"..."}}
   const [dirty,setDirty]=React.useState(false);
   const [loadingR,setLoadingR]=React.useState(true);
   const [saving,setSaving]=React.useState(false);
+  const [authError,setAuthError]=React.useState(false);
 
   const regionConf = REGIONS[region];
 
   React.useEffect(()=>{
+    setLoadingR(true);
+    setAuthError(false);
     (async()=>{
       try{
         const res=await api("/api/admin/regions");
-        if(res&&typeof res==="object"&&!res.error){
+        if(res?.error){
+          setAuthError(true);
+        } else if(res&&typeof res==="object"){
           setAllRegions(res);
           setOverrides(res[region]||{});
         }
-      }catch(e){console.error(e);}
+      }catch(e){console.error(e);setAuthError(true);}
       finally{setLoadingR(false);}
     })();
-  },[]);
+  },[adminKeyVersion]);
 
   // When region changes, load its overrides from allRegions
   React.useEffect(()=>{setOverrides(allRegions[region]||{});setDirty(false);},[region,allRegions]);
@@ -1018,6 +1032,13 @@ function RegionsTab({criteria,show}){
       <p style={{fontSize:12,color:C.mid,marginBottom:16,lineHeight:1.5}}>
         Configure district-specific overrides. Each region can have its own HealthPathways URLs and localised guidance text per exam/site. The base HealthPathways domain is automatically swapped for each region — overrides here are for additional custom content.
       </p>
+
+      {authError && (
+        <div style={{background:C.failBg,border:`1px solid #f0b0b0`,borderRadius:3,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:12}}>
+          <span style={{fontSize:13,color:C.fail,flex:1}}>⚠ Admin key required or invalid — region overrides could not be loaded.</span>
+          <button onClick={openKeyModal} style={{padding:"5px 12px",background:C.fail,color:"#fff",border:"none",borderRadius:2,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:font,whiteSpace:"nowrap"}}>Set key</button>
+        </div>
+      )}
 
       {/* Region selector */}
       <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3,padding:14,marginBottom:16}}>
@@ -1087,7 +1108,7 @@ function RegionsTab({criteria,show}){
 //  VERSIONS TAB — with publish wired to API
 // ══════════════════════════════════════════════════════════
 
-function VersionsTab({show,pubVer,handlePublish,handleRollback,criteria,origData,dirty}){
+function VersionsTab({show,pubVer,handlePublish,handleRollback,criteria,origData,dirty,adminKeyVersion,openKeyModal}){
   const [label,setLabel]=React.useState("");
   const [notes,setNotes]=React.useState("");
 
@@ -1113,16 +1134,20 @@ function VersionsTab({show,pubVer,handlePublish,handleRollback,criteria,origData
   const [versions,setVersions]=React.useState([]);
   const [loadingV,setLoadingV]=React.useState(true);
   const [rollingBack,setRollingBack]=React.useState(null);
+  const [authError,setAuthError]=React.useState(false);
 
   React.useEffect(()=>{
+    setLoadingV(true);
+    setAuthError(false);
     (async()=>{
       try{
         const res=await api("/api/admin/versions");
-        if(res?.versions)setVersions(res.versions);
-      }catch(e){console.error(e);}
+        if(res?.error){setAuthError(true);}
+        else if(res?.versions)setVersions(res.versions);
+      }catch(e){console.error(e);setAuthError(true);}
       finally{setLoadingV(false);}
     })();
-  },[]);
+  },[adminKeyVersion]);
 
   async function doPublish(){
     if(!label.trim()){show("Enter a version label","warn");return;}
@@ -1181,12 +1206,19 @@ function VersionsTab({show,pubVer,handlePublish,handleRollback,criteria,origData
         </div>
       </div>
 
+      {authError && (
+        <div style={{background:C.failBg,border:`1px solid #f0b0b0`,borderRadius:3,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:12}}>
+          <span style={{fontSize:13,color:C.fail,flex:1}}>⚠ Admin key required or invalid — version history could not be loaded.</span>
+          <button onClick={openKeyModal} style={{padding:"5px 12px",background:C.fail,color:"#fff",border:"none",borderRadius:2,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:font,whiteSpace:"nowrap"}}>Set key</button>
+        </div>
+      )}
+
       {/* Version history */}
       <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3}}>
         <div style={{background:C.navy,color:"#fff",padding:"10px 14px",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"}}>Version History</div>
         {loadingV
           ? <div style={{padding:20,textAlign:"center",color:C.mid,fontSize:12}}>Loading…</div>
-          : versions.length===0
+          : versions.length===0 && !authError
             ? <div style={{padding:20,textAlign:"center",color:C.mid,fontSize:12}}>No versions yet — publish to create the first snapshot.</div>
             : versions.map((v,i)=>{
                 const isCurrent=v.version_label===currentLabel||v.version_label===currentLabel.replace(" (restored)","");
