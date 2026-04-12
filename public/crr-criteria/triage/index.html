@@ -239,6 +239,23 @@ textarea.note::placeholder{color:#aab8c2}
 .privacy-banner-icon{font-size:20px;line-height:1;flex-shrink:0;margin-top:1px}
 .privacy-banner-title{font-weight:700;font-size:13px;letter-spacing:0.02em;margin-bottom:2px;text-transform:uppercase}
 .privacy-banner-text{font-size:11.5px;opacity:0.92;line-height:1.45}
+
+/* ═══ PII REVIEW PANEL ════════════════════════════════════ */
+.pii-review-notice{background:#fef3c7;border-left:4px solid #d97706;padding:12px 14px;display:flex;gap:12px;align-items:flex-start}
+.pii-notice-icon{font-size:20px;line-height:1;flex-shrink:0;color:#d97706;margin-top:1px}
+.pii-notice-title{font-weight:700;font-size:13px;color:#92400e;margin-bottom:3px}
+.pii-notice-text{font-size:12px;color:#78350f;line-height:1.4}
+.pii-summary{font-size:11px;font-weight:700;color:#92400e;background:#fef9ee;border:1px solid #fde68a;border-radius:2px;padding:6px 10px;margin-bottom:10px;letter-spacing:0.2px}
+.pii-review-label{font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--mid);margin-bottom:6px}
+.pii-review-text{background:#fffbeb;border:1px solid #fde68a;border-radius:2px;padding:10px;font-family:var(--mono);font-size:12px;line-height:1.6;color:var(--ink);max-height:200px;overflow-y:auto;white-space:pre-wrap;margin-bottom:10px}
+.pii-mark{background:#fde68a;color:#92400e;border-radius:2px;padding:0 2px;font-weight:600}
+.pii-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn-pii-confirm{flex:1;min-width:160px;padding:9px 16px;background:#d97706;color:#fff;border:none;font-family:var(--sans);font-size:13px;font-weight:700;border-radius:2px;cursor:pointer}
+.btn-pii-confirm:hover{background:#b45309}
+.btn-pii-edit{padding:9px 14px;background:none;border:1px solid var(--rule);color:var(--mid);font-family:var(--sans);font-size:12px;font-weight:600;border-radius:2px;cursor:pointer}
+.btn-pii-edit:hover{border-color:var(--navy);color:var(--navy)}
+.btn-pii-cancel{padding:9px 14px;background:none;border:1px solid var(--rule);color:var(--mid);font-family:var(--sans);font-size:12px;font-weight:600;border-radius:2px;cursor:pointer}
+.btn-pii-cancel:hover{border-color:#c62828;color:#c62828}
 </style>
 
 <style>
@@ -891,29 +908,247 @@ function checkSafetyAlerts(noteL) {
   return null;
 }
 
-function runCheck() {
-  if (compareMode) { runComparison(); return; }
-  var note = getEffectiveNote();
-  if (!note) return;
-  lastNote = note;
-  lastAiResult = null;
+// ── PII Detection and Auto-Redaction ────────────────────────────────────────
+// Reduced NZ alphabet ordinal values (I and O excluded)
+var _NHI_ORD = (function() {
+  var m = {}, letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  for (var i = 0; i < letters.length; i++) m[letters[i]] = i + 1;
+  return m;
+})();
 
-  // Show loading state in AI panel immediately
+function _nhiVal(ch) {
+  var c = ch.toUpperCase();
+  return (c >= '0' && c <= '9') ? parseInt(c, 10) : (_NHI_ORD[c] || null);
+}
+
+function _validateNHIOld(s) {
+  var c = s.toUpperCase().replace(/[\s\-]/g, '');
+  if (!/^[A-HJ-NP-Z]{3}\d{4}$/.test(c)) return false;
+  var v = [], i; for (i = 0; i < 7; i++) { var n = _nhiVal(c[i]); if (n === null) return false; v.push(n); }
+  var sum = 0, w = [7,6,5,4,3,2]; for (i = 0; i < 6; i++) sum += v[i] * w[i];
+  var chk = 11 - (sum % 11);
+  if (chk === 11) return false;
+  if (chk === 10) chk = 0;
+  return v[6] === chk;
+}
+
+function _validateNHINew(s) {
+  var c = s.toUpperCase().replace(/[\s\-]/g, '');
+  if (!/^[A-HJ-NP-Z]{3}\d{2}[A-HJ-NP-Z]{2}$/.test(c)) return false;
+  var v = [], i; for (i = 0; i < 7; i++) { var n = _nhiVal(c[i]); if (n === null) return false; v.push(n); }
+  var sum = 0, w = [7,6,5,4,3,2]; for (i = 0; i < 6; i++) sum += v[i] * w[i];
+  var idx = 23 - (sum % 23);
+  if (idx === 0) return false;
+  return v[6] === idx;
+}
+
+function detectAndRedactPII(text) {
+  var t = text, counts = {};
+  function hit(type) { counts[type] = (counts[type] || 0) + 1; }
+
+  // NHI — labeled (consume before general scan)
+  t = t.replace(/\bNHI\s*[:#]?\s*([A-HJ-NP-Za-hj-np-z]{3}[\s\-]?\d{4}|[A-HJ-NP-Za-hj-np-z]{3}[\s\-]?\d{2}[\s\-]?[A-HJ-NP-Za-hj-np-z]{2})\b/gi,
+    function() { hit('NHI'); return '[NHI REDACTED]'; });
+
+  // NHI old format: AAANNNC — validate with mod-11
+  t = t.replace(/\b[A-HJ-NP-Za-hj-np-z]{3}[\s\-]?\d{4}\b/g, function(m) {
+    if (_validateNHIOld(m)) { hit('NHI'); return '[NHI REDACTED]'; }
+    return m;
+  });
+
+  // NHI new format: AAANNAX — validate with mod-23
+  t = t.replace(/\b[A-HJ-NP-Za-hj-np-z]{3}[\s\-]?\d{2}[\s\-]?[A-HJ-NP-Za-hj-np-z]{2}\b/g, function(m) {
+    if (_validateNHINew(m)) { hit('NHI'); return '[NHI REDACTED]'; }
+    return m;
+  });
+
+  // DOB — date + age combo (preserve age, it's clinically relevant)
+  t = t.replace(/\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{4}\s*\(\d{1,3}\s*(?:years?|yrs?|y\/o)\)/gi,
+    function(m) {
+      hit('DOB');
+      var age = m.match(/\(\d{1,3}\s*(?:years?|yrs?|y\/o)\)/i);
+      return '[DOB REDACTED] ' + (age ? age[0] : '');
+    });
+
+  // DOB — labeled patterns
+  t = t.replace(/\b(DOB|Date\s+of\s+Birth|Born|D\.O\.B\.?)\s*:?\s*\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}/gi,
+    function(m, label) { hit('DOB'); return label + ': [DOB REDACTED]'; });
+
+  // Patient name — PMS header patterns
+  t = t.replace(/\b(Patient\s+Name|Patient|Surname|Given\s+Name|First\s+Name|Name)\s*:\s*[^\n\r]+/gi,
+    function(m, label) { hit('NAME'); return label + ': [NAME REDACTED]'; });
+  t = t.replace(/\bRe\s*:\s*[A-Z][a-z]+\s+[A-Z][a-z]+/g,
+    function() { hit('NAME'); return 'Re: [NAME REDACTED]'; });
+  t = t.replace(/\bDear\s+Dr[^\n\r,]+(regarding|re:)[^\n\r]+/gi,
+    function() { hit('NAME'); return '[NAME REDACTED]'; });
+
+  // Patient name — salutation patterns
+  t = t.replace(/\b(Mr\.?|Mrs\.?|Ms\.?|Miss|Master)\s+[A-Z][a-z]+/g,
+    function(m, title) { hit('NAME'); return title + ' [NAME REDACTED]'; });
+
+  // Address — labeled
+  t = t.replace(/\b(Address|Street|Suburb|City)\s*:\s*[^\n\r]+/gi,
+    function(m, label) { hit('ADDRESS'); return label + ': [ADDRESS REDACTED]'; });
+
+  // Address — NZ street pattern
+  t = t.replace(/\b\d{1,4}\s+[A-Z][a-z]+\s+(?:Street|St|Road|Rd|Avenue|Ave|Drive|Dr|Place|Pl|Crescent|Cres|Terrace|Tce|Way|Lane|Ln|Close|Cl|Court|Ct|Boulevard|Blvd)\b/gi,
+    function() { hit('ADDRESS'); return '[ADDRESS REDACTED]'; });
+
+  // Phone numbers — NZ format
+  t = t.replace(/(?:\+?64|0)\s*[2-9]\d{1,2}[\s\-]?\d{3,4}[\s\-]?\d{3,4}/g,
+    function() { hit('PHONE'); return '[PHONE REDACTED]'; });
+
+  // Email addresses
+  t = t.replace(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g,
+    function() { hit('EMAIL'); return '[EMAIL REDACTED]'; });
+
+  // Clinician / practice details
+  t = t.replace(/\b(Referrer|Referring\s+Doctor|GP|Practice|Provider|Clinic)\s*:\s*[^\n\r]+/gi,
+    function(m, label) { hit('REFERRER'); return label + ': [REFERRER REDACTED]'; });
+  t = t.replace(/\bHPI\s*:\s*[A-HJ-NP-Za-hj-np-z]{4}\d{2}/gi,
+    function() { hit('REFERRER'); return 'HPI: [REFERRER REDACTED]'; });
+
+  return { redacted: t, findings: counts };
+}
+
+function _piiSummary(findings) {
+  var labels = { NHI:'NHI', NAME:'name', DOB:'date of birth', ADDRESS:'address', PHONE:'phone number', EMAIL:'email address', REFERRER:'clinician/practice detail' };
+  var parts = [], total = 0;
+  Object.keys(findings).forEach(function(k) {
+    var n = findings[k]; total += n;
+    parts.push(n + '\u00a0' + labels[k] + (n > 1 && k !== 'NHI' && k !== 'DOB' ? 's' : ''));
+  });
+  return total + ' item' + (total !== 1 ? 's' : '') + ' redacted: ' + parts.join(', ');
+}
+
+function _piiIsInsufficient(redactedText) {
+  return redactedText.replace(/\[(?:NHI|NAME|DOB|ADDRESS|PHONE|EMAIL|REFERRER) REDACTED\]/g, '').trim().length < 30;
+}
+
+var _piiPending = null;
+
+function _showPIIReview(findings, redactedNote, originalNote) {
+  var summary = _piiSummary(findings);
+  var displayHtml = esc(redactedNote).replace(
+    /\[(NHI|NAME|DOB|ADDRESS|PHONE|EMAIL|REFERRER) REDACTED\]/g,
+    '<span class="pii-mark">[$1 REDACTED]</span>'
+  );
+  document.getElementById('aiPanel').innerHTML =
+    '<div class="panel">' +
+    '<div class="pii-review-notice">' +
+    '<div class="pii-notice-icon">&#9888;</div>' +
+    '<div><div class="pii-notice-title">Patient-identifiable information detected</div>' +
+    '<div class="pii-notice-text">We\'ve found information that may identify a patient. This has been automatically redacted below. Please review and confirm before proceeding.</div>' +
+    '</div></div>' +
+    '<div style="padding:12px 14px 14px">' +
+    '<div class="pii-summary">' + esc(summary) + '</div>' +
+    '<div class="pii-review-label">Redacted text \u2014 review before submission</div>' +
+    '<div class="pii-review-text">' + displayHtml + '</div>' +
+    '<div class="pii-actions">' +
+    '<button class="btn-pii-confirm" onclick="_piiConfirm()">Use redacted text &#10003;</button>' +
+    '<button class="btn-pii-edit" onclick="_piiEditRetry()">Edit and retry</button>' +
+    '<button class="btn-pii-cancel" onclick="_piiCancel()">Cancel</button>' +
+    '</div></div></div>';
+  document.getElementById('methodBadge').textContent = 'PII Detected';
+  document.getElementById('methodBadge').className = 'method-badge method-ai';
+}
+
+function _piiConfirm() {
+  if (!_piiPending) return;
+  var redactedNote = _piiPending.redacted;
+  var isCompare = _piiPending.isCompare;
+  _piiPending = null;
+  if (_piiIsInsufficient(redactedNote)) {
+    document.getElementById('aiPanel').innerHTML =
+      '<div class="panel"><div style="padding:16px 14px">' +
+      '<div class="pii-review-notice" style="border-radius:2px;margin-bottom:0">' +
+      '<div class="pii-notice-icon">&#9888;</div>' +
+      '<div><div class="pii-notice-title">Insufficient clinical content</div>' +
+      '<div class="pii-notice-text">After removing patient-identifiable information, there isn\'t enough clinical detail to assess. Please enter the clinical indication and relevant history without patient-identifying details.</div>' +
+      '</div></div></div></div>';
+    document.getElementById('methodBadge').textContent = 'Ready';
+    document.getElementById('methodBadge').className = 'method-badge method-rule';
+    return;
+  }
+  lastNote = redactedNote;
+  lastAiResult = null;
+  if (isCompare) {
+    runComparison();
+  } else {
+    _showAssessLoading();
+    runAI();
+  }
+}
+
+function _piiEditRetry() {
+  _piiPending = null;
+  document.getElementById('aiPanel').innerHTML =
+    '<div class="panel"><div class="ai-col-empty" style="padding:32px 14px">' +
+    '<div style="font-size:28px;margin-bottom:8px;opacity:.3">&#9733;</div>' +
+    '<p>Edit the note to remove patient-identifiable information,<br>then click <strong>Check Referral</strong> again.</p>' +
+    '</div></div>';
+  document.getElementById('methodBadge').textContent = 'Ready';
+  document.getElementById('methodBadge').className = 'method-badge method-rule';
+  document.getElementById('noteInput').focus();
+}
+
+function _piiCancel() {
+  _piiPending = null;
+  document.getElementById('aiPanel').innerHTML =
+    '<div class="panel"><div class="ai-col-empty" style="padding:32px 14px">' +
+    '<div style="font-size:28px;margin-bottom:8px;opacity:.3">&#9733;</div>' +
+    '<p>Enter a note and click<br><strong>Check Referral</strong></p>' +
+    '</div></div>';
+  document.getElementById('methodBadge').textContent = 'Ready';
+  document.getElementById('methodBadge').className = 'method-badge method-rule';
+}
+
+function _showAssessLoading() {
   document.getElementById('aiPanel').innerHTML =
     '<div class="panel"><div style="padding:20px 14px;display:flex;align-items:center;gap:10px;color:var(--mid);font-size:13px;">' +
     '<div class="ai-spinner"><span></span><span></span><span></span></div>' +
     'Assessing\u2026</div></div>';
-
-  // Clear criteria panel
   document.getElementById('criteriaPanel').innerHTML =
     '<div class="panel"><div class="result-empty" style="padding:28px 14px">' +
     '<div class="result-empty-icon" style="font-size:22px">&#128196;</div>' +
     '<p style="margin-top:8px;font-size:12px;color:var(--mid)">Criteria reference will appear<br>once exam is identified.</p>' +
     '</div></div>';
-
   document.getElementById('methodBadge').textContent = 'Assessing\u2026';
   document.getElementById('methodBadge').className = 'method-badge method-ai';
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
+function runCheck() {
+  if (compareMode) {
+    // PII scan before comparison too
+    var compNote = getEffectiveNote();
+    if (!compNote) return;
+    var compPii = detectAndRedactPII(compNote);
+    if (Object.keys(compPii.findings).length > 0) {
+      _piiPending = { redacted: compPii.redacted, isCompare: true };
+      _showPIIReview(compPii.findings, compPii.redacted, compNote);
+      return;
+    }
+    lastNote = compNote;
+    lastAiResult = null;
+    runComparison();
+    return;
+  }
+
+  var note = getEffectiveNote();
+  if (!note) return;
+  lastAiResult = null;
+
+  var pii = detectAndRedactPII(note);
+  if (Object.keys(pii.findings).length > 0) {
+    _piiPending = { redacted: pii.redacted, isCompare: false };
+    _showPIIReview(pii.findings, pii.redacted, note);
+    return;
+  }
+
+  // No PII — proceed
+  lastNote = note;
+  _showAssessLoading();
   runAI();
 }
 
