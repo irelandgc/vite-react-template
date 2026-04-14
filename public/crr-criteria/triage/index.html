@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CRR Triage Advisor v2.1.0</title>
+<title>CRR Triage Advisor v2.1.1</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -275,7 +275,7 @@ textarea.note::placeholder{color:#aab8c2}
     <span class="logo">CRR</span>
     <div>
       <div class="hd-title">CRR Triage Advisor</div>
-      <div class="hd-sub">Community Referred Radiology — AI Triage Assessment &nbsp;·&nbsp; <button id="verBtn" onclick="openProvenanceModal()" style="background:none;border:none;color:#8ab4c8;font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:inherit;opacity:.8" title="Criteria provenance and version information">v2.1.0</button></div>
+      <div class="hd-sub">Community Referred Radiology — AI Triage Assessment &nbsp;·&nbsp; <button id="verBtn" onclick="openProvenanceModal()" style="background:none;border:none;color:#8ab4c8;font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:inherit;opacity:.8" title="Criteria provenance and version information">v2.1.1</button></div>
     </div>
   </div>
   <div class="hd-right">
@@ -455,7 +455,7 @@ textarea.note::placeholder{color:#aab8c2}
         <div style="background:var(--lite);border-radius:3px;padding:10px 12px;border:1px solid var(--rule)">
           <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:5px">Tool &amp; criteria version</div>
           <table style="width:100%;border-collapse:collapse;font-size:12px">
-            <tr><td style="padding:2px 0;color:var(--mid);width:55%">Tool version</td><td id="provToolVer" style="font-weight:600;color:var(--navy)">v2.1.0</td></tr>
+            <tr><td style="padding:2px 0;color:var(--mid);width:55%">Tool version</td><td id="provToolVer" style="font-weight:600;color:var(--navy)">v2.1.1</td></tr>
             <tr><td style="padding:2px 0;color:var(--mid)">Criteria data</td><td style="font-weight:600;color:var(--navy)">Aug 2025 reissue 3</td></tr>
             <tr><td style="padding:2px 0;color:var(--mid)">Adult updated</td><td style="font-weight:600;color:var(--navy)">March 2026</td></tr>
             <tr><td style="padding:2px 0;color:var(--mid)">Paediatric updated</td><td style="font-weight:600;color:var(--navy)">March 2026</td></tr>
@@ -584,15 +584,15 @@ textarea.note::placeholder{color:#aab8c2}
 <script>
 // ══════════════════════════════════════════════════════════════
 //  CRR TRIAGE ADVISOR — DECOUPLED
-//  Version: v2.1.0
+//  Version: v2.1.1
 //  Data source: API endpoint (with embedded fallback)
 // ══════════════════════════════════════════════════════════════
 
-var VER = "v2.1.0";
+var VER = "v2.1.1";
 var BUILD = "2026-04-03"; // bump on each deployment
 
 // Changelog:
-// v2.1.0 — API key proxy (key removed from browser), wide provenance modal, single-source VER
+// v2.1.1 — API key proxy (key removed from browser), wide provenance modal, single-source VER
 // v2.0.0 — decoupled from viewer, loads criteria from API
 
 // Wire version into DOM elements (they also have inline fallback text above)
@@ -937,28 +937,75 @@ function _validateNHINew(s) {
   if (!/^[A-HJ-NP-Z]{3}\d{2}[A-HJ-NP-Z]{2}$/.test(c)) return false;
   var v = [], i; for (i = 0; i < 7; i++) { var n = _nhiVal(c[i]); if (n === null) return false; v.push(n); }
   var sum = 0, w = [7,6,5,4,3,2]; for (i = 0; i < 6; i++) sum += v[i] * w[i];
-  var idx = 23 - (sum % 23);
-  if (idx === 0) return false;
-  return v[6] === idx;
+  // Production algorithm: modulus 23 (corrected from mod-24 after collision weakness)
+  var idx23 = 23 - (sum % 23);
+  if (idx23 !== 0 && v[6] === idx23) return true;
+  // Legacy check: modulus 24 (some test/sample NHIs generated before correction)
+  var idx24 = 24 - (sum % 24);
+  if (idx24 !== 0 && v[6] === idx24) return true;
+  return false;
 }
 
 function detectAndRedactPII(text) {
-  var t = text, counts = {};
+  // ── Pre-correction pass: fix common misspellings that would cause PII patterns to be missed ──
+  // Only corrects terms relevant to PII detection (street types, labels), not general clinical text
+  var t = text;
+
+  // Street type misspellings (case-preserving)
+  var _streetFixes = [
+    [/\bStree\b/g, 'Street'], [/\bStreeet\b/g, 'Street'], [/\bSreet\b/g, 'Street'], [/\bStret\b/g, 'Street'],
+    [/\bSt\b(?=\s*[,.]?\s*[A-Z])/g, 'Street'],  // "St" before city name — expand to Street for detection
+    [/\bRaod\b/g, 'Road'], [/\bRoda\b/g, 'Road'],
+    [/\bAvenue\b/gi, 'Avenue'], [/\bAveune\b/gi, 'Avenue'], [/\bAvnue\b/gi, 'Avenue'],
+    [/\bDrvie\b/g, 'Drive'], [/\bDrve\b/g, 'Drive'],
+    [/\bPlce\b/g, 'Place'], [/\bPalce\b/g, 'Place'],
+    [/\bCresent\b/g, 'Crescent'], [/\bCrecsent\b/g, 'Crescent'],
+    [/\bTerace\b/g, 'Terrace'], [/\bTerrace\b/gi, 'Terrace'],
+    [/\bBoulevrad\b/gi, 'Boulevard'], [/\bBouelvard\b/gi, 'Boulevard'],
+    [/\bCourt\b/gi, 'Court'], [/\bCort\b/g, 'Court'],
+    [/\bClsoe\b/g, 'Close'], [/\bColse\b/g, 'Close'],
+  ];
+  _streetFixes.forEach(function(fix) { t = t.replace(fix[0], fix[1]); });
+
+  // Common NZ city/suburb misspellings relevant to address detection
+  var _cityFixes = [
+    [/\bHamilotn\b/gi, 'Hamilton'], [/\bHamitlon\b/gi, 'Hamilton'],
+    [/\bWellingotn\b/gi, 'Wellington'], [/\bWellingon\b/gi, 'Wellington'],
+    [/\bChristchuch\b/gi, 'Christchurch'], [/\bChristchruch\b/gi, 'Christchurch'],
+    [/\bAuckand\b/gi, 'Auckland'], [/\bAuckalnd\b/gi, 'Auckland'],
+    [/\bMasteron\b/gi, 'Masterton'], [/\bMastetron\b/gi, 'Masterton'],
+    [/\bDunedni\b/gi, 'Dunedin'], [/\bDunedn\b/gi, 'Dunedin'],
+    [/\bTauranga\b/gi, 'Tauranga'], [/\bTauragnaa\b/gi, 'Tauranga'],
+    [/\bPalmerston Noth\b/gi, 'Palmerston North'], [/\bPalmerstn North\b/gi, 'Palmerston North'],
+  ];
+  _cityFixes.forEach(function(fix) { t = t.replace(fix[0], fix[1]); });
+
+  // Label misspellings
+  t = t.replace(/\bPatinet\b/gi, 'Patient');
+  t = t.replace(/\bAdress\b/gi, 'Address');
+  t = t.replace(/\bAddres\b/gi, 'Address');
+  t = t.replace(/\bSurnam\b/gi, 'Surname');
+
+  // ── PII detection and redaction ──
+  var counts = {};
   function hit(type) { counts[type] = (counts[type] || 0) + 1; }
 
   // NHI — labeled (consume before general scan)
   t = t.replace(/\bNHI\s*[:#]?\s*([A-HJ-NP-Za-hj-np-z]{3}[\s\-]?\d{4}|[A-HJ-NP-Za-hj-np-z]{3}[\s\-]?\d{2}[\s\-]?[A-HJ-NP-Za-hj-np-z]{2})\b/gi,
     function() { hit('NHI'); return '[NHI REDACTED]'; });
 
-  // NHI old format: AAANNNC — validate with mod-11
+  // NHI old format: AAANNNC — flag any format match (mistyped NHI is still PII)
   t = t.replace(/\b[A-HJ-NP-Za-hj-np-z]{3}[\s\-]?\d{4}\b/g, function(m) {
-    if (_validateNHIOld(m)) { hit('NHI'); return '[NHI REDACTED]'; }
-    return m;
+    hit('NHI'); return '[NHI REDACTED]';
   });
 
-  // NHI new format: AAANNAX — validate with mod-23
+  // NHI new format: AAANNAX — validate with mod-23 for unlabelled matches
+  // (labelled matches like "NHI: ALU18KZ" are already caught above)
+  // New format has higher false positive risk (AAA12BB matches clinical text)
+  // so we require check digit validation for unlabelled instances
   t = t.replace(/\b[A-HJ-NP-Za-hj-np-z]{3}[\s\-]?\d{2}[\s\-]?[A-HJ-NP-Za-hj-np-z]{2}\b/g, function(m) {
-    if (_validateNHINew(m)) { hit('NHI'); return '[NHI REDACTED]'; }
+    var clean = m.toUpperCase().replace(/[\s\-]/g, '');
+    if (_validateNHINew(clean)) { hit('NHI'); return '[NHI REDACTED]'; }
     return m;
   });
 
@@ -982,16 +1029,31 @@ function detectAndRedactPII(text) {
   t = t.replace(/\bDear\s+Dr[^\n\r,]+(regarding|re:)[^\n\r]+/gi,
     function() { hit('NAME'); return '[NAME REDACTED]'; });
 
-  // Patient name — salutation patterns
-  t = t.replace(/\b(Mr\.?|Mrs\.?|Ms\.?|Miss|Master)\s+[A-Z][a-z]+/g,
-    function(m, title) { hit('NAME'); return title + ' [NAME REDACTED]'; });
+  // Patient name — salutation patterns (consume title + first + optional surname + hyphenated)
+  t = t.replace(/\b(?:Mr\.?|Mrs\.?|Ms\.?|Miss|Master)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s*[\-][A-Z][a-z]+)?)?/g,
+    function() { hit('NAME'); return '[NAME REDACTED]'; });
+
+  // Patient name — bare Firstname Lastname followed by clinical context verb
+  // Caps word lengths to plausible name ranges; excludes common clinical adjectives as first word
+  var _clinAdj = /^(?:Lateral|Frozen|Acute|Chronic|Severe|Bilateral|Anterior|Posterior|Superior|Inferior|Medial|Proximal|Distal|Central|Primary|Secondary|Recurrent|Progressive|Persistent|Suspected|Possible|Probable|Confirmed|Known|Previous|Recent|Initial|Early|Late|Advanced|Mild|Moderate|Marked|Significant|Gross|Minor|Major|Upper|Lower|Right|Left|Deep|High|Low)$/i;
+  t = t.replace(/(^|[\n\r]|\]\s*)([A-Z][a-z]{1,12}\s+[A-Z][a-z]{1,10}(?:\s*[\-][A-Z][a-z]+)?)[,\s]+(?=is\s|ia\s|has\s|was\s|had\s|presents?\s|present(?:ing|ed)\s|aged?\s|a\s+\d|\d{1,3}\s*[MFmf]\b|with\s)/gm,
+    function(m, pre, name) {
+      var first = name.split(/\s/)[0];
+      if (_clinAdj.test(first)) return m;
+      hit('NAME'); return pre + '[NAME REDACTED] ';
+    });
 
   // Address — labeled
   t = t.replace(/\b(Address|Street|Suburb|City)\s*:\s*[^\n\r]+/gi,
     function(m, label) { hit('ADDRESS'); return label + ': [ADDRESS REDACTED]'; });
 
-  // Address — NZ street pattern
-  t = t.replace(/\b\d{1,4}\s+[A-Z][a-z]+\s+(?:Street|St|Road|Rd|Avenue|Ave|Drive|Dr|Place|Pl|Crescent|Cres|Terrace|Tce|Way|Lane|Ln|Close|Cl|Court|Ct|Boulevard|Blvd)\b/gi,
+  // Address — NZ street pattern + optional trailing comma and city/suburb
+  t = t.replace(/\b\d{1,4}\s+[A-Z][a-z]+\s+(?:Street|St|Road|Rd|Avenue|Ave|Drive|Dr|Place|Pl|Crescent|Cres|Terrace|Tce|Way|Lane|Ln|Close|Cl|Court|Ct|Boulevard|Blvd)\b(?:[,\s]+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?/gi,
+    function() { hit('ADDRESS'); return '[ADDRESS REDACTED]'; });
+
+  // Address — "lives in / from / resides in" + NZ city/town/suburb
+  var _nzPlaces = '(?:Auckland|Hamilton|Wellington|Christchurch|Tauranga|Napier|Hastings|Dunedin|Palmerston\\s+North|Nelson|Rotorua|New\\s+Plymouth|Whangarei|Invercargill|Whanganui|Gisborne|Blenheim|Timaru|Masterton|Levin|Tokoroa|Ashburton|Greymouth|Taupo|Thames|Whakatane|Cambridge|Te\\s+Awamutu|Pukekohe|Paraparaumu|Kapiti|Porirua|Hutt|Lower\\s+Hutt|Upper\\s+Hutt|Petone|Kilbirnie|Johnsonville|Karori|Newtown|Mt\\s+Albert|Mt\\s+Roskill|Manukau|Papakura|Takapuna|Henderson|Waitakere|Manurewa|Otahuhu|Panmure|Onehunga|Remuera|Ellerslie|Pakuranga|Howick|Botany|Flatbush|Mangere|Otara|Papatoetoe|Waiuku|Turangi|Te\\s+Kuiti|Matamata|Morrinsville|Huntly|Ngaruawahia|Raglan|Dargaville|Kaikohe|Kerikeri|Kaitaia|Warkworth|Orewa|Silverdale|Hibiscus\\s+Coast|Rangiora|Kaiapoi|Rolleston|Lincoln|Oamaru|Balclutha|Gore|Queenstown|Wanaka|Alexandra|Cromwell|Hokitika|Westport|Motueka|Richmond|Stoke|Picton|Kaikoura|Wairoa|Dannevirke|Waipukurau|Feilding|Marton|Bulls|Taihape|Ohakune|Carterton|Greytown|Featherston|Martinborough)';
+  t = t.replace(new RegExp('\\b(?:lives?\\s+in|from|resides?\\s+in|based\\s+in|of)\\s+' + _nzPlaces + '\\b', 'gi'),
     function() { hit('ADDRESS'); return '[ADDRESS REDACTED]'; });
 
   // Phone numbers — NZ format
@@ -1742,12 +1804,10 @@ function renderCriteriaBrowser(r) {
   h += esc(site.exam_title) + ' \u2014 ' + esc(site.site_label) + pageRef;
   h += '</div>';
 
-  // Guidance box
-  if (site.guidance) {
-    h += '<div class="guidance-box" style="margin:8px 0 10px">' + esc(site.guidance) + '</div>';
-  }
-  if (site.guidanceNarrative) {
-    h += '<div style="font-size:11px;color:var(--mid);line-height:1.5;margin-bottom:10px;padding:0 2px">' + esc(site.guidanceNarrative) + '</div>';
+  // Guidance box — prefer guidanceNarrative (fuller version); fall back to guidance
+  var _guideText = site.guidanceNarrative || site.guidance;
+  if (_guideText) {
+    h += '<div class="guidance-box" style="margin:8px 0 10px">' + esc(_guideText) + '</div>';
   }
 
   // Criteria groups

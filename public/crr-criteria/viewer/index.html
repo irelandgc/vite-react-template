@@ -465,7 +465,9 @@ async function loadCriteriaData() {
           DATA = apiData.data;
           PAED_EXAMS = apiData.data.paedExams || [];
           dataSource = "api";
-          document.getElementById("dataSourceBadge").textContent = "API · " + (apiData.version || "live");
+          var _cv = apiData.version || "live";
+          document.getElementById("dataSourceBadge").textContent = "API · " + _cv;
+          document.getElementById("verBadge").textContent = VER + " · content " + _cv;
           return true;
         }
       }
@@ -480,7 +482,9 @@ async function loadCriteriaData() {
     DATA = EMBEDDED_DATA;
     PAED_EXAMS = EMBEDDED_DATA.paedExams || [];
     dataSource = "embedded";
-    document.getElementById("dataSourceBadge").textContent = "embedded · " + (DATA.version ? DATA.version.label : "");
+    var _ecv = DATA.version ? DATA.version.label : "";
+    document.getElementById("dataSourceBadge").textContent = "embedded · " + _ecv;
+    document.getElementById("verBadge").textContent = VER + (_ecv ? " · content " + _ecv : "");
     return true;
   }
   
@@ -525,11 +529,6 @@ async function loadCriteriaData() {
   // Show paed toggle if paed data exists
   if (PAED_EXAMS.length > 0) {
     document.getElementById("paedToggleBtn").style.display = "inline-block";
-  }
-  
-  // Set version badge
-  if (DATA.version) {
-    document.getElementById("verBadge").textContent = VERSION.label + " · data " + (DATA.version.label || DATA.version.date || "");
   }
   
   // Init tool state
@@ -588,9 +587,13 @@ function priorityBadge(t) {
   return '';
 }
 
-function isGateway(label) {
+function isGateway(label, groupTitle) {
   var l = (label||'').toLowerCase();
-  return l.indexOf('bpac') !== -1 || l.indexOf('neurologist') !== -1 || l.indexOf('stroke specialist') !== -1;
+  var g = (groupTitle||'').toLowerCase();
+  return l.indexOf('bpac') !== -1 ||
+         l.indexOf('neurologist') !== -1 ||
+         l.indexOf('stroke specialist') !== -1 ||
+         (l.indexOf('secondary care') !== -1 && l.indexOf('advises') !== -1 && g.indexOf('acute') !== -1);
 }
 
 function checkSafetyText(text) {
@@ -770,8 +773,8 @@ function toolRenderSitePanel(site) {
   else if (_siteHpUrl) h += "<div class='ib-green'><a href='"+esc(_siteHpUrl)+"' target='_blank' style='color:#2a7a40;font-weight:600;'>View HealthPathways &rsaquo;</a></div>";
   // Localised info — site level
   var _siteLi = getLocalisedInfo(site.id);
-  if (_siteLi && _siteLi.text) {
-    h += "<div class='local-info-box'><div class='local-hd'>"+esc(getRegionLabel())+"</div>"+esc(_siteLi.text)+"</div>";
+  if (_siteLi) {
+    h += "<div class='local-info-box'><div class='local-hd'>"+esc(getRegionLabel())+"</div>"+esc(_siteLi)+"</div>";
   }
   for (var g=0;g<site.groups.length;g++) h += toolRenderGroup(site.groups[g]);
   if (site.footnotes) {
@@ -829,24 +832,24 @@ function toolRenderGroup(group) {
     if (group.mandatory) h += " <span style='font-size:10px;color:#c05000;font-style:italic;font-weight:normal;text-transform:none;'>(all must be met)</span>";
     h += "</div>";
   }
-  for (var i=0;i<group.items.length;i++) h += toolRenderItem(group.items[i]);
+  for (var i=0;i<group.items.length;i++) h += toolRenderItem(group.items[i], group.title);
   h += "</div>";
   return h;
 }
 
-function toolRenderItem(item) {
-  if (item.type==="cb")    return toolRenderCb(item);
-  if (item.type==="radio") return toolRenderRadio(item);
+function toolRenderItem(item, groupTitle) {
+  if (item.type==="cb")    return toolRenderCb(item, groupTitle);
+  if (item.type==="radio") return toolRenderRadio(item, groupTitle);
   return "";
 }
 
-function toolRenderCb(item) {
+function toolRenderCb(item, groupTitle) {
   var on = TS.cbs[item.id];
   var h = "<div class='criterion"+(on?" ticked":"")+"' id='row_"+esc(item.id)+"' onclick='toggleCb(\""+esc(item.id)+"\")'>";
   h += "<input type='checkbox' id='chk_"+esc(item.id)+"' onclick='event.stopPropagation();toggleCb(\""+esc(item.id)+"\")'"+(on?" checked":"")+">";
   h += "<label for='chk_"+esc(item.id)+"'>"+esc(item.label);
   if (item.mandatory) h += " <span class='mtag'>MANDATORY</span>";
-  if (isGateway(item.label)) h += " <span class='gateway-tag'>&#128274; GATEWAY</span>";
+  if (isGateway(item.label, groupTitle)) h += " <span class='gateway-tag'>&#128274; GATEWAY</span>";
   h += "</label></div>";
   if (item.conditionalNote) {
     h += "<div class='cond ib-red"+(on?" on":"")+"' id='cnote_"+esc(item.id)+"' style='margin-left:37px;'>"+esc(item.conditionalNote)+"</div>";
@@ -854,11 +857,11 @@ function toolRenderCb(item) {
   return h;
 }
 
-function toolRenderRadio(item) {
+function toolRenderRadio(item, groupTitle) {
   var cur = TS.radios[item.id]||null;
   var h = "<div class='radio-row'><span class='rl'>"+esc(item.label)+":";
   if (item.mandatory) h += " <span class='mtag'>MANDATORY</span>";
-  if (isGateway(item.label)) h += " <span class='gateway-tag'>&#128274; GATEWAY</span>";
+  if (isGateway(item.label, groupTitle)) h += " <span class='gateway-tag'>&#128274; GATEWAY</span>";
   h += "</span>";
   for (var i=0;i<item.options.length;i++) {
     var opt=item.options[i], chk=(cur===opt)?" checked":"";
