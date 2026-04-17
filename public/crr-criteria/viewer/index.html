@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CRR Criteria Viewer v4.1.0</title>
+<title>CRR Criteria Viewer v4.2.0</title>
 <style>
 
 /* ═══ RESET & BASE ═══════════════════════════════════════ */
@@ -344,7 +344,7 @@ input,textarea,select,button { font-family:inherit; }
   </div>
   <div class="header-right" style="gap:8px">
     <button id="paedToggleBtn" onclick="togglePaedMode()" style="background:none;color:#f0a020;border:1px solid rgba(255,165,0,0.4);padding:3px 10px;border-radius:2px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;display:none">Paediatric Criteria →</button>
-    <span class="ver-badge" id="verBadge">v4.0.0</span>
+    <span class="ver-badge" id="verBadge">v4.2.0</span>
     <span class="data-source-badge" id="dataSourceBadge"></span>
   </div>
 </div>
@@ -409,10 +409,11 @@ input,textarea,select,button { font-family:inherit; }
 //  Data source: API endpoint (with embedded fallback)
 // ══════════════════════════════════════════════════════════════
 
-var VER = "v4.1.0";
+var VER = "v4.2.0";
 var BUILD = "2026-04-03"; // bump on each deployment
 
 // Changelog:
+// v4.2.0 — restore URL param support: ?exam=, ?sites=, ?region=
 // v4.1.0 — single-source VER constant; no functional changes
 // v4.0.0 — decoupled from static data, loads from API
 
@@ -514,6 +515,12 @@ async function loadCriteriaData() {
       if (rResp.ok) regionOverrides = await rResp.json();
     } catch(e) { /* region overrides unavailable — proceed without */ }
   }
+  // Apply ?region= URL param before building dropdown
+  var _regionParam = getParam("region");
+  if (_regionParam && REGIONS[_regionParam]) {
+    selectedRegion = _regionParam;
+    localStorage.setItem('crr-region', selectedRegion);
+  }
   // Always show all regions defined in REGIONS, regardless of KV overrides
   var sel = document.getElementById("regionSelect");
   Object.keys(REGIONS).forEach(function(rid) {
@@ -534,7 +541,22 @@ async function loadCriteriaData() {
   // Init tool state
   var exams = DATA.exams.filter(function(e){ return e.active; });
   if (exams.length > 0) TS.examId = exams[0].id;
-  
+
+  // Apply ?exam= and ?sites= URL params
+  var _examParam = getParam("exam");
+  var _sitesParam = getParam("sites");
+  if (_examParam && getExamById(_examParam)) {
+    TS.examId = _examParam;
+    if (_sitesParam) {
+      var _siteIds = _sitesParam.split(",");
+      for (var _i = 0; _i < _siteIds.length; _i++) {
+        var _sid = _siteIds[_i].replace(/^\s+|\s+$/g, "");
+        if (_sid) TS.sites[_sid] = true;
+      }
+    }
+    TS.urlLaunched = true;
+  }
+
   toolRender();
 })();
 
@@ -560,6 +582,16 @@ var outputMode = "short";
 // ══════════════════════════════════════════════════════════════
 
 function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+function getParam(name) {
+  var s = window.location.search; if (!s) return null;
+  var pairs = s.substring(1).split("&");
+  for (var i = 0; i < pairs.length; i++) {
+    var kv = pairs[i].split("=");
+    if (decodeURIComponent(kv[0]) === name) return kv[1] ? decodeURIComponent(kv[1]) : null;
+  }
+  return null;
+}
 
 function getActiveExamList() {
   if (!DATA) return [];
