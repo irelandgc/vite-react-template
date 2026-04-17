@@ -10,7 +10,7 @@
 - **URL:** `https://crr-criteria-api.fk4dsrmq5r.workers.dev`
 - **Worker version:** 2.0.0 (from `/api/health`)
 - **Criteria version published:** v3.5.4 (published 2026-04-17)
-- **Criteria count in KV:** 4 adult exams, 2 paed exams (**partial** — full set is embedded in viewer as fallback)
+- **Criteria count in KV:** 4 adult exam groups, 2 paed exam groups (ct, us, xr, mri_lumbar — each is a multisite exam containing all anatomical sites and criteria)
 - **D1 database:** `crr-criteria` (ID: `1a8307f9-69e9-4315-a8f3-7f6737dd9c55`)
 - **KV namespace:** `d8e1a512828d4dd7981d7b241213f396`
 
@@ -138,7 +138,6 @@ crr-criteria/
 ## Known Issues & Pending Work
 
 ### Blocking
-- **KV not fully seeded** — only 4 adult + 2 paed exams published. Viewer falls back to embedded data (v3.4.4, 84 criteria). Re-seed via `api/migrate.py` + `/api/seed` endpoint with full `kv-published.json`.
 - **D1 schema not applied** — run `npx wrangler d1 execute crr-criteria --file=api/schema.sql` to create `audit_log` and `versions` tables. Until then, Audit Log tab and Version History tab will fail.
 
 ### In Progress
