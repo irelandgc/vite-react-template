@@ -1101,12 +1101,6 @@ function generateOutput(mode) {
   var exam=getExamById(TS.examId); if(!exam) return "";
   var items=getAllChecked();
   var L=[];
-  L.push("Exam: "+exam.title);
-  if(exam.type==="multisite"){
-    var sl=[]; for(var s=0;s<exam.sites.length;s++) if(TS.sites[exam.sites[s].id]) sl.push(exam.sites[s].label);
-    if(sl.length) L.push("Sites: "+sl.join(", "));
-  }
-  L.push("");
   function itemText(item){ return m==="short" && item.shortLabel ? item.shortLabel : item.label; }
   if(!items.length){ L.push("No clinical indicators selected."); }
   else if(exam.type==="multisite"){
