@@ -24,4 +24,4 @@ Parameters can be combined:
 |-----------|----------|---------|-------------|
 | `key` | `POST /api/seed` | `?key=published` | KV key to write seed data to (`published`, `match-data`, `version`) |
 | `limit` | `GET /api/admin/audit` | `?limit=100` | Max audit log entries to return (default: 50) |
-1
+1chec
