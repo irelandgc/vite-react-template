@@ -1,0 +1,2814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Driven GP Radiology Request System</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        .shake { animation: shake 0.5s; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        // PDF Configuration
+        const PDF_CONFIG = {
+            filename: 'National-Primary-Care-Referral-Criteria-for-Imaging-Phase-1.pdf',
+            // Comprehensive page mapping for all exam types
+            pageMapping: {
+                'CT': {
+                    'Adult': {
+                        'CT Chest, Abdomen and Pelvis': 10,
+                        'CT Chest': 10,
+                        'CT Colonography': 15,
+                        'CT Head': 18,
+                        'CT IVU / CT Renal': 20,
+                        'CT KUB': 22,
+                        'CT Other': 24,
+                        'CT Sinus': 25
+                    },
+                    'Paediatric': {
+                        'CT Head': 76
+                    }
+                },
+                'Ultrasound': {
+                    'Adult': {
+                        'US Abdomen': 27,
+                        'US Carotid': 31,
+                        'US DVT': 33,
+                        'US Guided FNA': 35,
+                        'US Musculoskeletal / Shoulder': 36,
+                        'US Neck/Thyroid': 38,
+                        'US Pelvis': 41,
+                        'US Renal': 48,
+                        'US Scrotum': 51,
+                        'US Soft Tissue Mass': 53
+                    },
+                    'Paediatric': {
+                        'US Hip': 77,
+                        'US Renal': 83
+                    }
+                },
+                'X-ray': {
+                    'Adult': {
+                        'X-ray Abdomen': 56,
+                        'X-ray Ankle / Foot': 58,
+                        'X-ray Chest': 60,
+                        'X-ray Elbow': 63,
+                        'X-ray Knee': 65,
+                        'X-ray Pelvis / Hip': 67,
+                        'X-ray Shoulder': 69,
+                        'X-ray Spine': 71,
+                        'X-ray Wrist / Hand': 74
+                    },
+                    'Paediatric': {
+                        'X-ray Abdomen': 91,
+                        'X-ray Chest': 78,
+                        'X-ray Elbow': 93,
+                        'X-ray Knee': 95,
+                        'X-ray Pelvis/Hip': 99,
+                        'X-ray Shoulder': 102,
+                        'X-ray Spine': 106,
+                        'X-ray Wrist and Hands': 104
+                    }
+                }
+            }
+        };
+
+        // Function to get PDF page for current exam
+        const getPDFPage = (modality, ageGroup, examType) => {
+            return PDF_CONFIG.pageMapping[modality]?.[ageGroup]?.[examType] || 1;
+        };
+
+
+
+        // Embedded Guidelines Data (same as before)
+        const GUIDELINES_DATA = {
+  "metadata": {
+    "title": "National Community Referral Criteria for Imaging (Phase 1)",
+    "version": "1.0",
+    "published": "24/09/2025",
+    "owner": "System Design Manager Community Radiology, Te Whatu Ora",
+    "authoriser": "National Clinical Governance Group",
+    "national_id": "15372",
+    "review_due": "24/09/2028",
+    "total_exam_types": 45
+  },
+  "guidelines": {
+    "CT": {
+      "Adult": {
+        "CT Chest, Abdomen and Pelvis": {
+          "description": "CT Chest, Abdomen and Pelvis - Adult",
+          "guidance": "Reserved for non-specific symptoms with strong suspicion of malignancy. Presence of 2+ abnormal blood tests increases cancer probability significantly. This is a high-radiation investigation and should be used selectively.",
+          "criteria": [
+            {
+              "id": "ct-cap-p2-1",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Strong suspicion of malignancy with no focal pathology",
+              "details": [
+                "Male >50 or female >60 years",
+                ">5% documented weight loss over 3-6 months",
+                "Yellow flag symptoms (abdominal pain, fatigue, nausea)",
+                "AND 2+ abnormal labs (raised CRP, low Hb, raised calcium, high platelets, high ALP, low albumin)",
+                "Persistent on repeat testing after 3 weeks"
+              ],
+              "prerequisites": [
+                "Targeted investigations completed (e.g. faecal occult blood, PSA, CA125)",
+                "Blood tests persistent on repeat"
+              ],
+              "source": "NHS England Faster Diagnosis / BMJ"
+            },
+            {
+              "id": "ct-cap-p2-2",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Secondary care clinician or PCRL advises urgent CT CAP",
+              "details": [
+                "Secondary care specialist or PCRL recommends urgent CT CAP"
+              ],
+              "source": "Clinical advice"
+            },
+            {
+              "id": "ct-cap-alt-1",
+              "priority": "not-funded",
+              "timeframe": "Alternative pathway",
+              "presentation": "Current cancer diagnosis under follow-up",
+              "details": [
+                "Patient with known cancer under oncology follow-up",
+                "Surveillance imaging required"
+              ],
+              "action": "Refer to oncology for surveillance imaging as per their protocol",
+              "source": "Oncology Pathway"
+            },
+            {
+              "id": "ct-cap-alt-2",
+              "priority": "not-funded",
+              "timeframe": "Alternative pathway",
+              "presentation": "Recent ultrasound within 3 months",
+              "details": [
+                "Ultrasound abdomen/pelvis performed within 3 months",
+                "Request for CT CAP without clear additional indication"
+              ],
+              "action": "Seek advice from radiologist. May not need CT if ultrasound adequate.",
+              "source": "Imaging Guidelines"
+            }
+          ]
+        },
+        "CT Chest": {
+          "description": "CT Chest - Adult",
+          "guidance": "Lung Cancer Imaging: A diagnosis of lung cancer and initiating imaging investigations should be considered for all patients with concerning symptoms or signs which last more than 3 weeks or sooner if the patient has risk factors for lung cancer. In New Zealand, patients who identify as M\u0101ori have higher rates of lung cancer than non-M\u0101ori and a lower threshold for investigating concerning symptoms or signs should be considered especially if the patient has risk factors.\n\nUrgent Chest x-ray (CXR) (preferably same or next day) remains the initial investigation of choice for symptomatic patients where lung cancer is suspected. However, studies suggest the sensitivity of a CXR is around 75-80% highlighting the importance of having \"safety netting\" in place for symptomatic patients with a normal CXR.\n\nThe presence of multiple signs and symptoms, particularly in combination with haemoptysis, weight loss or persistent thrombocytosis has a significantly stronger positive predictive value for lung cancer.\n\nHaemoptysis: In the primary care setting, the most common causes of haemoptysis are acute respiratory tract infections, chronic obstructive pulmonary disease, malignancy, and bronchiectasis. Chest x-ray identifies the site of bleeding in 47% of patients with haemoptysis. If CXR is normal and haemoptysis occurred without a concurrent chest infection, referral for further investigation should be considered, including CT and bronchoscopy.",
+          "criteria": [
+            {
+              "id": "ct-chest-acute-1",
+              "priority": "Acute",
+              "timeframe": "Refer for acute assessment without initial imaging",
+              "presentation": "Life-threatening massive haemoptysis",
+              "details": [
+                "Patient is at high risk of asphyxiation or exsanguination"
+              ],
+              "action": "Refer for acute assessment without initial imaging",
+              "source": "BMJ Best Practice"
+            },
+            {
+              "id": "ct-chest-acute-2",
+              "priority": "Acute",
+              "timeframe": "Refer for acute assessment without initial imaging",
+              "presentation": "Stridor or suspected SVC obstruction",
+              "details": [
+                "Superior vena cava syndrome requiring urgent assessment"
+              ],
+              "action": "Refer for acute assessment without initial imaging",
+              "source": "BMJ Best Practice - Superior vena cava syndrome"
+            },
+            {
+              "id": "ct-chest-p2-1",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Unexplained haemoptysis with normal chest x-ray",
+              "details": [
+                "Occurred in absence of chest infection",
+                "Upper respiratory tract causes excluded (nasopharynx, sinuses, oral cavity)",
+                "Investigations including chest x-ray fail to identify a cause"
+              ],
+              "prerequisites": [
+                "Chest x-ray performed",
+                "Upper respiratory tract causes excluded"
+              ],
+              "action": "Refer for urgent CT chest and for respiratory assessment",
+              "source": "BMJ Best Practice - Assessment of haemoptysis"
+            },
+            {
+              "id": "ct-chest-p2-2",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Aged over 55 years, current smoker with concerning symptoms",
+              "details": [
+                "Aged over 55 years old, current smoker",
+                "One or more concerning, new onset, symptoms/signs for lung cancer",
+                "Persistent for six weeks despite appropriate treatment",
+                "Unexplained despite initial investigations including chest x-ray and blood tests"
+              ],
+              "prerequisites": [
+                "Chest x-ray performed first",
+                "Symptoms persistent >6 weeks",
+                "Appropriate treatment attempted"
+              ],
+              "source": "Cancer Research UK Risk Assessment Tools, Recognising Lung Cancer in Primary Care"
+            },
+            {
+              "id": "ct-chest-p2-3",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Indeterminate abnormality on chest x-ray suspicious for lung cancer",
+              "details": [
+                "Indeterminate abnormality on chest x-ray which raises the possibility of a lung cancer (e.g. bulky hilum)",
+                "CT chest is recommended in the Radiology report"
+              ],
+              "prerequisites": [
+                "Chest x-ray performed",
+                "Radiologist recommends CT"
+              ],
+              "source": "Radiology reporting"
+            },
+            {
+              "id": "ct-chest-p2-4",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Persistent consolidation on 6-week follow-up chest x-ray",
+              "details": [
+                "Persistent consolidation on chest x-ray done as a 6-week follow-up study",
+                "CT chest is recommended in the Radiology report"
+              ],
+              "prerequisites": [
+                "Initial chest x-ray showed consolidation",
+                "6-week follow-up x-ray still shows consolidation",
+                "Radiologist recommends CT"
+              ],
+              "source": "Radiology reporting"
+            },
+            {
+              "id": "ct-chest-p2-5",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Staging CT for suspicious chest x-ray lesion",
+              "details": [
+                "Secondary care clinician or Radiologist advises referral for urgent staging CT chest/liver",
+                "For work up of a suspicious lesion on chest x-ray",
+                "CT is the advised next step on local HealthPathway",
+                "As opposed to referral to secondary care or PET-CT"
+              ],
+              "source": "HealthPathways"
+            },
+            {
+              "id": "ct-chest-p2-6",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Secondary care clinician or PCRL advises urgent CT chest",
+              "details": [
+                "Secondary care clinician or Primary Care Radiology Liaison (PCRL) or radiologist advises referral for urgent CT chest"
+              ],
+              "source": "Clinical advice"
+            },
+            {
+              "id": "ct-chest-p3-1",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Isolated pulmonary nodule on chest x-ray",
+              "details": [
+                "Isolated pulmonary nodule identified on a chest x-ray",
+                "Cannot be confirmed as benign from x-ray appearances alone",
+                "Referral for CT chest is recommended in the Radiology report"
+              ],
+              "prerequisites": [
+                "Chest x-ray performed",
+                "Radiologist unable to confirm benign appearance"
+              ],
+              "source": "i-refer (RCR) UK, Lung nodules"
+            },
+            {
+              "id": "ct-chest-p3-2",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Secondary care clinician or PCRL advises non-urgent CT chest",
+              "details": [
+                "Secondary care clinician or Primary Care Radiology Liaison (PCRL) or radiologist advises referral for non-urgent CT chest"
+              ],
+              "source": "Clinical advice"
+            },
+            {
+              "id": "ct-chest-alt-1",
+              "priority": "not-funded",
+              "timeframe": "Alternative pathway",
+              "presentation": "Patient re-presents with concerning symptoms, normal chest x-ray, doesn't meet CT criteria",
+              "details": [
+                "Patient re-presents with concerning symptoms or signs",
+                "Chest x-ray is normal",
+                "Doesn't meet the above criteria for CT chest referral"
+              ],
+              "action": "Seek advice from secondary care respiratory team, regarding appropriate management and whether CT chest is warranted",
+              "source": "HealthPathways"
+            },
+            {
+              "id": "ct-chest-alt-2",
+              "priority": "not-funded",
+              "timeframe": "Alternative pathway",
+              "presentation": "Persistent non-specific symptoms concerning for cancer",
+              "details": [
+                "Persistent, non-specific, non-localising symptoms and signs which are concerning for underlying cancer (e.g. weight loss, fatigue)",
+                "Initial investigations including chest x-ray and bloods fail to identify a cause"
+              ],
+              "action": "See CT Chest/Abdomen/Pelvis HealthPathway",
+              "source": "HealthPathways"
+            },
+            {
+              "id": "ct-chest-alt-3",
+              "priority": "not-funded",
+              "timeframe": "Alternative pathway",
+              "presentation": "Initial presentation with respiratory symptoms concerning for lung cancer",
+              "details": [
+                "Initial presentation with respiratory symptoms or signs concerning for lung cancer"
+              ],
+              "action": "Refer for urgent chest x-ray as the initial investigation",
+              "source": "Clinical pathway"
+            },
+            {
+              "id": "ct-chest-alt-4",
+              "priority": "not-funded",
+              "timeframe": "Alternative pathway",
+              "presentation": "Follow-up of incidentally discovered lung nodule",
+              "details": [
+                "Follow-up of nodule discovered incidentally on CT chest scan"
+              ],
+              "action": "Refer to secondary care for management advice unless radiology report confirms benign based on CT appearance and no follow-up is required (e.g. intrapulmonary lymph node, benign pattern of calcification)",
+              "source": "HealthPathways, 3D HealthPathways Canterbury"
+            }
+          ],
+          "notes": {
+            "concerning_symptoms": [
+              "Unexplained, new, or worsening dyspnoea",
+              "Unexplained cough, persisting and worsening for more than 3 weeks",
+              "Unexplained chest and/or shoulder pain persisting for more than 3 weeks",
+              "Unexplained changes in existing symptoms in patients with underlying chronic respiratory problems persisting for more than 3 weeks",
+              "Unexplained hoarseness persisting for more than 3 weeks",
+              "Repeated / or unresolved chest infections",
+              "Persistent, unexplained haemoptysis",
+              "Unexplained weight loss and loss of appetite persisting for more than 3 weeks",
+              "Un-investigated/unexplained abnormal chest signs persisting for more than 3 weeks (e.g. suspected pleural effusion)",
+              "New supraclavicular lymphadenopathy",
+              "Features suggestive of paraneoplastic syndromes (e.g. hypercalcaemia, hypertrophic osteoarthropathy with finger clubbing and painful swollen joints)",
+              "New cervical lymphadenopathy persisting for more than 3 weeks and nodes are more than 1 cm in diameter in a patient with other lung cancer symptoms or signs or risk factors"
+            ],
+            "risk_factors": [
+              "Current or ex-smoker",
+              "Age >55 years",
+              "Occupational exposure (asbestos, radon)",
+              "Family history of lung cancer",
+              "Previous cancer",
+              "Chronic lung disease (COPD, fibrosis)"
+            ]
+          }
+        },
+        "CT Colonography": {
+          "description": "CT Colonography (or Colonoscopy) - Adult",
+          "criteria": [
+            {
+              "id": "ct-colon-1",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Suspected colorectal cancer - high risk features",
+              "details": [
+                "Age >50 with rectal bleeding AND change in bowel habit",
+                "Iron deficiency anaemia (Hb <100 for men, <90 for women)",
+                "Positive faecal immunochemical test (FIT)"
+              ]
+            }
+          ],
+          "page": 15
+        },
+        "CT Head": {
+          "description": "CT Head - Adult",
+          "criteria": [
+            {
+              "id": "ct-head-acute-1",
+              "priority": "Acute",
+              "timeframe": "Immediate / Emergency",
+              "presentation": "Thunderclap headache - suspected subarachnoid haemorrhage",
+              "details": [
+                "Sudden onset severe headache ('worst headache of life')",
+                "Peaked intensity within seconds to minutes",
+                "May have associated neck stiffness, photophobia, altered consciousness"
+              ],
+              "action": "Emergency referral - DO NOT perform CT in primary care",
+              "source": "Clinical Emergency Pathway"
+            },
+            {
+              "id": "ct-head-acute-2",
+              "priority": "Acute",
+              "timeframe": "Immediate / Emergency",
+              "presentation": "Acute stroke or TIA with continued symptoms",
+              "details": [
+                "Acute neurological deficit",
+                "Symptoms ongoing or fluctuating"
+              ],
+              "action": "Emergency referral to stroke service",
+              "source": "Stroke Pathway"
+            },
+            {
+              "id": "ct-head-acute-3",
+              "priority": "Acute",
+              "timeframe": "Immediate / Emergency",
+              "presentation": "Head injury with concerning features",
+              "details": [
+                "Loss of consciousness >5 minutes",
+                "Amnesia >30 minutes",
+                "Focal neurological deficit",
+                "Signs of skull fracture",
+                "Post-traumatic seizure"
+              ],
+              "action": "Emergency referral",
+              "source": "Head Injury Guidelines"
+            },
+            {
+              "id": "ct-head-p2-1",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Subacute progressive neurological symptoms",
+              "details": [
+                "Progressive focal neurological deficits",
+                "Progressive cognitive decline",
+                "New onset seizures in adults",
+                "Persistent severe headaches with concerning features"
+              ],
+              "source": "Neurology Pathway"
+            },
+            {
+              "id": "ct-head-p2-2",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "PCRL or specialist advises urgent CT head",
+              "details": [
+                "Secondary care clinician or Primary Care Radiology Liaison (PCRL) advises urgent CT head"
+              ],
+              "source": "Clinical advice"
+            },
+            {
+              "id": "ct-head-p3-1",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Cognitive impairment where subtype diagnosis alters management",
+              "details": [
+                "Cognitive impairment without space-occupying lesion features",
+                "Where CT head findings would alter clinical management",
+                "Typically for dementia subtype classification"
+              ],
+              "prerequisites": [
+                "Clinical assessment completed",
+                "Blood tests excluding reversible causes"
+              ],
+              "source": "Dementia Pathway"
+            },
+            {
+              "id": "ct-head-p3-2",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "PCRL or specialist advises non-urgent CT head",
+              "details": [
+                "Secondary care clinician or Primary Care Radiology Liaison (PCRL) advises non-urgent CT head"
+              ],
+              "source": "Clinical advice"
+            },
+            {
+              "id": "ct-head-alt-1",
+              "priority": "not-funded",
+              "timeframe": "Alternative pathway",
+              "presentation": "Chronic stable headache without red flags",
+              "details": [
+                "Chronic headache pattern",
+                "No red flag features",
+                "Normal neurological examination"
+              ],
+              "action": "Manage as primary headache disorder (migraine, tension-type). Consider neurology referral if not responding to treatment.",
+              "source": "Headache Pathway"
+            }
+          ]
+        },
+        "CT IVU / CT Renal": {
+          "description": "CT Intravenous Urogram (IVU), CT Renal \u2013 Adult",
+          "criteria": [
+            {
+              "id": "ct-ivu-1",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Visible haematuria age >45 OR age <45 with risk factors"
+            }
+          ],
+          "page": 21
+        },
+        "CT KUB": {
+          "description": "CT Kidney, Ureter, Bladder - Adult",
+          "criteria": [
+            {
+              "id": "ct-kub-acute-1",
+              "priority": "Acute",
+              "timeframe": "Same day",
+              "presentation": "Suspected renal colic - acute presentation",
+              "details": [
+                "Acute flank pain",
+                "Haematuria",
+                "Suspected ureteric calculus"
+              ],
+              "source": "Urology Emergency Pathway"
+            },
+            {
+              "id": "ct-kub-p3-1",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Recurrent urinary tract calculi requiring treatment planning",
+              "details": [
+                "History of recurrent stones",
+                "Treatment planning required"
+              ],
+              "source": "Urology Pathway"
+            }
+          ]
+        },
+        "CT Other": {
+          "description": "CT Other \u2013 Adult",
+          "criteria": [
+            {
+              "id": "ct-other-1",
+              "priority": "Acute",
+              "presentation": "PCRL or radiologist advises same/next day CT",
+              "timeframe": "Immediate / Within 24-48 hours"
+            },
+            {
+              "id": "ct-other-2",
+              "priority": "P2",
+              "presentation": "PCRL or radiologist advises urgent CT",
+              "timeframe": "Within 2 weeks"
+            },
+            {
+              "id": "ct-other-3",
+              "priority": "P3",
+              "presentation": "PCRL or radiologist advises non-urgent CT",
+              "timeframe": "Within 6 weeks"
+            }
+          ],
+          "page": 24
+        },
+        "CT Sinus": {
+          "description": "CT Sinus - Adult",
+          "criteria": [
+            {
+              "id": "ct-sinus-p3-1",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Suspected chronic rhinosinusitis",
+              "details": [
+                "Symptoms >12 weeks",
+                "Failed medical management",
+                "Pre-operative assessment"
+              ],
+              "prerequisites": [
+                "Appropriate medical management for 3+ months"
+              ],
+              "source": "ENT Pathway"
+            },
+            {
+              "id": "ct-sinus-p3-2",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "ORL specialist or PCRL advises CT sinus",
+              "details": [
+                "Specialist recommendation for CT sinus"
+              ],
+              "source": "Clinical advice"
+            }
+          ]
+        }
+      },
+      "Paediatric": {
+        "CT Head": {
+          "description": "CT Head - Paediatric",
+          "criteria": [
+            {
+              "id": "ct-head-paed-acute-1",
+              "priority": "Acute",
+              "timeframe": "Emergency",
+              "presentation": "Suspected non-accidental injury with neurological signs",
+              "details": [
+                "Concerning injury pattern",
+                "Neurological symptoms",
+                "Safeguarding concerns"
+              ],
+              "action": "Emergency paediatric referral",
+              "source": "Paediatric Safeguarding"
+            },
+            {
+              "id": "ct-head-paed-acute-2",
+              "priority": "Acute",
+              "timeframe": "Emergency",
+              "presentation": "Head injury meeting paediatric CT criteria",
+              "details": [
+                "Loss of consciousness >5 minutes",
+                "Suspected skull fracture",
+                "Focal neurological signs",
+                "Persistent vomiting"
+              ],
+              "action": "Emergency paediatric referral",
+              "source": "NICE Head Injury Guidelines"
+            }
+          ]
+        }
+      }
+    },
+    "Ultrasound": {
+      "Adult": {
+        "US Abdomen": {
+          "description": "US Abdomen - Adult",
+          "guidance": "Ultrasound is the first-line imaging for hepatobiliary pathology. Patient should be fasting (>6 hours) for optimal gallbladder assessment.",
+          "criteria": [
+            {
+              "id": "us-abdomen-acute-1",
+              "priority": "Acute",
+              "timeframe": "Same day",
+              "presentation": "Suspected acute appendicitis",
+              "details": [
+                "Right iliac fossa pain",
+                "Guarding/rebound tenderness",
+                "Raised inflammatory markers"
+              ],
+              "action": "Consider surgical referral. Imaging if diagnosis uncertain.",
+              "source": "Acute Surgical Pathway"
+            },
+            {
+              "id": "us-abdomen-acute-2",
+              "priority": "Acute",
+              "timeframe": "Same day",
+              "presentation": "Right upper quadrant pain - suspected acute cholecystitis",
+              "details": [
+                "RUQ pain",
+                "Murphy's sign positive",
+                "Fever",
+                "Raised inflammatory markers"
+              ],
+              "source": "Biliary Pathway"
+            },
+            {
+              "id": "us-abdomen-p2-1",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Obstructive jaundice",
+              "details": [
+                "Jaundice with conjugated hyperbilirubinaemia",
+                "Pale stools / dark urine",
+                "Raised ALP/GGT",
+                "To assess for biliary obstruction"
+              ],
+              "source": "Jaundice Pathway"
+            },
+            {
+              "id": "us-abdomen-p3-1",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Biliary colic - assessment for gallstones",
+              "details": [
+                "Episodic RUQ pain",
+                "Post-prandial symptoms",
+                "No features of acute cholecystitis",
+                "Assessment for gallstones"
+              ],
+              "source": "Biliary Pathway"
+            },
+            {
+              "id": "us-abdomen-p3-2",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Abnormal liver function tests requiring imaging",
+              "details": [
+                "Persistently abnormal LFTs",
+                "To assess for fatty liver, cirrhosis",
+                "No acute presentation"
+              ],
+              "prerequisites": [
+                "Viral hepatitis screen, autoimmune screen completed"
+              ],
+              "source": "Hepatology Pathway"
+            },
+            {
+              "id": "us-abdomen-p3-3",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Palpable abdominal mass requiring characterization",
+              "details": [
+                "Abdominal mass on examination",
+                "Requires imaging characterization",
+                "No urgent features"
+              ],
+              "source": "General Surgery Pathway"
+            },
+            {
+              "id": "us-abdomen-p4-1",
+              "priority": "P4",
+              "timeframe": "Routine",
+              "presentation": "AAA surveillance (known AAA 3.0-5.4cm)",
+              "details": [
+                "Known abdominal aortic aneurysm",
+                "Size 3.0-5.4cm",
+                "Routine surveillance imaging"
+              ],
+              "source": "AAA Surveillance Program"
+            },
+            {
+              "id": "us-abdomen-alt-1",
+              "priority": "not-funded",
+              "timeframe": "Alternative pathway",
+              "presentation": "Follow-up of asymptomatic gallstones",
+              "details": [
+                "Incidentally found gallstones",
+                "Completely asymptomatic",
+                "No complications"
+              ],
+              "action": "No routine surveillance required. Advise patient to return if symptoms develop.",
+              "source": "Biliary Guidelines"
+            },
+            {
+              "id": "us-abdomen-alt-2",
+              "priority": "not-funded",
+              "timeframe": "Alternative pathway",
+              "presentation": "Screening for fatty liver or cirrhosis",
+              "details": [
+                "Asymptomatic screening request",
+                "No abnormal LFTs",
+                "No clinical indication"
+              ],
+              "action": "Not indicated without clinical or biochemical abnormality.",
+              "source": "Clinical guidelines"
+            }
+          ]
+        },
+        "US Carotid": {
+          "description": "US Carotid Doppler - Adult",
+          "guidance": "Carotid ultrasound is indicated for symptomatic patients (TIA/stroke) to assess for significant stenosis (>50%) that may benefit from carotid endarterectomy. Time-critical - should be performed within 2 weeks of event.",
+          "criteria": [
+            {
+              "id": "us-carotid-p2-1",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Recent TIA or minor stroke - assessment for carotid stenosis",
+              "details": [
+                "TIA or minor stroke within last 2 weeks",
+                "Assessment for significant carotid stenosis",
+                "To determine suitability for carotid endarterectomy"
+              ],
+              "prerequisites": [
+                "Neuroimaging (CT/MRI brain) completed or arranged",
+                "Patient medically fit for potential intervention"
+              ],
+              "source": "Stroke Pathway"
+            },
+            {
+              "id": "us-carotid-p2-2",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Carotid bruit in symptomatic patient",
+              "details": [
+                "Carotid bruit on examination",
+                "Patient has TIA/stroke symptoms",
+                "Assessment for carotid stenosis"
+              ],
+              "source": "Stroke Pathway"
+            },
+            {
+              "id": "us-carotid-p3-1",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Known carotid stenosis - surveillance",
+              "details": [
+                "Known moderate carotid stenosis (50-69%)",
+                "Surveillance imaging",
+                "Patient declined or not fit for surgery"
+              ],
+              "source": "Vascular Surveillance"
+            },
+            {
+              "id": "us-carotid-alt-1",
+              "priority": "not-funded",
+              "timeframe": "Alternative pathway",
+              "presentation": "Asymptomatic carotid bruit screening",
+              "details": [
+                "Incidental carotid bruit",
+                "No TIA/stroke symptoms",
+                "Screening request"
+              ],
+              "action": "Not routinely indicated. Focus on cardiovascular risk factor management. Consider if multiple vascular risk factors and discussion with vascular team.",
+              "source": "Vascular Guidelines"
+            }
+          ]
+        },
+        "US DVT": {
+          "description": "US Deep Vein Thrombosis - Adult",
+          "guidance": "Use Wells score and D-dimer to guide imaging. Wells \u22652 (DVT likely) \u2192 ultrasound. Wells 0-1 (unlikely) \u2192 D-dimer first, then ultrasound only if positive. Ultrasound should be performed within 48 hours of presentation.",
+          "criteria": [
+            {
+              "id": "us-dvt-p2-1",
+              "priority": "P2",
+              "timeframe": "Within 48 hours",
+              "presentation": "Suspected deep vein thrombosis - likely DVT",
+              "details": [
+                "Wells score \u22652 (likely DVT)",
+                "Unilateral leg swelling",
+                "Calf swelling >3cm compared to other leg",
+                "Pitting oedema",
+                "Collateral superficial veins"
+              ],
+              "prerequisites": [
+                "D-dimer if Wells score 1 (DVT unlikely)",
+                "Consider anticoagulation while awaiting scan if high suspicion"
+              ],
+              "source": "DVT Pathway"
+            },
+            {
+              "id": "us-dvt-p2-2",
+              "priority": "P2",
+              "timeframe": "Within 48 hours",
+              "presentation": "DVT unlikely (Wells 0-1) but positive D-dimer",
+              "details": [
+                "Wells score 0-1 (DVT unlikely)",
+                "D-dimer positive",
+                "Ultrasound required to confirm/exclude DVT"
+              ],
+              "prerequisites": [
+                "D-dimer completed"
+              ],
+              "source": "DVT Pathway"
+            },
+            {
+              "id": "us-dvt-alt-1",
+              "priority": "not-funded",
+              "timeframe": "Alternative pathway",
+              "presentation": "DVT unlikely with negative D-dimer",
+              "details": [
+                "Wells score 0-1 (DVT unlikely)",
+                "D-dimer negative",
+                "DVT effectively excluded"
+              ],
+              "action": "No imaging required. DVT excluded. Consider alternative diagnosis.",
+              "source": "DVT Pathway"
+            }
+          ]
+        },
+        "US Guided FNA": {
+          "description": "Ultrasound Guided FNA - Adult",
+          "criteria": [
+            {
+              "id": "us-fna-1",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Thyroid nodule requiring tissue diagnosis"
+            },
+            {
+              "id": "us-fna-2",
+              "priority": "P2",
+              "presentation": "Suspicious lymph node requiring histology",
+              "timeframe": "Within 2 weeks"
+            }
+          ],
+          "page": 35
+        },
+        "US Musculoskeletal / Shoulder": {
+          "description": "Ultrasound Musculoskeletal incl. Shoulder - Adult",
+          "criteria": [
+            {
+              "id": "us-msk-1",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Shoulder pain - suspected rotator cuff tear",
+              "details": [
+                "Failed 6 weeks conservative management",
+                "Considering physiotherapy or surgical referral"
+              ]
+            },
+            {
+              "id": "us-msk-2",
+              "priority": "P3",
+              "presentation": "Suspected soft tissue mass requiring imaging",
+              "timeframe": "Within 6 weeks"
+            }
+          ],
+          "page": 36
+        },
+        "US Neck/Thyroid": {
+          "description": "Ultrasound Neck/Thyroid - Adult",
+          "criteria": [
+            {
+              "id": "us-thyroid-1",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Palpable thyroid nodule >1cm",
+              "details": [
+                "Age <30 or >70",
+                "Radiation exposure history",
+                "Family history thyroid cancer",
+                "Rapidly growing nodule",
+                "Hoarseness or dysphagia"
+              ]
+            },
+            {
+              "id": "us-thyroid-2",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Incidental thyroid nodule on imaging"
+            },
+            {
+              "id": "us-thyroid-3",
+              "priority": "P3",
+              "presentation": "Neck mass - suspected lymphadenopathy",
+              "timeframe": "Within 6 weeks"
+            }
+          ],
+          "page": 38
+        },
+        "US Pelvis": {
+          "description": "US Pelvis - Adult (primarily gynecological indications)",
+          "criteria": [
+            {
+              "id": "us-pelvis-acute-1",
+              "priority": "Acute",
+              "timeframe": "Within 24 hours",
+              "presentation": "Suspected ectopic pregnancy",
+              "details": [
+                "Positive pregnancy test",
+                "Abdominal pain",
+                "Vaginal bleeding",
+                "Risk factors for ectopic pregnancy"
+              ],
+              "action": "Urgent referral to gynecology/emergency department",
+              "source": "Gynecology Emergency Pathway"
+            },
+            {
+              "id": "us-pelvis-acute-2",
+              "priority": "Acute",
+              "timeframe": "Within 24 hours",
+              "presentation": "Suspected ovarian torsion",
+              "details": [
+                "Sudden onset severe pelvic pain",
+                "Known ovarian cyst or mass",
+                "Nausea and vomiting"
+              ],
+              "action": "Emergency referral",
+              "source": "Gynecology Emergency Pathway"
+            },
+            {
+              "id": "us-pelvis-p2-1",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Post-menopausal bleeding",
+              "details": [
+                "Any vaginal bleeding >12 months after last menstrual period",
+                "Excluding bleeding on HRT (see local guidelines)"
+              ],
+              "prerequisites": [
+                "Exclude cervical pathology (examination +/- smear)"
+              ],
+              "source": "Gynecology Cancer Pathway"
+            },
+            {
+              "id": "us-pelvis-p2-2",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Suspected ovarian cancer",
+              "details": [
+                "Pelvic mass on examination",
+                "Elevated CA125 with concerning symptoms",
+                "Persistent bloating, abdominal distension",
+                "Unexplained weight loss with gynae symptoms"
+              ],
+              "source": "Ovarian Cancer Pathway"
+            },
+            {
+              "id": "us-pelvis-p2-3",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Complex cyst on previous scan requiring follow-up",
+              "details": [
+                "Previous ultrasound showed complex ovarian cyst",
+                "Follow-up imaging recommended in radiology report"
+              ],
+              "source": "Radiology follow-up"
+            },
+            {
+              "id": "us-pelvis-p3-1",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Palpable pelvic mass requiring characterization",
+              "details": [
+                "Pelvic mass palpable on examination",
+                "Not meeting urgent criteria",
+                "Requires imaging characterization"
+              ],
+              "source": "Gynecology Pathway"
+            },
+            {
+              "id": "us-pelvis-p3-2",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Heavy menstrual bleeding - assessment for structural causes",
+              "details": [
+                "Heavy menstrual bleeding affecting quality of life",
+                "Medical management failed or structural pathology suspected",
+                "Assessment for fibroids, polyps, adenomyosis"
+              ],
+              "prerequisites": [
+                "Medical management attempted or contraindicated",
+                "Cervical screening up to date"
+              ],
+              "source": "Heavy Menstrual Bleeding Pathway"
+            },
+            {
+              "id": "us-pelvis-p3-3",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Chronic pelvic pain - assessment for structural causes",
+              "details": [
+                "Chronic pelvic pain (>6 months)",
+                "Assessment for endometriosis, adenomyosis, fibroids",
+                "Not responding to initial management"
+              ],
+              "prerequisites": [
+                "STI screen negative",
+                "Initial management attempted"
+              ],
+              "source": "Chronic Pelvic Pain Pathway"
+            },
+            {
+              "id": "us-pelvis-p4-1",
+              "priority": "P4",
+              "timeframe": "Routine",
+              "presentation": "Follow-up of known simple ovarian cyst",
+              "details": [
+                "Simple ovarian cyst on previous scan",
+                "Follow-up imaging recommended",
+                "No concerning features"
+              ],
+              "source": "Radiology follow-up"
+            },
+            {
+              "id": "us-pelvis-alt-1",
+              "priority": "not-funded",
+              "timeframe": "Alternative pathway",
+              "presentation": "Asymptomatic fibroids",
+              "details": [
+                "Incidentally noted fibroids",
+                "No heavy menstrual bleeding",
+                "No pressure symptoms",
+                "No fertility concerns"
+              ],
+              "action": "Reassure. No imaging required unless symptoms develop.",
+              "source": "Clinical guidelines"
+            }
+          ]
+        },
+        "US Renal": {
+          "description": "US Renal Tract - Adult",
+          "criteria": [
+            {
+              "id": "us-renal-p2-1",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Visible haematuria age >45 OR age <45 with risk factors",
+              "details": [
+                "Visible haematuria",
+                "Age >45 years OR younger with risk factors (smoking, occupational exposure)"
+              ],
+              "prerequisites": [
+                "Urine cytology",
+                "Cystoscopy arranged"
+              ],
+              "source": "Haematuria Pathway"
+            },
+            {
+              "id": "us-renal-p3-1",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Persistent non-visible haematuria",
+              "details": [
+                "Non-visible haematuria on 2+ occasions",
+                "No infection",
+                "Age >40 years"
+              ],
+              "source": "Haematuria Pathway"
+            },
+            {
+              "id": "us-renal-p3-2",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Chronic kidney disease - assessment for structural abnormality",
+              "details": [
+                "CKD stage 3-5",
+                "Assessment for obstruction or structural abnormality"
+              ],
+              "source": "Renal Pathway"
+            }
+          ]
+        },
+        "US Scrotum": {
+          "description": "Ultrasound Scrotum - Adult",
+          "criteria": [
+            {
+              "id": "us-scrotum-1",
+              "priority": "Acute",
+              "presentation": "Suspected testicular torsion",
+              "action": "Urgent surgical assessment",
+              "timeframe": "Immediate / Within 24-48 hours"
+            },
+            {
+              "id": "us-scrotum-2",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Testicular mass or hard testis",
+              "details": [
+                "Suspected malignancy",
+                "Painless swelling"
+              ]
+            },
+            {
+              "id": "us-scrotum-3",
+              "priority": "P3",
+              "presentation": "Scrotal swelling - suspected varicocele/hydrocele",
+              "timeframe": "Within 6 weeks"
+            }
+          ],
+          "page": 52
+        },
+        "US Soft Tissue Mass": {
+          "description": "Ultrasound Soft Tissue Mass - Adult",
+          "criteria": [
+            {
+              "id": "us-soft-1",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Soft tissue mass >5cm or deep to fascia",
+              "details": [
+                "Suspected sarcoma",
+                "Rapidly growing"
+              ]
+            },
+            {
+              "id": "us-soft-2",
+              "priority": "P3",
+              "presentation": "Superficial soft tissue lump",
+              "timeframe": "Within 6 weeks"
+            }
+          ],
+          "page": 55
+        }
+      },
+      "Paediatric": {
+        "US Hip": {
+          "description": "US Hip - Paediatric",
+          "criteria": [
+            {
+              "id": "us-hip-paed-p2-1",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Suspected developmental dysplasia of hip",
+              "details": [
+                "Risk factors: breech, family history, clinical hip instability",
+                "Age <6 months"
+              ],
+              "source": "DDH Screening"
+            },
+            {
+              "id": "us-hip-paed-acute-1",
+              "priority": "Acute",
+              "timeframe": "Same day",
+              "presentation": "Irritable hip / septic arthritis",
+              "details": [
+                "Acute onset",
+                "Child unwell",
+                "Refusing to weight bear",
+                "Fever"
+              ],
+              "action": "Emergency paediatric referral",
+              "source": "Paediatric Emergency"
+            }
+          ]
+        },
+        "US Renal": {
+          "description": "US Renal - Paediatric",
+          "criteria": [
+            {
+              "id": "us-renal-paed-p2-1",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Antenatal hydronephrosis requiring postnatal assessment",
+              "details": [
+                "Hydronephrosis detected on antenatal scan",
+                "Postnatal follow-up imaging"
+              ],
+              "source": "Paediatric Urology"
+            },
+            {
+              "id": "us-renal-paed-p2-2",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "First febrile UTI requiring imaging",
+              "details": [
+                "First confirmed UTI with fever in child",
+                "Assessment for structural abnormality"
+              ],
+              "source": "Paediatric UTI Pathway"
+            }
+          ]
+        }
+      }
+    },
+    "X-ray": {
+      "Adult": {
+        "X-ray Abdomen": {
+          "description": "X-ray Abdomen - Adult",
+          "criteria": [
+            {
+              "id": "xr-abd-1",
+              "priority": "Acute",
+              "presentation": "Suspected bowel obstruction or perforation",
+              "action": "Acute surgical assessment",
+              "timeframe": "Immediate / Within 24-48 hours"
+            },
+            {
+              "id": "xr-abd-2",
+              "priority": "P3",
+              "presentation": "Chronic constipation assessment",
+              "timeframe": "Within 6 weeks"
+            }
+          ],
+          "page": 56
+        },
+        "X-ray Ankle / Foot": {
+          "description": "X-ray Ankle / Foot - Adult",
+          "guidance": "Ottawa Ankle Rules have 98-99% sensitivity for excluding fractures. Use selectively based on clinical assessment. Include foot views if midfoot tenderness or inability to weight bear.",
+          "criteria": [
+            {
+              "id": "xray-ankle-acute-1",
+              "priority": "Acute",
+              "timeframe": "Same day",
+              "presentation": "Acute ankle injury - Ottawa Ankle Rules positive",
+              "details": [
+                "Bone tenderness at posterior edge or tip of lateral malleolus (6cm)",
+                "Bone tenderness at posterior edge or tip of medial malleolus (6cm)",
+                "Unable to bear weight both immediately and in ED/clinic (4 steps)"
+              ],
+              "source": "Ottawa Ankle Rules"
+            },
+            {
+              "id": "xray-ankle-p3-1",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Persistent ankle pain >6 weeks post-injury",
+              "details": [
+                "Initial injury >6 weeks ago",
+                "Persistent symptoms despite conservative management",
+                "To exclude missed fracture or other pathology"
+              ],
+              "source": "MSK Pathway"
+            },
+            {
+              "id": "xray-ankle-p3-2",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Chronic ankle pain - suspected arthritis",
+              "details": [
+                "Chronic ankle pain and swelling",
+                "Reduced range of motion",
+                "Assessment for osteoarthritis or inflammatory arthropathy"
+              ],
+              "source": "Rheumatology Pathway"
+            },
+            {
+              "id": "xray-ankle-alt-1",
+              "priority": "not-funded",
+              "timeframe": "Alternative pathway",
+              "presentation": "Acute ankle injury - Ottawa Ankle Rules negative",
+              "details": [
+                "Acute ankle injury",
+                "Ottawa Ankle Rules negative",
+                "Able to weight bear",
+                "No bony tenderness in key areas"
+              ],
+              "action": "Conservative management (RICE protocol). X-ray not indicated. Review if not improving at 10-14 days.",
+              "source": "Ottawa Ankle Rules"
+            }
+          ]
+        },
+        "X-ray Chest": {
+          "description": "X-ray Chest - Adult",
+          "guidance": "CXR remains the initial investigation for suspected lung cancer (sensitivity 75-80%). Always consider clinical context when interpreting normal CXR - safety netting essential.",
+          "criteria": [
+            {
+              "id": "xray-chest-acute-1",
+              "priority": "Acute",
+              "timeframe": "Same day / Emergency",
+              "presentation": "Suspected pneumothorax",
+              "details": [
+                "Sudden onset dyspnoea",
+                "Pleuritic chest pain",
+                "Reduced breath sounds",
+                "Hyperresonance to percussion"
+              ],
+              "action": "If tension pneumothorax suspected, emergency referral BEFORE imaging",
+              "source": "Emergency Medicine Guidelines"
+            },
+            {
+              "id": "xray-chest-p2-1",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Suspected lung cancer - symptomatic",
+              "details": [
+                "Concerning symptoms for lung cancer (see notes)",
+                "Persistent >3 weeks",
+                "Risk factors present (smoker, age >50)"
+              ],
+              "source": "Lung Cancer Pathway"
+            },
+            {
+              "id": "xray-chest-p2-2",
+              "priority": "P2",
+              "timeframe": "Within 2 weeks",
+              "presentation": "Haemoptysis",
+              "details": [
+                "Any unexplained haemoptysis",
+                "Excluding clear upper respiratory tract source"
+              ],
+              "source": "Lung Cancer Pathway"
+            },
+            {
+              "id": "xray-chest-p3-1",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Suspected pneumonia - non-severe",
+              "details": [
+                "Clinical features of pneumonia",
+                "Not meeting admission criteria",
+                "CXR for confirmation and baseline"
+              ],
+              "source": "Pneumonia Pathway"
+            },
+            {
+              "id": "xray-chest-p3-2",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Chronic cough >8 weeks",
+              "details": [
+                "Cough persistent >8 weeks",
+                "No red flag features",
+                "To exclude structural abnormalities"
+              ],
+              "prerequisites": [
+                "Trial of treatment for common causes (GORD, post-nasal drip) if appropriate"
+              ],
+              "source": "Respiratory Pathway"
+            },
+            {
+              "id": "xray-chest-p4-1",
+              "priority": "P4",
+              "timeframe": "Routine",
+              "presentation": "Follow-up imaging as per previous radiology report",
+              "details": [
+                "Previous CXR recommended follow-up imaging",
+                "No urgent features",
+                "Routine monitoring"
+              ],
+              "source": "Radiology follow-up"
+            },
+            {
+              "id": "xray-chest-alt-1",
+              "priority": "not-funded",
+              "timeframe": "Alternative pathway",
+              "presentation": "Acute upper respiratory tract infection",
+              "details": [
+                "Typical viral URTI symptoms",
+                "No features of pneumonia",
+                "Symptoms <7 days"
+              ],
+              "action": "Conservative management. No X-ray indicated.",
+              "source": "URTI Guidelines"
+            }
+          ]
+        },
+        "X-ray Elbow": {
+          "description": "X-ray Elbow - Adult",
+          "criteria": [
+            {
+              "id": "xr-elbow-1",
+              "priority": "Acute",
+              "presentation": "Acute elbow injury with inability to fully extend",
+              "timeframe": "Immediate / Within 24-48 hours"
+            },
+            {
+              "id": "xr-elbow-2",
+              "priority": "P3",
+              "presentation": "Chronic elbow pain",
+              "timeframe": "Within 6 weeks"
+            }
+          ],
+          "page": 63
+        },
+        "X-ray Knee": {
+          "description": "X-ray Knee - Adult",
+          "guidance": "Ottawa Knee Rules have high sensitivity (97-99%) for excluding fractures. X-rays should be used selectively based on clinical assessment and Ottawa Knee Rules.",
+          "criteria": [
+            {
+              "id": "xray-knee-acute-1",
+              "priority": "Acute",
+              "timeframe": "Same day / Emergency",
+              "presentation": "Acute knee injury - Ottawa Knee Rules positive",
+              "details": [
+                "Age \u226555 years",
+                "Tenderness at head of fibula",
+                "Isolated patellar tenderness",
+                "Unable to flex to 90 degrees",
+                "Unable to bear weight 4 steps"
+              ],
+              "source": "Ottawa Knee Rules"
+            },
+            {
+              "id": "xray-knee-acute-2",
+              "priority": "Acute",
+              "timeframe": "Same day",
+              "presentation": "Knee injury with inability to bear weight",
+              "details": [
+                "Acute injury",
+                "Unable to weight bear immediately and in ED/clinic"
+              ],
+              "source": "Clinical guidelines"
+            },
+            {
+              "id": "xray-knee-p3-1",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Chronic knee pain - OA assessment",
+              "details": [
+                "Age >50 years",
+                "Activity-related pain",
+                "Morning stiffness <30 minutes",
+                "Considering surgical options"
+              ],
+              "prerequisites": [
+                "Clinical diagnosis of OA already made",
+                "Conservative management attempted",
+                "X-ray for surgical planning only"
+              ],
+              "source": "Osteoarthritis Pathway"
+            },
+            {
+              "id": "xray-knee-p3-2",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Persistent knee pain following treatment",
+              "details": [
+                "Persistent symptoms >6 weeks",
+                "Despite appropriate conservative management",
+                "To exclude fracture or other pathology"
+              ],
+              "source": "MSK Pathway"
+            },
+            {
+              "id": "xray-knee-p3-3",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Suspected inflammatory arthropathy",
+              "details": [
+                "Joint swelling",
+                "Morning stiffness >30 minutes",
+                "Symmetrical joint involvement",
+                "Systemic symptoms"
+              ],
+              "prerequisites": [
+                "Blood tests (RF, anti-CCP, inflammatory markers) performed or pending"
+              ],
+              "source": "Rheumatology Pathway"
+            },
+            {
+              "id": "xray-knee-alt-1",
+              "priority": "not-funded",
+              "timeframe": "Alternative pathway",
+              "presentation": "Acute knee injury - Ottawa Knee Rules negative",
+              "details": [
+                "Acute injury but Ottawa Knee Rules negative",
+                "Able to weight bear",
+                "No bony tenderness in key areas"
+              ],
+              "action": "Conservative management. X-ray not indicated. Review if not improving at 7-10 days.",
+              "source": "Ottawa Knee Rules"
+            },
+            {
+              "id": "xray-knee-alt-2",
+              "priority": "not-funded",
+              "timeframe": "Alternative pathway",
+              "presentation": "Chronic knee pain in young patient without red flags",
+              "details": [
+                "Age <50 years",
+                "No trauma",
+                "No red flag features",
+                "Symptoms <6 weeks"
+              ],
+              "action": "Conservative management first (physiotherapy, analgesia). Consider X-ray if not improving after 6 weeks of appropriate management.",
+              "source": "MSK Pathway"
+            }
+          ]
+        },
+        "X-ray Pelvis / Hip": {
+          "description": "X-ray Pelvis / Hip - Adult",
+          "criteria": [
+            {
+              "id": "xray-hip-acute-1",
+              "priority": "Acute",
+              "timeframe": "Same day",
+              "presentation": "Suspected fractured neck of femur",
+              "details": [
+                "Fall or trauma in elderly",
+                "Unable to weight bear",
+                "Shortened and externally rotated leg"
+              ],
+              "action": "Emergency orthopaedic referral",
+              "source": "Trauma Pathway"
+            },
+            {
+              "id": "xray-hip-p3-1",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Chronic hip pain - OA assessment",
+              "details": [
+                "Age >50",
+                "Activity-related pain",
+                "Considering surgical referral"
+              ],
+              "source": "Orthopaedic Pathway"
+            }
+          ]
+        },
+        "X-ray Shoulder": {
+          "description": "X-ray Shoulder - Adult",
+          "criteria": [
+            {
+              "id": "xray-shoulder-acute-1",
+              "priority": "Acute",
+              "timeframe": "Same day",
+              "presentation": "Suspected fracture or dislocation",
+              "details": [
+                "Trauma",
+                "Severe pain",
+                "Deformity",
+                "Unable to move arm"
+              ],
+              "source": "Trauma Pathway"
+            },
+            {
+              "id": "xray-shoulder-p3-1",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Chronic shoulder pain - OA assessment",
+              "details": [
+                "Age >50",
+                "Activity-related pain",
+                "Considering surgical options"
+              ],
+              "source": "Orthopaedic Pathway"
+            },
+            {
+              "id": "xray-shoulder-p3-2",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Suspected calcific tendinitis",
+              "details": [
+                "Severe shoulder pain",
+                "Restricted range of motion",
+                "Not responding to conservative management"
+              ],
+              "source": "MSK Pathway"
+            }
+          ]
+        },
+        "X-ray Spine": {
+          "description": "X-ray Spine (Lumbar/Cervical) - Adult",
+          "criteria": [
+            {
+              "id": "xray-spine-acute-1",
+              "priority": "Acute",
+              "timeframe": "Same day",
+              "presentation": "Suspected vertebral fracture - trauma or red flags",
+              "details": [
+                "Significant trauma",
+                "OR age >50 with minimal trauma",
+                "OR osteoporosis risk"
+              ],
+              "action": "Emergency referral if neurological symptoms",
+              "source": "Spinal Trauma Pathway"
+            },
+            {
+              "id": "xray-spine-p3-1",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Chronic back pain with red flags",
+              "details": [
+                "Age <20 or >50 at onset",
+                "History of cancer",
+                "Constitutional symptoms",
+                "Progressive neurological deficit"
+              ],
+              "source": "Back Pain Pathway"
+            },
+            {
+              "id": "xray-spine-alt-1",
+              "priority": "not-funded",
+              "timeframe": "Alternative pathway",
+              "presentation": "Mechanical back pain <6 weeks, no red flags",
+              "details": [
+                "Typical mechanical pain",
+                "No red flags",
+                "Duration <6 weeks"
+              ],
+              "action": "Conservative management. X-ray not indicated unless red flags develop or symptoms persist >6 weeks.",
+              "source": "Back Pain Guidelines"
+            }
+          ]
+        },
+        "X-ray Wrist / Hand": {
+          "description": "X-ray Wrist / Hand - Adult",
+          "criteria": [
+            {
+              "id": "xr-wrist-1",
+              "priority": "Acute",
+              "presentation": "Suspected scaphoid fracture",
+              "details": [
+                "Anatomical snuffbox tenderness",
+                "Fall on outstretched hand"
+              ],
+              "timeframe": "Immediate / Within 24-48 hours"
+            },
+            {
+              "id": "xr-wrist-2",
+              "priority": "P3",
+              "presentation": "Chronic wrist/hand pain - suspected arthritis",
+              "timeframe": "Within 6 weeks"
+            }
+          ],
+          "page": 74
+        }
+      },
+      "Paediatric": {
+        "X-ray Chest": {
+          "description": "X-ray Chest - Paediatric",
+          "criteria": [
+            {
+              "id": "xray-chest-paed-acute-1",
+              "priority": "Acute",
+              "timeframe": "Same day",
+              "presentation": "Suspected pneumonia - unwell child",
+              "details": [
+                "Fever",
+                "Respiratory distress",
+                "Reduced air entry",
+                "Tachypnoea"
+              ],
+              "source": "Paediatric Pneumonia"
+            },
+            {
+              "id": "xray-chest-paed-p3-1",
+              "priority": "P3",
+              "timeframe": "Within 6 weeks",
+              "presentation": "Persistent respiratory symptoms",
+              "details": [
+                "Chronic cough >8 weeks",
+                "Recurrent chest infections",
+                "Assessment for structural abnormality"
+              ],
+              "source": "Paediatric Respiratory"
+            }
+          ]
+        },
+        "X-ray Abdomen": {
+          "description": "X-ray Abdomen - Paediatric",
+          "criteria": [
+            {
+              "id": "xray-abdomen-paed-acute-1",
+              "priority": "Acute",
+              "timeframe": "Same day",
+              "presentation": "Suspected bowel obstruction or perforation",
+              "details": [
+                "Vomiting",
+                "Abdominal distension",
+                "Not passing stool",
+                "Acute abdomen"
+              ],
+              "action": "Emergency paediatric surgical referral",
+              "source": "Paediatric Surgery"
+            }
+          ]
+        }
+      }
+    }
+  }
+};
+
+        // Helper function to determine if criterion approves imaging or requires alternative pathway
+        const getCriterionApprovalStatus = (criterion) => {
+            // Alternative pathway indicators
+            if (criterion.priority === 'not-funded') {
+                return 'alternative';
+            }
+            
+            // Check if action indicates referral without imaging
+            if (criterion.action) {
+                const lowerAction = criterion.action.toLowerCase();
+                if (lowerAction.includes('refer for') && 
+                    (lowerAction.includes('without') || 
+                     lowerAction.includes('assessment') ||
+                     lowerAction.includes('alternative'))) {
+                    return 'alternative';
+                }
+            }
+            
+            // Otherwise it's approved for imaging
+            return 'approved';
+        };
+
+        // Priority Configuration with approval status
+        const PRIORITY_CONFIG = {
+            acute: {
+                label: "Acute",
+                color: "bg-red-100 text-red-800 border-red-300",
+                description: "Within 24-48 hours",
+                badge: "bg-red-500"
+            },
+            P2: {
+                label: "Urgent (P2)",
+                color: "bg-orange-100 text-orange-800 border-orange-300",
+                description: "Within 2 weeks",
+                badge: "bg-orange-500"
+            },
+            P3: {
+                label: "Non-urgent (P3)",
+                color: "bg-blue-100 text-blue-800 border-blue-300",
+                description: "Within 6 weeks",
+                badge: "bg-blue-500"
+            },
+            P4: {
+                label: "Deferrable (P4)",
+                color: "bg-gray-100 text-gray-800 border-gray-300",
+                description: "6-12 weeks",
+                badge: "bg-gray-500"
+            },
+            "not-funded": {
+                label: "Not Routinely Funded",
+                color: "bg-yellow-100 text-yellow-800 border-yellow-300",
+                description: "Alternative management",
+                badge: "bg-yellow-500"
+            }
+        };
+
+        // Approval Status Configuration
+        const APPROVAL_CONFIG = {
+            approved: {
+                icon: "✓",
+                label: "CRR Imaging Approved",
+                color: "text-green-700 bg-green-50 border-green-300",
+                badgeColor: "bg-green-500"
+            },
+            alternative: {
+                icon: "→",
+                label: "Alternative Pathway Required",
+                color: "text-amber-700 bg-amber-50 border-amber-300",
+                badgeColor: "bg-amber-500"
+            }
+        };
+
+        
+        // Enhanced AI Search with Natural Language Processing
+        const extractMedicalTerms = (text) => {
+            // Remove common filler words and extract medical terms
+            const stopWords = ['patient', 'presented', 'with', 'has', 'had', 'history', 'of', 
+                             'showing', 'showed', 'shows', 'the', 'a', 'an', 'and', 'or', 
+                             'was', 'were', 'been', 'being', 'have', 'last', 'recent'];
+            
+            const words = text.toLowerCase()
+                .replace(/[,\.;:!?()]/g, ' ')  // Replace punctuation with spaces
+                .split(/\s+/)
+                .filter(word => word.length > 2 && !stopWords.includes(word));
+            
+            return words;
+        };
+
+        // Enhanced search function for both keyword and natural language
+        const enhancedSearch = (criteria, query) => {
+            if (!query || query.length < 3) return criteria;
+            
+            // Extract medical terms from natural language
+            const searchTerms = extractMedicalTerms(query);
+            const fullQuery = query.toLowerCase();
+            
+            return criteria.filter(criterion => {
+                const searchText = `
+                    ${criterion.presentation}
+                    ${criterion.details?.join(' ') || ''}
+                    ${criterion.action || ''}
+                    ${criterion.source || ''}
+                `.toLowerCase();
+
+                let score = 0;
+                
+                // Full query match (highest priority)
+                if (searchText.includes(fullQuery)) score += 10;
+                
+                // Individual term matches
+                searchTerms.forEach(term => {
+                    if (searchText.includes(term)) score += 1;
+                });
+
+                // Priority medical keywords
+                const priorityKeywords = ['chest', 'pain', 'headache', 'cancer', 'bleeding', 
+                                        'acute', 'suspected', 'fracture', 'haemoptysis', 
+                                        'seizure', 'tia', 'stroke', 'lesion', 'lung', 'mass'];
+                priorityKeywords.forEach(pk => {
+                    if (searchTerms.includes(pk) && searchText.includes(pk)) score += 2;
+                });
+
+                return score > 0;
+            });
+        };
+
+// Main App Component
+        function App() {
+            const [step, setStep] = useState(1);
+            const [modality, setModality] = useState('');
+            const [ageGroup, setAgeGroup] = useState('');
+            const [examType, setExamType] = useState('');
+            const [selectedCriteria, setSelectedCriteria] = useState([]);
+            const [searchQuery, setSearchQuery] = useState('');
+            const [aiAssist, setAiAssist] = useState(false);
+            const [showMixedWarning, setShowMixedWarning] = useState(false);
+            const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+            const [showGlobalResults, setShowGlobalResults] = useState(false);
+
+
+            const guidelines = GUIDELINES_DATA.guidelines;
+
+            // Build searchable index of ALL criteria across all modalities/ages/exams
+            const allCriteriaIndex = useMemo(() => {
+                const index = [];
+                for (const [modalityName, ageGroups] of Object.entries(guidelines)) {
+                    for (const [ageGroupName, exams] of Object.entries(ageGroups)) {
+                        for (const [examName, examData] of Object.entries(exams)) {
+                            examData.criteria.forEach(criterion => {
+                                index.push({
+                                    ...criterion,
+                                    modality: modalityName,
+                                    ageGroup: ageGroupName,
+                                    examType: examName,
+                                    examDescription: examData.description,
+                                    guidance: examData.guidance
+                                });
+                            });
+                        }
+                    }
+                }
+                return index;
+            }, []);
+
+            // Global AI search across ALL criteria with natural language support
+            const globalSearchResults = useMemo(() => {
+                if (!globalSearchQuery || globalSearchQuery.length < 3) return [];
+
+                const query = globalSearchQuery.toLowerCase();
+                const searchTerms = extractMedicalTerms(globalSearchQuery);
+
+                const results = allCriteriaIndex.map(criterion => {
+                    const searchText = `
+                        ${criterion.presentation}
+                        ${criterion.details?.join(' ') || ''}
+                        ${criterion.action || ''}
+                        ${criterion.source || ''}
+                        ${criterion.examType}
+                    `.toLowerCase();
+
+                    let score = 0;
+                    
+                    // Full query match (highest priority)
+                    if (searchText.includes(query)) score += 20;
+                    
+                    // Individual term matches
+                    searchTerms.forEach(term => {
+                        if (searchText.includes(term)) score += 3;
+                    });
+
+                    // Priority medical keywords
+                    const priorityKeywords = ['chest', 'pain', 'headache', 'cancer', 'bleeding', 
+                                            'acute', 'suspected', 'fracture', 'haemoptysis', 
+                                            'seizure', 'tia', 'stroke', 'knee', 'lesion', 'lung', 'mass'];
+                    priorityKeywords.forEach(pk => {
+                        if (searchTerms.includes(pk) && searchText.includes(pk)) score += 5;
+                    });
+
+                    return { ...criterion, score };
+                }).filter(c => c.score > 0);
+
+                return results.sort((a, b) => b.score - a.score).slice(0, 10);
+            }, [globalSearchQuery, allCriteriaIndex]);
+
+
+            const availableExams = useMemo(() => {
+                if (!modality || !ageGroup) return [];
+                return Object.keys(guidelines[modality]?.[ageGroup] || {});
+            }, [modality, ageGroup]);
+
+            const currentCriteria = useMemo(() => {
+                if (!modality || !ageGroup || !examType) return [];
+                return guidelines[modality]?.[ageGroup]?.[examType]?.criteria || [];
+            }, [modality, ageGroup, examType]);
+
+            const currentGuidance = useMemo(() => {
+                if (!modality || !ageGroup || !examType) return null;
+                return guidelines[modality]?.[ageGroup]?.[examType]?.guidance || null;
+            }, [modality, ageGroup, examType]);
+
+            const filteredCriteria = enhancedSearch(currentCriteria, searchQuery);
+
+            // Analyze selected criteria for approval status
+            const selectionAnalysis = useMemo(() => {
+                if (selectedCriteria.length === 0) {
+                    return { status: 'none', approved: [], alternative: [], hasAcute: false, hasNonAcute: false, acuteOverride: false };
+                }
+
+                const approved = [];
+                const alternative = [];
+                let hasAcute = false;
+                let hasNonAcute = false;
+
+                selectedCriteria.forEach(id => {
+                    const criterion = currentCriteria.find(c => c.id === id);
+                    if (criterion) {
+                        const status = getCriterionApprovalStatus(criterion);
+                        if (status === 'approved') {
+                            approved.push(criterion);
+                        } else {
+                            alternative.push(criterion);
+                        }
+                        
+                        // Check for acute/non-acute mix
+                        if (criterion.priority === 'Acute') {
+                            hasAcute = true;
+                        } else {
+                            hasNonAcute = true;
+                        }
+                    }
+                });
+
+                let status = 'none';
+                if (approved.length > 0 && alternative.length === 0) {
+                    status = 'approved';
+                } else if (alternative.length > 0 && approved.length === 0) {
+                    status = 'alternative';
+                } else if (approved.length > 0 && alternative.length > 0) {
+                    status = 'mixed';
+                }
+
+                // Check for acute override situation
+                const acuteOverride = hasAcute && hasNonAcute;
+
+                return { status, approved, alternative, hasAcute, hasNonAcute, acuteOverride };
+            }, [selectedCriteria, currentCriteria]);
+
+            useEffect(() => {
+                if (selectionAnalysis.status === 'mixed') {
+                    setShowMixedWarning(true);
+                } else {
+                    setShowMixedWarning(false);
+                }
+            }, [selectionAnalysis.status]);
+
+
+            const handleGlobalSearchSelect = (result) => {
+                setModality(result.modality);
+                setAgeGroup(result.ageGroup);
+                setExamType(result.examType);
+                setSelectedCriteria([result.id]);
+                setGlobalSearchQuery('');
+                setShowGlobalResults(false);
+                setStep(4);
+            };
+
+
+            const handleModalitySelect = (selectedModality) => {
+                setModality(selectedModality);
+                setAgeGroup('');
+                setExamType('');
+                setSelectedCriteria([]);
+                setStep(2);
+            };
+
+            const handleAgeGroupSelect = (group) => {
+                setAgeGroup(group);
+                setExamType('');
+                setSelectedCriteria([]);
+                setStep(3);
+            };
+
+            const handleExamTypeSelect = (exam) => {
+                setExamType(exam);
+                setSelectedCriteria([]);
+                setSearchQuery('');
+                setStep(4);
+            };
+
+            const toggleCriterion = (criterionId) => {
+                setSelectedCriteria(prev =>
+                    prev.includes(criterionId)
+                        ? prev.filter(id => id !== criterionId)
+                        : [...prev, criterionId]
+                );
+            };
+
+            const getHighestPriority = () => {
+                if (selectionAnalysis.approved.length === 0) return null;
+                const priorities = selectionAnalysis.approved
+                    .map(c => c.priority)
+                    .filter(Boolean);
+                const priorityOrder = ['acute', 'P2', 'P3', 'P4'];
+                return priorities.sort((a, b) =>
+                    priorityOrder.indexOf(a) - priorityOrder.indexOf(b)
+                )[0];
+            };
+
+            const highestPriority = getHighestPriority();
+
+            const resetApp = () => {
+                setStep(1);
+                setModality('');
+                setAgeGroup('');
+                setExamType('');
+                setSelectedCriteria([]);
+                setSearchQuery('');
+                setAiAssist(false);
+                setShowMixedWarning(false);
+                setGlobalSearchQuery('');
+                setShowGlobalResults(false);
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+                    <div className="max-w-7xl mx-auto p-6">
+                        {/* Header */}
+                        <div className="mb-8">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+                                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h1 className="text-3xl font-bold text-gray-900">
+                                                AI-Driven GP Radiology Request System
+                                            </h1>
+                                            <p className="text-xs text-blue-600 font-medium">Version 1.3.5</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-gray-600 ml-13">
+                                        National Primary Care Referral Criteria for Imaging - Phase 1
+                                    </p>
+                                    <div className="ml-13 mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+                                        <strong>⚠️ PROOF OF CONCEPT:</strong> This is a demonstration tool for evaluation purposes only. 
+                                        Not clinically approved or validated for production use. Always refer to official guidelines and consult appropriate clinical pathways.
+                                    </div>
+                                </div>
+                                {step > 1 && (
+                                    <button
+                                        onClick={resetApp}
+                                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                                    >
+                                        ← Start Over
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+
+                        {/* GLOBAL AI SEARCH - ALWAYS VISIBLE */}
+                        <div className="mb-8 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg shadow-lg p-6 fade-in">
+                            <div className="flex items-center gap-3 mb-3">
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                <h2 className="text-xl font-semibold text-white">AI Clinical Search</h2>
+                                <span className="px-2 py-1 bg-white/20 rounded text-xs text-white font-medium">SEARCH ALL 102 CRITERIA</span>
+                            </div>
+                            <p className="text-purple-100 text-sm mb-3">Describe patient symptoms to instantly find matching criteria across all modalities</p>
+                            <div className="relative">
+                                <svg className="absolute left-4 top-4 w-5 h-5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                <textarea
+                                    rows="3"
+                                    placeholder="Type or paste patient symptoms:
+'Patient presented with tightness of chest, last CT showed lesion on left lung'
+
+Keywords work too: 'chest pain haemoptysis TIA stroke knee injury'"
+                                    value={globalSearchQuery}
+                                    onChange={(e) => {
+                                        setGlobalSearchQuery(e.target.value);
+                                        setShowGlobalResults(e.target.value.length >= 3);
+                                    }}
+                                    className="w-full pl-12 pr-4 py-4 text-lg border-2 border-purple-400 rounded-lg focus:ring-4 focus:ring-purple-300 focus:border-purple-600 bg-white resize-y min-h-[100px] font-medium"
+                                    style={{lineHeight: '1.6'}}
+                                />
+                            </div>
+                            {globalSearchQuery && globalSearchQuery.length < 3 && (
+                                <p className="text-purple-200 text-sm mt-2">Type at least 3 characters to search across all 102 clinical criteria...</p>
+                            )}
+
+                            {/* Global Search Results */}
+                            {showGlobalResults && globalSearchResults.length > 0 && (
+                                <div className="mt-4 bg-white rounded-lg shadow-xl max-h-[600px] overflow-y-auto">
+                                    <div className="p-4 bg-purple-50 border-b border-purple-200 sticky top-0 z-10">
+                                        <p className="text-sm font-medium text-purple-900">
+                                            Found {globalSearchResults.length} matching {globalSearchResults.length === 1 ? 'criterion' : 'criteria'}
+                                        </p>
+                                        <p className="text-xs text-gray-600 mt-1">
+                                            💡 Tip: Select one or more criteria below, then proceed to finalize your request.
+                                        </p>
+                                    </div>
+                                    <div className="p-4">
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                        {globalSearchResults.map(result => {
+                                            const approvalStatus = getCriterionApprovalStatus(result);
+                                            const approvalConfig = APPROVAL_CONFIG[approvalStatus] || APPROVAL_CONFIG['approved'];
+                                            const priorityConfig = PRIORITY_CONFIG[result.priority] || PRIORITY_CONFIG['P3'];
+                                            const isSelected = selectedCriteria.includes(result.id);
+
+                                            return (
+                                                <div
+                                                    key={result.id}
+                                                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                                                        isSelected
+                                                            ? approvalStatus === 'approved'
+                                                                ? 'border-green-500 bg-green-50'
+                                                                : 'border-amber-500 bg-amber-50'
+                                                            : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-start gap-3">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isSelected}
+                                                            onChange={() => {
+                                                                // Auto-navigate to step 4 and toggle criterion
+                                                                setModality(result.modality);
+                                                                setAgeGroup(result.ageGroup);
+                                                                setExamType(result.examType);
+                                                                setStep(4);
+                                                                toggleCriterion(result.id);
+                                                            }}
+                                                            className="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                                                        />
+                                                        <div className="flex-1">
+                                                            {/* Approval Status Badge */}
+                                                            <div className="flex items-start justify-between gap-2 mb-2">
+                                                                <div className="flex-1">
+                                                                    <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold mb-2 ${approvalConfig.color} border`}>
+                                                                        <span className="text-base">{approvalConfig.icon}</span>
+                                                                        {approvalConfig.label}
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2 text-xs text-blue-600 mb-2">
+                                                                        <span className="font-medium">{result.modality}</span>
+                                                                        <span>→</span>
+                                                                        <span className="font-medium">{result.ageGroup}</span>
+                                                                        <span>→</span>
+                                                                        <span className="font-medium">{result.examType}</span>
+                                                                    </div>
+                                                                    <p className="font-medium text-gray-900">{result.presentation}</p>
+                                                                </div>
+                                                                <div className="flex flex-col items-end gap-1">
+                                                                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${priorityConfig.color}`}>
+                                                                        {priorityConfig.label}
+                                                                    </span>
+                                                                    {result.timeframe && (
+                                                                        <span className="text-xs text-gray-600 whitespace-nowrap">
+                                                                            ⏱️ {result.timeframe}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            {result.details && result.details.length > 0 && (
+                                                                <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                                                                    {result.details.map((detail, idx) => (
+                                                                        <li key={idx} className="list-disc">{detail}</li>
+                                                                    ))}
+                                                                </ul>
+                                                            )}
+                                                            {result.action && (
+                                                                <div className={`mt-2 p-3 rounded text-sm font-medium ${
+                                                                    approvalStatus === 'alternative' 
+                                                                        ? 'bg-amber-100 border-2 border-amber-400' 
+                                                                        : 'bg-blue-50 border border-blue-200'
+                                                                }`}>
+                                                                    <strong>Required Action:</strong> {result.action}
+                                                                </div>
+                                                            )}
+                                                            {getPDFPage(result.modality, result.ageGroup, result.examType) && (
+                                                                <div className="mt-2">
+                                                                    <a
+                                                                        href={`${PDF_CONFIG.filename}#page=${getPDFPage(result.modality, result.ageGroup, result.examType)}`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                                                                    >
+                                                                        📄 View in National Guidelines PDF (Page {getPDFPage(result.modality, result.ageGroup, result.examType)})
+                                                                    </a>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {showGlobalResults && globalSearchQuery.length >= 3 && globalSearchResults.length === 0 && (
+                                <div className="mt-4 bg-white rounded-lg shadow-xl p-6 text-center">
+                                    <p className="text-gray-600">No matching criteria found. Try different search terms or use the step-by-step selection below.</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {!showGlobalResults && (
+                            <div className="text-center text-sm text-gray-600 mb-6">
+                                <p>Or use the step-by-step selection below:</p>
+                            </div>
+                        )}
+
+
+                        {/* Progress */}
+                        <div className="mb-8 bg-white rounded-lg shadow-sm p-6">
+                            <div className="flex items-center justify-between">
+                                {['Modality', 'Age Group', 'Exam Type', 'Clinical Criteria'].map((label, idx) => (
+                                    <div key={label} className="flex items-center">
+                                        <div className={`flex items-center gap-2 ${idx + 1 <= step ? 'text-blue-600' : 'text-gray-400'}`}>
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${
+                                                idx + 1 <= step ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
+                                            }`}>
+                                                {idx + 1}
+                                            </div>
+                                            <span className="font-medium hidden sm:inline">{label}</span>
+                                        </div>
+                                        {idx < 3 && (
+                                            <svg className={`mx-2 w-5 h-5 ${idx + 1 < step ? 'text-blue-600' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                            </svg>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Mixed Warning Banner */}
+                        {showMixedWarning && (
+                            <div className="mb-6 bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg shake">
+                                <div className="flex items-start">
+                                    <svg className="w-6 h-6 text-amber-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                    <div className="ml-3">
+                                        <h3 className="text-sm font-medium text-amber-800">
+                                            Mixed Selection Detected
+                                        </h3>
+                                        <p className="mt-1 text-sm text-amber-700">
+                                            You've selected {selectionAnalysis.approved.length} criterion/criteria for CRR imaging and {selectionAnalysis.alternative.length} requiring alternative pathways. 
+                                            Review your selection - typically only one category should apply to a single patient presentation.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            {/* Left Panel - Selection */}
+                            <div className="lg:col-span-2 space-y-6">
+                                {/* Step 1: Modality */}
+                                {step >= 1 && (
+                                    <div className="bg-white rounded-lg shadow-sm p-6 fade-in">
+                                        <h2 className="text-xl font-semibold mb-4 text-gray-900">1. Select Modality</h2>
+                                        <div className="grid grid-cols-3 gap-4">
+                                            {['CT', 'Ultrasound', 'X-ray'].map(m => (
+                                                <button
+                                                    key={m}
+                                                    onClick={() => handleModalitySelect(m)}
+                                                    className={`p-4 rounded-lg border-2 font-medium transition-all ${
+                                                        modality === m
+                                                            ? 'border-blue-600 bg-blue-50 text-blue-900'
+                                                            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                                    }`}
+                                                >
+                                                    {m}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Step 2: Age Group */}
+                                {step >= 2 && modality && (
+                                    <div className="bg-white rounded-lg shadow-sm p-6 fade-in">
+                                        <h2 className="text-xl font-semibold mb-4 text-gray-900">2. Select Patient Age Group</h2>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {['Adult', 'Paediatric'].map(group => (
+                                                <button
+                                                    key={group}
+                                                    onClick={() => handleAgeGroupSelect(group)}
+                                                    disabled={!guidelines[modality]?.[group]}
+                                                    className={`p-4 rounded-lg border-2 font-medium transition-all ${
+                                                        ageGroup === group
+                                                            ? 'border-blue-600 bg-blue-50 text-blue-900'
+                                                            : !guidelines[modality]?.[group]
+                                                            ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+                                                            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                                    }`}
+                                                >
+                                                    {group}
+                                                    {group === 'Paediatric' && <span className="text-sm block mt-1">≤15 years</span>}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Step 3: Exam Type */}
+                                {step >= 3 && ageGroup && availableExams.length > 0 && (
+                                    <div className="bg-white rounded-lg shadow-sm p-6 fade-in">
+                                        <h2 className="text-xl font-semibold mb-4 text-gray-900">3. Select Exam Type</h2>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            {availableExams.map(exam => (
+                                                <button
+                                                    key={exam}
+                                                    onClick={() => handleExamTypeSelect(exam)}
+                                                    className={`p-4 rounded-lg border-2 text-left font-medium transition-all ${
+                                                        examType === exam
+                                                            ? 'border-blue-600 bg-blue-50 text-blue-900'
+                                                            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                                    }`}
+                                                >
+                                                    {exam}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Step 4: Clinical Criteria */}
+                                {step >= 4 && examType && (
+                                    <div className="bg-white rounded-lg shadow-sm p-6 fade-in">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h2 className="text-xl font-semibold text-gray-900">4. Select Clinical Presentation</h2>
+                                            <button
+                                                onClick={() => setAiAssist(!aiAssist)}
+                                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                                    aiAssist
+                                                        ? 'bg-purple-100 text-purple-700 border border-purple-300'
+                                                        : 'bg-gray-100 text-gray-700 hover:bg-purple-50'
+                                                }`}
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                                </svg>
+                                                AI Assist
+                                            </button>
+                                        </div>
+
+                                        {currentGuidance && (
+                                            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                                <div className="flex items-start gap-2">
+                                                    <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                                    </svg>
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center justify-between mb-1">
+                                                            <div className="text-sm font-medium text-blue-900">Clinical Guidance</div>
+                                                            <a
+                                                                href={`${PDF_CONFIG.filename}#page=${getPDFPage(modality, ageGroup, examType)}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                                                            >
+                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                                </svg>
+                                                                Open PDF
+                                                            </a>
+                                                        </div>
+                                                        <p className="text-sm text-blue-800">{currentGuidance}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {aiAssist && (
+                                            <div className="mb-4">
+                                                <div className="relative">
+                                                    <svg className="absolute left-3 top-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                    </svg>
+                                                    <textarea
+                                                        rows="3"
+                                                        placeholder="Type or paste natural language:
+'Patient presented with tightness of chest, coughing blood, weight loss over 3 months'
+
+Or keywords: 'chest pain haemoptysis weight loss'"
+                                                        value={searchQuery}
+                                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                                        className="w-full pl-10 pr-4 py-3 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-600 resize-y min-h-[90px] font-medium"
+                                                        style={{lineHeight: '1.5'}}
+                                                    />
+                                                </div>
+                                                {searchQuery && searchQuery.length < 3 && (
+                                                    <p className="text-sm text-gray-500 mt-2">Type at least 3 characters to filter criteria below...</p>
+                                                )}
+                                                {searchQuery && searchQuery.length >= 3 && filteredCriteria.length === 0 && (
+                                                    <p className="text-sm text-amber-600 mt-2">No criteria match your search. Try different terms or clear search to see all.</p>
+                                                )}
+                                                {searchQuery && searchQuery.length >= 3 && filteredCriteria.length > 0 && (
+                                                    <p className="text-sm text-blue-600 mt-2">Showing {filteredCriteria.length} of {currentCriteria.length} criteria. Select multiple if needed.</p>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {currentCriteria.length > 0 && (
+                                            <div className="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                                <p className="text-sm text-gray-700">
+                                                    <strong>💡 Tip:</strong> Select one or more criteria that match your patient's presentation. 
+                                                    {aiAssist && " Use the search above to filter criteria."}
+                                                </p>
+                                            </div>
+                                        )}
+                                        
+                                        <div className="space-y-3">
+                                            {(aiAssist && searchQuery.length >= 3 ? filteredCriteria : currentCriteria).map(criterion => {
+                                                const isSelected = selectedCriteria.includes(criterion.id);
+                                                const approvalStatus = getCriterionApprovalStatus(criterion);
+                                                const approvalConfig = APPROVAL_CONFIG[approvalStatus] || APPROVAL_CONFIG['approved'];
+
+                                                return (
+                                                    <label
+                                                        key={criterion.id}
+                                                        className={`block p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                                                            isSelected
+                                                                ? approvalStatus === 'approved'
+                                                                    ? 'border-green-500 bg-green-50'
+                                                                    : 'border-amber-500 bg-amber-50'
+                                                                : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-start gap-3">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isSelected}
+                                                                onChange={() => toggleCriterion(criterion.id)}
+                                                                className="mt-1 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                                                            />
+                                                            <div className="flex-1">
+                                                                {/* Approval Status Badge */}
+                                                                <div className="flex items-start justify-between gap-2 mb-2">
+                                                                    <div className="flex-1">
+                                                                        <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold mb-2 ${approvalConfig.color} border`}>
+                                                                            <span className="text-base">{approvalConfig.icon}</span>
+                                                                            {approvalConfig.label}
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 text-xs text-blue-600 mb-2">
+                                                                            <span className="font-medium">{modality}</span>
+                                                                            <span>→</span>
+                                                                            <span className="font-medium">{ageGroup}</span>
+                                                                            <span>→</span>
+                                                                            <span className="font-medium">{examType}</span>
+                                                                        </div>
+                                                                        <p className="font-medium text-gray-900">{criterion.presentation}</p>
+                                                                    </div>
+                                                                    <div className="flex flex-col items-end gap-1">
+                                                                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${PRIORITY_CONFIG[criterion.priority]?.color}`}>
+                                                                            {PRIORITY_CONFIG[criterion.priority]?.label}
+                                                                        </span>
+                                                                        {criterion.timeframe && (
+                                                                            <span className="text-xs text-gray-600 whitespace-nowrap">
+                                                                                ⏱️ {criterion.timeframe}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                {criterion.details && criterion.details.length > 0 && (
+                                                                    <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                                                                        {criterion.details.map((detail, idx) => (
+                                                                            <li key={idx} className="list-disc">{detail}</li>
+                                                                        ))}
+                                                                    </ul>
+                                                                )}
+                                                                {criterion.prerequisites && criterion.prerequisites.length > 0 && (
+                                                                    <div className="mt-2 p-2 bg-purple-50 border border-purple-200 rounded text-sm">
+                                                                        <strong>Prerequisites:</strong>
+                                                                        <ul className="ml-4 mt-1">
+                                                                            {criterion.prerequisites.map((prereq, idx) => (
+                                                                                <li key={idx} className="list-disc">{prereq}</li>
+                                                                            ))}
+                                                                        </ul>
+                                                                    </div>
+                                                                )}
+                                                                {criterion.action && (
+                                                                    <div className={`mt-2 p-3 rounded text-sm font-medium ${
+                                                                        approvalStatus === 'alternative' 
+                                                                            ? 'bg-amber-100 border-2 border-amber-400' 
+                                                                            : 'bg-blue-50 border border-blue-200'
+                                                                    }`}>
+                                                                        <strong>Required Action:</strong> {criterion.action}
+                                                                    </div>
+                                                                )}
+                                                                {criterion.source && (
+                                                                    <p className="text-xs text-gray-500 mt-2 italic">
+                                                                        Source: {criterion.source}
+                                                                    </p>
+                                                                )}
+                                                                <div className="mt-2 pt-2 border-t border-gray-200">
+                                                                    <a
+                                                                        href={`${PDF_CONFIG.filename}#page=${getPDFPage(modality, ageGroup, examType)}`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                                                                    >
+                                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                                        </svg>
+                                                                        View in National Guidelines PDF (Page {getPDFPage(modality, ageGroup, examType)})
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {aiAssist && searchQuery.length >= 3 && filteredCriteria.length === 0 && (
+                                            <div className="text-center py-8 text-gray-500">
+                                                <p>No matching criteria found. Try different search terms or consult with PCRL.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Right Panel - Summary & Decision */}
+                            <div className="lg:col-span-1">
+                                <div className="sticky top-6 space-y-6">
+                                    {/* Summary */}
+                                    <div className="bg-white rounded-lg shadow-sm p-6">
+                                        <h3 className="font-semibold text-gray-900 mb-4">Request Summary</h3>
+                                        <div className="space-y-3 text-sm">
+                                            <div>
+                                                <span className="text-gray-600">Modality:</span>
+                                                <span className="ml-2 font-medium text-gray-900">{modality || '—'}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-600">Age Group:</span>
+                                                <span className="ml-2 font-medium text-gray-900">{ageGroup || '—'}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-600">Exam Type:</span>
+                                                <span className="ml-2 font-medium text-gray-900">{examType || '—'}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-600">Criteria Selected:</span>
+                                                <span className="ml-2 font-medium text-gray-900">{selectedCriteria.length}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Approval Decision */}
+                                        {selectionAnalysis.status !== 'none' && (
+                                            <div className="mt-4 pt-4 border-t">
+                                                <p className="text-sm font-medium text-gray-700 mb-3">Request Decision:</p>
+                                                
+                                                {selectionAnalysis.status === 'approved' && (
+                                                    <div className="bg-green-50 border-2 border-green-500 rounded-lg p-3">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <span className="text-2xl">✓</span>
+                                                            <span className="font-bold text-green-800">CRR Imaging Approved</span>
+                                                        </div>
+                                                        <p className="text-sm text-green-700">
+                                                            Patient meets criteria for community-referred radiology imaging
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {selectionAnalysis.status === 'alternative' && (
+                                                    <div className="bg-amber-50 border-2 border-amber-500 rounded-lg p-3">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <span className="text-2xl">→</span>
+                                                            <span className="font-bold text-amber-800">Alternative Pathway Required</span>
+                                                        </div>
+                                                        <p className="text-sm text-amber-700">
+                                                            Criteria indicate alternative management or referral without CRR imaging
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {selectionAnalysis.status === 'mixed' && (
+                                                    <div className="bg-red-50 border-2 border-red-500 rounded-lg p-3">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <span className="text-2xl">⚠</span>
+                                                            <span className="font-bold text-red-800">Mixed Selection</span>
+                                                        </div>
+                                                        <p className="text-sm text-red-700 mb-2">
+                                                            {selectionAnalysis.approved.length} approved, {selectionAnalysis.alternative.length} alternative
+                                                        </p>
+                                                        <p className="text-xs text-red-600">
+                                                            Review selection - conflicting criteria selected
+                                                        </p>
+                                                        {selectionAnalysis.acuteOverride && (
+                                                            <div className="mt-2 pt-2 border-t border-red-300">
+                                                                <p className="text-sm font-semibold text-red-800 flex items-center gap-1">
+                                                                    <span>🚨</span> ACUTE Priority Conflict
+                                                                </p>
+                                                                <p className="text-xs text-red-700 mt-1">
+                                                                    ACUTE criteria require immediate action and override non-acute pathways. 
+                                                                    Consider whether acute assessment is needed before routine imaging.
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Priority (only for approved imaging) */}
+                                        {highestPriority && selectionAnalysis.approved.length > 0 && (
+                                            <div className="mt-4 pt-4 border-t">
+                                                <p className="text-sm text-gray-600 mb-2">Recommended Priority:</p>
+                                                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${PRIORITY_CONFIG[highestPriority]?.color}`}>
+                                                    <div className={`w-2 h-2 rounded-full ${PRIORITY_CONFIG[highestPriority]?.badge}`}></div>
+                                                    <div>
+                                                        <div className="font-semibold">{PRIORITY_CONFIG[highestPriority]?.label}</div>
+                                                        <div className="text-xs">{PRIORITY_CONFIG[highestPriority]?.description}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Detailed Breakdown */}
+                                    {selectedCriteria.length > 0 && (
+                                        <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg shadow-lg p-6 text-white">
+                                            <h3 className="font-semibold mb-4 flex items-center gap-2">
+                                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                                </svg>
+                                                Selected Criteria Details
+                                            </h3>
+                                            
+                                            {selectionAnalysis.approved.length > 0 && (
+                                                <div className="mb-4">
+                                                    <div className="flex items-center gap-2 mb-2 text-green-200">
+                                                        <span className="text-lg">✓</span>
+                                                        <span className="font-semibold">CRR Imaging Approved ({selectionAnalysis.approved.length})</span>
+                                                            {selectionAnalysis.acuteOverride && (
+                                                                <span className="ml-2 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">
+                                                                    ⚠ Check Priority
+                                                                </span>
+                                                            )}
+                                                    </div>
+                                                    <div className="space-y-3">
+                                                        {selectionAnalysis.approved.map(criterion => (
+                                                            <div key={criterion.id} className="bg-white/10 backdrop-blur rounded-lg p-3">
+                                                                <p className="font-medium text-sm">{criterion.presentation}</p>
+                                                                {criterion.timeframe && (
+                                                                    <p className="text-xs opacity-90 mt-1">
+                                                                        ⏱️ {criterion.timeframe}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {selectionAnalysis.alternative.length > 0 && (
+                                                <div className="mb-4">
+                                                    <div className="flex items-center gap-2 mb-2 text-amber-200">
+                                                        <span className="text-lg">→</span>
+                                                        <span className="font-semibold">Alternative Pathway ({selectionAnalysis.alternative.length})</span>
+                                                    </div>
+                                                    <div className="space-y-3">
+                                                        {selectionAnalysis.alternative.map(criterion => (
+                                                            <div key={criterion.id} className="bg-amber-500/20 backdrop-blur rounded-lg p-3 border border-amber-400/30">
+                                                                <p className="font-medium text-sm">{criterion.presentation}</p>
+                                                                {criterion.action && (
+                                                                    <p className="text-xs mt-2 bg-amber-600/30 p-2 rounded">
+                                                                        <strong>Action:</strong> {criterion.action}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div className="mt-6 pt-4 border-t border-white/20">
+                                                <p className="text-sm opacity-90">
+                                                    <strong>Important:</strong> This is clinical decision support. Always consider individual patient circumstances and consult PCRL if uncertain.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Legend */}
+                                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-6">
+                                        <h3 className="font-semibold text-gray-900 mb-3">Decision Legend</h3>
+                                        <div className="space-y-3 text-sm">
+                                            <div className="flex items-start gap-2">
+                                                <span className="text-xl text-green-600">✓</span>
+                                                <div>
+                                                    <div className="font-medium text-green-800">CRR Imaging Approved</div>
+                                                    <div className="text-gray-600 text-xs">Patient meets criteria for community radiology</div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-start gap-2">
+                                                <span className="text-xl text-amber-600">→</span>
+                                                <div>
+                                                    <div className="font-medium text-amber-800">Alternative Pathway</div>
+                                                    <div className="text-gray-600 text-xs">Refer to specialist or alternative management</div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-start gap-2">
+                                                <span className="text-xl text-red-600">⚠</span>
+                                                <div>
+                                                    <div className="font-medium text-red-800">Mixed Selection</div>
+                                                    <div className="text-gray-600 text-xs">Review - conflicting criteria selected</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="mt-8 text-center text-sm text-gray-500">
+                            <p>National Community Referral Criteria for Imaging (Phase 1) | Version 1.0 | Published: 24/09/2025</p>
+                            <p className="mt-1">Te Whatu Ora - Health New Zealand | National Radiology Network</p>
+                        </div>
+
+                        {/* Version Footer */}
+                        <div className="mt-8 pt-6 border-t border-gray-200 text-center text-xs text-gray-500">
+                            <p>
+                                <strong>Version 1.3.0</strong> | Proof of Concept | Last Updated: 02/01/2026
+                            </p>
+                            <p className="mt-1">
+                                National Primary Care Referral Criteria for Imaging - Phase 1 (Published 24/09/2025)
+                            </p>
+                            <p className="mt-1 text-amber-600">
+                                ⚠️ For evaluation purposes only - Not clinically validated for production use
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+            );
+        }
+
+        // Render App
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
