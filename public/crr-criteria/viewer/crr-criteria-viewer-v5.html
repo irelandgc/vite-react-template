@@ -719,7 +719,7 @@ function onGlobalSearch(val) {
       var it = results[r].item;
       var badge = getPriBadgeForGroup(it.groupTitle);
       var examLabel = esc(it.examTitle) + (it.siteLabel ? " — " + esc(it.siteLabel) : "");
-      h += "<div class='search-result' onclick='selectSearchResult("" + esc(it.examId) + "","" + esc(it.siteId||"") + "","" + esc(it.itemId) + "","" + esc(it.mode||"") + "")'>";
+      h += "<div class='search-result' onclick='selectSearchResult(\"" + esc(it.examId) + "\",\"" + esc(it.siteId||"") + "\",\"" + esc(it.itemId) + "\",\"" + esc(it.mode||"") + "\")'>";
       h += "<span class='search-result-exam'>" + examLabel + "</span>";
       h += "<span class='search-result-text'>" + esc(it.label) + badge + "</span>";
       h += "</div>";
