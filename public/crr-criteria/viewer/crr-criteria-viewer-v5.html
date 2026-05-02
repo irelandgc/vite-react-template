@@ -803,7 +803,7 @@ function toolRender() {
     hLeft += "<div class='card-bd' style='padding-top:8px;padding-bottom:8px'><div class='site-check-row'>";
     for (var si = 0; si < exam.sites.length; si++) {
       var s = exam.sites[si];
-      hLeft += "<div class='site-check'><input type='checkbox' id='site_" + esc(s.id) + "' onchange='toggleSite("" + esc(s.id) + "")'" + (TS.sites[s.id] ? " checked" : "") + "><label for='site_" + esc(s.id) + "'>" + esc(s.label) + "</label></div>";
+      hLeft += "<div class='site-check'><input type='checkbox' id='site_" + esc(s.id) + "' onchange='toggleSite(\"" + esc(s.id) + "\")'" + (TS.sites[s.id] ? " checked" : "") + "><label for='site_" + esc(s.id) + "'>" + esc(s.label) + "</label></div>";
     }
     hLeft += "</div></div>";
   }
@@ -1018,8 +1018,8 @@ function toolRenderCb(item, groupTitle) {
   if (isHighlight) cardClass += " highlight";
 
   var h = "<div class='" + cardClass + "' id='row_" + esc(item.id) + "'>";
-  h += "<div class='crit-card-header' onclick='toggleCb("" + esc(item.id) + "")'>";
-  h += "<input type='checkbox' class='crit-card-check' id='chk_" + esc(item.id) + "' onclick='event.stopPropagation();toggleCb("" + esc(item.id) + "")'";
+  h += "<div class='crit-card-header' onclick='toggleCb(\"" + esc(item.id) + "\")'>";
+  h += "<input type='checkbox' class='crit-card-check' id='chk_" + esc(item.id) + "' onclick='event.stopPropagation();toggleCb(\"" + esc(item.id) + "\")'";
   h += on ? " checked" : "";
   h += ">";
   h += "<span class='crit-card-label'>" + esc(item.label);
@@ -1031,7 +1031,7 @@ function toolRenderCb(item, groupTitle) {
   h += "</span>";
   // Expand toggle (only show if there's detail to show)
   if (item.conditionalNote || item.shortLabel) {
-    h += "<span class='crit-card-expand" + (isExpanded?" open":"") + "' onclick='event.stopPropagation();toggleExpand("" + esc(item.id) + "")'>&#9654;</span>";
+    h += "<span class='crit-card-expand" + (isExpanded?" open":"") + "' onclick='event.stopPropagation();toggleExpand(\"" + esc(item.id) + "\")'>&#9654;</span>";
   }
   h += "</div>"; // end header
 
@@ -1057,7 +1057,7 @@ function toolRenderRadio(item, groupTitle) {
   h += "</span>";
   for (var i = 0; i < item.options.length; i++) {
     var opt = item.options[i], chk = (cur === opt) ? " checked" : "";
-    h += "<label class='radio-opt'><input type='radio' name='r_" + esc(item.id) + "' value='" + esc(opt) + "' onchange='setRadio("" + esc(item.id) + "","" + esc(opt) + "")'"+chk+"><span>" + esc(opt) + "</span></label>";
+    h += "<label class='radio-opt'><input type='radio' name='r_" + esc(item.id) + "' value='" + esc(opt) + "' onchange='setRadio(\"" + esc(item.id) + "\",\"" + esc(opt) + "\")'" + chk + "><span>" + esc(opt) + "</span></label>";
   }
   h += "</div>";
   if (item.note && cur) h += "<div class='ib-blue' style='margin-left:37px;margin-top:-1px'>" + esc(item.note) + "</div>";
