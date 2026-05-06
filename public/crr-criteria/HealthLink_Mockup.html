@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>eReferral Mockup - CareConnect</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; margin: 0; background-color: #f0f0f0; color: #333; }
+        .top-header { background: white; padding: 5px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; }
+        .logo-area { display: flex; align-items: center; color: #007bbd; font-weight: bold; font-size: 18px; }
+        .logo-area span { color: #888; font-size: 12px; margin-left: 5px; }
+        .hl-logo { color: #005aab; font-size: 24px; font-weight: 900; border-bottom: 3px solid #005aab; }
+        .action-bar { background: #cedbe9; padding: 4px; display: flex; justify-content: flex-end; gap: 2px; border-bottom: 1px solid #999; }
+        .btn { background: #fff; border: 1px solid #888; padding: 2px 10px; cursor: pointer; font-size: 11px; }
+        .wrapper { display: flex; padding: 10px; gap: 10px; max-width: 1200px; margin: 0 auto; }
+        .sidebar { width: 220px; display: flex; flex-direction: column; gap: 8px; }
+        .sidebar-box { background: #8fbcd4; border: 1px solid #5a8fb2; border-radius: 5px; overflow: hidden; }
+        .sidebar-title { background: rgba(0,0,0,0.1); padding: 4px 8px; font-weight: bold; border-bottom: 1px solid rgba(0,0,0,0.1); }
+        .sidebar-content { padding: 6px 8px; font-size: 11px; line-height: 1.3; }
+        .main-form { flex: 1; background: #d0e0eb; border: 1px solid #999; border-radius: 5px; padding: 15px; }
+        .form-title { font-weight: bold; font-size: 14px; margin-bottom: 15px; border-bottom: 1px solid #999; padding-bottom: 5px; }
+        .form-section { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #b4c7d8; }
+        .row { display: flex; align-items: center; margin-bottom: 8px; }
+        .label-cell { width: 280px; font-weight: normal; }
+        .required { color: red; }
+        .grid-options { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; margin: 10px 0; }
+        .health-pathway-box { background: rgba(255,255,255,0.4); padding: 10px; border: 1px solid #a4b7c8; border-radius: 3px; margin: 10px 0; }
+        .hp-link { color: #005aab; text-decoration: underline; cursor: pointer; font-weight: bold; display: block; margin: 6px 0; }
+        textarea { width: 100%; border: 1px solid #888; border-radius: 2px; padding: 5px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+<div class="top-header">
+    <div class="logo-area">CareConnect <span>eReferrals Mockup</span></div>
+    <div class="hl-logo">HL</div>
+</div>
+
+<div class="action-bar">
+    <button class="btn" style="background: #4b6ea9; color: white;">Submit</button>
+    <button class="btn">Preview</button>
+    <button class="btn">Park</button>
+    <button class="btn">Help ▾</button>
+</div>
+
+<div class="wrapper">
+    <div class="sidebar">
+        <div class="sidebar-box" style="background: #d0e0eb; border: 2px solid #ff6666;">
+            <div class="sidebar-title">Clinical Information</div>
+            <div class="sidebar-content">CT Scan</div>
+        </div>
+        <div class="sidebar-box">
+            <div class="sidebar-title">Patient Information</div>
+            <div class="sidebar-content">
+                <strong>CHAPLIN, Charlie</strong><br>
+                <strong>NHI: ABC1234</strong><br>
+                Age: 60yrs (DOB: 16/04/1889)<br>
+                Disability not specified
+            </div>
+        </div>
+    </div>
+
+    <div class="main-form">
+        <div class="form-title">CT Scan Referral for Investigation/Test Only</div>
+
+        <div class="form-section">
+            <label><strong>Requested CT Scan Types</strong><span class="required">*</span></label>
+            <div class="grid-options">
+                <label><input type="checkbox"> Abdo-Pelvis</label>
+                <label><input type="checkbox"> Chest-Abdo-Pelvis</label>
+                <label><input type="checkbox" checked> Chest</label>
+                <label><input type="checkbox"> CT Colonography</label>
+                <label><input type="checkbox" checked> Head</label>
+                <label><input type="checkbox"> IVU</label>
+                <label><input type="checkbox"> KUB</label>
+                <label><input type="checkbox"> Sinus</label>
+            </div>
+        </div>
+
+        <div class="health-pathway-box">
+            <strong>Decision Support / HealthPathways</strong>
+            <span class="hp-link" onclick="openPopup('https://vite-react-template.fk4dsrmq5r.workers.dev/crr-criteria/viewer/?exam=ct&sites=ct_chest,ct_head&region=3D')">
+                - Check criteria for CT Chest
+            </span>
+            <span class="hp-link" onclick="openPopup('https://vite-react-template.fk4dsrmq5r.workers.dev/crr-criteria/viewer/popup?exam=ct&sites=ct_head&region=3D')">
+                - Check criteria for CT Head
+            </span>
+
+            <div class="row" style="margin-top:12px;">
+                <div class="input-cell">
+                    Does this investigation meet Health Pathway criteria?<span class="required">*</span>
+                    <input type="radio" name="hp" style="margin-left:15px;"> Yes
+                    <input type="radio" name="hp"> No
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section" style="border:none">
+            <label><strong>Clinical question to be answered (1000 character limit)</strong><span class="required">*</span></label>
+            <textarea style="height: 60px; margin-top:5px;"></textarea>
+            
+            <label style="display:block; margin-top:15px;"><strong>Relevant history, examination findings and investigations</strong><span class="required">*</span></label>
+            <textarea style="height: 60px; margin-top:5px;" placeholder="Please include relevant bloods and previous imaging..."></textarea>
+        </div>
+
+        <div class="form-section">
+            <div class="sidebar-title" style="background:none; padding:0; margin-bottom:10px;">Contrast Section</div>
+            
+            <div class="row">
+                <div class="label-cell">Patient has renal disease with eGFR less than 30:<span class="required">*</span></div>
+                <div class="input-cell">
+                    <input type="radio" name="egfr"> Yes
+                    <input type="radio" name="egfr" checked> No
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="label-cell">Patient taking Metformin?<span class="required">*</span></div>
+                <div class="input-cell">
+                    <input type="radio" name="met"> Yes
+                    <input type="radio" name="met"> No
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="label-cell">History of thyroid disease?<span class="required">*</span></div>
+                <div class="input-cell">
+                    <input type="radio" name="thy"> Yes
+                    <input type="radio" name="thy"> No
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openPopup(url) {
+        const width = 800;
+        const height = 800;
+        const left = (screen.width / 2) - (width / 2);
+        const top = (screen.height / 2) - (height / 2);
+        
+        window.open(
+            url, 
+            'HealthPathwaysPopup', 
+            `width=${width},height=${height},top=${top},left=${left},toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes`
+        );
+    }
+</script>
+
+</body>
+</html>
