@@ -324,34 +324,14 @@ textarea.note::placeholder{color:#aab8c2}
         <div class="note-hint">Describe the patient and clinical presentation</div>
         <textarea class="note" id="noteInput" oninput="onNoteChange()" placeholder="e.g. 70-year-old male, 4 days ago sudden onset left arm weakness lasting 40 minutes, fully resolved. No AF, not on anticoagulants. Requesting CT Head."></textarea>
 
-        <div class="note-hint" style="margin-top:10px">Patient demographics &amp; key results <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">(optional — prepended to note)</span></div>
-        <div class="demog-row">
-          <div class="demog-field">
-            <span class="demog-label">Age</span>
-            <input class="demog-input demog-age" id="demogAge" type="number" min="0" max="120" placeholder="yrs" oninput="onDemogChange()">
-          </div>
-          <div class="demog-field">
-            <span class="demog-label">Sex</span>
-            <div class="sex-row">
-              <button class="sex-btn" id="sexM" onclick="setSex('M',this)">M</button>
-              <button class="sex-btn" id="sexF" onclick="setSex('F',this)">F</button>
-              <button class="sex-btn active" id="sexNone" onclick="setSex('',this)">—</button>
-            </div>
-          </div>
-          <div class="demog-field" style="flex:1">
-            <span class="demog-label">Key results <span id="labHint" style="font-weight:400;text-transform:none;font-size:10px">(e.g. ALP 180, eGFR 52, Wells 3, D-dimer +ve)</span></span>
-            <input class="demog-input demog-results" id="demogResults" type="text" placeholder="optional" oninput="onDemogChange()">
-          </div>
-        </div>
+        <!-- Hidden inputs retained for JS compatibility — age/sex now passed via URL params -->
+        <input type="hidden" id="demogAge" value="">
+        <input type="hidden" id="demogResults" value="">
+        <input type="hidden" id="sexM" data-val="M">
+        <input type="hidden" id="sexF" data-val="F">
+        <input type="hidden" id="sexNone" data-val="">
         <div class="paed-warning" id="paedWarning">
           &#9888; <strong>Paediatric patient detected:</strong> Switching to paediatric CRR criteria. Adult criteria do not apply.
-        </div>
-        <div class="note-hint" style="margin-top:10px">Filter by modality</div>
-        <div class="mod-row" id="modRow">
-          <button class="mod-btn active" data-mod="all" onclick="setMod(this)">All</button>
-          <button class="mod-btn" data-mod="CT" onclick="setMod(this)">CT</button>
-          <button class="mod-btn" data-mod="Ultrasound" onclick="setMod(this)">Ultrasound</button>
-          <button class="mod-btn" data-mod="X-Ray" onclick="setMod(this)">X-Ray</button>
         </div>
         <div class="note-hint" style="margin-top:10px">AI documentation standard</div>
         <div class="mod-row">
@@ -372,6 +352,7 @@ textarea.note::placeholder{color:#aab8c2}
       <div class="ph ph-teal" style="cursor:pointer" onclick="toggleExamples()">Examples <span id="exArrow">&#9654;</span></div>
       <div id="exPanel" style="display:none">
         <div class="pb" style="padding-top:10px">
+          <div style="font-size:10px;font-weight:700;color:var(--mid);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:5px">Standard presentations</div>
           <span class="chip" onclick="loadEx(0)">TIA — CT Head</span>
           <span class="chip" onclick="loadEx(1)">Renal colic — CT KUB</span>
           <span class="chip" onclick="loadEx(2)">Haemoptysis — CXR</span>
@@ -382,6 +363,19 @@ textarea.note::placeholder{color:#aab8c2}
           <span class="chip" onclick="loadEx(7)">Back pain — XR Spine</span>
           <span class="chip" onclick="loadEx(8)">Knee OA — XR Knee</span>
           <span class="chip" onclick="loadEx(9)">Thyroid nodule — US Thyroid</span>
+          <div style="font-size:10px;font-weight:700;color:#8B1a1a;letter-spacing:0.4px;text-transform:uppercase;margin:8px 0 5px">Emergency / acute redirect</div>
+          <span class="chip" style="border-color:#f0b0b0;color:#8B1a1a" onclick="loadEx(10)">Testicular torsion — acute scrotal pain</span>
+          <span class="chip" style="border-color:#f0b0b0;color:#8B1a1a" onclick="loadEx(11)">Thunderclap headache — worst ever</span>
+          <span class="chip" style="border-color:#f0b0b0;color:#8B1a1a" onclick="loadEx(12)">Cauda equina — saddle anaesthesia</span>
+          <span class="chip" style="border-color:#f0b0b0;color:#8B1a1a" onclick="loadEx(13)">Suspected pneumothorax</span>
+          <div style="font-size:10px;font-weight:700;color:#7a4a00;letter-spacing:0.4px;text-transform:uppercase;margin:8px 0 5px">Alternative management / not funded</div>
+          <span class="chip" style="border-color:#f0c060;color:#7a4a00" onclick="loadEx(14)">Routine back pain — no red flags</span>
+          <span class="chip" style="border-color:#f0c060;color:#7a4a00" onclick="loadEx(15)">Knee OA — imaging requested</span>
+          <div style="font-size:10px;font-weight:700;color:var(--teal);letter-spacing:0.4px;text-transform:uppercase;margin:8px 0 5px">April 2026 criteria</div>
+          <span class="chip" onclick="loadEx(16)">Amiodarone — new respiratory symptoms</span>
+          <span class="chip" onclick="loadEx(17)">PMR — starting steroids</span>
+          <span class="chip" onclick="loadEx(18)">Idiopathic DVT — exclude malignancy</span>
+          <span class="chip" onclick="loadEx(19)">Microscopic haematuria — male 55</span>
         </div>
       </div>
     </div>
@@ -596,10 +590,32 @@ var BUILD = "2026-04-03"; // bump on each deployment
 // v2.0.0 — decoupled from viewer, loads criteria from API
 
 // Wire version into DOM elements (they also have inline fallback text above)
+function getParam(name) {
+  var s = window.location.search; if (!s) return null;
+  var pairs = s.substring(1).split('&');
+  for (var i = 0; i < pairs.length; i++) {
+    var kv = pairs[i].split('=');
+    if (decodeURIComponent(kv[0]) === name) return kv[1] ? decodeURIComponent(kv[1]) : null;
+  }
+  return null;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   var vb = document.getElementById('verBtn'); if (vb) vb.textContent = VER;
   var pv = document.getElementById('provToolVer'); if (pv) pv.textContent = VER + ' · ' + BUILD;
   document.title = 'CRR Triage Advisor ' + VER;
+
+  // Pre-populate from ?presentation= URL parameter
+  var pres = getParam('presentation');
+  if (pres) {
+    var noteEl = document.getElementById('noteInput');
+    if (noteEl) {
+      noteEl.value = pres;
+      onNoteChange();
+      // Auto-run assessment when presentation is pre-populated
+      runCheck();
+    }
+  }
 });
 
 // ── CONFIGURATION ────────────────────────────────────────────
@@ -706,6 +722,45 @@ var EXAM_KEYWORDS = {
 };
 
 // ═══════════════════════════════════════════════
+//  HEALTHPATHWAYS URL MAP
+//  URLs sourced from Auckland region HealthPathways (aucklandregion.communityhealthpathways.org)
+// ═══════════════════════════════════════════════
+var HP_URLS = {
+  // CT sites
+  ct_head:        'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=15616.htm',
+  ct_cap:         'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=17650.htm',
+  ct_chest:       'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=448214.htm',
+  ct_colonography:'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=53111.htm',
+  ct_ivu:         'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=177141.htm',
+  ct_kub:         'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20717.htm',
+  ct_sinus:       'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=29072.htm',
+  // Ultrasound sites
+  us_abdomen:     'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=15607.htm',
+  us_carotid:     'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=29069.htm',
+  us_dvt:         'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=32358.htm',
+  us_msk:         'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=15606.htm',
+  us_neck_thyroid:'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20738.htm',
+  us_pelvis:      'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=15608.htm',
+  us_renal:       'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=19858.htm',
+  us_scrotum:     'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=29070.htm',
+  us_soft_tissue: 'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=479698.htm',
+  // X-Ray — use the XR landing page as fallback
+  xr_chest:       'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm',
+  xr_abdomen:     'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm',
+  xr_ankle_foot:  'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm',
+  xr_elbow:       'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm',
+  xr_knee:        'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm',
+  xr_pelvis_hip:  'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm',
+  xr_shoulder:    'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm',
+  xr_spine:       'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm',
+  xr_wrist_hand:  'https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm',
+};
+
+function getHpUrl(site) {
+  return HP_URLS[site.site_id] || '';
+}
+
+// ═══════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════
 var activeMod   = 'all';
@@ -716,16 +771,15 @@ var lastNote      = '';
 var correctedNote = '';  // spell-corrected version of lastNote
 var lastAiResult  = null;
 
-function setSex(val, btn) {
+function setSex(val) {
+  // Demographics are now passed via URL parameters; this is a no-op stub
   demogSex = val;
-  document.querySelectorAll('.sex-btn').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-  onDemogChange();
 }
 
 function onDemogChange() {
-  var age = parseInt(document.getElementById('demogAge').value, 10);
+  // Demographics are now passed via URL parameters; paediatric detection uses note text only
   var w = document.getElementById('paedWarning');
+  var age = parseInt(document.getElementById('demogAge').value, 10);
   if (!isNaN(age) && age < 16) { w.classList.add('show'); }
   else { w.classList.remove('show'); }
 }
@@ -733,26 +787,17 @@ function onDemogChange() {
 function onNoteChange() {
   // Show paediatric warning if note text implies paediatric patient
   var w = document.getElementById('paedWarning');
-  var ageFld = parseInt(document.getElementById('demogAge').value, 10);
-  // Only auto-show from note if age field is empty
-  if (isNaN(ageFld) && detectPaediatric()) {
+  if (detectPaediatric()) {
     w.classList.add('show');
-  } else if (isNaN(ageFld)) {
+  } else {
     w.classList.remove('show');
   }
 }
 
 function buildDemogPrefix() {
-  var age = document.getElementById('demogAge').value.trim();
-  var results = document.getElementById('demogResults').value.trim();
-  var parts = [];
-  if (age || demogSex) {
-    var ageStr = age ? age + '-year-old' : '';
-    var sexStr = demogSex === 'M' ? 'male' : demogSex === 'F' ? 'female' : '';
-    parts.push([ageStr, sexStr].filter(Boolean).join(' '));
-  }
-  if (results) parts.push('Key results: ' + results);
-  return parts.length ? parts.join('. ') + '. ' : '';
+  // Demographics (age, sex) are now passed via the ?presentation= URL parameter
+  // and included directly in the note text — no separate prefix needed.
+  return '';
 }
 
 function getEffectiveNote() {
@@ -782,6 +827,7 @@ function setDocMode(mode, btn) {
 //  EXAMPLES
 // ═══════════════════════════════════════════════
 var EXAMPLES = [
+  // 0–9: standard presentations
   '70-year-old male, 4 days ago sudden onset left arm weakness and facial droop lasting 40 minutes, fully resolved. No AF. Not on anticoagulants. Significant smoking history. Requesting CT Head.',
   '45-year-old male, first presentation severe right loin to groin pain. No fever, temp 36.8. eGFR 78. No history of renal stones. No solitary kidney. Requesting CT KUB.',
   '58-year-old male, 4 weeks persistent unexplained cough worsening. No chest infection. Some weight loss. Long-term smoker 30 pack years. Requesting chest x-ray.',
@@ -792,10 +838,23 @@ var EXAMPLES = [
   '55-year-old male, 8 weeks lower back pain. History of treated prostate cancer 3 years ago. Pain waking him at night. Requesting spine x-ray.',
   '65-year-old male, 6 weeks right knee pain worse with activity, improves with rest. Clinically consistent with osteoarthritis. Requesting orthopaedic assessment, surgeon wants knee x-ray before referral.',
   '45-year-old female, palpable thyroid nodule, no suspicious features, euthyroid, normal TSH. Requesting thyroid ultrasound as initial imaging.',
+  // 10–13: emergency / acute redirect triggers
+  'Suspected testicular torsion, acute onset scrotal pain 2 hours ago. Testis high-riding, tender, absent cremasteric reflex.',
+  'Sudden severe headache, worst ever in life, thunderclap onset while at rest. No prior headache history. Requesting urgent CT Head.',
+  'Cauda equina symptoms — saddle anaesthesia and urinary retention. Unable to void since this morning. Bilateral leg weakness.',
+  'Suspected large pneumothorax, acute onset chest pain and dyspnoea. Reduced air entry right side. Requesting chest x-ray urgently.',
+  // 14–15: alternative management / not funded
+  'Routine back pain, no red flags, 3 weeks duration. No history of malignancy, no night pain, no neurological symptoms, no weight loss. Requesting lumbar spine x-ray.',
+  'Knee OA confirmed clinically, patient requesting imaging. No prior imaging. Clinically consistent with osteoarthritis, no red flag features. Requesting knee x-ray.',
+  // 16–19: April 2026 criteria
+  'Patient on long-term amiodarone therapy with new respiratory symptoms — progressive exertional dyspnoea and dry cough over 3 months. Requesting CT Chest to assess for amiodarone pulmonary toxicity.',
+  'PMR diagnosis, planning to start steroids. Bilateral shoulder and hip girdle pain, elevated ESR and CRP, age 68. Requesting baseline imaging before steroid commencement.',
+  'Idiopathic DVT confirmed on ultrasound, need to exclude underlying malignancy. No obvious precipitating factor. Age 62, non-smoker. Requesting CT CAP to screen for occult malignancy.',
+  'Microscopic haematuria found on dipstick, male aged 55, non-smoker, no UTI symptoms, repeat dipstick also positive. Requesting CT IVU to investigate haematuria.',
 ];
 
 function loadEx(i) {
-  document.getElementById('noteInput').value = EXAMPLES[i];
+  document.getElementById('noteInput').value = EXAMPLES[i] || '';
   onNoteChange();
   runCheck();
 }
@@ -810,24 +869,11 @@ function toggleExamples() {
 }
 
 // ═══════════════════════════════════════════════
-//  MODALITY FILTER
+//  MODALITY FILTER — removed from UI, always 'all'
 // ═══════════════════════════════════════════════
 function setMod(btn) {
-  document.querySelectorAll('.mod-btn').forEach(function(b){ b.classList.remove('active'); });
-  btn.classList.add('active');
-  activeMod = btn.getAttribute('data-mod');
-  updateLabHint();
-}
-
-function updateLabHint() {
-  var hints = {
-    'CT':         '(e.g. ALP 180, eGFR 52, Hb 95, ferritin 8, creatinine 140)',
-    'Ultrasound': '(e.g. ALP 180, GGT 95, ALT 65, Ca-125 42, Wells 3, D-dimer +ve, TSH 0.8)',
-    'X-Ray':      '(e.g. CRP elevated, Hb 98, ESR 65)',
-    'all':        '(e.g. ALP 180, eGFR 52, Wells 3, D-dimer +ve)'
-  };
-  var el = document.getElementById('labHint');
-  if (el) el.textContent = hints[activeMod] || hints['all'];
+  // Modality filter UI removed; kept as no-op for any lingering references
+  activeMod = 'all';
 }
 
 function detectPaediatric() {
@@ -856,9 +902,7 @@ function detectPaediatric() {
 
 function getFilteredIndex() {
   var isPaed = detectPaediatric();
-  var idx = isPaed ? PAED_INDEX : SITE_INDEX;
-  if (activeMod === 'all') return idx;
-  return idx.filter(function(s){ return s.modality === activeMod; });
+  return isPaed ? PAED_INDEX : SITE_INDEX;
 }
 
 // ═══════════════════════════════════════════════
@@ -1270,31 +1314,9 @@ function renderMatchCard(r, idx) {
   h += '<div><div class="av-title">' + vd.title + '</div>';
   h += '<div class="av-body">' + vd.body + '</div></div></div>';
 
-  // Age-aware missing flags — check if patient age conflicts with age-gated criteria
-  var ageFld = parseInt(document.getElementById('demogAge').value, 10);
+  // Age-aware missing flags — age/sex are now embedded in the note text from URL params
+  // (no separate demog fields); the AI assessment handles age-gated criteria checks
   var ageMissingFlags = [];
-  if (!isNaN(ageFld)) {
-    // Check for age 50+ criteria — headache P2 pathway
-    if (ageFld < 50) {
-      var hasHeadacheCrit = r.matchedItems.some(function(m){
-        return m.item.id === 'cth_p2_1' || (m.item.label && m.item.label.indexOf('headache') !== -1 && m.item.label.indexOf('50') !== -1);
-      });
-      if (hasHeadacheCrit) {
-        ageMissingFlags.push('Patient age ' + ageFld + ' does not meet age 50+ requirement for P2 headache criterion [p20]');
-      }
-    }
-    // Check for age 40-85 haematuria criteria
-    if ((ageFld < 40 || ageFld > 85) && r.site.site_id === 'ct_ivu') {
-      ageMissingFlags.push('Patient age ' + ageFld + ' — CT IVU P2 haematuria criterion requires age 40–85 [p24]');
-    }
-    // Male >50 / female >60 for CT CAP
-    if (r.site.site_id === 'ct_cap') {
-      var sexFld = document.getElementById('sexF') && document.getElementById('sexF').classList.contains('active') ? 'F' : 
-                   document.getElementById('sexM') && document.getElementById('sexM').classList.contains('active') ? 'M' : '';
-      if (sexFld === 'M' && ageFld <= 50) ageMissingFlags.push('Male patient age ' + ageFld + ' — CT CAP P2 requires male >50 [p10]');
-      if (sexFld === 'F' && ageFld <= 60) ageMissingFlags.push('Female patient age ' + ageFld + ' — CT CAP P2 requires female >60 [p10]');
-    }
-  }
 
   // Missing items — always show when there are unmatched items or age flags
   var importantMissing = r.unmatchedItems.filter(function(m){ return m.item.mandatory; });
@@ -1333,6 +1355,12 @@ function renderMatchCard(r, idx) {
     h += '<div class="guidance-box" style="margin-top:8px">' + esc(site.guidance) + '</div>';
   }
 
+  // HealthPathways link
+  var _hpUrl = getHpUrl(site);
+  if (_hpUrl) {
+    h += '<div style="margin-top:6px"><a href="' + _hpUrl + '" target="_blank" rel="noopener" style="font-size:11px;font-weight:600;color:var(--teal);text-decoration:none">View HealthPathways ›</a></div>';
+  }
+
   // Alternative management — important for redirects
   if (site.alternativeManagement) {
     h += '<div class="alt-mgmt-box" style="margin-top:6px"><strong style="display:block;margin-bottom:2px;font-size:10px;letter-spacing:0.4px;text-transform:uppercase;">Alternative management / redirect</strong>' + esc(site.alternativeManagement) + '</div>';
@@ -1350,11 +1378,7 @@ function renderMatchCard(r, idx) {
 
 function clearAll() {
   document.getElementById('noteInput').value = '';
-  document.getElementById('demogAge').value = '';
-  document.getElementById('demogResults').value = '';
   demogSex = '';
-  document.querySelectorAll('.sex-btn').forEach(function(b){ b.classList.remove('active'); });
-  document.getElementById('sexNone').classList.add('active');
   document.getElementById('paedWarning').classList.remove('show');
   lastNote = ''; lastAiResult = null; lastResults = null; correctedNote = '';
   document.getElementById('aiPanel').innerHTML =
@@ -1507,9 +1531,8 @@ function clearUsageLog() {
 
 function buildCriteriaBlock() {
   var isPaed = detectPaediatric();
-  var ageFld = parseInt(document.getElementById('demogAge').value, 10);
   var baseIdx = isPaed ? PAED_INDEX : SITE_INDEX;
-  var filtered = (activeMod === 'all') ? baseIdx : baseIdx.filter(function(s){ return s.modality === activeMod; });
+  var filtered = baseIdx; // Modality filter removed — always search full criteria set
   var lines = [];
   filtered.forEach(function(site) {
     var pageRef = site.page ? ' [p' + site.page + ']' : '';
@@ -1533,7 +1556,7 @@ function buildCriteriaBlock() {
 
 function buildSystemPrompt() {
   var isPaed = detectPaediatric();
-  var ageFld = parseInt(document.getElementById('demogAge').value, 10);
+  var ageFld = NaN; // Age is embedded in note text (passed via ?presentation= URL param)
   var docModeInstruction = docMode === 'strict'
     ? '2. DOCUMENTATION STANDARD \u2014 STRICT: Only count information as documented if EXPLICITLY STATED in the note. Do NOT infer. "No AF" (no atrial fibrillation) does NOT imply not anticoagulated. Age and sex must be explicitly stated. This mirrors how a triage radiologist reads a referral cold.\n\n'
     : '2. DOCUMENTATION STANDARD \u2014 INFERRED: You may make reasonable clinical inferences where obvious to any clinician. "No AF" (no atrial fibrillation) suggests the patient is less likely to be anticoagulated specifically for AF — but do not infer the patient is not anticoagulated at all, as other indications (prior DVT, mechanical heart valve, thrombophilia) may apply. Do not infer specific clinical findings not mentioned at all.\n\n';
@@ -1806,9 +1829,17 @@ function renderCriteriaBrowser(r) {
 
   // Guidance box — prefer guidanceNarrative (fuller version); fall back to guidance
   var _guideText = site.guidanceNarrative || site.guidance;
+  var _hpUrlRef = getHpUrl(site);
   if (_guideText) {
-    h += '<div class="guidance-box" style="margin:8px 0 10px">' + esc(_guideText) + '</div>';
+    h += '<div class="guidance-box" style="margin:8px 0 4px">' + esc(_guideText);
+    if (_hpUrlRef) {
+      h += ' <a href="' + _hpUrlRef + '" target="_blank" rel="noopener" style="color:#2a7a40;font-weight:600;white-space:nowrap;text-decoration:none">View HealthPathways &rsaquo;</a>';
+    }
+    h += '</div>';
+  } else if (_hpUrlRef) {
+    h += '<div class="guidance-box" style="margin:8px 0 4px"><a href="' + _hpUrlRef + '" target="_blank" rel="noopener" style="color:#2a7a40;font-weight:600;text-decoration:none">View HealthPathways &rsaquo;</a></div>';
   }
+  if (_guideText || _hpUrlRef) h += '<div style="margin-bottom:10px"></div>';
 
   // Criteria groups
   site.groups.forEach(function(g) {
