@@ -258,6 +258,16 @@ input,textarea,select,button { font-family:inherit; }
 .loader-error h3 { font-size:14px; color:#dc2626; margin-bottom:6px; }
 .loader-error p { font-size:12px; color:#7a2020; }
 
+/* ═══ INDICATION-FIRST VIEW ═══════════════════════════════════ */
+.view-toggle-bar { display:-ms-flexbox; display:flex; gap:4px; margin:0 0 10px; background:#f0f2f5; border-radius:6px; padding:2px; width:-webkit-fit-content; width:fit-content; }
+.view-toggle-btn { padding:4px 12px; border:none; background:none; border-radius:4px; font-size:11px; font-weight:500; color:#5a6068; cursor:pointer; font-family:inherit; }
+.view-toggle-btn.active { background:#ffffff; color:#1a6fa0; font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,0.08); }
+.theme-group-hd { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.8px; color:#8b919a; padding:10px 0 4px; border-bottom:1px solid #f0f2f5; margin-bottom:2px; }
+.theme-group-hd:first-child { padding-top:0; }
+.indic-priority-badge { display:inline-block; font-size:10px; font-weight:700; padding:1px 7px; border-radius:10px; margin-left:6px; vertical-align:middle; flex-shrink:0; }
+.indic-prereq-block { background:#fff8e1; border-left:3px solid #f0a020; border-radius:0 6px 6px 0; padding:10px 12px; margin-bottom:10px; font-size:12px; color:#92400e; }
+.indic-prereq-hd { font-weight:700; font-size:12px; margin-bottom:5px; }
+
 /* hidden clipboard helper */
 #clipHelper { position:absolute; left:-9999px; top:-9999px; width:1px; height:1px; }
 
@@ -444,6 +454,7 @@ var viewMode = 'interactive';
 var isPopup = !!(window.opener && !window.opener.closed);
 var isPassive = false;
 var isIntegration = false;
+var viewLayout = 'indication'; // 'indication' | 'urgency'
 var ceQaLog = [];
 var ceQaActive = null;
 // Track which criterion cards are expanded
@@ -1121,6 +1132,142 @@ function toolRender() {
 // ══════════════════════════════════════════════════════════════
 //  RENDER SITE PANEL
 // ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+//  INDICATION-FIRST RENDERING
+// ══════════════════════════════════════════════════════════════
+
+function setViewLayout(l) {
+  viewLayout = l;
+  toolRender();
+}
+
+function getIndicationTheme(label) {
+  var t = (label || "").toLowerCase();
+  if (t.indexOf("secondary care") !== -1 || t.indexOf("radiologist advises") !== -1 || t.indexOf("clinician or radiologist") !== -1 || t.indexOf("specialist") !== -1 && t.indexOf("advises") !== -1) return "Secondary care referral";
+  if (t.indexOf("cancer") !== -1 || t.indexOf("malignancy") !== -1 || t.indexOf("carcinoma") !== -1 || t.indexOf("tumour") !== -1 || t.indexOf("lymphoma") !== -1 || t.indexOf("metastasi") !== -1 || t.indexOf("known or suspected colorectal") !== -1) return "Cancer / malignancy";
+  if (t.indexOf("family history") !== -1 || t.indexOf("nzgg") !== -1 || t.indexOf("familial") !== -1) return "Family history";
+  if (t.indexOf("anaemia") !== -1 || t.indexOf("iron deficiency") !== -1 || t.indexOf("ferritin") !== -1 || (t.indexOf("hb ") !== -1 && t.indexOf("haemo") !== -1)) return "Anaemia / blood results";
+  if (t.indexOf("rectal bleeding") !== -1 || t.indexOf("haemoptysis") !== -1 || t.indexOf("haematuria") !== -1 || t.indexOf("haemorrhage") !== -1 || t.indexOf("pr bleeding") !== -1) return "Bleeding";
+  if (t.indexOf("bowel habit") !== -1 || t.indexOf("altered bowel") !== -1 || t.indexOf("diarrhoea") !== -1 || t.indexOf("bowel symptom") !== -1) return "Bowel symptoms";
+  if (t.indexOf("tia") !== -1 || t.indexOf("stroke") !== -1 || t.indexOf("seizure") !== -1 || t.indexOf("focal neurological") !== -1 || t.indexOf("headache") !== -1 || t.indexOf("neurological") !== -1) return "Neurological";
+  if (t.indexOf("infection") !== -1 || t.indexOf("osteomyelitis") !== -1 || t.indexOf("septic arthritis") !== -1 || t.indexOf("abscess") !== -1 || t.indexOf("pyelonephritis") !== -1) return "Infection / inflammation";
+  if (t.indexOf("fracture") !== -1 || t.indexOf("trauma") !== -1 || t.indexOf("injury") !== -1) return "Trauma / injury";
+  if (t.indexOf("pain") !== -1) return "Pain";
+  return "Other";
+}
+
+function getPriorityShortFromGroup(title) {
+  var t = (title || "").toLowerCase();
+  if (t.indexOf("acute assessment") !== -1 || t.indexOf("emergency") !== -1) return "Emergency";
+  if (t.indexOf("acute") !== -1) return "Acute";
+  if (t.indexOf("p2") !== -1) return "P2";
+  if (t.indexOf("p3") !== -1) return "P3";
+  if (t.indexOf("p4") !== -1) return "P4";
+  return "";
+}
+
+function getIndicPriorityStyle(tier) {
+  if (tier === "Emergency") return "background:#fdecea;color:#c0392b";
+  if (tier === "Acute")     return "background:#fff7ed;color:#b45309";
+  if (tier === "P2")        return "background:#faf5ff;color:#7c3aed";
+  if (tier === "P3")        return "background:#f0fdf4;color:#15803d";
+  if (tier === "P4")        return "background:#eff6ff;color:#1d4ed8";
+  return "background:#f0f2f5;color:#5a6068";
+}
+
+function renderIndicationPrereqs(obj) {
+  var note = obj.outOfCriteriaNote || "";
+  if (!note) return "";
+  return "<div class='indic-prereq-block'><div class='indic-prereq-hd'>&#128203; Before referring, confirm:</div>" + esc(note) + "</div>";
+}
+
+function renderViewToggle() {
+  return "<div class='view-toggle-bar'>" +
+    "<button class='view-toggle-btn" + (viewLayout === 'indication' ? " active" : "") + "' onclick='setViewLayout(\"indication\")'>By indication</button>" +
+    "<button class='view-toggle-btn" + (viewLayout === 'urgency' ? " active" : "") + "' onclick='setViewLayout(\"urgency\")'>By urgency</button>" +
+    "</div>";
+}
+
+function toolRenderIndicationPanel(obj, prereqLabels) {
+  // Flatten all non-emergency items, tagging each with its source priority
+  var allItems = [];
+  var groups = obj.groups || [];
+  for (var g = 0; g < groups.length; g++) {
+    var grp = groups[g];
+    if (isEmergencyGroup(grp.title)) continue;
+    var tier = getPriorityShortFromGroup(grp.title);
+    for (var i = 0; i < grp.items.length; i++) {
+      var it = grp.items[i];
+      if (it.type === "cb" && prereqLabels && prereqLabels[it.label]) continue;
+      allItems.push({ item: it, tier: tier, groupTitle: grp.title });
+    }
+  }
+
+  // Group by clinical theme, preserving insertion order
+  var themeOrder = [];
+  var themeMap = {};
+  for (var j = 0; j < allItems.length; j++) {
+    var theme = getIndicationTheme(allItems[j].item.label);
+    if (!themeMap[theme]) { themeMap[theme] = []; themeOrder.push(theme); }
+    themeMap[theme].push(allItems[j]);
+  }
+
+  var h = "";
+  for (var ti = 0; ti < themeOrder.length; ti++) {
+    var th = themeOrder[ti];
+    var entries = themeMap[th];
+    h += "<div class='theme-group-hd'>" + esc(th) + "</div>";
+    for (var ei = 0; ei < entries.length; ei++) {
+      h += toolRenderIndicCb(entries[ei].item, entries[ei].tier, entries[ei].groupTitle);
+    }
+  }
+  return h;
+}
+
+function toolRenderIndicCb(item, tier, groupTitle) {
+  var on = TS.cbs[item.id];
+  var isExpanded = on || expandedCards[item.id];
+  var gateway = isGateway(item.label);
+  var labval  = isLabValue(item.label);
+  var isHighlight = (highlightId === item.id);
+
+  var cardClass = "crit-card";
+  if (on) cardClass += " ticked";
+  if (gateway) cardClass += " gateway-card";
+  else if (labval) cardClass += " lab-card";
+  if (isHighlight) cardClass += " highlight";
+
+  var h = "<div class='" + cardClass + "' id='row_" + esc(item.id) + "'>";
+  h += "<div class='crit-card-header' onclick='toggleCb(\"" + esc(item.id) + "\")'>";
+  h += "<input type='checkbox' class='crit-card-check' id='chk_" + esc(item.id) + "' onclick='event.stopPropagation();toggleCb(\"" + esc(item.id) + "\")'";
+  h += on ? " checked" : "";
+  h += ">";
+  h += "<span class='crit-card-label'>" + esc(item.label);
+  if (item.mandatory) h += " <span class='mandatory-tag'>Mandatory</span>";
+  h += "</span>";
+  h += "<span class='crit-card-badges'>";
+  if (tier) h += "<span class='indic-priority-badge' style='" + getIndicPriorityStyle(tier) + "'>" + esc(tier) + "</span>";
+  if (gateway) h += "<span class='gateway-tag'>&#128274; Gateway</span>";
+  if (labval)  h += "<span class='lab-tag'>&#128299; Lab value</span>";
+  h += "</span>";
+  if (item.conditionalNote || item.shortLabel) {
+    h += "<span class='crit-card-expand" + (isExpanded ? " open" : "") + "' onclick='event.stopPropagation();toggleExpand(\"" + esc(item.id) + "\")'>&#9654;</span>";
+  }
+  h += "</div>";
+  if (item.conditionalNote || item.shortLabel) {
+    h += "<div class='crit-card-detail" + (isExpanded ? " open" : "") + "' id='detail_" + esc(item.id) + "'>";
+    if (item.shortLabel && item.shortLabel !== item.label) {
+      h += "<div class='crit-detail-note' style='font-size:11px;color:#8b919a;font-style:italic'>Shorthand: " + esc(item.shortLabel) + "</div>";
+    }
+    if (item.conditionalNote) {
+      h += "<div class='ib-red' style='margin-top:4px;font-size:12px'>" + esc(item.conditionalNote) + "</div>";
+    }
+    h += "</div>";
+  }
+  h += "</div>";
+  return h;
+}
+
 function toolRenderSitePanel(site) {
   var cnt = countSite(site);
   var h = "<div class='card'>";
@@ -1155,17 +1302,29 @@ function toolRenderSitePanel(site) {
     }
   }
 
-  // Emergency block
+  // Emergency block (always shown regardless of view layout)
   if (emergencyItems.length) h += renderEmergencyBlock(emergencyItems);
 
-  // Prerequisites block
+  // Prerequisites
   var prereqs = gatherPrereqs(site);
-  if (prereqs.length) h += renderPrereqBlock(prereqs);
   var prereqLabels = {};
   for (var p = 0; p < prereqs.length; p++) prereqLabels[prereqs[p]] = true;
 
-  // Non-emergency groups
-  for (var ng = 0; ng < nonEmergencyGroups.length; ng++) h += toolRenderGroup(nonEmergencyGroups[ng], prereqLabels);
+  // View toggle (interactive mode only)
+  if (viewMode !== "passive") h += renderViewToggle();
+
+  if (viewLayout === 'indication') {
+    // Static prereq block from outOfCriteriaNote
+    h += renderIndicationPrereqs(site);
+    // Gateway prereqs amber block
+    if (prereqs.length) h += renderPrereqBlock(prereqs);
+    // Flat themed indication list
+    h += toolRenderIndicationPanel(site, prereqLabels);
+  } else {
+    // Urgency-grouped view (existing behaviour)
+    if (prereqs.length) h += renderPrereqBlock(prereqs);
+    for (var ng = 0; ng < nonEmergencyGroups.length; ng++) h += toolRenderGroup(nonEmergencyGroups[ng], prereqLabels);
+  }
 
   // Footer blocks
   h += renderFooterBlocks(site);
@@ -1186,10 +1345,20 @@ function toolRenderSinglesite(exam) {
   }
   if (emergencyItems.length) h += renderEmergencyBlock(emergencyItems);
   var prereqs = gatherPrereqs(exam);
-  if (prereqs.length) h += renderPrereqBlock(prereqs);
   var prereqLabels = {};
   for (var p = 0; p < prereqs.length; p++) prereqLabels[prereqs[p]] = true;
-  for (var ng = 0; ng < nonEmergencyGroups.length; ng++) h += toolRenderGroup(nonEmergencyGroups[ng], prereqLabels);
+
+  if (viewMode !== "passive") h += renderViewToggle();
+
+  if (viewLayout === 'indication') {
+    h += renderIndicationPrereqs(exam);
+    if (prereqs.length) h += renderPrereqBlock(prereqs);
+    h += toolRenderIndicationPanel(exam, prereqLabels);
+  } else {
+    if (prereqs.length) h += renderPrereqBlock(prereqs);
+    for (var ng = 0; ng < nonEmergencyGroups.length; ng++) h += toolRenderGroup(nonEmergencyGroups[ng], prereqLabels);
+  }
+
   h += renderFooterBlocks(exam);
   h += "</div></div>";
   return h;
@@ -1590,8 +1759,13 @@ function updateDecisionPanel(items) {
   if (countEl) countEl.textContent = items.length;
   var tier = getHighestPriorityTier(items);
   var h = "";
-  h += "<div class='decision-status'><span class='decision-icon'>&#9989;</span><span class='decision-msg' style='color:#059669'>" + items.length + " indicator" + (items.length===1?"":"s") + " selected</span></div>";
-  if (tier) h += "<div class='decision-tier'>Highest priority: <strong>" + esc(tier) + "</strong></div>";
+  if (viewLayout === 'indication' && tier) {
+    // Indication-first summary: emphasise the urgency met
+    h += "<div class='decision-status'><span class='decision-icon'>&#9989;</span><span class='decision-msg' style='color:#059669;font-weight:600'>Selected criteria meet " + esc(tier) + "</span></div>";
+  } else {
+    h += "<div class='decision-status'><span class='decision-icon'>&#9989;</span><span class='decision-msg' style='color:#059669'>" + items.length + " indicator" + (items.length===1?"":"s") + " selected</span></div>";
+    if (tier) h += "<div class='decision-tier'>Highest priority: <strong>" + esc(tier) + "</strong></div>";
+  }
   h += "<div class='decision-disclaimer'>Based on selected indicators only. Does not assess documentation quality or completeness.</div>";
   body.innerHTML = h;
 }
