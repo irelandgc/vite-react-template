@@ -4,35 +4,37 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>CRR Triage Advisor v2.1.1</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --navy:#003B5C;--teal:#008B8B;--teal2:#00B4B4;--ink:#0d1f2d;
-  --mist:#f2f6f8;--rule:#d0dce4;--mid:#5a7a8a;--lite:#eaf2f7;
-  --pass:#1a6640;--pass-bg:#e6f4ec;--pass-bd:#a8d8b8;
-  --warn:#7a4a00;--warn-bg:#fff3e0;--warn-bd:#f0c060;
-  --fail:#8B1a1a;--fail-bg:#fdecea;--fail-bd:#f0b0b0;
+  --navy:#1a1d21;--teal:#1a6fa0;--teal2:#145a84;--ink:#1a1d21;
+  --mist:#f5f6f8;--rule:#dde1e6;--mid:#5a6068;--lite:#f0f2f5;
+  --pass:#059669;--pass-bg:#f0fdf4;--pass-bd:#a7f3d0;
+  --warn:#92400e;--warn-bg:#fff8e1;--warn-bd:#ffe082;
+  --fail:#dc2626;--fail-bg:#fdecea;--fail-bd:#f0b0b0;
   --ai:#2a4a8a;--ai-bg:#eef3fd;--ai-bd:#b0c8f0;
-  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+  --accent:#1a6fa0;--accent-hover:#145a84;--accent-light:#e8f2fa;
+  --sans:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'Courier New',monospace;
 }
-body{font-family:var(--sans);background:var(--mist);color:var(--ink);font-size:14px;line-height:1.5;min-height:100vh}
+body{font-family:var(--sans);background:var(--mist);color:var(--ink);font-size:13px;line-height:1.5;min-height:100vh}
 
 /* Header */
-.hd{background:var(--navy);color:#fff;padding:0 20px;height:50px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:3px solid var(--teal)}
+.hd{background:#fff;color:var(--ink);padding:0 20px;height:46px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--rule);box-shadow:0 1px 3px rgba(0,0,0,0.06)}
 .hd-left{display:flex;align-items:center;gap:12px}
-.logo{background:var(--teal);color:#fff;font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:1px;padding:3px 7px;border-radius:2px}
-.hd-title{font-size:14px;font-weight:700}
-.hd-sub{font-size:11px;color:#8ab4c8;margin-top:1px}
+.logo{background:var(--accent-light);color:var(--accent);font-size:10px;font-weight:700;letter-spacing:0.8px;padding:3px 7px;border-radius:6px}
+.hd-title{font-size:15px;font-weight:700;color:var(--accent)}
+.hd-sub{font-size:11px;color:#8b919a;margin-top:1px}
 .hd-right{display:flex;align-items:center;gap:8px}
-.btn-key{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;font-family:var(--sans);font-size:11px;font-weight:600;padding:4px 10px;border-radius:2px;cursor:pointer}
-.btn-key:hover{background:rgba(255,255,255,0.18)}
+.btn-key{background:#f0f2f5;border:1px solid var(--rule);color:var(--mid);font-family:var(--sans);font-size:11px;font-weight:500;padding:4px 10px;border-radius:6px;cursor:pointer}
+.btn-key:hover{background:var(--rule)}
 .key-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle}
-.key-dot.set{background:#4dd}
-.key-dot.unset{background:#f87}
-.method-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:0.3px}
-.method-rule{background:rgba(0,139,139,0.25);color:#4dd}
-.method-ai{background:rgba(100,150,255,0.25);color:#aac8ff}
+.key-dot.set{background:#059669}
+.key-dot.unset{background:#dc2626}
+.method-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;letter-spacing:0.3px}
+.method-rule{background:var(--accent-light);color:var(--accent)}
+.method-ai{background:#eef3fd;color:#2a4a8a}
 
 /* Layout */
 .wrap{max-width:1600px;margin:0 auto;padding:16px 16px 60px;display:grid;grid-template-columns:340px 1fr 1fr;gap:14px;align-items:start}
@@ -40,123 +42,127 @@ body{font-family:var(--sans);background:var(--mist);color:var(--ink);font-size:1
 @media(max-width:760px){.wrap{grid-template-columns:1fr}}
 
 /* Panels */
-.panel{background:#fff;border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+.panel{background:#fff;border:1px solid var(--rule);border-radius:10px;overflow:hidden}
 /* Column headers */
-.col-hd{font-size:11px;font-weight:700;letter-spacing:0.7px;text-transform:uppercase;color:var(--mid);padding:0 2px 8px;border-bottom:2px solid var(--rule);margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.col-hd-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.col-hd{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#8b919a;padding:0 2px 8px;border-bottom:1px solid var(--rule);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.col-hd-dot{display:none}
 /* Action verdict banner — leads rule-based result */
-.action-verdict{padding:11px 14px;border-radius:2px;margin-bottom:10px;border-left:4px solid;display:flex;gap:10px;align-items:flex-start}
+.action-verdict{padding:11px 14px;border-radius:8px;margin-bottom:10px;border-left:4px solid;display:flex;gap:10px;align-items:flex-start}
 .action-verdict.proceed{background:var(--pass-bg);border-color:var(--pass)}
-.action-verdict.atrisk{background:var(--warn-bg);border-color:#e09000}
-.action-verdict.decline{background:var(--fail-bg);border-color:#c62828}
+.action-verdict.atrisk{background:var(--warn-bg);border-color:#ffe082}
+.action-verdict.decline{background:var(--fail-bg);border-color:var(--fail)}
 .av-icon{font-size:22px;flex-shrink:0;line-height:1}
 .av-title{font-size:13px;font-weight:700;margin-bottom:2px}
 .action-verdict.proceed .av-title{color:var(--pass)}
 .action-verdict.atrisk .av-title{color:var(--warn)}
 .action-verdict.decline .av-title{color:var(--fail)}
-.av-body{font-size:12px;color:var(--ink);line-height:1.4}
+.av-body{font-size:12px;color:var(--ink);line-height:1.6}
 /* What to add box */
-.add-info-box{background:#fff8e6;border:1px solid #f0d070;border-left:3px solid #e09000;border-radius:2px;padding:10px 12px;margin-bottom:10px}
-.add-info-hd{font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--warn);margin-bottom:6px}
-.add-info-item{font-size:12px;color:var(--ink);padding:3px 0 3px 14px;border-left:2px solid #e0b060;margin-bottom:3px;line-height:1.4}
+.add-info-box{background:var(--warn-bg);border:1px solid var(--warn-bd);border-left:3px solid var(--warn-bd);border-radius:6px;padding:10px 12px;margin-bottom:10px}
+.add-info-hd{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--warn);margin-bottom:6px}
+.add-info-item{font-size:12px;color:var(--ink);padding:3px 0 3px 14px;border-left:2px solid var(--warn-bd);margin-bottom:3px;line-height:1.4}
 /* AI col */
-.ai-col-empty{padding:24px 14px;text-align:center;color:#aab8c2}
+.ai-col-empty{padding:24px 14px;text-align:center;color:#8b919a}
 .ai-col-empty p{font-size:12px;line-height:1.5}
-.btn-run-ai{width:100%;padding:10px;background:var(--ai);color:#fff;border:none;font-family:var(--sans);font-size:13px;font-weight:700;border-radius:2px;cursor:pointer;margin-bottom:10px}
+.btn-run-ai{width:100%;padding:10px;background:var(--ai);color:#fff;border:none;font-family:var(--sans);font-size:13px;font-weight:600;border-radius:6px;cursor:pointer;margin-bottom:10px}
 .btn-run-ai:hover{background:#1a3070}
 .btn-run-ai:disabled{background:#b0bec8;cursor:not-allowed}
-.ph{background:var(--navy);color:#fff;font-size:11px;font-weight:700;letter-spacing:0.7px;text-transform:uppercase;padding:9px 14px;display:flex;align-items:center;justify-content:space-between}
-.ph-teal{background:var(--teal)}
+.ph{background:var(--lite);color:#8b919a;font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;padding:9px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--rule)}
+.ph-teal{background:var(--accent-light);color:var(--accent)}
 .pb{padding:14px}
 
 /* Input */
-.note-hint{font-size:11px;font-weight:700;color:var(--mid);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:6px}
+.note-hint{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:6px}
 /* Demographic fields */
 .demog-row{display:flex;gap:8px;margin:10px 0 0;align-items:flex-end}
 .demog-field{display:flex;flex-direction:column;gap:3px}
-.demog-label{font-size:10px;font-weight:700;color:var(--mid);letter-spacing:0.4px;text-transform:uppercase}
-.demog-input{border:1px solid var(--rule);border-radius:2px;padding:6px 8px;font-family:var(--sans);font-size:13px;color:var(--ink);width:100%;transition:border-color .15s}
-.demog-input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 2px rgba(0,139,139,0.1)}
-.demog-input::placeholder{color:#aab8c2}
+.demog-label{font-size:10px;font-weight:600;color:#8b919a;letter-spacing:0.8px;text-transform:uppercase}
+.demog-input{border:1px solid var(--rule);border-radius:6px;padding:8px 10px;font-family:var(--sans);font-size:13px;color:var(--ink);width:100%;transition:border-color .15s}
+.demog-input:focus{outline:none;border-color:#4a86b5;box-shadow:0 0 0 2px rgba(26,111,160,0.1)}
+.demog-input::placeholder{color:#8b919a}
 .demog-age{width:68px}
 .demog-results{flex:1}
 .sex-row{display:flex;gap:4px}
-.sex-btn{padding:5px 10px;border:1px solid var(--rule);border-radius:2px;background:#fff;font-family:var(--sans);font-size:12px;font-weight:600;color:var(--mid);cursor:pointer;transition:all .12s}
-.sex-btn:hover{border-color:var(--teal);color:var(--teal)}
-.sex-btn.active{background:var(--teal);color:#fff;border-color:var(--teal)}
+.sex-btn{padding:5px 10px;border:1px solid var(--rule);border-radius:6px;background:#fff;font-family:var(--sans);font-size:12px;font-weight:500;color:var(--mid);cursor:pointer;transition:all .12s}
+.sex-btn:hover{border-color:var(--accent);color:var(--accent)}
+.sex-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 /* Paediatric warning */
-.paed-warning{background:#fff8e6;border:1px solid #f0c060;border-left:3px solid #c07800;border-radius:2px;padding:8px 10px;font-size:12px;color:#7a4a00;margin-top:8px;display:none}
+.paed-warning{background:var(--warn-bg);border:1px solid var(--warn-bd);border-left:3px solid var(--warn-bd);border-radius:6px;padding:8px 10px;font-size:12px;color:var(--warn);margin-top:8px;display:none}
 .paed-warning.show{display:block}
-textarea.note{width:100%;min-height:160px;border:1px solid var(--rule);border-radius:2px;padding:10px;font-family:var(--sans);font-size:13px;color:var(--ink);resize:vertical;transition:border-color .15s}
-textarea.note:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,139,139,0.1)}
-textarea.note::placeholder{color:#aab8c2}
-.mod-row{display:flex;gap:6px;margin:10px 0;flex-wrap:wrap}
-.mod-btn{padding:5px 12px;border:1px solid var(--rule);border-radius:2px;background:#fff;font-family:var(--sans);font-size:12px;font-weight:600;color:var(--mid);cursor:pointer;transition:all .12s}
-.mod-btn:hover{border-color:var(--teal);color:var(--teal)}
-.mod-btn.active{background:var(--teal);color:#fff;border-color:var(--teal)}
+textarea.note{width:100%;min-height:160px;border:1px solid var(--rule);border-radius:6px;padding:10px;font-family:var(--sans);font-size:13px;color:var(--ink);resize:vertical;transition:border-color .15s;line-height:1.6}
+textarea.note:focus{outline:none;border-color:#4a86b5;box-shadow:0 0 0 2px rgba(26,111,160,0.1)}
+textarea.note::placeholder{color:#8b919a}
+
+/* Strict/Inferred segmented control */
+.mod-row{display:inline-flex;gap:0;margin:10px 0;background:var(--lite);border-radius:6px;padding:2px}
+.mod-btn{padding:5px 14px;border:none;border-radius:4px;background:transparent;font-family:var(--sans);font-size:12px;font-weight:500;color:var(--mid);cursor:pointer;transition:all .12s}
+.mod-btn:hover{color:var(--ink)}
+.mod-btn.active{background:#fff;color:var(--accent);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,0.08)}
+
 .act-row{display:flex;align-items:center;gap:10px;margin-top:12px}
-.btn-assess{background:var(--teal);color:#fff;border:none;padding:9px 22px;font-family:var(--sans);font-size:13px;font-weight:700;border-radius:2px;cursor:pointer;transition:background .12s}
-.btn-assess:hover{background:#007070}
-.btn-clr{background:none;border:1px solid var(--rule);color:var(--mid);padding:8px 12px;font-family:var(--sans);font-size:12px;font-weight:600;border-radius:2px;cursor:pointer}
+.btn-assess{background:var(--accent);color:#fff;border:none;padding:7px 16px;font-family:var(--sans);font-size:13px;font-weight:500;border-radius:6px;cursor:pointer;transition:background .12s}
+.btn-assess:hover{background:var(--accent-hover)}
+.btn-clr{background:#fff;border:1px solid var(--rule);color:var(--mid);padding:7px 16px;font-family:var(--sans);font-size:13px;font-weight:500;border-radius:6px;cursor:pointer}
+.btn-clr:hover{background:var(--lite)}
 .hint-box{font-size:11px;color:var(--mid);margin-top:12px;padding-top:10px;border-top:1px solid var(--rule);line-height:1.5}
-.hint-box strong{color:var(--navy)}
+.hint-box strong{color:var(--ink)}
 
 /* Examples */
-.ex-hd{font-size:11px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:var(--mid);margin-bottom:6px}
-.chip{display:inline-block;background:var(--mist);border:1px solid var(--rule);border-radius:2px;padding:4px 9px;font-size:11px;color:var(--navy);cursor:pointer;margin:2px 2px 2px 0;transition:all .12s}
-.chip:hover{background:#ddeef5;border-color:var(--teal);color:var(--teal)}
+.ex-hd{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#8b919a;margin-bottom:6px}
+.chip{display:inline-block;background:var(--lite);border:1px solid var(--rule);border-radius:6px;padding:4px 9px;font-size:11px;color:var(--ink);cursor:pointer;margin:2px 2px 2px 0;transition:all .12s}
+.chip:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
 
 /* Results */
-.result-empty{padding:36px 16px;text-align:center;color:#aab8c2}
+.result-empty{padding:36px 16px;text-align:center;color:#8b919a}
 .result-empty-icon{font-size:32px;margin-bottom:8px;opacity:.4}
-.result-empty p{font-size:13px}
+.result-empty p{font-size:13px;color:#8b919a}
 
 /* Confidence bar */
 .conf-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-.conf-label{font-size:12px;font-weight:600;color:var(--navy);flex:1;min-width:0}
-.conf-pct{font-size:11px;font-weight:700;color:var(--mid);width:34px;text-align:right;flex-shrink:0}
+.conf-label{font-size:12px;font-weight:600;color:var(--ink);flex:1;min-width:0}
+.conf-pct{font-size:11px;font-weight:600;color:var(--mid);width:34px;text-align:right;flex-shrink:0}
 .conf-bar-wrap{width:80px;height:6px;background:var(--rule);border-radius:3px;flex-shrink:0;overflow:hidden}
-.conf-bar{height:100%;border-radius:3px;background:var(--teal);transition:width .3s}
+.conf-bar{height:100%;border-radius:3px;background:var(--accent);transition:width .3s}
 .conf-bar.high{background:var(--pass)}
 .conf-bar.med{background:#e09000}
 .conf-bar.low{background:#ccc}
 
 /* Match card */
-.match-card{border:1px solid var(--rule);border-radius:2px;margin-bottom:10px;overflow:hidden}
+.match-card{border:1px solid var(--rule);border-radius:8px;margin-bottom:10px;overflow:hidden}
 .match-card-hd{padding:9px 12px;background:var(--lite);display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
-.match-card-hd:hover{background:#ddeef5}
-.match-card-title{font-size:12px;font-weight:700;color:var(--navy)}
+.match-card-hd:hover{background:var(--accent-light)}
+.match-card-title{font-size:12px;font-weight:600;color:var(--ink)}
 .match-card-meta{display:flex;align-items:center;gap:6px}
-.badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:0.3px;flex-shrink:0}
+.badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;letter-spacing:0.3px;flex-shrink:0}
 .badge-pass{background:var(--pass-bg);color:var(--pass);border:1px solid var(--pass-bd)}
 .badge-warn{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-bd)}
 .badge-fail{background:var(--fail-bg);color:var(--fail);border:1px solid var(--fail-bd)}
-.badge-mod{background:var(--lite);color:var(--navy);border:1px solid var(--rule)}
+.badge-mod{background:var(--lite);color:var(--ink);border:1px solid var(--rule)}
 .match-card-bd{padding:10px 12px;display:none}
 .match-card-bd.open{display:block}
-.criteria-item{font-size:12px;padding:4px 0 4px 14px;border-left:2px solid var(--rule);margin-bottom:3px;color:var(--ink);line-height:1.4}
-.criteria-item.met{border-color:var(--teal)}
-.criteria-item.missing{border-color:#e0b060;color:var(--warn)}
-.ci-tag{font-size:10px;font-family:var(--mono);font-weight:600;padding:1px 5px;border-radius:2px;margin-right:4px}
+.criteria-item{font-size:12px;padding:4px 0 4px 14px;border-left:2px solid var(--rule);margin-bottom:3px;color:var(--ink);line-height:1.6}
+.criteria-item.met{border-color:var(--accent)}
+.criteria-item.missing{border-color:#ffe082;color:var(--warn)}
+.ci-tag{font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;margin-right:4px}
 .ci-tag.met{background:var(--pass-bg);color:var(--pass)}
 .ci-tag.missing{background:var(--warn-bg);color:var(--warn)}
 .ci-tag.mandatory{background:var(--fail-bg);color:var(--fail)}
-.group-hd{font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--mid);margin:8px 0 4px}
-.guidance-box{font-size:11px;color:var(--mid);background:var(--mist);border-radius:2px;padding:8px 10px;margin-top:8px;line-height:1.5;border-left:3px solid var(--teal)}
-.alt-mgmt-box{font-size:11px;color:#7a4a00;background:#fff8f0;border-radius:2px;padding:8px 10px;margin-top:6px;line-height:1.5;border-left:3px solid #e09000}
-.not-funded-box{font-size:11px;color:var(--fail);background:var(--fail-bg);border-radius:2px;padding:8px 10px;margin-top:6px;line-height:1.5;border-left:3px solid #c62828}
+.group-hd{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#8b919a;margin:8px 0 4px}
+.guidance-box{font-size:11px;color:var(--mid);background:var(--lite);border-radius:6px;padding:8px 10px;margin-top:8px;line-height:1.5;border-left:3px solid var(--accent)}
+.alt-mgmt-box{font-size:11px;color:var(--warn);background:var(--warn-bg);border-radius:6px;padding:8px 10px;margin-top:6px;line-height:1.5;border-left:3px solid var(--warn-bd)}
+.not-funded-box{font-size:11px;color:var(--fail);background:var(--fail-bg);border-radius:6px;padding:8px 10px;margin-top:6px;line-height:1.5;border-left:3px solid var(--fail)}
 
 /* AI escalation */
-.ai-bar{background:var(--ai-bg);border:1px solid var(--ai-bd);border-radius:2px;padding:10px 14px;margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ai-bar{background:var(--ai-bg);border:1px solid var(--ai-bd);border-radius:8px;padding:10px 14px;margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .ai-bar-text{font-size:12px;color:var(--ai);line-height:1.4}
 .ai-bar-text strong{display:block;font-size:12px;margin-bottom:1px}
-.btn-ai{background:var(--ai);color:#fff;border:none;padding:7px 14px;font-family:var(--sans);font-size:12px;font-weight:700;border-radius:2px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.btn-ai{background:var(--ai);color:#fff;border:none;padding:7px 14px;font-family:var(--sans);font-size:12px;font-weight:600;border-radius:6px;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .btn-ai:hover{background:#1a3070}
 .btn-ai:disabled{background:#b0bec8;cursor:not-allowed}
 
 /* AI result overlay */
-.ai-result{background:var(--ai-bg);border:1px solid var(--ai-bd);border-radius:2px;padding:12px 14px;margin-top:10px}
-.ai-result-hd{font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--ai);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.ai-result{background:var(--ai-bg);border:1px solid var(--ai-bd);border-radius:8px;padding:12px 14px;margin-top:10px;line-height:1.6;color:var(--ink)}
+.ai-result-hd{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--ai);margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .ai-spinner{display:inline-flex;gap:3px}
 .ai-spinner span{width:5px;height:5px;border-radius:50%;background:var(--ai);animation:bounce 1.2s ease-in-out infinite}
 .ai-spinner span:nth-child(2){animation-delay:.2s}
@@ -164,108 +170,108 @@ textarea.note::placeholder{color:#aab8c2}
 @keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-5px);opacity:1}}
 
 /* Verdict banner */
-.verdict{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border-radius:2px;margin-bottom:12px;border-left:4px solid}
+.verdict{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border-radius:8px;margin-bottom:12px;border-left:4px solid}
 .verdict.pass{background:var(--pass-bg);border-color:var(--pass)}
-.verdict.warn{background:var(--warn-bg);border-color:#e09000}
-.verdict.fail{background:var(--fail-bg);border-color:#c62828}
+.verdict.warn{background:var(--warn-bg);border-color:var(--warn-bd)}
+.verdict.fail{background:var(--fail-bg);border-color:var(--fail)}
 .verdict-icon{font-size:20px;flex-shrink:0;margin-top:1px}
 .verdict-title{font-size:12px;font-weight:700}
 .verdict.pass .verdict-title{color:var(--pass)}
 .verdict.warn .verdict-title{color:var(--warn)}
 .verdict.fail .verdict-title{color:var(--fail)}
-.verdict-body{font-size:12px;color:var(--ink);margin-top:2px;line-height:1.4}
+.verdict-body{font-size:12px;color:var(--ink);margin-top:2px;line-height:1.6}
 
 /* Reword */
-.reword{background:#f0f7ff;border:1px solid #b8d4ee;border-left:3px solid #2a6090;border-radius:2px;padding:10px 12px;font-size:12px;font-style:italic;line-height:1.6;color:var(--ink);margin-top:8px}
-.reword-lbl{font-size:10px;font-weight:700;font-style:normal;letter-spacing:0.5px;text-transform:uppercase;color:#2a6090;margin-bottom:4px}
+.reword{background:var(--accent-light);border:1px solid #b8d4ee;border-left:3px solid var(--accent);border-radius:6px;padding:10px 12px;font-size:12px;font-style:italic;line-height:1.6;color:var(--ink);margin-top:8px}
+.reword-lbl{font-size:10px;font-weight:600;font-style:normal;letter-spacing:0.8px;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
 
 /* Copy / actions */
 .result-actions{display:flex;gap:8px;margin-top:12px}
-.btn-copy{flex:1;padding:8px;background:none;border:1px solid var(--rule);border-radius:2px;font-family:var(--sans);font-size:12px;font-weight:600;color:var(--mid);cursor:pointer;text-align:center;transition:all .12s}
-.btn-copy:hover{border-color:var(--navy);color:var(--navy)}
+.btn-copy{flex:1;padding:7px 16px;background:#fff;border:1px solid var(--rule);border-radius:6px;font-family:var(--sans);font-size:13px;font-weight:500;color:var(--mid);cursor:pointer;text-align:center;transition:all .12s}
+.btn-copy:hover{border-color:var(--accent);color:var(--accent)}
 
 /* Typo correction box */
-.correction-box{background:#f0f7ff;border:1px solid #b8d4ee;border-left:3px solid #2a6090;border-radius:2px;padding:10px 12px;margin-bottom:10px}
-.correction-lbl{font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#2a6090;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.correction-box{background:var(--accent-light);border:1px solid #b8d4ee;border-left:3px solid var(--accent);border-radius:6px;padding:10px 12px;margin-bottom:10px}
+.correction-lbl{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:6px}
 .correction-interpreted{font-size:12px;line-height:1.6;color:var(--ink);margin-bottom:4px}
-.correction-original{font-size:11px;color:#8ab4c8;font-style:italic;margin-top:4px;line-height:1.5}
-.correction-toggle{font-size:11px;color:#2a6090;cursor:pointer;text-decoration:underline;margin-left:auto}
+.correction-original{font-size:11px;color:#8b919a;font-style:italic;margin-top:4px;line-height:1.5}
+.correction-toggle{font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline;margin-left:auto}
 
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,30,50,.5);z-index:500;align-items:center;justify-content:center}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center}
 .modal-bg.open{display:flex}
-.modal{background:#fff;border-radius:3px;width:440px;max-width:95vw;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)}
-.modal-hd{background:var(--navy);color:#fff;padding:12px 18px;font-size:13px;font-weight:700}
+.modal{background:#fff;border-radius:10px;width:440px;max-width:95vw;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal-hd{background:var(--accent);color:#fff;padding:12px 18px;font-size:13px;font-weight:700}
 .modal-bd{padding:18px}
 .modal-bd p{font-size:13px;color:var(--mid);margin-bottom:10px;line-height:1.5}
-.modal-bd input{width:100%;border:1px solid var(--rule);border-radius:2px;padding:9px 10px;font-family:var(--mono);font-size:12px;color:var(--ink);margin-bottom:10px}
-.modal-bd input:focus{outline:none;border-color:var(--teal)}
-.modal-warn{font-size:11px;color:#a05000;background:#fff8f0;border:1px solid #f0d090;border-radius:2px;padding:7px 9px;line-height:1.5;margin-top:4px}
+.modal-bd input{width:100%;border:1px solid var(--rule);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--ink);margin-bottom:10px}
+.modal-bd input:focus{outline:none;border-color:#4a86b5}
+.modal-warn{font-size:11px;color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn-bd);border-radius:6px;padding:7px 9px;line-height:1.5;margin-top:4px}
 .modal-acts{display:flex;gap:7px;justify-content:flex-end;margin-top:12px}
-.btn-mc{padding:7px 14px;border:1px solid var(--rule);background:#fff;color:var(--mid);font-family:var(--sans);font-size:12px;font-weight:600;border-radius:2px;cursor:pointer}
-.btn-ms{padding:7px 14px;background:var(--teal);border:none;color:#fff;font-family:var(--sans);font-size:12px;font-weight:700;border-radius:2px;cursor:pointer}
-.btn-md{padding:7px 14px;background:none;border:1px solid #f0b0b0;color:#c62828;font-family:var(--sans);font-size:12px;font-weight:600;border-radius:2px;cursor:pointer}
+.btn-mc{padding:7px 14px;border:1px solid var(--rule);background:#fff;color:var(--mid);font-family:var(--sans);font-size:12px;font-weight:500;border-radius:6px;cursor:pointer}
+.btn-ms{padding:7px 14px;background:var(--accent);border:none;color:#fff;font-family:var(--sans);font-size:12px;font-weight:600;border-radius:6px;cursor:pointer}
+.btn-md{padding:7px 14px;background:none;border:1px solid #f0b0b0;color:var(--fail);font-family:var(--sans);font-size:12px;font-weight:500;border-radius:6px;cursor:pointer}
 
 /* ── QA System ───────────────────────────────────────────── */
-.btn-qa{padding:9px 12px;background:none;border:1px solid #e0a020;color:#c07800;font-family:var(--sans);font-size:12px;font-weight:700;border-radius:2px;cursor:pointer;transition:all .12s;white-space:nowrap}
-.btn-qa:hover{background:#fff8e6;border-color:#c07800}
-.btn-qa-export{padding:5px 12px;background:none;border:1px solid var(--rule);color:var(--mid);font-family:var(--sans);font-size:11px;font-weight:600;border-radius:2px;cursor:pointer}
-.btn-qa-export:hover{border-color:var(--teal);color:var(--teal)}
+.btn-qa{padding:7px 12px;background:#fff;border:1px solid var(--warn-bd);color:var(--warn);font-family:var(--sans);font-size:11px;font-weight:500;border-radius:6px;cursor:pointer;transition:all .12s;white-space:nowrap}
+.btn-qa:hover{background:var(--warn-bg)}
+.btn-qa-export{padding:5px 12px;background:none;border:1px solid var(--rule);color:var(--mid);font-family:var(--sans);font-size:11px;font-weight:500;border-radius:6px;cursor:pointer}
+.btn-qa-export:hover{border-color:var(--accent);color:var(--accent)}
 .qa-stars{display:flex;gap:6px;margin:10px 0}
-.qa-star{width:36px;height:36px;border:2px solid var(--rule);border-radius:3px;background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;color:#ccc}
-.qa-star.selected{border-color:#f0a020;background:#fff8e6;color:#f0a020}
-.qa-star:hover{border-color:#f0a020;background:#fff8e6;color:#f0a020}
+.qa-star{width:36px;height:36px;border:2px solid var(--rule);border-radius:6px;background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;color:#dde1e6}
+.qa-star.selected{border-color:#f0a020;background:#fff8e1;color:#f0a020}
+.qa-star:hover{border-color:#f0a020;background:#fff8e1;color:#f0a020}
 .qa-score-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--mid);margin-top:2px;padding:0 2px}
-.qa-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#e8f5e9;color:#2e7d32;border:1px solid #a8d8a8}
+.qa-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:var(--pass-bg);color:var(--pass);border:1px solid var(--pass-bd)}
 
 /* ── Comparison Mode ──────────────────────────────────────── */
-.btn-compare{padding:4px 10px;background:none;border:1px solid rgba(255,255,255,0.25);color:#8ab4c8;font-family:var(--sans);font-size:11px;font-weight:600;border-radius:2px;cursor:pointer;margin-right:4px;transition:all .12s}
-.btn-compare:hover{border-color:#8ab4c8}
-.btn-compare.active{background:rgba(150,100,200,0.3);border-color:#b080e0;color:#d0a0ff}
+.btn-compare{padding:4px 10px;background:var(--lite);border:1px solid var(--rule);color:var(--mid);font-family:var(--sans);font-size:11px;font-weight:500;border-radius:6px;cursor:pointer;margin-right:4px;transition:all .12s}
+.btn-compare:hover{border-color:var(--mid)}
+.btn-compare.active{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
 .comp-panels{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.comp-model-hdr{font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;padding:6px 10px;border-radius:2px 2px 0 0;margin-bottom:0;display:flex;align-items:center;justify-content:space-between}
-.comp-model-hdr.sonnet{background:#003B5C;color:#fff}
+.comp-model-hdr{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;padding:6px 10px;border-radius:6px 6px 0 0;margin-bottom:0;display:flex;align-items:center;justify-content:space-between}
+.comp-model-hdr.sonnet{background:var(--accent);color:#fff}
 .comp-model-hdr.opus{background:#4a1060;color:#fff}
-.comp-diff-bar{background:#fff8e6;border:1px solid #f0d070;border-radius:2px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#7a4a00}
-.comp-agree-bar{background:#e8f5e9;border:1px solid #a8d8a8;border-radius:2px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#2e7d32}
+.comp-diff-bar{background:var(--warn-bg);border:1px solid var(--warn-bd);border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--warn)}
+.comp-agree-bar{background:var(--pass-bg);border:1px solid var(--pass-bd);border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--pass)}
 .comp-log-entry{padding:8px 0;border-bottom:1px solid var(--rule);font-size:12px}
 .comp-log-note{font-size:11px;color:var(--mid);font-style:italic;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.badge-s{background:#e3f2fd;color:#1565c0;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;margin:0 2px;display:inline-block}
-.badge-o{background:#f3e8f7;color:#6a1b9a;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;margin:0 2px;display:inline-block}
-.badge-agree{background:#e8f5e9;color:#2e7d32;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;margin:0 2px;display:inline-block}
-.badge-differ{background:#fff3e0;color:#e65100;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;margin:0 2px;display:inline-block}
+.badge-s{background:var(--accent-light);color:var(--accent);font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;margin:0 2px;display:inline-block}
+.badge-o{background:#f3e8f7;color:#6a1b9a;font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;margin:0 2px;display:inline-block}
+.badge-agree{background:var(--pass-bg);color:var(--pass);font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;margin:0 2px;display:inline-block}
+.badge-differ{background:#fff3e0;color:#e65100;font-size:10px;font-weight:600;padding:1px 6px;border-radius:4px;margin:0 2px;display:inline-block}
 
 /* ═══ PRIVACY WARNING BANNER ══════════════════════════════ */
-.privacy-banner{background:linear-gradient(135deg,#7a1a10 0%,#991b1b 50%,#7a1a10 100%);color:#fff;padding:10px 20px;display:flex;align-items:flex-start;gap:12px;border-bottom:2px solid #fbbf24;position:relative;z-index:99}
-.privacy-banner-icon{font-size:20px;line-height:1;flex-shrink:0;margin-top:1px}
-.privacy-banner-title{font-weight:700;font-size:13px;letter-spacing:0.02em;margin-bottom:2px;text-transform:uppercase}
-.privacy-banner-text{font-size:11.5px;opacity:0.92;line-height:1.45}
+.privacy-banner{background:var(--warn-bg);color:var(--warn);padding:9px 20px;display:flex;align-items:flex-start;gap:12px;border-bottom:1px solid var(--warn-bd);border-left:3px solid var(--warn-bd);position:relative;z-index:99}
+.privacy-banner-icon{font-size:18px;line-height:1;flex-shrink:0;margin-top:1px}
+.privacy-banner-title{font-weight:600;font-size:12px;margin-bottom:2px}
+.privacy-banner-text{font-size:11px;opacity:0.9;line-height:1.45}
 
 /* ═══ PII REVIEW PANEL ════════════════════════════════════ */
-.pii-review-notice{background:#fef3c7;border-left:4px solid #d97706;padding:12px 14px;display:flex;gap:12px;align-items:flex-start}
-.pii-notice-icon{font-size:20px;line-height:1;flex-shrink:0;color:#d97706;margin-top:1px}
-.pii-notice-title{font-weight:700;font-size:13px;color:#92400e;margin-bottom:3px}
-.pii-notice-text{font-size:12px;color:#78350f;line-height:1.4}
-.pii-summary{font-size:11px;font-weight:700;color:#92400e;background:#fef9ee;border:1px solid #fde68a;border-radius:2px;padding:6px 10px;margin-bottom:10px;letter-spacing:0.2px}
-.pii-review-label{font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--mid);margin-bottom:6px}
-.pii-review-text{background:#fffbeb;border:1px solid #fde68a;border-radius:2px;padding:10px;font-family:var(--mono);font-size:12px;line-height:1.6;color:var(--ink);max-height:200px;overflow-y:auto;white-space:pre-wrap;margin-bottom:10px}
+.pii-review-notice{background:var(--warn-bg);border-left:4px solid var(--warn-bd);padding:12px 14px;display:flex;gap:12px;align-items:flex-start;border-radius:6px}
+.pii-notice-icon{font-size:20px;line-height:1;flex-shrink:0;color:var(--warn);margin-top:1px}
+.pii-notice-title{font-weight:700;font-size:13px;color:var(--warn);margin-bottom:3px}
+.pii-notice-text{font-size:12px;color:var(--warn);line-height:1.4}
+.pii-summary{font-size:11px;font-weight:600;color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn-bd);border-radius:6px;padding:6px 10px;margin-bottom:10px;letter-spacing:0.2px}
+.pii-review-label{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#8b919a;margin-bottom:6px}
+.pii-review-text{background:#fffbeb;border:1px solid var(--warn-bd);border-radius:6px;padding:10px;font-family:var(--mono);font-size:12px;line-height:1.6;color:var(--ink);max-height:200px;overflow-y:auto;white-space:pre-wrap;margin-bottom:10px}
 .pii-mark{background:#fde68a;color:#92400e;border-radius:2px;padding:0 2px;font-weight:600}
 .pii-actions{display:flex;gap:8px;flex-wrap:wrap}
-.btn-pii-confirm{flex:1;min-width:160px;padding:9px 16px;background:#d97706;color:#fff;border:none;font-family:var(--sans);font-size:13px;font-weight:700;border-radius:2px;cursor:pointer}
+.btn-pii-confirm{flex:1;min-width:160px;padding:7px 16px;background:#d97706;color:#fff;border:none;font-family:var(--sans);font-size:13px;font-weight:600;border-radius:6px;cursor:pointer}
 .btn-pii-confirm:hover{background:#b45309}
-.btn-pii-edit{padding:9px 14px;background:none;border:1px solid var(--rule);color:var(--mid);font-family:var(--sans);font-size:12px;font-weight:600;border-radius:2px;cursor:pointer}
-.btn-pii-edit:hover{border-color:var(--navy);color:var(--navy)}
-.btn-pii-cancel{padding:9px 14px;background:none;border:1px solid var(--rule);color:var(--mid);font-family:var(--sans);font-size:12px;font-weight:600;border-radius:2px;cursor:pointer}
-.btn-pii-cancel:hover{border-color:#c62828;color:#c62828}
+.btn-pii-edit{padding:7px 14px;background:#fff;border:1px solid var(--rule);color:var(--mid);font-family:var(--sans);font-size:12px;font-weight:500;border-radius:6px;cursor:pointer}
+.btn-pii-edit:hover{border-color:var(--ink);color:var(--ink)}
+.btn-pii-cancel{padding:7px 14px;background:#fff;border:1px solid var(--rule);color:var(--mid);font-family:var(--sans);font-size:12px;font-weight:500;border-radius:6px;cursor:pointer}
+.btn-pii-cancel:hover{border-color:var(--fail);color:var(--fail)}
 </style>
 
 <style>
 .loader-overlay{position:fixed;inset:0;background:var(--mist);display:flex;align-items:center;justify-content:center;z-index:9999}
 .loader-box{text-align:center}
-.loader-spinner{width:32px;height:32px;border:3px solid var(--rule);border-top-color:var(--teal);border-radius:50%;animation:lspin 0.8s linear infinite;margin:0 auto 12px}
+.loader-spinner{width:32px;height:32px;border:3px solid var(--rule);border-top-color:var(--accent);border-radius:50%;animation:lspin 0.8s linear infinite;margin:0 auto 12px}
 @keyframes lspin{to{transform:rotate(360deg)}}
-.loader-title{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:4px}
-.loader-sub{font-size:11px;color:var(--mid)}
-.data-source-badge{font-size:9px;background:rgba(255,255,255,0.12);color:#8ab4c8;padding:2px 6px;border-radius:2px;margin-left:6px;letter-spacing:0.3px}
+.loader-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.loader-sub{font-size:11px;color:#8b919a}
+.data-source-badge{font-size:9px;background:var(--lite);color:#8b919a;padding:2px 6px;border-radius:10px;margin-left:6px;letter-spacing:0.3px;border:1px solid var(--rule)}
 </style>
 </head>
 <body>
@@ -275,7 +281,7 @@ textarea.note::placeholder{color:#aab8c2}
     <span class="logo">CRR</span>
     <div>
       <div class="hd-title">CRR Triage Advisor</div>
-      <div class="hd-sub">Community Referred Radiology — AI Triage Assessment &nbsp;·&nbsp; <button id="verBtn" onclick="openProvenanceModal()" style="background:none;border:none;color:#8ab4c8;font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:inherit;opacity:.8" title="Criteria provenance and version information">v2.1.1</button></div>
+      <div class="hd-sub">Community Referred Radiology — AI Triage Assessment &nbsp;·&nbsp; <button id="verBtn" onclick="openProvenanceModal()" style="background:none;border:none;color:#8b919a;font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:inherit;opacity:.8" title="Criteria provenance and version information">v2.1.1</button></div>
     </div>
   </div>
   <div class="hd-right">
@@ -283,13 +289,13 @@ textarea.note::placeholder{color:#aab8c2}
     <button id="compareBtn" onclick="toggleCompareMode()" class="btn-compare" title="Compare Sonnet 4 vs Opus 4.6 side by side">
       &#9316; Compare Models
     </button>
-    <button class="btn-stats" onclick="openStatsModal()" title="Usage statistics" id="statsBtn" style="background:none;border:1px solid rgba(255,255,255,0.25);color:#8ab4c8;padding:4px 10px;border-radius:2px;font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;margin-right:4px">
+    <button class="btn-stats" onclick="openStatsModal()" title="Usage statistics" id="statsBtn" style="background:#f0f2f5;border:1px solid #dde1e6;color:#8b919a;padding:4px 10px;border-radius:6px;font-family:var(--sans);font-size:11px;font-weight:500;cursor:pointer;margin-right:4px">
       <span id="statsBadge">NZ$0.00</span>
     </button>
-    <button id="compLogBtn" onclick="openCompLogModal()" style="display:none;background:none;border:1px solid rgba(150,100,200,0.4);color:#b080e0;padding:4px 10px;border-radius:2px;font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;margin-right:4px">
+    <button id="compLogBtn" onclick="openCompLogModal()" style="display:none;background:#f0f2f5;border:1px solid #dde1e6;color:#5a6068;padding:4px 10px;border-radius:6px;font-family:var(--sans);font-size:11px;font-weight:500;cursor:pointer;margin-right:4px">
       &#9316; Log
     </button>
-    <button onclick="exportQaLog()" title="Download QA log as JSON" id="qaExportBtn" style="display:none;background:none;border:1px solid rgba(255,165,0,0.4);color:#f0a020;padding:4px 10px;border-radius:2px;font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;margin-right:4px">
+    <button onclick="exportQaLog()" title="Download QA log as JSON" id="qaExportBtn" style="display:none;background:#fff;border:1px solid #ffe082;color:#92400e;padding:4px 10px;border-radius:6px;font-family:var(--sans);font-size:11px;font-weight:500;cursor:pointer;margin-right:4px">
       &#9733; QA Log
     </button>
   </div>
@@ -308,7 +314,7 @@ textarea.note::placeholder{color:#aab8c2}
 <div class="privacy-banner">
   <div class="privacy-banner-icon">⚠</div>
   <div>
-    <div class="privacy-banner-title">Do Not Enter Patient-Identifiable Information</div>
+    <div class="privacy-banner-title">Do not enter patient-identifiable information</div>
     <div class="privacy-banner-text">This is a pilot/demonstration tool hosted on a public cloud service. Do not enter NHI numbers, patient names, dates of birth, addresses, or any other personally identifiable health information into any field. For clinical use, refer to your local PMS and HealthPathways.</div>
   </div>
 </div>
@@ -317,11 +323,11 @@ textarea.note::placeholder{color:#aab8c2}
 
   <!-- COL 1: INPUT -->
   <div>
-    <div class="col-hd"><span class="col-hd-dot" style="background:var(--teal)"></span>Clinical Note</div>
+    <div class="col-hd">Clinical note</div>
     <div class="panel">
-      <div class="ph">Note &amp; Settings</div>
+      <div class="ph">Note &amp; settings</div>
       <div class="pb">
-        <div class="note-hint">Describe the patient and clinical presentation</div>
+        <div class="note-hint">Clinical presentation</div>
         <textarea class="note" id="noteInput" oninput="onNoteChange()" placeholder="e.g. 70-year-old male, 4 days ago sudden onset left arm weakness lasting 40 minutes, fully resolved. No AF, not on anticoagulants. Requesting CT Head."></textarea>
 
         <!-- Hidden inputs retained for JS compatibility — age/sex now passed via URL params -->
@@ -333,7 +339,7 @@ textarea.note::placeholder{color:#aab8c2}
         <div class="paed-warning" id="paedWarning">
           &#9888; <strong>Paediatric patient detected:</strong> Switching to paediatric CRR criteria. Adult criteria do not apply.
         </div>
-        <div class="note-hint" style="margin-top:10px">AI documentation standard</div>
+        <div class="ex-hd" style="margin-top:10px">AI documentation standard</div>
         <div class="mod-row">
           <button class="mod-btn active" id="modeStrict" onclick="setDocMode('strict', this)" title="Only count information explicitly stated in the referral note">Strict — explicit only</button>
           <button class="mod-btn" id="modeInferred" onclick="setDocMode('inferred', this)" title="Allow reasonable clinical inferences from context">Inferred — allow context</button>
@@ -349,10 +355,13 @@ textarea.note::placeholder{color:#aab8c2}
     </div>
 
     <div class="panel" style="margin-top:10px">
-      <div class="ph ph-teal" style="cursor:pointer" onclick="toggleExamples()">Examples <span id="exArrow">&#9654;</span></div>
+      <div style="padding:10px 14px;border-bottom:1px solid var(--rule);cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleExamples()">
+        <span style="font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#8b919a">Examples</span>
+        <span id="exArrow" style="color:#8b919a;font-size:10px">&#9654;</span>
+      </div>
       <div id="exPanel" style="display:none">
         <div class="pb" style="padding-top:10px">
-          <div style="font-size:10px;font-weight:700;color:var(--mid);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:5px">Standard presentations</div>
+          <div style="font-size:10px;font-weight:600;color:#8b919a;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:5px">Standard presentations</div>
           <span class="chip" onclick="loadEx(0)">TIA — CT Head</span>
           <span class="chip" onclick="loadEx(1)">Renal colic — CT KUB</span>
           <span class="chip" onclick="loadEx(2)">Haemoptysis — CXR</span>
@@ -363,15 +372,15 @@ textarea.note::placeholder{color:#aab8c2}
           <span class="chip" onclick="loadEx(7)">Back pain — XR Spine</span>
           <span class="chip" onclick="loadEx(8)">Knee OA — XR Knee</span>
           <span class="chip" onclick="loadEx(9)">Thyroid nodule — US Thyroid</span>
-          <div style="font-size:10px;font-weight:700;color:#8B1a1a;letter-spacing:0.4px;text-transform:uppercase;margin:8px 0 5px">Emergency / acute redirect</div>
-          <span class="chip" style="border-color:#f0b0b0;color:#8B1a1a" onclick="loadEx(10)">Testicular torsion — acute scrotal pain</span>
-          <span class="chip" style="border-color:#f0b0b0;color:#8B1a1a" onclick="loadEx(11)">Thunderclap headache — worst ever</span>
-          <span class="chip" style="border-color:#f0b0b0;color:#8B1a1a" onclick="loadEx(12)">Cauda equina — saddle anaesthesia</span>
-          <span class="chip" style="border-color:#f0b0b0;color:#8B1a1a" onclick="loadEx(13)">Suspected pneumothorax</span>
-          <div style="font-size:10px;font-weight:700;color:#7a4a00;letter-spacing:0.4px;text-transform:uppercase;margin:8px 0 5px">Alternative management / not funded</div>
-          <span class="chip" style="border-color:#f0c060;color:#7a4a00" onclick="loadEx(14)">Routine back pain — no red flags</span>
-          <span class="chip" style="border-color:#f0c060;color:#7a4a00" onclick="loadEx(15)">Knee OA — imaging requested</span>
-          <div style="font-size:10px;font-weight:700;color:var(--teal);letter-spacing:0.4px;text-transform:uppercase;margin:8px 0 5px">April 2026 criteria</div>
+          <div style="font-size:10px;font-weight:600;color:#dc2626;letter-spacing:0.8px;text-transform:uppercase;margin:8px 0 5px">Emergency / acute redirect</div>
+          <span class="chip" style="border-color:#f5c6cb;color:#dc2626" onclick="loadEx(10)">Testicular torsion — acute scrotal pain</span>
+          <span class="chip" style="border-color:#f5c6cb;color:#dc2626" onclick="loadEx(11)">Thunderclap headache — worst ever</span>
+          <span class="chip" style="border-color:#f5c6cb;color:#dc2626" onclick="loadEx(12)">Cauda equina — saddle anaesthesia</span>
+          <span class="chip" style="border-color:#f5c6cb;color:#dc2626" onclick="loadEx(13)">Suspected pneumothorax</span>
+          <div style="font-size:10px;font-weight:600;color:#92400e;letter-spacing:0.8px;text-transform:uppercase;margin:8px 0 5px">Alternative management / not funded</div>
+          <span class="chip" style="border-color:#ffe082;color:#92400e" onclick="loadEx(14)">Routine back pain — no red flags</span>
+          <span class="chip" style="border-color:#ffe082;color:#92400e" onclick="loadEx(15)">Knee OA — imaging requested</span>
+          <div style="font-size:10px;font-weight:600;color:var(--accent);letter-spacing:0.8px;text-transform:uppercase;margin:8px 0 5px">April 2026 criteria</div>
           <span class="chip" onclick="loadEx(16)">Amiodarone — new respiratory symptoms</span>
           <span class="chip" onclick="loadEx(17)">PMR — starting steroids</span>
           <span class="chip" onclick="loadEx(18)">Idiopathic DVT — exclude malignancy</span>
@@ -383,7 +392,7 @@ textarea.note::placeholder{color:#aab8c2}
 
   <!-- COL 2: AI ASSESSMENT (now primary) -->
   <div>
-    <div class="col-hd"><span class="col-hd-dot" style="background:var(--ai)"></span>AI Assessment</div>
+    <div class="col-hd">AI assessment</div>
     <div id="aiPanel">
       <div class="panel">
         <div class="ai-col-empty" style="padding:32px 14px">
@@ -396,7 +405,7 @@ textarea.note::placeholder{color:#aab8c2}
 
   <!-- COL 3: CRITERIA BROWSER -->
   <div>
-    <div class="col-hd"><span class="col-hd-dot" style="background:var(--teal)"></span>Criteria Reference</div>
+    <div class="col-hd">Criteria reference</div>
     <div id="criteriaPanel">
       <div class="panel">
         <div class="result-empty" style="padding:32px 14px">
@@ -412,11 +421,11 @@ textarea.note::placeholder{color:#aab8c2}
 <!-- COMPARE LOG MODAL -->
 <div class="modal-bg" id="compLogModal">
   <div class="modal" style="width:700px;max-width:96vw;max-height:85vh;overflow-y:auto">
-    <div class="modal-hd" style="display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#003B5C;z-index:1">
+    <div class="modal-hd" style="display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--accent);z-index:1">
       <span>&#9316; Model Comparison Log</span>
       <div style="display:flex;gap:8px;align-items:center">
-        <button onclick="exportCompLog()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:#8ab4c8;padding:3px 10px;border-radius:2px;font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer">Export MD</button>
-        <button onclick="closeCompLogModal()" style="background:none;border:none;color:#8ab4c8;font-size:16px;cursor:pointer;padding:0 4px">&#10005;</button>
+        <button onclick="exportCompLog()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;padding:3px 10px;border-radius:6px;font-family:var(--sans);font-size:11px;font-weight:500;cursor:pointer">Export MD</button>
+        <button onclick="closeCompLogModal()" style="background:none;border:none;color:#fff;font-size:16px;cursor:pointer;padding:0 4px">&#10005;</button>
       </div>
     </div>
     <div class="modal-bd" id="compLogBody">
@@ -428,9 +437,9 @@ textarea.note::placeholder{color:#aab8c2}
 <!-- PROVENANCE MODAL -->
 <div class="modal-bg" id="provModal">
   <div class="modal" style="width:820px;max-width:96vw;max-height:88vh;overflow-y:auto">
-    <div class="modal-hd" style="display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#003B5C;z-index:1">
+    <div class="modal-hd" style="display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--accent);z-index:1">
       <span>&#128196; Criteria Provenance &amp; AI Settings</span>
-      <button onclick="closeProvenanceModal()" style="background:none;border:none;color:#8ab4c8;font-size:16px;cursor:pointer;padding:0 4px">&#10005;</button>
+      <button onclick="closeProvenanceModal()" style="background:none;border:none;color:#fff;font-size:16px;cursor:pointer;padding:0 4px">&#10005;</button>
     </div>
     <div class="modal-bd" style="font-size:12px;line-height:1.5">
 
@@ -536,17 +545,17 @@ textarea.note::placeholder{color:#aab8c2}
           <div class="qa-star" data-score="5" onclick="setQaScore(5)" title="5 — Very accurate">5</div>
         </div>
         <div class="qa-score-labels"><span>Very inaccurate</span><span>Very accurate</span></div>
-        <div id="qaScoreLabel" style="font-size:12px;color:var(--teal);font-weight:600;margin-top:6px;min-height:18px"></div>
+        <div id="qaScoreLabel" style="font-size:12px;color:var(--accent);font-weight:600;margin-top:6px;min-height:18px"></div>
       </div>
 
       <div style="margin-bottom:14px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:6px">What was correct? <span style="font-weight:400;text-transform:none">(optional)</span></div>
-        <textarea id="qaCommentCorrect" placeholder="e.g. Correctly identified exam, met criteria accurate..." style="width:100%;border:1px solid var(--rule);border-radius:2px;padding:8px 10px;font-family:var(--sans);font-size:12px;color:var(--ink);resize:vertical;min-height:52px;box-sizing:border-box"></textarea>
+        <textarea id="qaCommentCorrect" placeholder="e.g. Correctly identified exam, met criteria accurate..." style="width:100%;border:1px solid var(--rule);border-radius:6px;padding:8px 10px;font-family:var(--sans);font-size:12px;color:var(--ink);resize:vertical;min-height:52px;box-sizing:border-box"></textarea>
       </div>
 
       <div style="margin-bottom:16px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:6px">What was wrong or missing? <span style="font-weight:400;text-transform:none">(optional)</span></div>
-        <textarea id="qaCommentWrong" placeholder="e.g. Missed mandatory gateway requirement, wrong priority assigned..." style="width:100%;border:1px solid var(--rule);border-radius:2px;padding:8px 10px;font-family:var(--sans);font-size:12px;color:var(--ink);resize:vertical;min-height:52px;box-sizing:border-box"></textarea>
+        <textarea id="qaCommentWrong" placeholder="e.g. Missed mandatory gateway requirement, wrong priority assigned..." style="width:100%;border:1px solid var(--rule);border-radius:6px;padding:8px 10px;font-family:var(--sans);font-size:12px;color:var(--ink);resize:vertical;min-height:52px;box-sizing:border-box"></textarea>
       </div>
 
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -770,6 +779,11 @@ var lastResults = null;
 var lastNote      = '';
 var correctedNote = '';  // spell-corrected version of lastNote
 var lastAiResult  = null;
+
+// Popup / postMessage helpers
+var isPopup = !!(window.opener && !window.opener.closed);
+var sendButtonOn = getParam('sendButton') === 'on';
+var showSendButton = sendButtonOn && isPopup;
 
 function setSex(val) {
   // Demographics are now passed via URL parameters; this is a no-op stub
@@ -2022,6 +2036,9 @@ function renderAIResult(r) {
   h += '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">';
   h += '<button class="btn-run-ai" onclick="runCheck()" style="margin-bottom:0;flex:1;min-width:100px">Re-assess ›</button>';
   h += '<button class="btn-copy" onclick="copyResult()" style="flex:0 0 auto;padding:10px 14px">&#128203; Copy</button>';
+  if (showSendButton) {
+    h += '<button class="btn-send-assessment" onclick="sendAssessmentToForm()" style="flex:0 0 auto;padding:10px 14px;background:var(--teal);color:#fff;border:none;font-family:var(--sans);font-size:12px;font-weight:600;border-radius:2px;cursor:pointer">&#8593; Send to Form</button>';
+  }
   h += '<button class="btn-qa" onclick="openQaModal()" title="Rate the accuracy of this assessment for clinical QA">&#9733; QA</button>';
   h += '</div>';
   h += '</div></div>';
@@ -2033,11 +2050,28 @@ function renderAIResult(r) {
 //  COPY
 // ═══════════════════════════════════════════════
 function copyResult() {
+  var text = buildAssessmentText();
+  try { navigator.clipboard.writeText(text); }
+  catch(e) { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
+  var btn = document.querySelector('.btn-copy');
+  if (btn) {
+    btn.textContent = '✓ Copied!';
+    if (isPopup) {
+      setTimeout(function(){ window.close(); }, 700);
+    } else {
+      setTimeout(function(){ btn.innerHTML = '&#128203; Copy'; }, 2000);
+    }
+  }
+}
+
+
+// ═══════════════════════════════════════════════
+//  SEND ASSESSMENT TO FORM (postMessage)
+// ═══════════════════════════════════════════════
+function buildAssessmentText() {
   var lines = ['CRR REFERRAL CHECK', '=================='];
-  // Demographics
   var prefix = buildDemogPrefix();
   if (prefix) { lines.push('Patient: ' + prefix.replace(/\. $/, '')); }
-  // Note (use corrected if available)
   var noteText = correctedNote || lastNote;
   if (noteText) { lines.push('Note: ' + noteText); lines.push(''); }
   if (lastResults && lastResults.length) {
@@ -2083,14 +2117,19 @@ function copyResult() {
     if (r.notes) lines.push('Notes: ' + r.notes);
     lines.push('');
   }
-  lines.push('CRR Triage Advisor v1.2.3.002 — Health New Zealand');
-  var text = lines.join('\r\n');
-  try { navigator.clipboard.writeText(text); }
-  catch(e) { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
-  var btn = document.querySelector('.btn-copy');
-  if (btn) { btn.textContent = '✓ Copied'; setTimeout(function(){ btn.innerHTML = '&#128203; Copy results'; }, 2000); }
+  lines.push('CRR Triage Advisor — Health New Zealand');
+  return lines.join('\r\n');
 }
 
+function sendAssessmentToForm() {
+  var assessmentText = buildAssessmentText();
+  if (window.opener && !window.opener.closed) {
+    window.opener.postMessage({ type: 'crr-output', text: assessmentText, source: 'triage' }, '*');
+  }
+  var btn = document.querySelector('.btn-send-assessment');
+  if (btn) { btn.textContent = '✓ Sent'; }
+  setTimeout(function(){ window.close(); }, 1000);
+}
 
 // ═══════════════════════════════════════════════
 //  CLINICAL QA SYSTEM
