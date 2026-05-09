@@ -8,10 +8,9 @@
 <link rel="stylesheet" href="/crr-criteria/shared/crr-design-system.css">
 <style>
 
-/* Header */
+/* ── Triage-specific header ──────────────────────────── */
 .hd{background:#fff;color:var(--ink);padding:0 20px;height:46px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--rule);box-shadow:0 1px 3px rgba(0,0,0,0.06)}
 .hd-left{display:flex;align-items:center;gap:12px}
-.logo{background:var(--accent-light);color:var(--accent);font-size:10px;font-weight:700;letter-spacing:0.8px;padding:3px 7px;border-radius:6px}
 .hd-title{font-size:15px;font-weight:700;color:var(--accent)}
 .hd-sub{font-size:11px;color:#5f6b7c;margin-top:1px}
 .hd-right{display:flex;align-items:center;gap:8px}
@@ -20,21 +19,14 @@
 .key-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle}
 .key-dot.set{background:#059669}
 .key-dot.unset{background:#dc2626}
-.method-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;letter-spacing:0.3px}
-.method-rule{background:var(--accent-light);color:var(--accent)}
-.method-ai{background:#eef3fd;color:#2a4a8a}
 
-/* Layout */
+/* ── Three-column layout ─────────────────────────────── */
 .wrap{max-width:1600px;margin:0 auto;padding:16px 16px 60px;display:grid;grid-template-columns:340px 1fr 1fr;gap:14px;align-items:start}
 @media(max-width:1100px){.wrap{grid-template-columns:300px 1fr 1fr}}
 @media(max-width:760px){.wrap{grid-template-columns:1fr}}
-
-/* Panels */
-.panel{background:#fff;border:1px solid var(--rule);border-radius:10px;overflow:hidden}
-/* Column headers */
-.col-hd{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#5f6b7c;padding:0 2px 8px;border-bottom:1px solid var(--rule);margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .col-hd-dot{display:none}
-/* Action verdict banner — leads rule-based result */
+
+/* ── Triage panel internals ──────────────────────────── */
 .action-verdict{padding:11px 14px;border-radius:8px;margin-bottom:10px;border-left:4px solid;display:flex;gap:10px;align-items:flex-start}
 .action-verdict.proceed{background:var(--pass-bg);border-color:var(--pass)}
 .action-verdict.atrisk{background:var(--warn-bg);border-color:#ffe082}
@@ -45,11 +37,9 @@
 .action-verdict.atrisk .av-title{color:var(--warn)}
 .action-verdict.decline .av-title{color:var(--fail)}
 .av-body{font-size:12px;color:var(--ink);line-height:1.6}
-/* What to add box */
 .add-info-box{background:var(--warn-bg);border:1px solid var(--warn-bd);border-left:3px solid var(--warn-bd);border-radius:6px;padding:10px 12px;margin-bottom:10px}
 .add-info-hd{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--warn);margin-bottom:6px}
 .add-info-item{font-size:12px;color:var(--ink);padding:3px 0 3px 14px;border-left:2px solid var(--warn-bd);margin-bottom:3px;line-height:1.4}
-/* AI col */
 .ai-col-empty{padding:24px 14px;text-align:center;color:#8b919a}
 .ai-col-empty p{font-size:12px;line-height:1.5}
 .btn-run-ai{width:100%;padding:10px;background:var(--ai);color:#fff;border:none;font-family:var(--sans);font-size:13px;font-weight:600;border-radius:6px;cursor:pointer;margin-bottom:10px}
@@ -59,9 +49,8 @@
 .ph-teal{background:var(--accent-light);color:var(--accent)}
 .pb{padding:14px}
 
-/* Input */
+/* ── Input / form ────────────────────────────────────── */
 .note-hint{font-size:13px;font-weight:500;color:var(--ink);margin-bottom:6px}
-/* Demographic fields */
 .demog-row{display:flex;gap:8px;margin:10px 0 0;align-items:flex-end}
 .demog-field{display:flex;flex-direction:column;gap:3px}
 .demog-label{font-size:10px;font-weight:600;color:#5f6b7c;letter-spacing:0.8px;text-transform:uppercase}
@@ -74,19 +63,11 @@
 .sex-btn{padding:5px 10px;border:1px solid var(--rule);border-radius:6px;background:#fff;font-family:var(--sans);font-size:12px;font-weight:500;color:var(--mid);cursor:pointer;transition:all .12s}
 .sex-btn:hover{border-color:var(--accent);color:var(--accent)}
 .sex-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-/* Paediatric warning */
 .paed-warning{background:var(--warn-bg);border:1px solid var(--warn-bd);border-left:3px solid var(--warn-bd);border-radius:6px;padding:8px 10px;font-size:12px;color:var(--warn);margin-top:8px;display:none}
 .paed-warning.show{display:block}
 textarea.note{width:100%;min-height:160px;border:1px solid var(--rule);border-radius:6px;padding:10px;font-family:var(--sans);font-size:13px;color:var(--ink);resize:vertical;transition:border-color .15s;line-height:1.6}
 textarea.note:focus{outline:none;border-color:#4a86b5;box-shadow:0 0 0 2px rgba(26,111,160,0.1)}
 textarea.note::placeholder{color:#8b919a}
-
-/* Strict/Inferred segmented control */
-.mod-row{display:inline-flex;gap:0;margin:10px 0;background:var(--lite);border-radius:6px;padding:2px}
-.mod-btn{padding:5px 14px;border:none;border-radius:4px;background:transparent;font-family:var(--sans);font-size:12px;font-weight:500;color:var(--mid);cursor:pointer;transition:all .12s}
-.mod-btn:hover{color:var(--ink)}
-.mod-btn.active{background:#fff;color:var(--accent);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,0.08)}
-
 .act-row{display:flex;align-items:center;gap:10px;margin-top:12px}
 .btn-assess{background:var(--accent);color:#fff;border:none;padding:7px 16px;font-family:var(--sans);font-size:13px;font-weight:500;border-radius:6px;cursor:pointer;transition:background .12s}
 .btn-assess:hover{background:var(--accent-hover)}
@@ -95,17 +76,15 @@ textarea.note::placeholder{color:#8b919a}
 .hint-box{font-size:11px;color:var(--mid);margin-top:12px;padding-top:10px;border-top:1px solid var(--rule);line-height:1.5}
 .hint-box strong{color:var(--ink)}
 
-/* Examples */
+/* ── Examples / chips ────────────────────────────────── */
 .ex-hd{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#5f6b7c;margin-bottom:6px}
 .chip{display:inline-block;background:var(--lite);border:1px solid var(--rule);border-radius:6px;padding:4px 9px;font-size:11px;color:var(--ink);cursor:pointer;margin:2px 2px 2px 0;transition:all .12s;font-family:var(--sans)}
 .chip:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
 
-/* Results */
+/* ── Results / match cards ───────────────────────────── */
 .result-empty{padding:36px 16px;text-align:center;color:#5f6b7c}
 .result-empty-icon{font-size:32px;margin-bottom:8px;opacity:.4}
 .result-empty p{font-size:13px;color:#5f6b7c}
-
-/* Confidence bar */
 .conf-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
 .conf-label{font-size:12px;font-weight:600;color:var(--ink);flex:1;min-width:0}
 .conf-pct{font-size:11px;font-weight:600;color:var(--mid);width:34px;text-align:right;flex-shrink:0}
@@ -114,8 +93,6 @@ textarea.note::placeholder{color:#8b919a}
 .conf-bar.high{background:var(--pass)}
 .conf-bar.med{background:#e09000}
 .conf-bar.low{background:#ccc}
-
-/* Match card */
 .match-card{border:1px solid var(--rule);border-radius:8px;margin-bottom:10px;overflow:hidden}
 .match-card-hd{padding:9px 12px;background:var(--lite);display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
 .match-card-hd:hover{background:var(--accent-light)}
@@ -128,17 +105,6 @@ textarea.note::placeholder{color:#8b919a}
 .badge-mod{background:var(--lite);color:var(--ink);border:1px solid var(--rule)}
 .match-card-bd{padding:10px 12px;display:none}
 .match-card-bd.open{display:block}
-.criteria-item{font-size:12px;padding:4px 0 4px 14px;border-left:2px solid var(--rule);margin-bottom:3px;color:var(--ink);line-height:1.6}
-.criteria-item.met{border-color:var(--accent)}
-.criteria-item.missing{border-color:#ffe082;color:var(--warn)}
-.ci-tag{font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;margin-right:4px}
-.ci-tag.met{background:var(--pass-bg);color:var(--pass)}
-.ci-tag.missing{background:var(--warn-bg);color:var(--warn)}
-.ci-tag.mandatory{background:var(--fail-bg);color:var(--fail)}
-.group-hd{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#5f6b7c;margin:8px 0 4px}
-.guidance-box{font-size:11px;color:var(--mid);background:var(--lite);border-radius:6px;padding:8px 10px;margin-top:8px;line-height:1.5;border-left:3px solid var(--accent)}
-.alt-mgmt-box{font-size:11px;color:var(--warn);background:var(--warn-bg);border-radius:6px;padding:8px 10px;margin-top:6px;line-height:1.5;border-left:3px solid var(--warn-bd)}
-.not-funded-box{font-size:11px;color:var(--fail);background:var(--fail-bg);border-radius:6px;padding:8px 10px;margin-top:6px;line-height:1.5;border-left:3px solid var(--fail)}
 
 /* AI escalation */
 .ai-bar{background:var(--ai-bg);border:1px solid var(--ai-bd);border-radius:8px;padding:10px 14px;margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -252,20 +218,6 @@ textarea.note::placeholder{color:#8b919a}
 .btn-pii-cancel:hover{border-color:var(--fail);color:var(--fail)}
 </style>
 
-<style>
-.loader-overlay{position:fixed;inset:0;background:var(--mist);display:flex;align-items:center;justify-content:center;z-index:9999}
-.loader-box{text-align:center}
-.loader-spinner{width:32px;height:32px;border:3px solid var(--rule);border-top-color:var(--accent);border-radius:50%;animation:lspin 0.8s linear infinite;margin:0 auto 12px}
-@keyframes lspin{to{transform:rotate(360deg)}}
-.loader-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px}
-.loader-sub{font-size:11px;color:#5f6b7c}
-.data-source-badge{font-size:9px;background:var(--lite);color:#5f6b7c;padding:2px 6px;border-radius:10px;margin-left:6px;letter-spacing:0.3px;border:1px solid var(--rule)}
-.crit-view-toggle{display:-ms-flexbox;display:flex;gap:4px;margin:0 0 10px;background:#f0f2f5;border-radius:6px;padding:2px;width:-webkit-fit-content;width:fit-content}
-.crit-view-toggle-btn{padding:4px 12px;border:none;background:none;border-radius:4px;font-size:11px;font-weight:500;color:#5a6068;cursor:pointer;font-family:inherit}
-.crit-view-toggle-btn.active{background:#fff;color:#1a6fa0;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
-.crit-theme-hd{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#5f6b7c;padding:8px 0 4px;border-bottom:1px solid #f0f2f5;margin-bottom:2px}
-.crit-theme-hd:first-child{padding-top:0}
-</style>
 </head>
 <body>
 
