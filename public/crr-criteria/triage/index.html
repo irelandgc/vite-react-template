@@ -10,9 +10,9 @@
 :root{
   --navy:#1a1d21;--teal:#1a6fa0;--teal2:#145a84;--ink:#1a1d21;
   --mist:#f5f6f8;--rule:#dde1e6;--mid:#5a6068;--lite:#f0f2f5;
-  --pass:#059669;--pass-bg:#f0fdf4;--pass-bd:#a7f3d0;
+  --pass:#047857;--pass-bg:#f0fdf4;--pass-bd:#a7f3d0;
   --warn:#92400e;--warn-bg:#fff8e1;--warn-bd:#ffe082;
-  --fail:#dc2626;--fail-bg:#fdecea;--fail-bd:#f0b0b0;
+  --fail:#b91c1c;--fail-bg:#fdecea;--fail-bd:#f0b0b0;
   --ai:#2a4a8a;--ai-bg:#eef3fd;--ai-bd:#b0c8f0;
   --accent:#1a6fa0;--accent-hover:#145a84;--accent-light:#e8f2fa;
   --sans:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;
@@ -25,7 +25,7 @@ body{font-family:var(--sans);background:var(--mist);color:var(--ink);font-size:1
 .hd-left{display:flex;align-items:center;gap:12px}
 .logo{background:var(--accent-light);color:var(--accent);font-size:10px;font-weight:700;letter-spacing:0.8px;padding:3px 7px;border-radius:6px}
 .hd-title{font-size:15px;font-weight:700;color:var(--accent)}
-.hd-sub{font-size:11px;color:#8b919a;margin-top:1px}
+.hd-sub{font-size:11px;color:#5f6b7c;margin-top:1px}
 .hd-right{display:flex;align-items:center;gap:8px}
 .btn-key{background:#f0f2f5;border:1px solid var(--rule);color:var(--mid);font-family:var(--sans);font-size:11px;font-weight:500;padding:4px 10px;border-radius:6px;cursor:pointer}
 .btn-key:hover{background:var(--rule)}
@@ -44,7 +44,7 @@ body{font-family:var(--sans);background:var(--mist);color:var(--ink);font-size:1
 /* Panels */
 .panel{background:#fff;border:1px solid var(--rule);border-radius:10px;overflow:hidden}
 /* Column headers */
-.col-hd{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#8b919a;padding:0 2px 8px;border-bottom:1px solid var(--rule);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.col-hd{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#5f6b7c;padding:0 2px 8px;border-bottom:1px solid var(--rule);margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .col-hd-dot{display:none}
 /* Action verdict banner — leads rule-based result */
 .action-verdict{padding:11px 14px;border-radius:8px;margin-bottom:10px;border-left:4px solid;display:flex;gap:10px;align-items:flex-start}
@@ -67,7 +67,7 @@ body{font-family:var(--sans);background:var(--mist);color:var(--ink);font-size:1
 .btn-run-ai{width:100%;padding:10px;background:var(--ai);color:#fff;border:none;font-family:var(--sans);font-size:13px;font-weight:600;border-radius:6px;cursor:pointer;margin-bottom:10px}
 .btn-run-ai:hover{background:#1a3070}
 .btn-run-ai:disabled{background:#b0bec8;cursor:not-allowed}
-.ph{background:var(--lite);color:#8b919a;font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;padding:9px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--rule)}
+.ph{background:var(--lite);color:#5f6b7c;font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;padding:9px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--rule)}
 .ph-teal{background:var(--accent-light);color:var(--accent)}
 .pb{padding:14px}
 
@@ -76,7 +76,7 @@ body{font-family:var(--sans);background:var(--mist);color:var(--ink);font-size:1
 /* Demographic fields */
 .demog-row{display:flex;gap:8px;margin:10px 0 0;align-items:flex-end}
 .demog-field{display:flex;flex-direction:column;gap:3px}
-.demog-label{font-size:10px;font-weight:600;color:#8b919a;letter-spacing:0.8px;text-transform:uppercase}
+.demog-label{font-size:10px;font-weight:600;color:#5f6b7c;letter-spacing:0.8px;text-transform:uppercase}
 .demog-input{border:1px solid var(--rule);border-radius:6px;padding:8px 10px;font-family:var(--sans);font-size:13px;color:var(--ink);width:100%;transition:border-color .15s}
 .demog-input:focus{outline:none;border-color:#4a86b5;box-shadow:0 0 0 2px rgba(26,111,160,0.1)}
 .demog-input::placeholder{color:#8b919a}
@@ -108,14 +108,14 @@ textarea.note::placeholder{color:#8b919a}
 .hint-box strong{color:var(--ink)}
 
 /* Examples */
-.ex-hd{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#8b919a;margin-bottom:6px}
-.chip{display:inline-block;background:var(--lite);border:1px solid var(--rule);border-radius:6px;padding:4px 9px;font-size:11px;color:var(--ink);cursor:pointer;margin:2px 2px 2px 0;transition:all .12s}
+.ex-hd{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#5f6b7c;margin-bottom:6px}
+.chip{display:inline-block;background:var(--lite);border:1px solid var(--rule);border-radius:6px;padding:4px 9px;font-size:11px;color:var(--ink);cursor:pointer;margin:2px 2px 2px 0;transition:all .12s;font-family:var(--sans)}
 .chip:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
 
 /* Results */
-.result-empty{padding:36px 16px;text-align:center;color:#8b919a}
+.result-empty{padding:36px 16px;text-align:center;color:#5f6b7c}
 .result-empty-icon{font-size:32px;margin-bottom:8px;opacity:.4}
-.result-empty p{font-size:13px;color:#8b919a}
+.result-empty p{font-size:13px;color:#5f6b7c}
 
 /* Confidence bar */
 .conf-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
@@ -147,7 +147,7 @@ textarea.note::placeholder{color:#8b919a}
 .ci-tag.met{background:var(--pass-bg);color:var(--pass)}
 .ci-tag.missing{background:var(--warn-bg);color:var(--warn)}
 .ci-tag.mandatory{background:var(--fail-bg);color:var(--fail)}
-.group-hd{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#8b919a;margin:8px 0 4px}
+.group-hd{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#5f6b7c;margin:8px 0 4px}
 .guidance-box{font-size:11px;color:var(--mid);background:var(--lite);border-radius:6px;padding:8px 10px;margin-top:8px;line-height:1.5;border-left:3px solid var(--accent)}
 .alt-mgmt-box{font-size:11px;color:var(--warn);background:var(--warn-bg);border-radius:6px;padding:8px 10px;margin-top:6px;line-height:1.5;border-left:3px solid var(--warn-bd)}
 .not-funded-box{font-size:11px;color:var(--fail);background:var(--fail-bg);border-radius:6px;padding:8px 10px;margin-top:6px;line-height:1.5;border-left:3px solid var(--fail)}
@@ -194,7 +194,7 @@ textarea.note::placeholder{color:#8b919a}
 .correction-box{background:var(--accent-light);border:1px solid #b8d4ee;border-left:3px solid var(--accent);border-radius:6px;padding:10px 12px;margin-bottom:10px}
 .correction-lbl{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:6px}
 .correction-interpreted{font-size:12px;line-height:1.6;color:var(--ink);margin-bottom:4px}
-.correction-original{font-size:11px;color:#8b919a;font-style:italic;margin-top:4px;line-height:1.5}
+.correction-original{font-size:11px;color:#5f6b7c;font-style:italic;margin-top:4px;line-height:1.5}
 .correction-toggle{font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline;margin-left:auto}
 
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center}
@@ -217,8 +217,8 @@ textarea.note::placeholder{color:#8b919a}
 .btn-qa-export{padding:5px 12px;background:none;border:1px solid var(--rule);color:var(--mid);font-family:var(--sans);font-size:11px;font-weight:500;border-radius:6px;cursor:pointer}
 .btn-qa-export:hover{border-color:var(--accent);color:var(--accent)}
 .qa-stars{display:flex;gap:6px;margin:10px 0}
-.qa-star{width:36px;height:36px;border:2px solid var(--rule);border-radius:6px;background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;color:#dde1e6}
-.qa-star.selected{border-color:#f0a020;background:#fff8e1;color:#f0a020}
+.qa-star{width:36px;height:36px;border:2px solid var(--rule);border-radius:6px;background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;color:#5f6b7c;font-family:var(--sans)}
+.qa-star.selected{border-color:#f0a020;background:#fff8e1;color:#b45309}
 .qa-star:hover{border-color:#f0a020;background:#fff8e1;color:#f0a020}
 .qa-score-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--mid);margin-top:2px;padding:0 2px}
 .qa-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:var(--pass-bg);color:var(--pass);border:1px solid var(--pass-bd)}
@@ -252,12 +252,12 @@ textarea.note::placeholder{color:#8b919a}
 .pii-notice-title{font-weight:700;font-size:13px;color:var(--warn);margin-bottom:3px}
 .pii-notice-text{font-size:12px;color:var(--warn);line-height:1.4}
 .pii-summary{font-size:11px;font-weight:600;color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn-bd);border-radius:6px;padding:6px 10px;margin-bottom:10px;letter-spacing:0.2px}
-.pii-review-label{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#8b919a;margin-bottom:6px}
+.pii-review-label{font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#5f6b7c;margin-bottom:6px}
 .pii-review-text{background:#fffbeb;border:1px solid var(--warn-bd);border-radius:6px;padding:10px;font-family:var(--mono);font-size:12px;line-height:1.6;color:var(--ink);max-height:200px;overflow-y:auto;white-space:pre-wrap;margin-bottom:10px}
 .pii-mark{background:#fde68a;color:#92400e;border-radius:2px;padding:0 2px;font-weight:600}
 .pii-actions{display:flex;gap:8px;flex-wrap:wrap}
-.btn-pii-confirm{flex:1;min-width:160px;padding:7px 16px;background:#d97706;color:#fff;border:none;font-family:var(--sans);font-size:13px;font-weight:600;border-radius:6px;cursor:pointer}
-.btn-pii-confirm:hover{background:#b45309}
+.btn-pii-confirm{flex:1;min-width:160px;padding:7px 16px;background:#b45309;color:#fff;border:none;font-family:var(--sans);font-size:13px;font-weight:600;border-radius:6px;cursor:pointer}
+.btn-pii-confirm:hover{background:#92400e}
 .btn-pii-edit{padding:7px 14px;background:#fff;border:1px solid var(--rule);color:var(--mid);font-family:var(--sans);font-size:12px;font-weight:500;border-radius:6px;cursor:pointer}
 .btn-pii-edit:hover{border-color:var(--ink);color:var(--ink)}
 .btn-pii-cancel{padding:7px 14px;background:#fff;border:1px solid var(--rule);color:var(--mid);font-family:var(--sans);font-size:12px;font-weight:500;border-radius:6px;cursor:pointer}
@@ -270,8 +270,13 @@ textarea.note::placeholder{color:#8b919a}
 .loader-spinner{width:32px;height:32px;border:3px solid var(--rule);border-top-color:var(--accent);border-radius:50%;animation:lspin 0.8s linear infinite;margin:0 auto 12px}
 @keyframes lspin{to{transform:rotate(360deg)}}
 .loader-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px}
-.loader-sub{font-size:11px;color:#8b919a}
-.data-source-badge{font-size:9px;background:var(--lite);color:#8b919a;padding:2px 6px;border-radius:10px;margin-left:6px;letter-spacing:0.3px;border:1px solid var(--rule)}
+.loader-sub{font-size:11px;color:#5f6b7c}
+.data-source-badge{font-size:9px;background:var(--lite);color:#5f6b7c;padding:2px 6px;border-radius:10px;margin-left:6px;letter-spacing:0.3px;border:1px solid var(--rule)}
+.crit-view-toggle{display:-ms-flexbox;display:flex;gap:4px;margin:0 0 10px;background:#f0f2f5;border-radius:6px;padding:2px;width:-webkit-fit-content;width:fit-content}
+.crit-view-toggle-btn{padding:4px 12px;border:none;background:none;border-radius:4px;font-size:11px;font-weight:500;color:#5a6068;cursor:pointer;font-family:inherit}
+.crit-view-toggle-btn.active{background:#fff;color:#1a6fa0;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.crit-theme-hd{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:#5f6b7c;padding:8px 0 4px;border-bottom:1px solid #f0f2f5;margin-bottom:2px}
+.crit-theme-hd:first-child{padding-top:0}
 </style>
 </head>
 <body>
@@ -281,7 +286,7 @@ textarea.note::placeholder{color:#8b919a}
     <span class="logo">CRR</span>
     <div>
       <div class="hd-title">CRR Triage Advisor</div>
-      <div class="hd-sub">Community Referred Radiology — AI Triage Assessment &nbsp;·&nbsp; <button id="verBtn" onclick="openProvenanceModal()" style="background:none;border:none;color:#8b919a;font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:inherit;opacity:.8" title="Criteria provenance and version information">v2.1.1</button></div>
+      <div class="hd-sub">Community Referred Radiology — AI Triage Assessment &nbsp;·&nbsp; <button id="verBtn" onclick="openProvenanceModal()" style="background:none;border:none;color:#5f6b7c;font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:inherit;opacity:.8" title="Criteria provenance and version information">v2.1.1</button></div>
     </div>
   </div>
   <div class="hd-right">
@@ -289,7 +294,7 @@ textarea.note::placeholder{color:#8b919a}
     <button id="compareBtn" onclick="toggleCompareMode()" class="btn-compare" title="Compare Sonnet 4 vs Opus 4.6 side by side">
       &#9316; Compare Models
     </button>
-    <button class="btn-stats" onclick="openStatsModal()" title="Usage statistics" id="statsBtn" style="background:#f0f2f5;border:1px solid #dde1e6;color:#8b919a;padding:4px 10px;border-radius:6px;font-family:var(--sans);font-size:11px;font-weight:500;cursor:pointer;margin-right:4px">
+    <button class="btn-stats" onclick="openStatsModal()" title="Usage statistics" id="statsBtn" style="background:#f0f2f5;border:1px solid #dde1e6;color:#5f6b7c;padding:4px 10px;border-radius:6px;font-family:var(--sans);font-size:11px;font-weight:500;cursor:pointer;margin-right:4px">
       <span id="statsBadge">NZ$0.00</span>
     </button>
     <button id="compLogBtn" onclick="openCompLogModal()" style="display:none;background:#f0f2f5;border:1px solid #dde1e6;color:#5a6068;padding:4px 10px;border-radius:6px;font-family:var(--sans);font-size:11px;font-weight:500;cursor:pointer;margin-right:4px">
@@ -355,36 +360,36 @@ textarea.note::placeholder{color:#8b919a}
     </div>
 
     <div class="panel" style="margin-top:10px">
-      <div style="padding:10px 14px;border-bottom:1px solid var(--rule);cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleExamples()">
-        <span style="font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#8b919a">Examples</span>
-        <span id="exArrow" style="color:#8b919a;font-size:10px">&#9654;</span>
-      </div>
+      <button onclick="toggleExamples()" style="width:100%;padding:10px 14px;border:none;border-bottom:1px solid var(--rule);background:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-family:var(--sans);text-align:left">
+        <span style="font-size:10px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#5f6b7c">Examples</span>
+        <span id="exArrow" style="color:#8b919a;font-size:10px" aria-hidden="true">&#9654;</span>
+      </button>
       <div id="exPanel" style="display:none">
         <div class="pb" style="padding-top:10px">
-          <div style="font-size:10px;font-weight:600;color:#8b919a;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:5px">Standard presentations</div>
-          <span class="chip" onclick="loadEx(0)">TIA — CT Head</span>
-          <span class="chip" onclick="loadEx(1)">Renal colic — CT KUB</span>
-          <span class="chip" onclick="loadEx(2)">Haemoptysis — CXR</span>
-          <span class="chip" onclick="loadEx(3)">RUQ/LFTs — US Abdomen</span>
-          <span class="chip" onclick="loadEx(4)">DVT — US Leg</span>
-          <span class="chip" onclick="loadEx(5)">PMB — US Pelvis</span>
-          <span class="chip" onclick="loadEx(6)">Scrotal lump — US Scrotum</span>
-          <span class="chip" onclick="loadEx(7)">Back pain — XR Spine</span>
-          <span class="chip" onclick="loadEx(8)">Knee OA — XR Knee</span>
-          <span class="chip" onclick="loadEx(9)">Thyroid nodule — US Thyroid</span>
-          <div style="font-size:10px;font-weight:600;color:#dc2626;letter-spacing:0.8px;text-transform:uppercase;margin:8px 0 5px">Emergency / acute redirect</div>
-          <span class="chip" style="border-color:#f5c6cb;color:#dc2626" onclick="loadEx(10)">Testicular torsion — acute scrotal pain</span>
-          <span class="chip" style="border-color:#f5c6cb;color:#dc2626" onclick="loadEx(11)">Thunderclap headache — worst ever</span>
-          <span class="chip" style="border-color:#f5c6cb;color:#dc2626" onclick="loadEx(12)">Cauda equina — saddle anaesthesia</span>
-          <span class="chip" style="border-color:#f5c6cb;color:#dc2626" onclick="loadEx(13)">Suspected pneumothorax</span>
+          <div style="font-size:10px;font-weight:600;color:#5f6b7c;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:5px">Standard presentations</div>
+          <button class="chip" onclick="loadEx(0)">TIA — CT Head</button>
+          <button class="chip" onclick="loadEx(1)">Renal colic — CT KUB</button>
+          <button class="chip" onclick="loadEx(2)">Haemoptysis — CXR</button>
+          <button class="chip" onclick="loadEx(3)">RUQ/LFTs — US Abdomen</button>
+          <button class="chip" onclick="loadEx(4)">DVT — US Leg</button>
+          <button class="chip" onclick="loadEx(5)">PMB — US Pelvis</button>
+          <button class="chip" onclick="loadEx(6)">Scrotal lump — US Scrotum</button>
+          <button class="chip" onclick="loadEx(7)">Back pain — XR Spine</button>
+          <button class="chip" onclick="loadEx(8)">Knee OA — XR Knee</button>
+          <button class="chip" onclick="loadEx(9)">Thyroid nodule — US Thyroid</button>
+          <div style="font-size:10px;font-weight:600;color:#b91c1c;letter-spacing:0.8px;text-transform:uppercase;margin:8px 0 5px">Emergency / acute redirect</div>
+          <button class="chip" style="border-color:#f5c6cb;color:#b91c1c" onclick="loadEx(10)">Testicular torsion — acute scrotal pain</button>
+          <button class="chip" style="border-color:#f5c6cb;color:#b91c1c" onclick="loadEx(11)">Thunderclap headache — worst ever</button>
+          <button class="chip" style="border-color:#f5c6cb;color:#b91c1c" onclick="loadEx(12)">Cauda equina — saddle anaesthesia</button>
+          <button class="chip" style="border-color:#f5c6cb;color:#b91c1c" onclick="loadEx(13)">Suspected pneumothorax</button>
           <div style="font-size:10px;font-weight:600;color:#92400e;letter-spacing:0.8px;text-transform:uppercase;margin:8px 0 5px">Alternative management / not funded</div>
-          <span class="chip" style="border-color:#ffe082;color:#92400e" onclick="loadEx(14)">Routine back pain — no red flags</span>
-          <span class="chip" style="border-color:#ffe082;color:#92400e" onclick="loadEx(15)">Knee OA — imaging requested</span>
+          <button class="chip" style="border-color:#ffe082;color:#92400e" onclick="loadEx(14)">Routine back pain — no red flags</button>
+          <button class="chip" style="border-color:#ffe082;color:#92400e" onclick="loadEx(15)">Knee OA — imaging requested</button>
           <div style="font-size:10px;font-weight:600;color:var(--accent);letter-spacing:0.8px;text-transform:uppercase;margin:8px 0 5px">April 2026 criteria</div>
-          <span class="chip" onclick="loadEx(16)">Amiodarone — new respiratory symptoms</span>
-          <span class="chip" onclick="loadEx(17)">PMR — starting steroids</span>
-          <span class="chip" onclick="loadEx(18)">Idiopathic DVT — exclude malignancy</span>
-          <span class="chip" onclick="loadEx(19)">Microscopic haematuria — male 55</span>
+          <button class="chip" onclick="loadEx(16)">Amiodarone — new respiratory symptoms</button>
+          <button class="chip" onclick="loadEx(17)">PMR — starting steroids</button>
+          <button class="chip" onclick="loadEx(18)">Idiopathic DVT — exclude malignancy</button>
+          <button class="chip" onclick="loadEx(19)">Microscopic haematuria — male 55</button>
         </div>
       </div>
     </div>
@@ -538,11 +543,11 @@ textarea.note::placeholder{color:#8b919a}
       <div style="margin-bottom:14px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:6px">Overall accuracy score</div>
         <div class="qa-stars" id="qaStars">
-          <div class="qa-star" data-score="1" onclick="setQaScore(1)" title="1 — Very inaccurate">1</div>
-          <div class="qa-star" data-score="2" onclick="setQaScore(2)" title="2 — Mostly inaccurate">2</div>
-          <div class="qa-star" data-score="3" onclick="setQaScore(3)" title="3 — Partially correct">3</div>
-          <div class="qa-star" data-score="4" onclick="setQaScore(4)" title="4 — Mostly accurate">4</div>
-          <div class="qa-star" data-score="5" onclick="setQaScore(5)" title="5 — Very accurate">5</div>
+          <button class="qa-star" data-score="1" onclick="setQaScore(1)" title="1 — Very inaccurate" aria-label="Score 1 — Very inaccurate">1</button>
+          <button class="qa-star" data-score="2" onclick="setQaScore(2)" title="2 — Mostly inaccurate" aria-label="Score 2 — Mostly inaccurate">2</button>
+          <button class="qa-star" data-score="3" onclick="setQaScore(3)" title="3 — Partially correct" aria-label="Score 3 — Partially correct">3</button>
+          <button class="qa-star" data-score="4" onclick="setQaScore(4)" title="4 — Mostly accurate" aria-label="Score 4 — Mostly accurate">4</button>
+          <button class="qa-star" data-score="5" onclick="setQaScore(5)" title="5 — Very accurate" aria-label="Score 5 — Very accurate">5</button>
         </div>
         <div class="qa-score-labels"><span>Very inaccurate</span><span>Very accurate</span></div>
         <div id="qaScoreLabel" style="font-size:12px;color:var(--accent);font-weight:600;margin-top:6px;min-height:18px"></div>
@@ -779,6 +784,8 @@ var lastResults = null;
 var lastNote      = '';
 var correctedNote = '';  // spell-corrected version of lastNote
 var lastAiResult  = null;
+var triaCriteriaLayout = 'indication';
+var lastTriaR = null;
 
 // Popup / postMessage helpers
 var isPopup = !!(window.opener && !window.opener.closed);
@@ -1311,7 +1318,7 @@ function renderMatchCard(r, idx) {
   var h = '<div class="panel" style="margin-bottom:10px;">';
 
   // Card header with title + confidence
-  h += '<div style="background:var(--lite);padding:9px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid var(--rule);" onclick="toggleCard(' + idx + ')">';
+  h += '<div style="background:var(--lite);padding:9px 12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-bottom:1px solid var(--rule);" role="button" tabindex="0" onclick="toggleCard(' + idx + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();toggleCard(' + idx + ')}">';
   h += '<span style="font-size:12px;font-weight:700;color:var(--navy);">' + esc(title) + pageRef + '</span>';
   h += '<span style="display:flex;align-items:center;gap:6px">';
   h += '<span class="badge badge-mod">' + esc(site.modality) + '</span>';
@@ -1794,7 +1801,115 @@ function siteIdFromExamString(examStr) {
   return null;
 }
 
+// ═══════════════════════════════════════════════
+//  CRITERIA REFERENCE PANEL HELPERS
+// ═══════════════════════════════════════════════
+function triIsEmergencyGroup(title) {
+  var t = (title||'').toLowerCase();
+  return t.indexOf('emergency') !== -1 || t.indexOf('acute assessment') !== -1;
+}
+function triIsNonClinicalGroup(title) {
+  var t = (title||'').toLowerCase();
+  return t.indexOf('not fund') !== -1 || t.indexOf('not routinely') !== -1 || t.indexOf('alternative management') !== -1;
+}
+function triGetPriorityShort(title) {
+  var t = (title||'').toLowerCase();
+  if (triIsEmergencyGroup(title)) return 'Emergency';
+  if (t.indexOf('24 hour') !== -1 || t.indexOf('24hr') !== -1) return 'Acute 24 (within 24 hours)';
+  if (t.indexOf('acute') !== -1) return 'Acute 48 (within 48 hours)';
+  if (t.indexOf('p2') !== -1) return 'Urgent (within two weeks)';
+  if (t.indexOf('p3') !== -1) return 'Non-deferrable (within six weeks)';
+  if (t.indexOf('p4') !== -1) return 'Routine (within six weeks)';
+  if (t.indexOf('s1') !== -1) return 'Urgent (within one week)';
+  if (t.indexOf('s2') !== -1) return 'Urgent (within two weeks)';
+  if (t.indexOf('s3') !== -1) return 'Non-deferrable (within six weeks)';
+  return '';
+}
+function triGetPriorityBadgeStyle(tier) {
+  if (!tier) return 'background:#f0f2f5;color:#5a6068';
+  if (tier.indexOf('Emergency') === 0) return 'background:#fdecea;color:#c0392b';
+  if (tier.indexOf('Acute') === 0) return 'background:#fff7ed;color:#b45309';
+  if (tier.indexOf('Urgent') === 0) return 'background:#faf5ff;color:#7c3aed';
+  if (tier.indexOf('Non-deferrable') === 0) return 'background:#f0fdf4;color:#15803d';
+  if (tier.indexOf('Routine') === 0) return 'background:#eff6ff;color:#1d4ed8';
+  return 'background:#f0f2f5;color:#5a6068';
+}
+function triGetIndicationTheme(label) {
+  var t = (label||'').toLowerCase();
+  if (t.indexOf('secondary care') !== -1 || t.indexOf('radiologist advises') !== -1 || (t.indexOf('specialist') !== -1 && t.indexOf('advises') !== -1)) return 'Secondary care referral';
+  if (t.indexOf('cancer') !== -1 || t.indexOf('malignancy') !== -1 || t.indexOf('carcinoma') !== -1 || t.indexOf('tumour') !== -1 || t.indexOf('lymphoma') !== -1 || t.indexOf('metastasi') !== -1) return 'Cancer / malignancy';
+  if (t.indexOf('family history') !== -1 || t.indexOf('nzgg') !== -1 || t.indexOf('familial') !== -1) return 'Family history';
+  if (t.indexOf('anaemia') !== -1 || t.indexOf('iron deficiency') !== -1 || t.indexOf('ferritin') !== -1) return 'Anaemia / blood results';
+  if (t.indexOf('rectal bleeding') !== -1 || t.indexOf('haemoptysis') !== -1 || t.indexOf('haematuria') !== -1 || t.indexOf('haemorrhage') !== -1 || t.indexOf('pr bleeding') !== -1) return 'Bleeding';
+  if (t.indexOf('bowel habit') !== -1 || t.indexOf('altered bowel') !== -1 || t.indexOf('diarrhoea') !== -1) return 'Bowel symptoms';
+  if (t.indexOf('tia') !== -1 || t.indexOf('stroke') !== -1 || t.indexOf('seizure') !== -1 || t.indexOf('focal neurological') !== -1 || t.indexOf('headache') !== -1 || t.indexOf('neurological') !== -1) return 'Neurological';
+  if (t.indexOf('infection') !== -1 || t.indexOf('osteomyelitis') !== -1 || t.indexOf('septic arthritis') !== -1 || t.indexOf('abscess') !== -1) return 'Infection / inflammation';
+  if (t.indexOf('fracture') !== -1 || t.indexOf('trauma') !== -1 || t.indexOf('injury') !== -1) return 'Trauma / injury';
+  if (t.indexOf('pain') !== -1) return 'Pain';
+  return 'Other';
+}
+function setTriaCriteriaLayout(mode) {
+  triaCriteriaLayout = mode;
+  if (lastTriaR) renderCriteriaBrowser(lastTriaR);
+}
+function renderTriaCriteriaItem(item, tier) {
+  var labelL = (item.label||'').toLowerCase();
+  var isGw = labelL.indexOf('bpac') !== -1 || labelL.indexOf('neurologist') !== -1 || labelL.indexOf('stroke specialist') !== -1;
+  var labTerms = ['alp','ggt','alt','egfr','creatinine','hb ','haemoglobin','ferritin','ca-125','d-dimer','wells','tsh','crp','mmol','micromol'];
+  var needsLab = !isGw && labTerms.some(function(lt){ return labelL.indexOf(lt) !== -1; });
+  var borderColor = isGw ? '#7B2D8B' : (item.mandatory ? '#c62828' : 'var(--teal)');
+  var h = '<div style="font-size:12px;color:var(--ink);line-height:1.4;padding:4px 0 4px 12px;border-left:3px solid ' + borderColor + ';margin-bottom:4px">';
+  if (isGw) h += '<span style="font-size:10px;font-weight:700;color:#7B2D8B;text-transform:uppercase;margin-right:4px;background:#f3e8f7;padding:1px 5px;border-radius:2px">&#128274; GATEWAY</span> ';
+  else if (item.mandatory) h += '<span style="font-size:10px;font-weight:700;color:#c62828;text-transform:uppercase;margin-right:4px">MANDATORY</span>';
+  if (needsLab) h += '<span style="font-size:10px;font-weight:700;color:#1565c0;background:#e3f2fd;padding:1px 5px;border-radius:2px;margin-right:4px;border:1px solid #90c4e8">&#128203; LAB</span> ';
+  h += esc(item.label);
+  if (tier) h += ' <span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px;margin-left:4px;display:inline-block;' + triGetPriorityBadgeStyle(tier) + '">' + esc(tier) + '</span>';
+  h += '</div>';
+  return h;
+}
+function renderTriaCriteriaByIndication(site) {
+  var allItems = [];
+  (site.groups||[]).forEach(function(g) {
+    if (triIsEmergencyGroup(g.title) || triIsNonClinicalGroup(g.title)) return;
+    var tier = triGetPriorityShort(g.title);
+    (g.items||[]).forEach(function(item) {
+      allItems.push({ item: item, tier: tier });
+    });
+  });
+  var themeOrder = [], themeMap = {};
+  allItems.forEach(function(e) {
+    var th = triGetIndicationTheme(e.item.label);
+    if (!themeMap[th]) { themeMap[th] = []; themeOrder.push(th); }
+    themeMap[th].push(e);
+  });
+  var h = '';
+  themeOrder.forEach(function(th) {
+    h += '<div class="crit-theme-hd">' + esc(th) + '</div>';
+    themeMap[th].forEach(function(e) { h += renderTriaCriteriaItem(e.item, e.tier); });
+  });
+  return h || '<div style="font-size:12px;color:var(--mid);font-style:italic;padding:6px 0">No criteria available.</div>';
+}
+function renderTriaCriteriaByUrgency(site) {
+  var h = '';
+  (site.groups||[]).forEach(function(g) {
+    if (triIsNonClinicalGroup(g.title)) return;
+    var isEmg = triIsEmergencyGroup(g.title);
+    var shortLabel = isEmg ? 'Emergency' : (triGetPriorityShort(g.title) || g.title);
+    var lblStyle = isEmg
+      ? 'color:#c62828;background:#fdecea;border:1px solid #f0b0b0'
+      : 'color:var(--mid);background:var(--lite);border:1px solid var(--rule)';
+    h += '<div style="margin-bottom:10px">';
+    h += '<div style="font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:5px;padding:3px 8px;border-radius:4px;display:inline-block;' + lblStyle + '">' + esc(shortLabel) + '</div>';
+    (g.items||[]).forEach(function(item) {
+      h += renderTriaCriteriaItem(item, null);
+    });
+    h += '</div>';
+  });
+  return h || '<div style="font-size:12px;color:var(--mid);font-style:italic;padding:6px 0">No criteria available.</div>';
+}
+
 function renderCriteriaBrowser(r) {
+  lastTriaR = r;
   var panel = document.getElementById('criteriaPanel');
   if (!panel) return;
 
@@ -1855,33 +1970,12 @@ function renderCriteriaBrowser(r) {
   }
   if (_guideText || _hpUrlRef) h += '<div style="margin-bottom:10px"></div>';
 
-  // Criteria groups
-  site.groups.forEach(function(g) {
-    h += '<div style="margin-bottom:10px">';
-    h += '<div style="font-size:10px;font-weight:700;color:var(--mid);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:5px;padding-bottom:3px;border-bottom:1px solid var(--rule)">' + esc(g.title) + '</div>';
-    g.items.forEach(function(item) {
-      var mandatory = item.mandatory;
-      // Gateway detection
-      var labelL = (item.label || '').toLowerCase();
-      var isGateway = labelL.indexOf('bpac') !== -1 ||
-                      labelL.indexOf('neurologist') !== -1 ||
-                      labelL.indexOf('stroke specialist') !== -1 ||
-                      (labelL.indexOf('secondary care') !== -1 && labelL.indexOf('advises') !== -1 && g.title.toLowerCase().indexOf('acute') !== -1);
-      // Lab value detection — items requiring specific numeric results
-      var labTerms = ['alp', 'ggt', 'alt', 'bilirubin', 'egfr', 'creatinine', 'hb ', 'haemoglobin',
-                      'ferritin', 'ca-125', 'd-dimer', 'wells', 'tsh', 'hcg', 'crp', 'acr', 'psa',
-                      'uln', 'iu/l', 'mmol', 'micromol', 'iu at'];
-      var needsLab = !isGateway && labTerms.some(function(t){ return labelL.indexOf(t) !== -1; });
-      var borderColor = isGateway ? '#7B2D8B' : (mandatory ? '#c62828' : 'var(--teal)');
-      h += '<div style="font-size:12px;color:var(--ink);line-height:1.4;padding:4px 0 4px 12px;border-left:3px solid ' + borderColor + ';margin-bottom:4px">';
-      if (isGateway) h += '<span style="font-size:10px;font-weight:700;color:#7B2D8B;text-transform:uppercase;margin-right:4px;background:#f3e8f7;padding:1px 5px;border-radius:2px">&#128274; GATEWAY</span> ';
-      else if (mandatory) h += '<span style="font-size:10px;font-weight:700;color:#c62828;text-transform:uppercase;margin-right:4px">MANDATORY</span>';
-      if (needsLab) h += '<span style="font-size:10px;font-weight:700;color:#1565c0;background:#e3f2fd;padding:1px 5px;border-radius:2px;margin-right:4px;border:1px solid #90c4e8">&#128203; LAB VALUE REQUIRED</span> ';
-      h += esc(item.label);
-      h += '</div>';
-    });
-    h += '</div>';
-  });
+  // View toggle + criteria
+  h += '<div class="crit-view-toggle">';
+  h += '<button class="crit-view-toggle-btn' + (triaCriteriaLayout === 'indication' ? ' active' : '') + '" onclick="setTriaCriteriaLayout(\'indication\')">By indication</button>';
+  h += '<button class="crit-view-toggle-btn' + (triaCriteriaLayout === 'urgency' ? ' active' : '') + '" onclick="setTriaCriteriaLayout(\'urgency\')">By urgency</button>';
+  h += '</div>';
+  h += triaCriteriaLayout === 'indication' ? renderTriaCriteriaByIndication(site) : renderTriaCriteriaByUrgency(site);
 
   // Footnotes
   if (site.footnotes) {
@@ -2035,9 +2129,11 @@ function renderAIResult(r) {
   // Re-check button
   h += '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">';
   h += '<button class="btn-run-ai" onclick="runCheck()" style="margin-bottom:0;flex:1;min-width:100px">Re-assess ›</button>';
-  h += '<button class="btn-copy" onclick="copyResult()" style="flex:0 0 auto;padding:10px 14px">&#128203; Copy</button>';
-  if (showSendButton) {
-    h += '<button class="btn-send-assessment" onclick="sendAssessmentToForm()" style="flex:0 0 auto;padding:10px 14px;background:var(--teal);color:#fff;border:none;font-family:var(--sans);font-size:12px;font-weight:600;border-radius:2px;cursor:pointer">&#8593; Send to Form</button>';
+  if (r.suggested_wording) {
+    h += '<button class="btn-copy" onclick="copyResult()" style="flex:0 0 auto;padding:10px 14px">&#128203; Copy wording</button>';
+    if (showSendButton) {
+      h += '<button class="btn-send-assessment" onclick="sendAssessmentToForm()" style="flex:0 0 auto;padding:10px 14px;background:var(--teal);color:#fff;border:none;font-family:var(--sans);font-size:12px;font-weight:600;border-radius:2px;cursor:pointer">&#8593; Send to Form</button>';
+    }
   }
   h += '<button class="btn-qa" onclick="openQaModal()" title="Rate the accuracy of this assessment for clinical QA">&#9733; QA</button>';
   h += '</div>';
@@ -2050,7 +2146,8 @@ function renderAIResult(r) {
 //  COPY
 // ═══════════════════════════════════════════════
 function copyResult() {
-  var text = buildAssessmentText();
+  if (!lastAiResult || !lastAiResult.suggested_wording) return;
+  var text = lastAiResult.suggested_wording;
   try { navigator.clipboard.writeText(text); }
   catch(e) { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
   var btn = document.querySelector('.btn-copy');
@@ -2059,7 +2156,7 @@ function copyResult() {
     if (isPopup) {
       setTimeout(function(){ window.close(); }, 700);
     } else {
-      setTimeout(function(){ btn.innerHTML = '&#128203; Copy'; }, 2000);
+      setTimeout(function(){ btn.innerHTML = '&#128203; Copy wording'; }, 2000);
     }
   }
 }
@@ -2122,9 +2219,10 @@ function buildAssessmentText() {
 }
 
 function sendAssessmentToForm() {
-  var assessmentText = buildAssessmentText();
+  if (!lastAiResult || !lastAiResult.suggested_wording) return;
+  var text = lastAiResult.suggested_wording;
   if (window.opener && !window.opener.closed) {
-    window.opener.postMessage({ type: 'crr-output', text: assessmentText, source: 'triage' }, '*');
+    window.opener.postMessage({ type: 'crr-output', text: text, source: 'triage' }, '*');
   }
   var btn = document.querySelector('.btn-send-assessment');
   if (btn) { btn.textContent = '✓ Sent'; }
