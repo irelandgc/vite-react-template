@@ -1029,12 +1029,13 @@ function toolRender() {
     elCrit.style.maxWidth = "900px";
     elCrit.style.margin = "0 auto";
 
-    var hIntRight = renderCritSummaryBar();
+    var hIntRight = "";
     // Show HealthPathways link compactly
     var _hpUrlInt = getHealthPathwaysUrl(exam);
     if (_hpUrlInt) {
       hIntRight += "<div class='guide-box' style='margin-bottom:10px;font-size:12px'>" + esc(exam.guidance) + " <a href='" + esc(_hpUrlInt) + "' target='_blank'>View HealthPathways &#8250;</a></div>";
     }
+    hIntRight += renderCritSummaryBar();
     if (exam.type === "singlesite") {
       hIntRight += toolRenderSinglesite(exam);
     } else {
@@ -1285,17 +1286,19 @@ function toolRenderSitePanel(site) {
   var prereqLabels = {};
   for (var p = 0; p < prereqs.length; p++) prereqLabels[prereqs[p]] = true;
 
+  // Eligibility / prereq block comes before the toggle (gives context before choosing view)
+  if (viewLayout === 'indication') {
+    h += renderIndicationPrereqs(site);
+  } else {
+    if (prereqs.length) h += renderPrereqBlock(prereqs);
+  }
+
   // View toggle (interactive mode only)
   if (viewMode !== "passive") h += renderViewToggle();
 
   if (viewLayout === 'indication') {
-    // Eligibility/outOfCriteria block only (informational, not tickable)
-    h += renderIndicationPrereqs(site);
-    // All items as flat themed tickable list — no exclusions, gateway items are regular checkboxes
     h += toolRenderIndicationPanel(site, {});
   } else {
-    // Urgency-grouped view (existing behaviour)
-    if (prereqs.length) h += renderPrereqBlock(prereqs);
     for (var ng = 0; ng < nonEmergencyGroups.length; ng++) h += toolRenderGroup(nonEmergencyGroups[ng], prereqLabels);
   }
 
@@ -1321,13 +1324,17 @@ function toolRenderSinglesite(exam) {
   var prereqLabels = {};
   for (var p = 0; p < prereqs.length; p++) prereqLabels[prereqs[p]] = true;
 
+  if (viewLayout === 'indication') {
+    h += renderIndicationPrereqs(exam);
+  } else {
+    if (prereqs.length) h += renderPrereqBlock(prereqs);
+  }
+
   if (viewMode !== "passive") h += renderViewToggle();
 
   if (viewLayout === 'indication') {
-    h += renderIndicationPrereqs(exam);
     h += toolRenderIndicationPanel(exam, {});
   } else {
-    if (prereqs.length) h += renderPrereqBlock(prereqs);
     for (var ng = 0; ng < nonEmergencyGroups.length; ng++) h += toolRenderGroup(nonEmergencyGroups[ng], prereqLabels);
   }
 
