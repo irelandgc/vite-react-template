@@ -672,11 +672,11 @@ function groupClass(title) {
 function priorityBadgeHtml(groupTitle) {
   var t = (groupTitle||"").toLowerCase();
   if (isEmergencyGroup(groupTitle)) return "<span class='priority-badge pri-emergency'>Emergency</span>";
-  if (t.indexOf("24 hour") !== -1 || t.indexOf("24hr") !== -1) return "<span class='priority-badge pri-acute24'>Acute 24hr</span>";
-  if (t.indexOf("acute") !== -1) return "<span class='priority-badge pri-acute'>Acute 48hr</span>";
-  if (t.indexOf("p2") !== -1) return "<span class='priority-badge pri-p2'>P2 — 2 weeks</span>";
-  if (t.indexOf("p3") !== -1) return "<span class='priority-badge pri-p3'>P3 — 6 weeks</span>";
-  if (t.indexOf("p4") !== -1) return "<span class='priority-badge pri-p4'>P4 — 6–12 wks</span>";
+  if (t.indexOf("24 hour") !== -1 || t.indexOf("24hr") !== -1) return "<span class='priority-badge pri-acute24'>Acute 24 (within 24 hours)</span>";
+  if (t.indexOf("acute") !== -1) return "<span class='priority-badge pri-acute'>Acute 48 (within 48 hours)</span>";
+  if (t.indexOf("p2") !== -1) return "<span class='priority-badge pri-p2'>Urgent (within two weeks)</span>";
+  if (t.indexOf("p3") !== -1) return "<span class='priority-badge pri-p3'>Non-deferrable (within six weeks)</span>";
+  if (t.indexOf("p4") !== -1) return "<span class='priority-badge pri-p4'>Routine (within six weeks)</span>";
   if (t.indexOf("s1") !== -1) return "<span class='priority-badge pri-s1'>S1 — 1 week</span>";
   if (t.indexOf("s2") !== -1) return "<span class='priority-badge pri-s2'>S2 — 2 weeks</span>";
   if (t.indexOf("s3") !== -1) return "<span class='priority-badge pri-s3'>S3 — 6 weeks</span>";
@@ -1034,14 +1034,9 @@ function toolRender() {
   hLeft += "<div id='safetyAlertArea'>" + checkSafetyText(TS.notes||"") + "</div>";
 
   if (viewMode !== "passive") {
-    // 6. Notes
-    hLeft += "<div class='notes-label'>Additional Notes <span style='font-weight:400;text-transform:none;letter-spacing:0;font-size:10px'>(optional)</span></div>";
-    hLeft += "<div class='card' style='margin-bottom:10px'><textarea class='notes-area' id='toolNotes' placeholder='Additional clinical information...' onkeyup='onNotes()' onchange='onNotes()'>" + esc(TS.notes) + "</textarea></div>";
-
     // 7. Selected Indicators preview panel
     hLeft += "<div class='output-section-label'>Selected Indicators</div>";
     hLeft += "<div class='preview-panel'><div class='preview-body' id='outputPreviewArea'><div class='preview-empty'>Tick criteria on the right to see the output.</div></div></div>";
-    hLeft += "<div class='card' style='margin:0 0 12px'><textarea class='text-output-area' id='textOutputArea' readonly onclick='this.select()' placeholder='Output will appear here...'></textarea></div>";
   }
 
   if (isIntegration) {
@@ -1070,6 +1065,15 @@ function toolRender() {
         }
       }
     }
+    // Selected Indicators panel — hidden until items ticked (Fix 7)
+    var _showSendInt = (getParam('sendButton') === 'on') && isPopup;
+    hIntRight += "<div id='decisionPanel' class='decision-panel' style='display:none;margin-top:16px'>";
+    hIntRight += "<div class='decision-panel-hd'>Selected Indicators <span id='decisionCount' class='preview-count'>0</span></div>";
+    hIntRight += "<div class='decision-panel-body' id='decisionBody'></div>";
+    hIntRight += "<div id='intCopyBtns' style='padding:8px 12px 4px'>";
+    hIntRight += "<button class='btn btn-p' onclick='handleCopySelected()'>Copy</button>";
+    if (_showSendInt) hIntRight += " <button class='btn btn-p' onclick='handleSendToForm()' style='background:#059669'>Send to Form</button>";
+    hIntRight += "</div></div>";
     elCrit.innerHTML = hIntRight;
   } else if (viewMode === "passive") {
     // Passive mode: hide left column, render everything in criteria column
@@ -1159,26 +1163,26 @@ function getIndicationTheme(label) {
 function getPriorityShortFromGroup(title) {
   var t = (title || "").toLowerCase();
   if (t.indexOf("acute assessment") !== -1 || t.indexOf("emergency") !== -1) return "Emergency";
-  if (t.indexOf("acute") !== -1) return "Acute";
-  if (t.indexOf("p2") !== -1) return "P2";
-  if (t.indexOf("p3") !== -1) return "P3";
-  if (t.indexOf("p4") !== -1) return "P4";
+  if (t.indexOf("acute") !== -1) return "Acute 48 (within 48 hours)";
+  if (t.indexOf("p2") !== -1) return "Urgent (within two weeks)";
+  if (t.indexOf("p3") !== -1) return "Non-deferrable (within six weeks)";
+  if (t.indexOf("p4") !== -1) return "Routine (within six weeks)";
   return "";
 }
 
 function getIndicPriorityStyle(tier) {
   if (tier === "Emergency") return "background:#fdecea;color:#c0392b";
-  if (tier === "Acute")     return "background:#fff7ed;color:#b45309";
-  if (tier === "P2")        return "background:#faf5ff;color:#7c3aed";
-  if (tier === "P3")        return "background:#f0fdf4;color:#15803d";
-  if (tier === "P4")        return "background:#eff6ff;color:#1d4ed8";
+  if (tier.indexOf("Acute") === 0) return "background:#fff7ed;color:#b45309";
+  if (tier.indexOf("Urgent") === 0) return "background:#faf5ff;color:#7c3aed";
+  if (tier.indexOf("Non-deferrable") === 0) return "background:#f0fdf4;color:#15803d";
+  if (tier.indexOf("Routine") === 0) return "background:#eff6ff;color:#1d4ed8";
   return "background:#f0f2f5;color:#5a6068";
 }
 
 function renderIndicationPrereqs(obj) {
-  var note = obj.outOfCriteriaNote || "";
+  var note = obj.outOfCriteriaNote || obj.notFundedDetail || "";
   if (!note) return "";
-  return "<div class='indic-prereq-block'><div class='indic-prereq-hd'>&#128203; Before referring, confirm:</div>" + esc(note) + "</div>";
+  return "<div class='indic-prereq-block'><div class='indic-prereq-hd'>&#128203; Eligibility requirements:</div>" + esc(note) + "</div>";
 }
 
 function renderViewToggle() {
@@ -1250,19 +1254,9 @@ function toolRenderIndicCb(item, tier, groupTitle) {
   if (gateway) h += "<span class='gateway-tag'>&#128274; Gateway</span>";
   if (labval)  h += "<span class='lab-tag'>&#128299; Lab value</span>";
   h += "</span>";
-  if (item.conditionalNote || item.shortLabel) {
-    h += "<span class='crit-card-expand" + (isExpanded ? " open" : "") + "' onclick='event.stopPropagation();toggleExpand(\"" + esc(item.id) + "\")'>&#9654;</span>";
-  }
   h += "</div>";
-  if (item.conditionalNote || item.shortLabel) {
-    h += "<div class='crit-card-detail" + (isExpanded ? " open" : "") + "' id='detail_" + esc(item.id) + "'>";
-    if (item.shortLabel && item.shortLabel !== item.label) {
-      h += "<div class='crit-detail-note' style='font-size:11px;color:#8b919a;font-style:italic'>Shorthand: " + esc(item.shortLabel) + "</div>";
-    }
-    if (item.conditionalNote) {
-      h += "<div class='ib-red' style='margin-top:4px;font-size:12px'>" + esc(item.conditionalNote) + "</div>";
-    }
-    h += "</div>";
+  if (item.conditionalNote) {
+    h += "<div class='ib-red' style='margin:4px 8px 4px;font-size:12px'>" + esc(item.conditionalNote) + "</div>";
   }
   h += "</div>";
   return h;
@@ -1314,12 +1308,10 @@ function toolRenderSitePanel(site) {
   if (viewMode !== "passive") h += renderViewToggle();
 
   if (viewLayout === 'indication') {
-    // Static prereq block from outOfCriteriaNote
+    // Eligibility/outOfCriteria block only (informational, not tickable)
     h += renderIndicationPrereqs(site);
-    // Gateway prereqs amber block
-    if (prereqs.length) h += renderPrereqBlock(prereqs);
-    // Flat themed indication list
-    h += toolRenderIndicationPanel(site, prereqLabels);
+    // All items as flat themed tickable list — no exclusions, gateway items are regular checkboxes
+    h += toolRenderIndicationPanel(site, {});
   } else {
     // Urgency-grouped view (existing behaviour)
     if (prereqs.length) h += renderPrereqBlock(prereqs);
@@ -1352,8 +1344,7 @@ function toolRenderSinglesite(exam) {
 
   if (viewLayout === 'indication') {
     h += renderIndicationPrereqs(exam);
-    if (prereqs.length) h += renderPrereqBlock(prereqs);
-    h += toolRenderIndicationPanel(exam, prereqLabels);
+    h += toolRenderIndicationPanel(exam, {});
   } else {
     if (prereqs.length) h += renderPrereqBlock(prereqs);
     for (var ng = 0; ng < nonEmergencyGroups.length; ng++) h += toolRenderGroup(nonEmergencyGroups[ng], prereqLabels);
@@ -1742,7 +1733,7 @@ function getHighestPriorityTier(items) {
   }
   if (!tiers.length) return "";
   var min = Math.min.apply(null, tiers);
-  var labels = ["Emergency — refer immediately","Acute — within 24-48 hours","P2 — Urgent, within 2 weeks","P3 — Non-deferrable, within 6 weeks","P4 — Deferrable, within 6-12 weeks","Scheduled"];
+  var labels = ["Emergency — refer immediately","Acute (within 48 hours)","Urgent (within two weeks)","Non-deferrable (within six weeks)","Routine (within six weeks)","Scheduled"];
   return labels[min];
 }
 
@@ -1753,15 +1744,21 @@ function updateDecisionPanel(items) {
   if (!panel || !body) return;
   if (!items.length) {
     panel.className = "decision-panel";
+    if (isIntegration) panel.style.display = "none";
     return;
   }
   panel.className = "decision-panel active";
+  if (isIntegration) panel.style.display = "block";
   if (countEl) countEl.textContent = items.length;
   var tier = getHighestPriorityTier(items);
   var h = "";
   if (viewLayout === 'indication' && tier) {
-    // Indication-first summary: emphasise the urgency met
-    h += "<div class='decision-status'><span class='decision-icon'>&#9989;</span><span class='decision-msg' style='color:#059669;font-weight:600'>Selected criteria meet " + esc(tier) + "</span></div>";
+    var cnt2 = items.length;
+    var cntStr = cnt2 === 1 ? "1 criterion" : cnt2 + " criteria";
+    var urgMsg = cnt2 === 1
+      ? cntStr + " selected — meets <strong>" + esc(tier) + "</strong>"
+      : cntStr + " selected — highest urgency: <strong>" + esc(tier) + "</strong>";
+    h += "<div class='decision-status'><span class='decision-icon'>&#9989;</span><span class='decision-msg' style='color:#059669;font-weight:600'>" + urgMsg + "</span></div>";
   } else {
     h += "<div class='decision-status'><span class='decision-icon'>&#9989;</span><span class='decision-msg' style='color:#059669'>" + items.length + " indicator" + (items.length===1?"":"s") + " selected</span></div>";
     if (tier) h += "<div class='decision-tier'>Highest priority: <strong>" + esc(tier) + "</strong></div>";
@@ -1837,13 +1834,14 @@ function renderPreviewItem(item) {
 //  OUTPUT GENERATION
 // ══════════════════════════════════════════════════════════════
 function generateOutput(mode) {
-  var m = "verbose";
   var exam = getExamById(TS.examId); if (!exam) return "";
   var items = getAllChecked();
+  if (!items.length) return "No clinical indicators selected.";
+  var tier = getHighestPriorityTier(items);
+  var tierLabel = tier ? "Criteria meet " + tier : "Criteria selected";
+  function itemText(item) { return (item.shortLabel && item.shortLabel !== item.label) ? item.shortLabel : item.label; }
   var L = [];
-  function itemText(item) { return m === "short" && item.shortLabel ? item.shortLabel : item.label; }
-  if (!items.length) { L.push("No clinical indicators selected."); }
-  else if (exam.type === "multisite") {
+  if (exam.type === "multisite") {
     var bys = {}, ord = [];
     for (var i = 0; i < items.length; i++) {
       var s2 = items[i].site;
@@ -1851,15 +1849,13 @@ function generateOutput(mode) {
       bys[s2].push(itemText(items[i]));
     }
     for (var oi = 0; oi < ord.length; oi++) {
-      L.push(ord[oi] + ":");
+      L.push(exam.title + " " + ord[oi] + ": " + tierLabel);
       for (var li = 0; li < bys[ord[oi]].length; li++) L.push("  - " + bys[ord[oi]][li]);
-      L.push("");
     }
   } else {
+    L.push(exam.title + ": " + tierLabel);
     for (var j = 0; j < items.length; j++) L.push("  - " + itemText(items[j]));
-    L.push("");
   }
-  if (TS.notes && TS.notes.replace(/\s/g,"") !== "") { L.push("Notes: " + TS.notes); L.push(""); }
   return L.join("\r\n").trim();
 }
 
@@ -1915,56 +1911,27 @@ function updateCopyCloseBtn() {
 
 function buildSendSummaryText() {
   var exam = getExamById(TS.examId);
-  var examTitle = exam ? exam.title : (TS.examId || "");
   var items = getAllChecked();
+  if (!items.length) return "No clinical indicators selected.";
+  var tier = getHighestPriorityTier(items);
+  var tierLabel = tier ? "Criteria meet " + tier : "Criteria selected";
+  function itemText(item) { return (item.shortLabel && item.shortLabel !== item.label) ? item.shortLabel : item.label; }
   var lines = [];
-  lines.push("Referral Criteria: " + examTitle);
-  // Site labels from ticked sites
   if (exam && exam.type === "multisite") {
-    var activeSites = exam.sites.filter(function(s){ return TS.sites[s.id]; });
-    if (activeSites.length) lines.push("Site(s): " + activeSites.map(function(s){ return s.label; }).join(", "));
-  }
-  if (selectedRegion && REGIONS[selectedRegion]) lines.push("Region: " + REGIONS[selectedRegion].label);
-  lines.push("");
-  if (!items.length) {
-    lines.push("No clinical indicators selected.");
-  } else if (exam && exam.type === "multisite") {
     var bys = {}, ord = [];
     for (var i = 0; i < items.length; i++) {
       var st = items[i].site;
       if (!bys[st]) { bys[st] = []; ord.push(st); }
-      bys[st].push(items[i].label);
+      bys[st].push(itemText(items[i]));
     }
     for (var oi = 0; oi < ord.length; oi++) {
-      lines.push(ord[oi] + ":");
+      lines.push(exam.title + " " + ord[oi] + ": " + tierLabel);
       for (var li = 0; li < bys[ord[oi]].length; li++) lines.push("  - " + bys[ord[oi]][li]);
-      lines.push("");
     }
   } else {
-    for (var j = 0; j < items.length; j++) lines.push("  - " + items[j].label);
-    lines.push("");
-  }
-  if (TS.notes && TS.notes.replace(/\s/g,"") !== "") { lines.push("Notes: " + TS.notes); lines.push(""); }
-  // Alternative management text if present
-  if (exam) {
-    var altTexts = [];
-    function collectAlt(groups) {
-      for (var g = 0; g < groups.length; g++) {
-        var grp = groups[g];
-        if (grp.alternativeManagement) altTexts.push(grp.alternativeManagement);
-        for (var it = 0; it < grp.items.length; it++) {
-          if (grp.items[it].alternativeManagement) altTexts.push(grp.items[it].alternativeManagement);
-        }
-      }
-    }
-    if (exam.type === "multisite") {
-      for (var si2 = 0; si2 < exam.sites.length; si2++) {
-        if (TS.sites[exam.sites[si2].id] && exam.sites[si2].groups) collectAlt(exam.sites[si2].groups);
-      }
-    } else if (exam.groups) {
-      collectAlt(exam.groups);
-    }
-    if (altTexts.length) { lines.push("Alternative Management:"); for (var ai = 0; ai < altTexts.length; ai++) lines.push("  " + altTexts[ai]); }
+    var examTitle = exam ? exam.title : (TS.examId || "");
+    lines.push(examTitle + ": " + tierLabel);
+    for (var j = 0; j < items.length; j++) lines.push("  - " + itemText(items[j]));
   }
   return lines.join("\n").trim();
 }
