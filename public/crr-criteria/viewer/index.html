@@ -401,7 +401,7 @@ input,textarea,select,button { font-family:inherit; }
 
 <!-- Footer -->
 <div class="tool-footer">
-  <span id="footerCopyBtns">
+  <span id="footerCopyBtns" style="display:none">
   <button class="btn btn-p" onclick="handleCopySelected()">Copy</button>
   <button class="btn btn-p" id="btnSendToForm" onclick="handleSendToForm()" style="display:none;background:#059669">Send to Form</button>
   <button class="btn btn-g btn-sm" id="btnQaCe" onclick="openCeQa()" style="display:none">&#9733; QA</button>
@@ -782,8 +782,6 @@ function setViewMode(mode) {
     pBtn.style.color = (mode === "passive") ? "#fff" : "#5a6068";
     pBtn.style.borderColor = (mode === "passive") ? "#1a6fa0" : "#dde1e6";
   }
-  var footerCopy = document.getElementById("footerCopyBtns");
-  if (footerCopy) footerCopy.style.display = (mode === "passive") ? "none" : "inline";
   toolRender();
 }
 
@@ -1023,21 +1021,6 @@ function toolRender() {
   window._currentGuidNarr = _guidNarr;
   hLeft += "</div>"; // close exam-info-card
 
-  // 4. Decision summary panel (interactive mode only)
-  if (viewMode !== "passive") {
-    hLeft += "<div class='decision-panel' id='decisionPanel'>";
-    hLeft += "<div class='decision-panel-hd'>Selected Indicators <span id='decisionCount' class='preview-count'>0</span></div>";
-    hLeft += "<div class='decision-panel-body' id='decisionBody'></div></div>";
-  }
-
-  // 5. Safety alert
-  hLeft += "<div id='safetyAlertArea'>" + checkSafetyText(TS.notes||"") + "</div>";
-
-  if (viewMode !== "passive") {
-    // 7. Selected Indicators preview panel
-    hLeft += "<div class='output-section-label'>Selected Indicators</div>";
-    hLeft += "<div class='preview-panel'><div class='preview-body' id='outputPreviewArea'><div class='preview-empty'>Tick criteria on the right to see the output.</div></div></div>";
-  }
 
   if (isIntegration) {
     // Integration mode: single-column, hide left panel, show criteria only
@@ -1046,7 +1029,7 @@ function toolRender() {
     elCrit.style.maxWidth = "900px";
     elCrit.style.margin = "0 auto";
 
-    var hIntRight = "";
+    var hIntRight = renderCritSummaryBar();
     // Show HealthPathways link compactly
     var _hpUrlInt = getHealthPathwaysUrl(exam);
     if (_hpUrlInt) {
@@ -1065,15 +1048,6 @@ function toolRender() {
         }
       }
     }
-    // Selected Indicators panel — hidden until items ticked (Fix 7)
-    var _showSendInt = (getParam('sendButton') === 'on') && isPopup;
-    hIntRight += "<div id='decisionPanel' class='decision-panel' style='display:none;margin-top:16px'>";
-    hIntRight += "<div class='decision-panel-hd'>Selected Indicators <span id='decisionCount' class='preview-count'>0</span></div>";
-    hIntRight += "<div class='decision-panel-body' id='decisionBody'></div>";
-    hIntRight += "<div id='intCopyBtns' style='padding:8px 12px 4px'>";
-    hIntRight += "<button class='btn btn-p' onclick='handleCopySelected()'>Copy</button>";
-    if (_showSendInt) hIntRight += " <button class='btn btn-p' onclick='handleSendToForm()' style='background:#059669'>Send to Form</button>";
-    hIntRight += "</div></div>";
     elCrit.innerHTML = hIntRight;
   } else if (viewMode === "passive") {
     // Passive mode: hide left column, render everything in criteria column
@@ -1110,7 +1084,7 @@ function toolRender() {
     elCrit.style.margin = "";
     elMain.innerHTML = hLeft;
 
-    var hRight = "";
+    var hRight = renderCritSummaryBar();
     if (exam.type === "singlesite") {
       hRight += toolRenderSinglesite(exam);
     } else {
@@ -1183,6 +1157,13 @@ function renderIndicationPrereqs(obj) {
   var note = obj.outOfCriteriaNote || obj.notFundedDetail || "";
   if (!note) return "";
   return "<div class='indic-prereq-block'><div class='indic-prereq-hd'>&#128203; Eligibility requirements:</div>" + esc(note) + "</div>";
+}
+
+function renderCritSummaryBar() {
+  return "<div id='critSummaryBar' style='display:none;position:sticky;top:0;z-index:100;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:6px;padding:10px 14px;margin:0 0 10px;overflow:hidden'>" +
+    "<span id='critSummaryMsg' style='color:#065f46;font-weight:600;font-size:13px'></span>" +
+    "<button onclick='handleClear()' style='float:right;background:none;border:none;color:#059669;font-size:12px;text-decoration:underline;cursor:pointer;padding:0;line-height:1.4'>Clear</button>" +
+    "</div>";
 }
 
 function renderViewToggle() {
@@ -1738,33 +1719,26 @@ function getHighestPriorityTier(items) {
 }
 
 function updateDecisionPanel(items) {
-  var panel = document.getElementById("decisionPanel");
-  var body  = document.getElementById("decisionBody");
-  var countEl = document.getElementById("decisionCount");
-  if (!panel || !body) return;
+  var bar = document.getElementById("critSummaryBar");
+  var msgEl = document.getElementById("critSummaryMsg");
+  var footerBtns = document.getElementById("footerCopyBtns");
   if (!items.length) {
-    panel.className = "decision-panel";
-    if (isIntegration) panel.style.display = "none";
+    if (bar) bar.style.display = "none";
+    if (footerBtns) footerBtns.style.display = "none";
     return;
   }
-  panel.className = "decision-panel active";
-  if (isIntegration) panel.style.display = "block";
-  if (countEl) countEl.textContent = items.length;
+  if (bar) bar.style.display = "block";
+  if (footerBtns) footerBtns.style.display = isPassive ? "none" : "inline";
   var tier = getHighestPriorityTier(items);
-  var h = "";
-  if (viewLayout === 'indication' && tier) {
-    var cnt2 = items.length;
-    var cntStr = cnt2 === 1 ? "1 criterion" : cnt2 + " criteria";
-    var urgMsg = cnt2 === 1
-      ? cntStr + " selected — meets <strong>" + esc(tier) + "</strong>"
-      : cntStr + " selected — highest urgency: <strong>" + esc(tier) + "</strong>";
-    h += "<div class='decision-status'><span class='decision-icon'>&#9989;</span><span class='decision-msg' style='color:#059669;font-weight:600'>" + urgMsg + "</span></div>";
-  } else {
-    h += "<div class='decision-status'><span class='decision-icon'>&#9989;</span><span class='decision-msg' style='color:#059669'>" + items.length + " indicator" + (items.length===1?"":"s") + " selected</span></div>";
-    if (tier) h += "<div class='decision-tier'>Highest priority: <strong>" + esc(tier) + "</strong></div>";
+  if (msgEl) {
+    var cnt = items.length;
+    var cntStr = cnt === 1 ? "1 criterion" : cnt + " criteria";
+    var action = cnt === 1 ? "meets" : "highest urgency:";
+    var urgMsg = tier
+      ? "✓ " + cntStr + " selected — " + action + " <strong>" + esc(tier) + "</strong>"
+      : "✓ " + cntStr + " selected";
+    msgEl.innerHTML = urgMsg;
   }
-  h += "<div class='decision-disclaimer'>Based on selected indicators only. Does not assess documentation quality or completeness.</div>";
-  body.innerHTML = h;
 }
 
 // ══════════════════════════════════════════════════════════════
