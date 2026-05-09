@@ -653,6 +653,12 @@ function isEmergencyGroup(title) {
   return t.indexOf("refer for acute") !== -1 || t.indexOf("red flag") !== -1;
 }
 
+function isNonClinicalGroup(title) {
+  var t = (title||"").toLowerCase();
+  return t.indexOf("not fund") !== -1 || t.indexOf("not routinely") !== -1 ||
+         t.indexOf("alternative management") !== -1;
+}
+
 function isAcuteGroup(title) {
   var t = (title||"").toLowerCase();
   return !isEmergencyGroup(t) && t.indexOf("acute") !== -1;
@@ -677,9 +683,9 @@ function priorityBadgeHtml(groupTitle) {
   if (t.indexOf("p2") !== -1) return "<span class='priority-badge pri-p2'>Urgent (within two weeks)</span>";
   if (t.indexOf("p3") !== -1) return "<span class='priority-badge pri-p3'>Non-deferrable (within six weeks)</span>";
   if (t.indexOf("p4") !== -1) return "<span class='priority-badge pri-p4'>Routine (within six weeks)</span>";
-  if (t.indexOf("s1") !== -1) return "<span class='priority-badge pri-s1'>S1 — 1 week</span>";
-  if (t.indexOf("s2") !== -1) return "<span class='priority-badge pri-s2'>S2 — 2 weeks</span>";
-  if (t.indexOf("s3") !== -1) return "<span class='priority-badge pri-s3'>S3 — 6 weeks</span>";
+  if (t.indexOf("s1") !== -1) return "<span class='priority-badge pri-s1'>Urgent (within one week)</span>";
+  if (t.indexOf("s2") !== -1) return "<span class='priority-badge pri-s2'>Urgent (within two weeks)</span>";
+  if (t.indexOf("s3") !== -1) return "<span class='priority-badge pri-s3'>Non-deferrable (within six weeks)</span>";
   return "";
 }
 
@@ -1142,6 +1148,9 @@ function getPriorityShortFromGroup(title) {
   if (t.indexOf("p2") !== -1) return "Urgent (within two weeks)";
   if (t.indexOf("p3") !== -1) return "Non-deferrable (within six weeks)";
   if (t.indexOf("p4") !== -1) return "Routine (within six weeks)";
+  if (t.indexOf("s1") !== -1) return "Urgent (within one week)";
+  if (t.indexOf("s2") !== -1) return "Urgent (within two weeks)";
+  if (t.indexOf("s3") !== -1) return "Non-deferrable (within six weeks)";
   return "";
 }
 
@@ -1181,6 +1190,7 @@ function toolRenderIndicationPanel(obj, prereqLabels) {
   for (var g = 0; g < groups.length; g++) {
     var grp = groups[g];
     if (isEmergencyGroup(grp.title)) continue;
+    if (isNonClinicalGroup(grp.title)) continue;
     var tier = getPriorityShortFromGroup(grp.title);
     for (var i = 0; i < grp.items.length; i++) {
       var it = grp.items[i];
@@ -1273,7 +1283,7 @@ function toolRenderSitePanel(site) {
   for (var g = 0; g < site.groups.length; g++) {
     if (isEmergencyGroup(site.groups[g].title)) {
       for (var ii = 0; ii < site.groups[g].items.length; ii++) emergencyItems.push(site.groups[g].items[ii]);
-    } else {
+    } else if (!isNonClinicalGroup(site.groups[g].title)) {
       nonEmergencyGroups.push(site.groups[g]);
     }
   }
@@ -1315,7 +1325,7 @@ function toolRenderSinglesite(exam) {
   for (var g = 0; g < exam.groups.length; g++) {
     if (isEmergencyGroup(exam.groups[g].title)) {
       for (var ii = 0; ii < exam.groups[g].items.length; ii++) emergencyItems.push(exam.groups[g].items[ii]);
-    } else {
+    } else if (!isNonClinicalGroup(exam.groups[g].title)) {
       nonEmergencyGroups.push(exam.groups[g]);
     }
   }
@@ -1367,7 +1377,7 @@ function toolRenderSitePanelPassive(site) {
   for (var g = 0; g < site.groups.length; g++) {
     if (isEmergencyGroup(site.groups[g].title)) {
       for (var ii = 0; ii < site.groups[g].items.length; ii++) emergencyItems.push(site.groups[g].items[ii]);
-    } else {
+    } else if (!isNonClinicalGroup(site.groups[g].title)) {
       nonEmergencyGroups.push(site.groups[g]);
     }
   }
@@ -1389,7 +1399,7 @@ function toolRenderSinglesitePassive(exam) {
   for (var g = 0; g < exam.groups.length; g++) {
     if (isEmergencyGroup(exam.groups[g].title)) {
       for (var ii = 0; ii < exam.groups[g].items.length; ii++) emergencyItems.push(exam.groups[g].items[ii]);
-    } else {
+    } else if (!isNonClinicalGroup(exam.groups[g].title)) {
       nonEmergencyGroups.push(exam.groups[g]);
     }
   }
@@ -1553,22 +1563,9 @@ function toolRenderCb(item, groupTitle) {
   if (gateway) h += "<span class='gateway-tag'>&#128274; Gateway</span>";
   if (labval)  h += "<span class='lab-tag'>&#128299; Lab value</span>";
   h += "</span>";
-  // Expand toggle (only show if there's detail to show)
-  if (item.conditionalNote || item.shortLabel) {
-    h += "<span class='crit-card-expand" + (isExpanded?" open":"") + "' onclick='event.stopPropagation();toggleExpand(\"" + esc(item.id) + "\")'>&#9654;</span>";
-  }
   h += "</div>"; // end header
-
-  // Detail pane
-  if (item.conditionalNote || item.shortLabel) {
-    h += "<div class='crit-card-detail" + (isExpanded?" open":"") + "' id='detail_" + esc(item.id) + "'>";
-    if (item.shortLabel && item.shortLabel !== item.label) {
-      h += "<div class='crit-detail-note' style='font-size:11px;color:#8b919a;font-style:italic'>Shorthand: " + esc(item.shortLabel) + "</div>";
-    }
-    if (item.conditionalNote) {
-      h += "<div class='ib-red' style='margin-top:4px;font-size:12px'>" + esc(item.conditionalNote) + "</div>";
-    }
-    h += "</div>";
+  if (item.conditionalNote) {
+    h += "<div class='ib-red' style='margin:4px 8px 4px;font-size:12px'>" + esc(item.conditionalNote) + "</div>";
   }
   h += "</div>"; // end crit-card
   return h;
@@ -1705,7 +1702,10 @@ function getHighestPriorityTier(items) {
           if (t.indexOf("refer for acute") !== -1 || t.indexOf("red flag") !== -1) tiers.push(0);
           else if (t.indexOf("acute") !== -1) tiers.push(1);
           else if (t.indexOf("p2") !== -1) tiers.push(2);
+          else if (t.indexOf("s1") !== -1) tiers.push(2);
+          else if (t.indexOf("s2") !== -1) tiers.push(2);
           else if (t.indexOf("p3") !== -1) tiers.push(3);
+          else if (t.indexOf("s3") !== -1) tiers.push(3);
           else if (t.indexOf("p4") !== -1) tiers.push(4);
           else tiers.push(5);
         }
