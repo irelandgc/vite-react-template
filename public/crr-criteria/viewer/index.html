@@ -1258,13 +1258,12 @@ function toolRenderIndicCb(item, tier, groupTitle) {
   h += "<input type='checkbox' class='crit-card-check' id='chk_" + esc(item.id) + "'" + (isPassive ? " disabled" : " onclick='event.stopPropagation();toggleCb(\"" + esc(item.id) + "\")'");
   h += on ? " checked" : "";
   h += ">";
-  h += "<span class='crit-card-label'>" + esc(item.label);
+  h += "<span class='crit-card-label'>";
+  if (gateway) h += "<span class='gateway-tag'>&#128274; Gateway</span> ";
+  if (labval)  h += "<span class='lab-tag'>&#128299; Lab value</span> ";
+  h += esc(item.label);
   if (item.mandatory) h += " <span class='mandatory-tag'>Mandatory</span>";
-  h += "</span>";
-  h += "<span class='crit-card-badges'>";
-  if (tier) h += "<span class='indic-priority-badge' style='" + getIndicPriorityStyle(tier) + "'>" + esc(tier) + "</span>";
-  if (gateway) h += "<span class='gateway-tag'>&#128274; Gateway</span>";
-  if (labval)  h += "<span class='lab-tag'>&#128299; Lab value</span>";
+  if (tier) h += " <span class='indic-priority-badge' style='" + getIndicPriorityStyle(tier) + "'>" + esc(tier) + "</span>";
   h += "</span>";
   h += "</div>";
   if (item.conditionalNote) {
@@ -1576,12 +1575,11 @@ function toolRenderCb(item, groupTitle) {
   h += "<input type='checkbox' class='crit-card-check' id='chk_" + esc(item.id) + "'" + (isPassive ? " disabled" : " onclick='event.stopPropagation();toggleCb(\"" + esc(item.id) + "\")'");
   h += on ? " checked" : "";
   h += ">";
-  h += "<span class='crit-card-label'>" + esc(item.label);
+  h += "<span class='crit-card-label'>";
+  if (gateway) h += "<span class='gateway-tag'>&#128274; Gateway</span> ";
+  if (labval)  h += "<span class='lab-tag'>&#128299; Lab value</span> ";
+  h += esc(item.label);
   if (item.mandatory) h += " <span class='mandatory-tag'>Mandatory</span>";
-  h += "</span>";
-  h += "<span class='crit-card-badges'>";
-  if (gateway) h += "<span class='gateway-tag'>&#128274; Gateway</span>";
-  if (labval)  h += "<span class='lab-tag'>&#128299; Lab value</span>";
   h += "</span>";
   h += "</div>"; // end header
   if (item.conditionalNote) {
