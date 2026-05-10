@@ -179,7 +179,7 @@
 
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 500; justify-content: center; align-items: center; }
         .modal-overlay.open { display: flex; }
-        .modal-frame { background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); width: 90vw; max-width: 1000px; height: 85vh; overflow: hidden; display: flex; flex-direction: column; }
+        .modal-frame { background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); width: 90vw; height: 90vh; overflow: hidden; display: flex; flex-direction: column; }
         .modal-header { padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         .modal-header h3 { font-size: 14px; font-weight: 600; }
         .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-secondary); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius); }
@@ -621,8 +621,11 @@ function launchTool(exam, sites) {
     var titles = {popup:'CRR Criteria (Popup)',viewer:'CRR Criteria Viewer',triage:'CRR Triage Advisor'};
     var title = titles[config.tool]||'CRR Tool';
     if (config.launch === 'popup') {
-        var w = config.tool==='triage'?900:800, h=850;
-        window.open(url,'CRRTool','width='+w+',height='+h+',top='+((screen.height/2)-(h/2))+',left='+((screen.width/2)-(w/2))+',toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes');
+        var w = Math.round(window.innerWidth * 0.9);
+        var h = Math.round(window.innerHeight * 0.9);
+        var left = window.screenX + Math.round((window.innerWidth - w) / 2);
+        var top = window.screenY + Math.round((window.innerHeight - h) / 2);
+        window.open(url,'CRRTool','width='+w+',height='+h+',top='+top+',left='+left+',toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes');
     } else if (config.launch === 'modal') {
         document.getElementById('modalTitle').textContent=title;
         document.getElementById('modalIframe').src=url;
