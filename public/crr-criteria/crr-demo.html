@@ -628,7 +628,7 @@ function launchTool(exam, sites) {
         window.open(url,'CRRTool','width='+w+',height='+h+',top='+top+',left='+left+',toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes');
     } else if (config.launch === 'modal') {
         document.getElementById('modalTitle').textContent=title;
-        document.getElementById('modalIframe').src=url;
+        document.getElementById('modalIframe').src=url+(url.indexOf('?')>=0?'&':'?')+'embed=modal';
         document.getElementById('modalOverlay').classList.add('open');
     } else {
         window.open(url,'_blank');
@@ -792,8 +792,9 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal()
 // In a real integration, HealthLink/BPAC/ERMS would add this same listener to their form page.
 window.addEventListener('message', function(event) {
     // In production you'd check: if (event.origin !== 'https://your-tool-domain.workers.dev') return;
-    if (!event.data || event.data.type !== 'crr-output') return;
-    receiveCRROutput(event.data);
+    if (!event.data) return;
+    if (event.data.type === 'crr-output') receiveCRROutput(event.data);
+    if (event.data.type === 'crr-close') closeModal();
 });
 
 function receiveCRROutput(data) {

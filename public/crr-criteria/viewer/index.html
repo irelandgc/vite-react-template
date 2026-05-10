@@ -310,6 +310,7 @@ var paedMode = false;
 var outputMode = "verbose";
 var viewMode = 'interactive';
 var isPopup = !!(window.opener && !window.opener.closed);
+var isModal = false;
 var isPassive = false;
 var isIntegration = false;
 var viewLayout = 'indication'; // 'indication' | 'urgency'
@@ -415,6 +416,8 @@ async function loadCriteriaData() {
   // Also support legacy ?popup=1 param
   var _popupParam = getParam("popup");
   if (_popupParam === "1") isPopup = true;
+  // Modal embed: viewer is inside a crr-demo modal iframe
+  isModal = (getParam('embed') === 'modal');
 
   // Passive mode
   isPassive = (getParam('mode') === 'passive');
@@ -466,9 +469,9 @@ async function loadCriteriaData() {
     }
   }
 
-  // Send button: show only when ?sendButton=on AND opened as popup
+  // Send button: show only when ?sendButton=on AND opened as popup or modal
   var _sendButtonOn = (getParam('sendButton') === 'on');
-  var _showSendButton = _sendButtonOn && isPopup;
+  var _showSendButton = _sendButtonOn && (isPopup || isModal);
   var _sendBtn = document.getElementById("btnSendToForm");
   if (_sendBtn) _sendBtn.style.display = _showSendButton ? "inline-block" : "none";
 
@@ -1931,10 +1934,10 @@ function handleCopySelected() {
   var copyBtn = document.querySelector("#footerCopyBtns .btn-p[onclick*='handleCopySelected']");
   var origText = copyBtn ? copyBtn.textContent : null;
   if (copyBtn) copyBtn.textContent = "Copied!";
-  if (isPopup) {
-    setTimeout(function() {
-      try { window.close(); } catch(e) {}
-    }, 700);
+  if (isModal) {
+    setTimeout(function() { window.parent.postMessage({ type: 'crr-close' }, '*'); }, 700);
+  } else if (isPopup) {
+    setTimeout(function() { try { window.close(); } catch(e) {} }, 700);
   } else {
     showToolStatus("&#10003; Copied to clipboard.", "success");
     if (copyBtn) setTimeout(function() { copyBtn.textContent = origText; }, 1500);
@@ -1973,13 +1976,15 @@ function buildSendSummaryText() {
 }
 
 function handleSendToForm() {
-  if (!window.opener || window.opener.closed) { showToolStatus("No referral form window found.", "error"); return; }
   var summaryText = buildSendSummaryText();
-  window.opener.postMessage({ type: 'crr-output', text: summaryText, source: 'viewer' }, '*');
   var btn = document.getElementById("btnSendToForm");
-  if (btn) {
-    btn.textContent = "✓ Sent";
-    setTimeout(function() { window.close(); }, 1000);
+  if (isModal) {
+    window.parent.postMessage({ type: 'crr-output', text: summaryText, source: 'viewer' }, '*');
+    if (btn) { btn.textContent = "✓ Sent"; setTimeout(function() { window.parent.postMessage({ type: 'crr-close' }, '*'); }, 1000); }
+  } else {
+    if (!window.opener || window.opener.closed) { showToolStatus("No referral form window found.", "error"); return; }
+    window.opener.postMessage({ type: 'crr-output', text: summaryText, source: 'viewer' }, '*');
+    if (btn) { btn.textContent = "✓ Sent"; setTimeout(function() { window.close(); }, 1000); }
   }
 }
 
