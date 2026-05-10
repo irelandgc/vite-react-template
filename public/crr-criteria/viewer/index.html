@@ -43,7 +43,7 @@
 .tool-criteria { width:60%; flex:1 1 auto; padding:12px 16px 100px; height:100%; overflow-y:auto; box-sizing:border-box; }
 
 /* ═══ LEFT COL SELECTION SUMMARY ════════════════════════ */
-#leftColSummary { flex-shrink:0; background:#ecfdf5; border-top:2px solid #6ee7b7; padding:10px 12px; max-height:200px; overflow-y:auto; }
+#leftColSummary { background:#ecfdf5; border:1px solid #6ee7b7; border-radius:8px; padding:10px 12px; margin-top:10px; }
 #leftColSummaryHd { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:4px; }
 #leftColSummaryMsg { font-size:12px; font-weight:600; color:#065f46; line-height:1.4; }
 .left-col-clr { background:none; border:none; color:#059669; font-size:11px; text-decoration:underline; cursor:pointer; padding:0; font-family:inherit; white-space:nowrap; flex-shrink:0; }
@@ -250,13 +250,6 @@
     </div>
     <div class="tool-main" id="toolMain">
       <div style="padding:40px 24px;text-align:center;color:#a0aab4;font-size:13px;font-style:italic">Loading criteria data…</div>
-    </div>
-    <div id="leftColSummary" style="display:none">
-      <div id="leftColSummaryHd">
-        <span id="leftColSummaryMsg"></span>
-        <button class="left-col-clr" onclick="handleClear()">Clear all</button>
-      </div>
-      <ul id="leftColSummaryList"></ul>
     </div>
   </div>
   <div class="tool-criteria" id="toolCriteria">
@@ -873,7 +866,7 @@ function toolRender() {
 
   // Guidance
   var hpUrl = getHealthPathwaysUrl(exam);
-  hLeft += "<div class='guide-box' style='font-size:12px;margin:8px 12px 0'>" + esc(exam.guidance);
+  hLeft += "<div class='guide-box' style='font-size:12px;margin:8px 12px'>" + esc(exam.guidance);
   if (hpUrl) hLeft += " <a href='" + esc(hpUrl) + "' target='_blank'>View HealthPathways &#8250;</a>";
   hLeft += "</div>";
   // guidanceNarrative — will be rendered inside the green inlineGuidance panel per-site instead
@@ -955,7 +948,11 @@ function toolRender() {
     elCrit.style.width = "";
     elCrit.style.maxWidth = "";
     elCrit.style.margin = "";
-    elMain.innerHTML = hLeft;
+    elMain.innerHTML = hLeft +
+      "<div id='leftColSummary' style='display:none'>" +
+        "<div id='leftColSummaryHd'><span id='leftColSummaryMsg'></span><button class='left-col-clr' onclick='handleClear()'>Clear all</button></div>" +
+        "<ul id='leftColSummaryList'></ul>" +
+      "</div>";
 
     var hRight = "";
     if (exam.type === "singlesite") {
