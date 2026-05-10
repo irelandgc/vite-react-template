@@ -37,17 +37,20 @@
 .search-clear { position:absolute; right:20px; top:50%; transform:translateY(-50%); background:none; border:none; color:#5f6b7c; cursor:pointer; font-size:16px; line-height:1; padding:2px 6px; }
 
 /* ═══ TWO-COLUMN LAYOUT ═════════════════════════════════ */
-.tool-layout { display:flex; flex-direction:row; height:calc(100vh - 95px); }
+/* Item 16: tool-layout height accounts for header (44px) + disclaimer (~37px) + identity footer (~33px) */
+.tool-layout { display:flex; flex-direction:row; height:calc(100vh - 114px); }
 .left-col { width:40%; flex-shrink:0; display:flex; flex-direction:column; border-right:1px solid #dde1e6; height:100%; }
-.tool-main { flex:1 1 0; min-height:0; overflow-y:auto; padding:12px 14px 60px; background:#f5f6f8; box-sizing:border-box; }
-.tool-criteria { width:60%; flex:1 1 auto; padding:12px 16px 100px; height:100%; overflow-y:auto; box-sizing:border-box; }
+.tool-main { flex:1 1 0; min-height:0; overflow-y:auto; padding:12px 14px 20px; background:#f5f6f8; box-sizing:border-box; }
+.tool-criteria { width:60%; flex:1 1 auto; padding:12px 16px 20px; height:100%; overflow-y:auto; box-sizing:border-box; }
 
 /* ═══ LEFT COL SELECTION SUMMARY ════════════════════════ */
+/* Item 2: Left panel includes selected indicators + action buttons */
 #leftColSummary { background:#ecfdf5; border:1px solid #6ee7b7; border-radius:8px; padding:10px 12px; margin-top:10px; }
 #leftColSummaryHd { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:4px; }
 #leftColSummaryMsg { font-size:12px; font-weight:600; color:#065f46; line-height:1.4; }
 .left-col-clr { background:none; border:none; color:#059669; font-size:11px; text-decoration:underline; cursor:pointer; padding:0; font-family:inherit; white-space:nowrap; flex-shrink:0; }
 #leftColSummaryList { margin:0; padding-left:16px; font-size:11px; color:#1a4a28; line-height:1.7; }
+#leftColSummaryActions { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; padding-top:8px; border-top:1px solid #a7f3d0; align-items:center; }
 
 /* ═══ EXAM INFO CARD ════════════════════════════════════ */
 .exam-info-card { background:#fff; border:1px solid #dde1e6; border-radius:10px; margin-bottom:10px; overflow:hidden; }
@@ -129,9 +132,14 @@
 .loader-error p { font-size:12px; color:#7a2020; }
 
 /* ═══ INTEGRATION MODE ══════════════════════════════════ */
+/* Item 1: integration header becomes compact bar — layout is handled by JS toolRender() */
 #integrationHeader { display:none; background:#fff; color:#1a1d21; padding:8px 16px; font-size:13px; font-weight:600; letter-spacing:0.2px; border-bottom:1px solid #dde1e6; }
+/* Passive integration: single column (no left panel) */
 .integration-mode .left-col { display:none !important; }
 .integration-mode .tool-criteria { width:100% !important; max-width:900px; margin:0 auto; }
+/* Interactive integration: two-column layout — left panel shown via JS */
+.integration-interactive .left-col { display:flex !important; }
+.integration-interactive .tool-criteria { width:60% !important; max-width:none !important; margin:0 !important; }
 
 /* ═══ RADIO ROWS (inline conditional questions) ═════════ */
 .radio-row { padding:7px 12px 7px 37px; border-bottom:1px solid #f5f6f8; display:flex; align-items:center; flex-wrap:wrap; }
@@ -147,7 +155,7 @@
 
 /* ═══ PRINT STYLES ══════════════════════════════════════ */
 @media print {
-  .tool-footer, .app-header, .region-bar, .left-col, .loader-overlay { display:none !important; }
+  .tool-footer, #toolFooterBar, #toolIdentityFooter, .app-header, .region-bar, .left-col, .loader-overlay { display:none !important; }
   .tool-layout { display:block !important; height:auto !important; }
   .tool-criteria { width:100% !important; height:auto !important; overflow:visible !important; padding:12px !important; }
   .emergency-block { break-inside:avoid; }
@@ -167,21 +175,15 @@
   </div>
 </div>
 
-<!-- Header -->
+<!-- Header (item 16: logo + title + mode toggles only) -->
 <div class="app-header">
   <div class="header-left">
     <span class="logo">CRR</span>
-    <div>
-      <div class="app-title">CRR Criteria Viewer v5.3.0</div>
-      <div class="app-sub">Health New Zealand | Te Whatu Ora — CRR Programme</div>
-    </div>
+    <div class="app-title">CRR Criteria Viewer</div>
   </div>
   <div class="header-right">
     <button id="modeInteractiveBtn" onclick="setViewMode('interactive')" style="display:none;background:#1a6fa0;color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">Interactive</button>
     <button id="modePassiveBtn" onclick="setViewMode('passive')" style="display:none;background:#fff;color:#5a6068;border:1px solid #dde1e6;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">Passive</button>
-    <button id="qaLogBtn" onclick="openCeQaLog()" style="background:#fff;color:#92400e;border:1px solid #ffe082;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">&#9733; QA Log</button>
-    <span class="ver-badge" id="verBadge">v5.3.0</span>
-    <span class="data-source-badge" id="dataSourceBadge"></span>
   </div>
 </div>
 
@@ -257,15 +259,27 @@
   </div>
 </div>
 
-<!-- Footer -->
-<div class="tool-footer">
+<!-- Sticky footer: only shown for Send/status (items removed from visible bar; left panel has action buttons) -->
+<div class="tool-footer" id="toolFooterBar" style="display:none">
   <span id="footerCopyBtns" style="display:none">
-  <button class="btn btn-p" onclick="handleCopySelected()">Copy</button>
-  <button class="btn btn-p" id="btnSendToForm" onclick="handleSendToForm()" style="display:none;background:#059669">Send to Form</button>
+  <button class="btn btn-p btn-sm" onclick="handleCopySelected()">Copy</button>
+  <button class="btn btn-p btn-sm" id="btnSendToForm" onclick="handleSendToForm()" style="display:none;background:#059669">Send to Form</button>
   <button class="btn btn-g btn-sm" id="btnQaCe" onclick="openCeQa()" style="display:none">&#9733; QA</button>
   <button class="btn-clr" onclick="handleClear()">Clear All</button>
   </span>
   <span class="status-msg" id="toolStatus"></span>
+</div>
+
+<!-- Tool identity footer (item 16) -->
+<div id="toolIdentityFooter" style="padding:8px 16px;font-size:10px;color:#8b919a;border-top:1px solid #dde1e6;background:#fff;display:flex;align-items:center;gap:12px;flex-shrink:0;">
+  <span>CRR Criteria Viewer v5.3.0</span>
+  <span style="color:#dde1e6">·</span>
+  <span id="footerContentVer">content v4.0.1</span>
+  <span style="color:#dde1e6">·</span>
+  <span>Health New Zealand | Te Whatu Ora — CRR Programme</span>
+  <span style="color:#dde1e6">·</span>
+  <button onclick="openCeQaLog()" style="background:none;border:none;color:#8b919a;font-size:10px;cursor:pointer;padding:0;font-family:inherit;text-decoration:underline;">&#9733; QA Log</button>
+  <span class="data-source-badge" id="dataSourceBadge" style="margin-left:auto"></span>
 </div>
 
 <textarea id="clipHelper" readonly></textarea>
@@ -338,7 +352,7 @@ async function loadCriteriaData() {
           dataSource = "api";
           var _cv = apiData.version || "live";
           document.getElementById("dataSourceBadge").textContent = "API · " + _cv;
-          document.getElementById("verBadge").textContent = VER + " · content " + _cv;
+          var _fv = document.getElementById("footerContentVer"); if (_fv) _fv.textContent = "content " + _cv;
           return true;
         }
       }
@@ -353,7 +367,7 @@ async function loadCriteriaData() {
     dataSource = "embedded";
     var _ecv = DATA.version ? DATA.version.label : "";
     document.getElementById("dataSourceBadge").textContent = "embedded · " + _ecv;
-    document.getElementById("verBadge").textContent = VER + (_ecv ? " · content " + _ecv : "");
+    var _fv2 = document.getElementById("footerContentVer"); if (_fv2 && _ecv) _fv2.textContent = "content " + _ecv;
     return true;
   }
   return false;
@@ -475,9 +489,16 @@ async function loadCriteriaData() {
   var _sendBtn = document.getElementById("btnSendToForm");
   if (_sendBtn) _sendBtn.style.display = _showSendButton ? "inline-block" : "none";
 
-  // Passive mode: hide copy/action buttons
+  // Passive mode: hide copy/action buttons in footer
   var _footerCopyBtns = document.getElementById("footerCopyBtns");
   if (_footerCopyBtns && isPassive) _footerCopyBtns.style.display = "none";
+
+  // Show footer bar if there are send/copy buttons to show (popup/modal integration)
+  // In non-popup non-modal mode, action buttons are in the left panel
+  var _footerBar = document.getElementById("toolFooterBar");
+  if (_footerBar && !isPassive && (isPopup || isModal)) {
+    _footerBar.style.display = "flex";
+  }
 
   toolRender();
 })();
@@ -890,20 +911,54 @@ function toolRender() {
   hLeft += "</div>"; // close exam-info-card
 
 
-  if (isIntegration) {
-    // Integration mode: single-column, hide left panel, show criteria only
+  if (isIntegration && isPassive) {
+    // Item 1: Passive integration mode — single-column, no left panel, no actions
+    var tlayout = document.querySelector(".tool-layout");
+    if (tlayout) { tlayout.classList.add("integration-mode"); tlayout.classList.remove("integration-interactive"); }
     if (elLeft) elLeft.style.display = "none";
     elCrit.style.width = "100%";
     elCrit.style.maxWidth = "900px";
     elCrit.style.margin = "0 auto";
 
-    var hIntRight = "";
-    // Show HealthPathways link compactly
-    var _hpUrlInt = getHealthPathwaysUrl(exam);
-    if (_hpUrlInt) {
-      hIntRight += "<div class='ib-green' style='margin-bottom:10px'><a href='" + esc(_hpUrlInt) + "' target='_blank' style='color:#2a7a40;font-weight:600'>View HealthPathways &#8250;</a></div>";
+    var hIntPassRight = "";
+    if (exam.type === "singlesite") {
+      hIntPassRight += toolRenderSinglesitePassive(exam);
+    } else {
+      var anySelIntP = false;
+      for (var skIntP = 0; skIntP < exam.sites.length; skIntP++) { if (TS.sites[exam.sites[skIntP].id]) { anySelIntP = true; break; } }
+      if (!anySelIntP) {
+        hIntPassRight += "<div class='no-site-msg'>No site selected. Please check the referral link.</div>";
+      } else {
+        for (var smIntP = 0; smIntP < exam.sites.length; smIntP++) {
+          if (TS.sites[exam.sites[smIntP].id]) hIntPassRight += toolRenderSitePanelPassive(exam.sites[smIntP]);
+        }
+      }
     }
-    hIntRight += renderCritSummaryBar();
+    elCrit.innerHTML = hIntPassRight;
+  } else if (isIntegration && !isPassive) {
+    // Item 1: Interactive integration mode — two-column layout
+    var tlayout2 = document.querySelector(".tool-layout");
+    if (tlayout2) { tlayout2.classList.remove("integration-mode"); tlayout2.classList.add("integration-interactive"); }
+    if (elLeft) { elLeft.style.display = ""; elLeft.style.removeProperty("display"); }
+    elCrit.style.width = "";
+    elCrit.style.maxWidth = "";
+    elCrit.style.margin = "";
+
+    // Left panel: selected indicators summary + action buttons (no exam/site selector in integration mode)
+    var _sendBtnVisInt = document.getElementById("btnSendToForm");
+    var _sendVisInt = _sendBtnVisInt && _sendBtnVisInt.style.display !== "none";
+    elMain.innerHTML =
+      "<div id='leftColSummary' style='display:none'>" +
+        "<div id='leftColSummaryHd'><span id='leftColSummaryMsg'></span></div>" +
+        "<ul id='leftColSummaryList'></ul>" +
+        "<div id='leftColSummaryActions'>" +
+          "<button class='btn btn-p btn-sm' onclick='handleCopySelected()'>Copy</button>" +
+          (_sendVisInt ? "<button class='btn btn-p btn-sm' style='background:#059669' onclick='handleSendToForm()'>Send to Form</button>" : "") +
+          "<button class='btn-clr' style='font-size:11px' onclick='handleClear()'>Clear all</button>" +
+        "</div>" +
+      "</div>";
+
+    var hIntRight = "";
     if (exam.type === "singlesite") {
       hIntRight += toolRenderSinglesite(exam);
     } else {
@@ -919,7 +974,9 @@ function toolRender() {
     }
     elCrit.innerHTML = hIntRight;
   } else if (viewMode === "passive") {
-    // Passive mode: hide left column, render everything in criteria column
+    // Standalone passive mode: single-column, no left panel, no actions
+    var tlayout3 = document.querySelector(".tool-layout");
+    if (tlayout3) { tlayout3.classList.remove("integration-mode"); tlayout3.classList.remove("integration-interactive"); }
     if (elLeft) elLeft.style.display = "none";
     elCrit.style.width = "100%";
     elCrit.style.maxWidth = "900px";
@@ -946,15 +1003,24 @@ function toolRender() {
     }
     elCrit.innerHTML = hPassiveHeader + hRightPassive;
   } else {
-    // Interactive mode: show left column, render criteria normally
-    if (elLeft) elLeft.style.display = "";
+    // Item 2: Standalone interactive mode — two-column; left panel has exam/site selector + selected indicators + action buttons
+    var tlayout4 = document.querySelector(".tool-layout");
+    if (tlayout4) { tlayout4.classList.remove("integration-mode"); tlayout4.classList.remove("integration-interactive"); }
+    if (elLeft) { elLeft.style.display = ""; elLeft.style.removeProperty("display"); }
     elCrit.style.width = "";
     elCrit.style.maxWidth = "";
     elCrit.style.margin = "";
+    var _sendBtnVis = document.getElementById("btnSendToForm");
+    var _sendVis = _sendBtnVis && _sendBtnVis.style.display !== "none";
     elMain.innerHTML = hLeft +
       "<div id='leftColSummary' style='display:none'>" +
-        "<div id='leftColSummaryHd'><span id='leftColSummaryMsg'></span><button class='left-col-clr' onclick='handleClear()'>Clear all</button></div>" +
+        "<div id='leftColSummaryHd'><span id='leftColSummaryMsg'></span></div>" +
         "<ul id='leftColSummaryList'></ul>" +
+        "<div id='leftColSummaryActions'>" +
+          "<button class='btn btn-p btn-sm' onclick='handleCopySelected()'>Copy</button>" +
+          (_sendVis ? "<button class='btn btn-p btn-sm' style='background:#059669' onclick='handleSendToForm()'>Send to Form</button>" : "") +
+          "<button class='btn-clr' style='font-size:11px' onclick='handleClear()'>Clear all</button>" +
+        "</div>" +
       "</div>";
 
     var hRight = "";
@@ -1276,8 +1342,8 @@ function toolRenderIndicCb(item, tier, groupTitle) {
   h += on ? " checked" : "";
   h += ">";
   h += "<span class='crit-card-label'>";
-  if (gateway) h += "<span class='gateway-tag'>&#128274; Gateway</span> ";
-  if (labval)  h += "<span class='lab-tag'>&#128299; Lab value</span> ";
+  if (gateway) h += "<span class='gateway-tag'>GATEWAY</span> ";
+  if (labval)  h += "<span class='lab-tag'>LAB</span> ";
   h += esc(item.label);
   if (item.mandatory) h += " <span class='mandatory-tag'>Mandatory</span>";
   if (tier) h += " <span class='indic-priority-badge' style='" + getIndicPriorityStyle(tier) + "'>" + esc(tier) + "</span>";
@@ -1291,23 +1357,36 @@ function toolRenderIndicCb(item, tier, groupTitle) {
 }
 
 function toolRenderSitePanel(site) {
+  // Items 9, 10, 19: Dark header bar with left label, right site name, HP link in integration mode
   var cnt = countSite(site);
-  var h = "<div class='card'>";
-  h += "<div class='card-hd light'>" + esc(site.label);
-  if (cnt > 0) h += " <span style='font-size:11px;font-weight:600;background:#e8f2fa;color:#1a6fa0;padding:2px 8px;border-radius:10px;margin-left:6px'>" + cnt + " selected</span>";
-  h += "</div><div>";
-
   var siteHpUrl = getHealthPathwaysUrl(site);
+  var h = "<div class='card'>";
+  // Dark header bar (item 9)
+  var leftLabel = isPassive ? "CRITERIA REFERENCE" : "SELECT INDICATORS";
+  h += "<div class='crit-panel-hd'>";
+  h += "<span class='crit-panel-hd-left'>" + leftLabel + "</span>";
+  h += "<span style='display:flex;align-items:center;gap:10px'>";
+  // Item 19: HealthPathways link in header bar in integration mode; standalone keeps it in guide-box
+  if (isIntegration && siteHpUrl) {
+    h += "<a href='" + esc(siteHpUrl) + "' target='_blank' class='crit-panel-hd-link'>View HealthPathways &#8250;</a>";
+  }
+  h += "<span class='crit-panel-hd-right'>" + esc(site.label);
+  if (cnt > 0) h += " <span style='font-size:10px;font-weight:600;background:rgba(255,255,255,0.15);color:#e0e8f0;padding:1px 7px;border-radius:10px;margin-left:4px'>" + cnt + "</span>";
+  h += "</span>";
+  h += "</span></div>";
+  h += "<div>";
+
   if (site.inlineGuidance) {
     h += "<div class='ib-green'>" + esc(site.inlineGuidance);
-    if (siteHpUrl) h += " <a href='" + esc(siteHpUrl) + "' target='_blank' style='color:#2a7a40;font-weight:600'>View HealthPathways &#8250;</a>";
+    // Standalone: HP link stays in guide block (item 19)
+    if (!isIntegration && siteHpUrl) h += " <a href='" + esc(siteHpUrl) + "' target='_blank' style='color:#2a7a40;font-weight:600'>View HealthPathways &#8250;</a>";
     if (window._currentGuidNarr) {
       var _gnId = "guidNarr_" + (site.id||"x").replace(/[^a-zA-Z0-9_]/g, "_");
       h += "<div style='margin-top:6px'><a href='javascript:void(0)' id='" + _gnId + "_lnk' style='font-size:11px;color:#2a7a40;text-decoration:none;font-weight:600' onclick='toggleGuidNarr(\"" + _gnId + "\")'>More detail &#8250;</a>";
       h += "<div id='" + _gnId + "' style='display:none;border-top:1px solid #c8e6c9;padding-top:8px;margin-top:6px;font-size:12px;color:#1a4a28'>" + esc(window._currentGuidNarr) + "</div></div>";
     }
     h += "</div>";
-  } else if (siteHpUrl) {
+  } else if (!isIntegration && siteHpUrl) {
     h += "<div class='ib-green'><a href='" + esc(siteHpUrl) + "' target='_blank' style='color:#2a7a40;font-weight:600'>View HealthPathways &#8250;</a></div>";
   }
   var siteLi = getLocalisedInfo(site.id);
@@ -1355,7 +1434,19 @@ function toolRenderSitePanel(site) {
 }
 
 function toolRenderSinglesite(exam) {
-  var h = "<div class='card'><div>";
+  // Items 9, 19: Dark header bar for single-site exams
+  var examHpUrl = getHealthPathwaysUrl(exam);
+  var leftLabel = isPassive ? "CRITERIA REFERENCE" : "SELECT INDICATORS";
+  var h = "<div class='card'>";
+  h += "<div class='crit-panel-hd'>";
+  h += "<span class='crit-panel-hd-left'>" + leftLabel + "</span>";
+  h += "<span style='display:flex;align-items:center;gap:10px'>";
+  if (isIntegration && examHpUrl) {
+    h += "<a href='" + esc(examHpUrl) + "' target='_blank' class='crit-panel-hd-link'>View HealthPathways &#8250;</a>";
+  }
+  h += "<span class='crit-panel-hd-right'>" + esc(exam.title) + "</span>";
+  h += "</span></div>";
+  h += "<div>";
   var emergencyItems = [];
   var nonEmergencyGroups = [];
   for (var g = 0; g < exam.groups.length; g++) {
@@ -1393,19 +1484,28 @@ function toolRenderSinglesite(exam) {
 //  PASSIVE RENDERING
 // ══════════════════════════════════════════════════════════════
 function toolRenderSitePanelPassive(site) {
-  var h = "<div class='card'>";
-  h += "<div class='card-hd light'>" + esc(site.label) + "</div><div>";
+  // Items 9, 19: Dark header bar; HP link in header for integration mode
   var siteHpUrl = getHealthPathwaysUrl(site);
+  var h = "<div class='card'>";
+  h += "<div class='crit-panel-hd'>";
+  h += "<span class='crit-panel-hd-left'>CRITERIA REFERENCE</span>";
+  h += "<span style='display:flex;align-items:center;gap:10px'>";
+  if (isIntegration && siteHpUrl) {
+    h += "<a href='" + esc(siteHpUrl) + "' target='_blank' class='crit-panel-hd-link'>View HealthPathways &#8250;</a>";
+  }
+  h += "<span class='crit-panel-hd-right'>" + esc(site.label) + "</span>";
+  h += "</span></div>";
+  h += "<div>";
   if (site.inlineGuidance) {
     h += "<div class='ib-green'>" + esc(site.inlineGuidance);
-    if (siteHpUrl) h += " <a href='" + esc(siteHpUrl) + "' target='_blank' style='color:#2a7a40;font-weight:600'>View HealthPathways &#8250;</a>";
+    if (!isIntegration && siteHpUrl) h += " <a href='" + esc(siteHpUrl) + "' target='_blank' style='color:#2a7a40;font-weight:600'>View HealthPathways &#8250;</a>";
     if (window._currentGuidNarr) {
       var _gnIdP = "guidNarrP_" + (site.id||"x").replace(/[^a-zA-Z0-9_]/g, "_");
       h += "<div style='margin-top:6px'><a href='javascript:void(0)' id='" + _gnIdP + "_lnk' style='font-size:11px;color:#2a7a40;text-decoration:none;font-weight:600' onclick='toggleGuidNarr(\"" + _gnIdP + "\")'>More detail &#8250;</a>";
       h += "<div id='" + _gnIdP + "' style='display:none;border-top:1px solid #c8e6c9;padding-top:8px;margin-top:6px;font-size:12px;color:#1a4a28'>" + esc(window._currentGuidNarr) + "</div></div>";
     }
     h += "</div>";
-  } else if (siteHpUrl) {
+  } else if (!isIntegration && siteHpUrl) {
     h += "<div class='ib-green'><a href='" + esc(siteHpUrl) + "' target='_blank' style='color:#2a7a40;font-weight:600'>View HealthPathways &#8250;</a></div>";
   }
   var emergencyItems = [];
@@ -1429,7 +1529,18 @@ function toolRenderSitePanelPassive(site) {
 }
 
 function toolRenderSinglesitePassive(exam) {
-  var h = "<div class='card'><div>";
+  // Items 9, 19: Dark header bar for single-site passive exams
+  var examHpUrl = getHealthPathwaysUrl(exam);
+  var h = "<div class='card'>";
+  h += "<div class='crit-panel-hd'>";
+  h += "<span class='crit-panel-hd-left'>CRITERIA REFERENCE</span>";
+  h += "<span style='display:flex;align-items:center;gap:10px'>";
+  if (isIntegration && examHpUrl) {
+    h += "<a href='" + esc(examHpUrl) + "' target='_blank' class='crit-panel-hd-link'>View HealthPathways &#8250;</a>";
+  }
+  h += "<span class='crit-panel-hd-right'>" + esc(exam.title) + "</span>";
+  h += "</span></div>";
+  h += "<div>";
   var emergencyItems = [];
   var nonEmergencyGroups = [];
   for (var g = 0; g < exam.groups.length; g++) {
@@ -1517,8 +1628,8 @@ function renderPrereqBlock(prereqs) {
     var _gw = isGateway(prereqs[i]);
     var _lv = isLabValue(prereqs[i]);
     h += "<div class='prereq-item'><span class='prereq-bullet'>&#9744;</span><span>" + esc(prereqs[i]) + "</span>";
-    if (_gw) h += " <span class='gateway-tag'>&#128274; Gateway</span>";
-    if (_lv) h += " <span class='lab-tag'>&#128299; Lab value</span>";
+    if (_gw) h += " <span class='gateway-tag'>GATEWAY</span>";
+    if (_lv) h += " <span class='lab-tag'>LAB</span>";
     h += "</div>";
   }
   h += "</div></div>";
@@ -1593,8 +1704,8 @@ function toolRenderCb(item, groupTitle) {
   h += on ? " checked" : "";
   h += ">";
   h += "<span class='crit-card-label'>";
-  if (gateway) h += "<span class='gateway-tag'>&#128274; Gateway</span> ";
-  if (labval)  h += "<span class='lab-tag'>&#128299; Lab value</span> ";
+  if (gateway) h += "<span class='gateway-tag'>GATEWAY</span> ";
+  if (labval)  h += "<span class='lab-tag'>LAB</span> ";
   h += esc(item.label);
   if (item.mandatory) h += " <span class='mandatory-tag'>Mandatory</span>";
   h += "</span>";
@@ -1761,41 +1872,33 @@ function getHighestPriorityTier(items) {
 }
 
 function updateDecisionPanel(items) {
-  var bar = document.getElementById("critSummaryBar");
+  // Item 3: No sticky summary bar — only left column summary used
   var leftSum = document.getElementById("leftColSummary");
   var leftMsg = document.getElementById("leftColSummaryMsg");
   var leftList = document.getElementById("leftColSummaryList");
+  // footerCopyBtns still referenced for send-to-form button visibility
   var footerBtns = document.getElementById("footerCopyBtns");
   if (isPassive) {
-    if (bar) bar.style.display = "none";
     if (leftSum) leftSum.style.display = "none";
     return;
   }
   if (!items.length) {
-    if (bar) bar.style.display = "none";
     if (leftSum) leftSum.style.display = "none";
     if (footerBtns) footerBtns.style.display = "none";
     return;
   }
+  // Keep footerCopyBtns visible (contains Send to Form button used in integration/popup)
   if (footerBtns) footerBtns.style.display = "inline";
   var tier = getHighestPriorityTier(items);
   var cnt = items.length;
   var cntStr = cnt === 1 ? "1 criterion" : cnt + " criteria";
   var action = cnt === 1 ? "meets" : "highest urgency:";
-  // Update right-panel bar (integration mode)
-  if (bar) {
-    bar.style.display = "block";
-    var msgEl = document.getElementById("critSummaryMsg");
-    if (msgEl) msgEl.innerHTML = tier
-      ? "✓ " + cntStr + " selected — " + action + " <strong>" + esc(tier) + "</strong>"
-      : "✓ " + cntStr + " selected";
-  }
-  // Update left-column summary (interactive mode)
+  // Update left-column summary (both interactive and interactive-integration modes)
   if (leftSum) {
     leftSum.style.display = "block";
-    if (leftMsg) leftMsg.textContent = tier
-      ? "✓ " + cntStr + " — " + action + " " + tier
-      : "✓ " + cntStr + " selected";
+    if (leftMsg) leftMsg.innerHTML = tier
+      ? "&#10003; " + cntStr + " &#8212; " + action + " <strong>" + esc(tier) + "</strong>"
+      : "&#10003; " + cntStr + " selected";
     if (leftList) {
       var lh = "";
       for (var i = 0; i < items.length; i++) {
@@ -1931,7 +2034,8 @@ function handleCopySelected() {
   var out = generateOutput();
   var ok = copyToClipboard(out);
   if (!ok) { showToolStatus("Automatic copy failed — please copy from the text box.", "error"); return; }
-  var copyBtn = document.querySelector("#footerCopyBtns .btn-p[onclick*='handleCopySelected']");
+  // Find copy button — could be in left panel or footer copy btns
+  var copyBtn = document.querySelector("#leftColSummaryActions .btn-p") || document.querySelector("#footerCopyBtns .btn-p[onclick*='handleCopySelected']");
   var origText = copyBtn ? copyBtn.textContent : null;
   if (copyBtn) copyBtn.textContent = "Copied!";
   if (isModal) {

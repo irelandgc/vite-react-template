@@ -51,27 +51,38 @@ input, textarea, select, button { font-family: inherit; }
 .method-ai { background: #eef3fd; color: #2a4a8a; }
 
 /* ─── PANELS / CARDS ─────────────────────────────────────────────────── */
+/* Item 10: Card container with border-radius, border, overflow hidden */
 .panel, .card { background: #fff; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
 .card { margin-bottom: 12px; }
 
 /* ─── SECTION HEADERS ────────────────────────────────────────────────── */
 /* .col-hd — triage style: sits inside a padded container (.pb), so minimal own padding */
 .col-hd { font-size: 10px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: #5f6b7c; padding: 0 2px 8px; border-bottom: 1px solid var(--rule); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+/* Item 6: card-hd shows as bold text only (no container border/background) */
 /* .card-hd — viewer style: direct child of .card, needs its own horizontal padding */
-.card-hd { padding: 10px 12px 8px; font-size: 10px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between; color: #5f6b7c; border-bottom: 1px solid var(--rule); margin-bottom: 0; }
+/* Note: actual site-name header bar uses .crit-panel-hd (dark bar, item 9) */
+.card-hd { padding: 10px 12px 8px; font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between; color: #5f6b7c; margin-bottom: 0; }
 .card-hd.navy, .card-hd.teal { background: transparent; color: #5f6b7c; }
 .card-hd.light { background: transparent; color: #5f6b7c; font-size: 10px; }
+/* Item 9: Dark header bar for criteria panel */
+.crit-panel-hd { background: #1a1d21; color: #fff; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; }
+.crit-panel-hd-left { color: #a0aab4; }
+.crit-panel-hd-right { color: #fff; font-weight: 600; letter-spacing: 0.3px; text-transform: none; font-size: 12px; }
+.crit-panel-hd-link { color: #7ecdf5; font-size: 11px; font-weight: 500; text-decoration: none; text-transform: none; letter-spacing: 0; }
+.crit-panel-hd-link:hover { text-decoration: underline; color: #a8dff5; }
 .card-bd { padding: 10px 12px; }
 
 /* ─── GROUP / THEME HEADERS ──────────────────────────────────────────── */
 /* .group-hd — triage (inside match card) */
-.group-hd { font-size: 10px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: #5f6b7c; margin: 8px 0 4px; }
+.group-hd { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #5f6b7c; margin: 8px 0 4px; }
+/* Item 13: Consistent group header style across views */
 /* .crit-theme-hd — triage indication view; .theme-group-hd — viewer indication view */
-.crit-theme-hd, .theme-group-hd { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #5f6b7c; padding: 8px 0 4px; border-bottom: 1px solid var(--lite); margin-bottom: 2px; }
+.crit-theme-hd, .theme-group-hd { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #5f6b7c; padding: 8px 0 4px; border-bottom: 1px solid var(--lite); margin-bottom: 2px; }
 .crit-theme-hd:first-child, .theme-group-hd:first-child { padding-top: 0; }
 
 /* ─── URGENCY GROUP HEADERS ──────────────────────────────────────────── */
-.group-title { padding: 6px 10px; font-size: 10px; font-weight: 600; color: #5f6b7c; letter-spacing: 0.8px; text-transform: uppercase; border-bottom: 1px solid var(--lite); display: flex; align-items: center; background: transparent; }
+/* Item 13: Consistent group header weight */
+.group-title { padding: 6px 10px; font-size: 10px; font-weight: 700; color: #5f6b7c; letter-spacing: 0.8px; text-transform: uppercase; border-bottom: 1px solid var(--lite); display: flex; align-items: center; background: transparent; }
 .group-title.gt-emergency { background: #fdecea; color: #9B1C1C; border-left: 4px solid #dc2626; }
 .group-title.gt-acute  { color: #92400e; border-left: 4px solid #d97706; }
 .group-title.gt-p2     { color: #6b21a8; border-left: 4px solid #9333ea; }
@@ -91,14 +102,17 @@ input, textarea, select, button { font-family: inherit; }
 .ci-tag.mandatory { background: var(--fail-bg); color: var(--fail); }
 
 /* ─── CRITERIA CARD ROWS (viewer interactive) ────────────────────────── */
-.crit-card { border-bottom: 1px solid var(--lite); background: #fff; transition: background 0.1s; border-left: 2px solid var(--rule); }
-.crit-card:last-child { border-bottom: none; }
+/* Item 8: No borders between criteria rows — spacing only */
+.crit-card { background: #fff; transition: background 0.1s; border-left: 2px solid var(--rule); }
 .crit-card.ticked { background: #f0f7fd; border-left-color: var(--accent); }
 .crit-card.highlight { background: #fff9e6 !important; outline: 2px solid #f0c040; outline-offset: -2px; }
 .crit-card.gateway-card { border-left: 3px solid #9333ea; }
 .crit-card.lab-card { border-left: 3px solid #2563eb; }
-.crit-card-header { display: flex; align-items: flex-start; padding: 5px 10px 5px 12px; cursor: pointer; gap: 8px; }
+/* Item 5 & 14: Tighter row spacing, gap 6px */
+.crit-card-header { display: flex; align-items: flex-start; padding: 4px 10px 4px 12px; cursor: pointer; gap: 6px; }
 .crit-card-header:hover { background: var(--mist); }
+/* Item 17: Disabled checkbox in passive mode */
+.crit-card-check:disabled { opacity: 0.4; cursor: not-allowed; }
 .crit-card-check { width: 16px; height: 16px; flex-shrink: 0; cursor: pointer; accent-color: var(--accent); margin-top: 2px; }
 .crit-card-label { flex: 1; font-size: 12px; color: var(--ink); line-height: 1.6; }
 .crit-card-badges { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
@@ -132,8 +146,9 @@ input, textarea, select, button { font-family: inherit; }
 .pri-s1                { background: #f5f3ff; color: #7c3aed; border: 1px solid rgba(124,58,237,0.2); }
 .pri-s2                { background: #f5f3ff; color: #6d28d9; border: 1px solid rgba(109,40,217,0.2); }
 .pri-s3                { background: #eef2ff; color: #4f46e5; border: 1px solid rgba(79,70,229,0.2); }
-.gateway-tag  { font-size: 10px; font-weight: 600; color: #7B2D8B; background: #f3e8f7; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
-.lab-tag      { font-size: 10px; font-weight: 600; color: #1d4ed8; background: #dbeafe; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+/* Item 11: Compact pill badges — no emoji, short text, uppercase */
+.gateway-tag  { font-size: 9px; font-weight: 700; color: #7B2D8B; background: #f3e8f7; padding: 1px 5px; border-radius: 3px; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.3px; }
+.lab-tag      { font-size: 9px; font-weight: 700; color: #1d4ed8; background: #dbeafe; padding: 1px 5px; border-radius: 3px; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.3px; }
 .mandatory-tag{ font-size: 10px; font-weight: 600; color: #c05000; background: #fff0e0; padding: 1px 5px; border-radius: 4px; white-space: nowrap; }
 
 /* ─── EMERGENCY BLOCK ────────────────────────────────────────────────── */

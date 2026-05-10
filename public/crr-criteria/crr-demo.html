@@ -621,7 +621,11 @@ function launchTool(exam, sites) {
     var titles = {popup:'CRR Criteria (Popup)',viewer:'CRR Criteria Viewer',triage:'CRR Triage Advisor'};
     var title = titles[config.tool]||'CRR Tool';
     if (config.launch === 'popup') {
-        var w = Math.round(window.innerWidth * 0.9);
+        // Item 4/18: width based on mode — interactive needs more space for two-column layout
+        var isInteractiveMode = (config.mode === 'interactive' || config.tool === 'triage');
+        var w = isInteractiveMode ? 1100 : 800;
+        // Cap to 95% of available screen width
+        w = Math.min(w, Math.round(window.innerWidth * 0.95));
         var h = Math.round(window.innerHeight * 0.9);
         var left = window.screenX + Math.round((window.innerWidth - w) / 2);
         var top = window.screenY + Math.round((window.innerHeight - h) / 2);
