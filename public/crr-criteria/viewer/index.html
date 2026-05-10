@@ -22,24 +22,32 @@
 .region-bar select:focus { border-color:#4a86b5; }
 .region-name { font-weight:600; color:#1a6fa0; }
 
-/* ═══ SEARCH BAR ════════════════════════════════════════ */
-.search-bar { background:#fff; border-bottom:1px solid #dde1e6; padding:8px 16px; position:relative; }
+/* ═══ SEARCH BAR (inside left column) ══════════════════ */
+.search-bar { background:#fff; border-bottom:1px solid #dde1e6; padding:8px 12px; position:relative; flex-shrink:0; }
 .search-bar input { width:100%; padding:8px 12px 8px 34px; border:1px solid #dde1e6; border-radius:6px; font-size:13px; outline:none; background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%238b919a' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.44 1.406a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E") no-repeat 10px center; color:#1a1d21; }
 .search-bar input:focus { border-color:#4a86b5; box-shadow:0 0 0 2px rgba(26,111,160,0.1); }
 .search-bar input::placeholder { color:#8b919a; }
-.search-dropdown { position:absolute; left:16px; right:16px; top:100%; background:#fff; border:1px solid #dde1e6; border-top:none; border-radius:0 0 6px 6px; box-shadow:0 4px 12px rgba(0,0,0,0.08); z-index:400; max-height:320px; overflow-y:auto; }
+.search-dropdown { position:absolute; left:12px; right:12px; top:100%; background:#fff; border:1px solid #dde1e6; border-top:none; border-radius:0 0 6px 6px; box-shadow:0 4px 12px rgba(0,0,0,0.08); z-index:400; max-height:320px; overflow-y:auto; }
 .search-result { padding:8px 12px; cursor:pointer; border-bottom:1px solid #f0f2f5; display:flex; align-items:flex-start; gap:8px; }
 .search-result:hover { background:#e8f2fa; }
 .search-result-exam { font-size:10px; font-weight:600; color:#1a6fa0; text-transform:uppercase; letter-spacing:0.8px; white-space:nowrap; flex-shrink:0; padding-top:2px; }
 .search-result-text { font-size:12px; color:#1a1d21; line-height:1.4; flex:1; }
 .search-result-badge { font-size:9px; font-weight:700; padding:1px 5px; border-radius:4px; margin-left:4px; white-space:nowrap; }
 .search-no-results { padding:12px 16px; font-size:12px; color:#5f6b7c; font-style:italic; }
-.search-clear { position:absolute; right:24px; top:50%; transform:translateY(-50%); background:none; border:none; color:#5f6b7c; cursor:pointer; font-size:16px; line-height:1; padding:2px 6px; }
+.search-clear { position:absolute; right:20px; top:50%; transform:translateY(-50%); background:none; border:none; color:#5f6b7c; cursor:pointer; font-size:16px; line-height:1; padding:2px 6px; }
 
 /* ═══ TWO-COLUMN LAYOUT ═════════════════════════════════ */
-.tool-layout { display:flex; flex-direction:row; height:calc(100vh - 148px); }
-.tool-main { width:40%; flex-shrink:0; padding:12px 14px 100px; border-right:1px solid #dde1e6; height:calc(100vh - 148px); overflow-y:auto; background:#f5f6f8; box-sizing:border-box; }
-.tool-criteria { width:60%; flex:1 1 auto; padding:12px 16px 100px; height:calc(100vh - 148px); overflow-y:auto; box-sizing:border-box; }
+.tool-layout { display:flex; flex-direction:row; height:calc(100vh - 95px); }
+.left-col { width:40%; flex-shrink:0; display:flex; flex-direction:column; border-right:1px solid #dde1e6; height:100%; }
+.tool-main { flex:1 1 0; min-height:0; overflow-y:auto; padding:12px 14px 60px; background:#f5f6f8; box-sizing:border-box; }
+.tool-criteria { width:60%; flex:1 1 auto; padding:12px 16px 100px; height:100%; overflow-y:auto; box-sizing:border-box; }
+
+/* ═══ LEFT COL SELECTION SUMMARY ════════════════════════ */
+#leftColSummary { flex-shrink:0; background:#ecfdf5; border-top:2px solid #6ee7b7; padding:10px 12px; max-height:200px; overflow-y:auto; }
+#leftColSummaryHd { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:4px; }
+#leftColSummaryMsg { font-size:12px; font-weight:600; color:#065f46; line-height:1.4; }
+.left-col-clr { background:none; border:none; color:#059669; font-size:11px; text-decoration:underline; cursor:pointer; padding:0; font-family:inherit; white-space:nowrap; flex-shrink:0; }
+#leftColSummaryList { margin:0; padding-left:16px; font-size:11px; color:#1a4a28; line-height:1.7; }
 
 /* ═══ EXAM INFO CARD ════════════════════════════════════ */
 .exam-info-card { background:#fff; border:1px solid #dde1e6; border-radius:10px; margin-bottom:10px; overflow:hidden; }
@@ -122,7 +130,7 @@
 
 /* ═══ INTEGRATION MODE ══════════════════════════════════ */
 #integrationHeader { display:none; background:#fff; color:#1a1d21; padding:8px 16px; font-size:13px; font-weight:600; letter-spacing:0.2px; border-bottom:1px solid #dde1e6; }
-.integration-mode .tool-main { display:none !important; }
+.integration-mode .left-col { display:none !important; }
 .integration-mode .tool-criteria { width:100% !important; max-width:900px; margin:0 auto; }
 
 /* ═══ RADIO ROWS (inline conditional questions) ═════════ */
@@ -139,7 +147,7 @@
 
 /* ═══ PRINT STYLES ══════════════════════════════════════ */
 @media print {
-  .tool-footer, .app-header, .region-bar, .search-bar, .tool-main, .loader-overlay { display:none !important; }
+  .tool-footer, .app-header, .region-bar, .left-col, .loader-overlay { display:none !important; }
   .tool-layout { display:block !important; height:auto !important; }
   .tool-criteria { width:100% !important; height:auto !important; overflow:visible !important; padding:12px !important; }
   .emergency-block { break-inside:avoid; }
@@ -232,16 +240,24 @@
 <div id="integrationHeader"></div>
 
 <!-- Global search bar -->
-<div class="search-bar" id="searchBarWrap">
-  <input type="text" id="globalSearch" placeholder="Search criteria — type 3+ characters (e.g. haemoptysis, knee pain, TIA)" oninput="onGlobalSearch(this.value)" autocomplete="off">
-  <button class="search-clear" id="searchClearBtn" style="display:none" onclick="clearGlobalSearch()">&#215;</button>
-  <div class="search-dropdown" id="searchDropdown" style="display:none"></div>
-</div>
-
 <!-- Two-column layout -->
 <div class="tool-layout">
-  <div class="tool-main" id="toolMain">
-    <div style="padding:40px 24px;text-align:center;color:#a0aab4;font-size:13px;font-style:italic">Loading criteria data…</div>
+  <div class="left-col" id="leftCol">
+    <div class="search-bar" id="searchBarWrap">
+      <input type="text" id="globalSearch" placeholder="Search criteria — type 3+ characters (e.g. haemoptysis, knee pain, TIA)" oninput="onGlobalSearch(this.value)" autocomplete="off">
+      <button class="search-clear" id="searchClearBtn" style="display:none" onclick="clearGlobalSearch()">&#215;</button>
+      <div class="search-dropdown" id="searchDropdown" style="display:none"></div>
+    </div>
+    <div class="tool-main" id="toolMain">
+      <div style="padding:40px 24px;text-align:center;color:#a0aab4;font-size:13px;font-style:italic">Loading criteria data…</div>
+    </div>
+    <div id="leftColSummary" style="display:none">
+      <div id="leftColSummaryHd">
+        <span id="leftColSummaryMsg"></span>
+        <button class="left-col-clr" onclick="handleClear()">Clear all</button>
+      </div>
+      <ul id="leftColSummaryList"></ul>
+    </div>
   </div>
   <div class="tool-criteria" id="toolCriteria">
     <div style="padding:60px 24px;text-align:center;color:#a0aab4;font-size:13px;font-style:italic">Select an exam to view criteria.</div>
@@ -814,6 +830,7 @@ function toolRender() {
   if (!exam) return;
   var elMain = document.getElementById("toolMain");
   var elCrit = document.getElementById("toolCriteria");
+  var elLeft = document.getElementById("leftCol");
   if (!elMain || !elCrit) return;
 
   var hLeft = "";
@@ -879,7 +896,7 @@ function toolRender() {
 
   if (isIntegration) {
     // Integration mode: single-column, hide left panel, show criteria only
-    elMain.style.display = "none";
+    if (elLeft) elLeft.style.display = "none";
     elCrit.style.width = "100%";
     elCrit.style.maxWidth = "900px";
     elCrit.style.margin = "0 auto";
@@ -907,7 +924,7 @@ function toolRender() {
     elCrit.innerHTML = hIntRight;
   } else if (viewMode === "passive") {
     // Passive mode: hide left column, render everything in criteria column
-    elMain.style.display = "none";
+    if (elLeft) elLeft.style.display = "none";
     elCrit.style.width = "100%";
     elCrit.style.maxWidth = "900px";
     elCrit.style.margin = "0 auto";
@@ -934,13 +951,13 @@ function toolRender() {
     elCrit.innerHTML = hPassiveHeader + hRightPassive;
   } else {
     // Interactive mode: show left column, render criteria normally
-    elMain.style.display = "";
+    if (elLeft) elLeft.style.display = "";
     elCrit.style.width = "";
     elCrit.style.maxWidth = "";
     elCrit.style.margin = "";
     elMain.innerHTML = hLeft;
 
-    var hRight = renderCritSummaryBar();
+    var hRight = "";
     if (exam.type === "singlesite") {
       hRight += toolRenderSinglesite(exam);
     } else {
@@ -1745,25 +1762,47 @@ function getHighestPriorityTier(items) {
 
 function updateDecisionPanel(items) {
   var bar = document.getElementById("critSummaryBar");
-  var msgEl = document.getElementById("critSummaryMsg");
+  var leftSum = document.getElementById("leftColSummary");
+  var leftMsg = document.getElementById("leftColSummaryMsg");
+  var leftList = document.getElementById("leftColSummaryList");
   var footerBtns = document.getElementById("footerCopyBtns");
-  if (isPassive) { if (bar) bar.style.display = "none"; return; }
+  if (isPassive) {
+    if (bar) bar.style.display = "none";
+    if (leftSum) leftSum.style.display = "none";
+    return;
+  }
   if (!items.length) {
     if (bar) bar.style.display = "none";
+    if (leftSum) leftSum.style.display = "none";
     if (footerBtns) footerBtns.style.display = "none";
     return;
   }
-  if (bar) bar.style.display = "block";
-  if (footerBtns) footerBtns.style.display = isPassive ? "none" : "inline";
+  if (footerBtns) footerBtns.style.display = "inline";
   var tier = getHighestPriorityTier(items);
-  if (msgEl) {
-    var cnt = items.length;
-    var cntStr = cnt === 1 ? "1 criterion" : cnt + " criteria";
-    var action = cnt === 1 ? "meets" : "highest urgency:";
-    var urgMsg = tier
+  var cnt = items.length;
+  var cntStr = cnt === 1 ? "1 criterion" : cnt + " criteria";
+  var action = cnt === 1 ? "meets" : "highest urgency:";
+  // Update right-panel bar (integration mode)
+  if (bar) {
+    bar.style.display = "block";
+    var msgEl = document.getElementById("critSummaryMsg");
+    if (msgEl) msgEl.innerHTML = tier
       ? "✓ " + cntStr + " selected — " + action + " <strong>" + esc(tier) + "</strong>"
       : "✓ " + cntStr + " selected";
-    msgEl.innerHTML = urgMsg;
+  }
+  // Update left-column summary (interactive mode)
+  if (leftSum) {
+    leftSum.style.display = "block";
+    if (leftMsg) leftMsg.textContent = tier
+      ? "✓ " + cntStr + " — " + action + " " + tier
+      : "✓ " + cntStr + " selected";
+    if (leftList) {
+      var lh = "";
+      for (var i = 0; i < items.length; i++) {
+        lh += "<li>" + esc(items[i].shortLabel || items[i].label) + "</li>";
+      }
+      leftList.innerHTML = lh;
+    }
   }
 }
 
