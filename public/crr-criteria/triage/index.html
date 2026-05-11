@@ -170,11 +170,20 @@ textarea.note::placeholder{color:#8b919a}
 .btn-qa:hover{background:var(--warn-bg)}
 .btn-qa-export{padding:5px 12px;background:none;border:1px solid var(--rule);color:var(--mid);font-family:var(--sans);font-size:11px;font-weight:500;border-radius:6px;cursor:pointer}
 .btn-qa-export:hover{border-color:var(--accent);color:var(--accent)}
-.qa-stars{display:flex;gap:6px;margin:10px 0}
-.qa-star{width:36px;height:36px;border:2px solid var(--rule);border-radius:6px;background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;color:#5f6b7c;font-family:var(--sans)}
-.qa-star.selected{border-color:#f0a020;background:#fff8e1;color:#b45309}
-.qa-star:hover{border-color:#f0a020;background:#fff8e1;color:#f0a020}
-.qa-score-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--mid);margin-top:2px;padding:0 2px}
+.qa-opt-btn{padding:7px 10px;border:2px solid var(--rule);border-radius:6px;background:#fff;font-size:12px;cursor:pointer;color:var(--ink);font-family:var(--sans);text-align:left;line-height:1.3;transition:all .1s;width:100%}
+.qa-opt-btn:hover{border-color:var(--accent);background:var(--lite)}
+.qa-opt-btn.selected{border-color:var(--accent);background:var(--lite);color:var(--navy);font-weight:600}
+.qa-role-btn{padding:5px 10px;border:2px solid var(--rule);border-radius:14px;background:#fff;font-size:12px;cursor:pointer;color:var(--ink);font-family:var(--sans);transition:all .1s;white-space:nowrap}
+.qa-role-btn:hover{border-color:var(--accent);background:var(--lite)}
+.qa-role-btn.selected{border-color:var(--accent);background:var(--lite);color:var(--navy);font-weight:600}
+.qa-score-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--mist)}
+.qa-score-lbl{flex:1;font-size:12px;color:var(--ink)}
+.qa-3pt-group{display:flex;gap:4px;flex:0 0 auto}
+.qa-3pt-btn{padding:5px 10px;border:2px solid var(--rule);border-radius:4px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:var(--mid);font-family:var(--sans);transition:all .1s;white-space:nowrap}
+.qa-3pt-btn:hover{border-color:var(--accent);background:var(--lite)}
+.qa-3pt-btn.selected[data-v="wrong"]{border-color:#c62828;background:#fdecea;color:#c62828}
+.qa-3pt-btn.selected[data-v="partial"]{border-color:#f0a020;background:#fff8e1;color:#b45309}
+.qa-3pt-btn.selected[data-v="correct"]{border-color:#2a7d4f;background:#e8f5e9;color:#2a7d4f}
 .qa-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:var(--pass-bg);color:var(--pass);border:1px solid var(--pass-bd)}
 
 /* ── Comparison Mode ──────────────────────────────────────── */
@@ -240,9 +249,6 @@ textarea.note::placeholder{color:#8b919a}
     <button id="compLogBtn" onclick="openCompLogModal()" style="display:none;background:#f0f2f5;border:1px solid #dde1e6;color:#5a6068;padding:4px 10px;border-radius:6px;font-family:var(--sans);font-size:11px;font-weight:500;cursor:pointer;margin-right:4px">
       &#9316; Log
     </button>
-    <button onclick="exportQaLog()" title="Download QA log as JSON" id="qaExportBtn" style="display:none;background:#fff;border:1px solid #ffe082;color:#92400e;padding:4px 10px;border-radius:6px;font-family:var(--sans);font-size:11px;font-weight:500;cursor:pointer;margin-right:4px">
-      &#9733; QA Log
-    </button>
   </div>
 </div>
 
@@ -284,17 +290,9 @@ textarea.note::placeholder{color:#8b919a}
         <div class="paed-warning" id="paedWarning">
           &#9888; <strong>Paediatric patient detected:</strong> Switching to paediatric CRR criteria. Adult criteria do not apply.
         </div>
-        <div class="ex-hd" style="margin-top:10px">AI documentation standard</div>
-        <div class="mod-row">
-          <button class="mod-btn active" id="modeStrict" onclick="setDocMode('strict', this)" title="Only count information explicitly stated in the referral note">Strict — explicit only</button>
-          <button class="mod-btn" id="modeInferred" onclick="setDocMode('inferred', this)" title="Allow reasonable clinical inferences from context">Inferred — allow context</button>
-        </div>
         <div class="act-row">
           <button class="btn-assess" onclick="runCheck()">Check Referral</button>
           <button class="btn-clr" onclick="clearAll()">Clear</button>
-        </div>
-        <div class="hint-box">
-          <strong>Strict:</strong> Only explicitly documented facts count — mirrors how a triage radiologist reads a referral cold. <strong>Inferred:</strong> Reasonable clinical context allowed (e.g. "No AF" — no atrial fibrillation — suggests anticoagulation for AF is less likely, though other indications may apply).
         </div>
       </div>
     </div>
@@ -464,50 +462,96 @@ textarea.note::placeholder{color:#8b919a}
 
 <!-- QA MODAL -->
 <div class="modal-bg" id="qaModal">
-  <div class="modal" style="width:520px;max-width:96vw">
+  <div class="modal" style="width:540px;max-width:96vw">
     <div class="modal-hd" style="display:flex;justify-content:space-between;align-items:center">
-      <span>&#9733; Clinical QA — Rate This Assessment</span>
+      <span>&#9733; Clinical QA Evaluation</span>
       <button onclick="closeQaModal()" style="background:none;border:none;color:#8ab4c8;font-size:16px;cursor:pointer;padding:0 4px">&#10005;</button>
     </div>
     <div class="modal-bd">
-      <div style="font-size:12px;color:var(--mid);margin-bottom:12px">Rate the accuracy of the AI assessment against the national criteria. Your rating and comments will be saved to the QA log.</div>
 
+      <!-- Reviewer -->
       <div style="margin-bottom:12px">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:6px">Reviewer</div>
-        <div style="display:flex;gap:8px">
-          <input id="qaReviewerName" type="text" placeholder="Name" style="flex:1;border:1px solid var(--rule);border-radius:2px;padding:7px 10px;font-family:var(--sans);font-size:13px;color:var(--ink)">
-          <input id="qaReviewerRole" type="text" placeholder="Role (e.g. Radiologist, GP)" style="flex:1;border:1px solid var(--rule);border-radius:2px;padding:7px 10px;font-family:var(--sans);font-size:13px;color:var(--ink)">
+        <input id="qaReviewerName" type="text" placeholder="Your name" style="width:100%;border:1px solid var(--rule);border-radius:4px;padding:7px 10px;font-family:var(--sans);font-size:13px;color:var(--ink);box-sizing:border-box;margin-bottom:6px">
+        <div id="qaRoleGroup" style="display:flex;flex-wrap:wrap;gap:5px">
+          <button class="qa-role-btn" data-val="GP" onclick="setQaRole('GP')">GP</button>
+          <button class="qa-role-btn" data-val="Nurse Practitioner" onclick="setQaRole('Nurse Practitioner')">Nurse Practitioner</button>
+          <button class="qa-role-btn" data-val="PCRL" onclick="setQaRole('PCRL')">PCRL</button>
+          <button class="qa-role-btn" data-val="MIT" onclick="setQaRole('MIT')">MIT</button>
+          <button class="qa-role-btn" data-val="Radiologist" onclick="setQaRole('Radiologist')">Radiologist</button>
+          <button class="qa-role-btn" data-val="Other" onclick="setQaRole('Other')">Other</button>
+        </div>
+        <input id="qaRoleOther" type="text" placeholder="Specify role" style="display:none;width:100%;margin-top:5px;border:1px solid var(--rule);border-radius:4px;padding:6px 10px;font-family:var(--sans);font-size:12px;color:var(--ink);box-sizing:border-box">
+      </div>
+
+      <!-- Scenario Type -->
+      <div style="margin-bottom:10px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:6px">Scenario type <span style="color:#c62828">*</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px" id="qaScenarioGroup">
+          <button class="qa-opt-btn" data-val="clear_approve" onclick="setQaScenario('clear_approve')">Clear-cut approve</button>
+          <button class="qa-opt-btn" data-val="borderline" onclick="setQaScenario('borderline')">Borderline / partial criteria</button>
+          <button class="qa-opt-btn" data-val="should_decline" onclick="setQaScenario('should_decline')">Should be declined</button>
+          <button class="qa-opt-btn" data-val="emergency_redirect" onclick="setQaScenario('emergency_redirect')">Emergency / ACC redirect</button>
         </div>
       </div>
 
-      <div style="margin-bottom:14px">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:6px">Overall accuracy score</div>
-        <div class="qa-stars" id="qaStars">
-          <button class="qa-star" data-score="1" onclick="setQaScore(1)" title="1 — Very inaccurate" aria-label="Score 1 — Very inaccurate">1</button>
-          <button class="qa-star" data-score="2" onclick="setQaScore(2)" title="2 — Mostly inaccurate" aria-label="Score 2 — Mostly inaccurate">2</button>
-          <button class="qa-star" data-score="3" onclick="setQaScore(3)" title="3 — Partially correct" aria-label="Score 3 — Partially correct">3</button>
-          <button class="qa-star" data-score="4" onclick="setQaScore(4)" title="4 — Mostly accurate" aria-label="Score 4 — Mostly accurate">4</button>
-          <button class="qa-star" data-score="5" onclick="setQaScore(5)" title="5 — Very accurate" aria-label="Score 5 — Very accurate">5</button>
+      <!-- 4 Score rows (3-point scale) -->
+      <div style="margin-bottom:10px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:4px">Assessment scores <span style="color:#c62828">*</span></div>
+        <div class="qa-score-row">
+          <span class="qa-score-lbl">Criteria identification</span>
+          <div class="qa-3pt-group" id="scoreGroup_criteria_id">
+            <button class="qa-3pt-btn" data-v="wrong" onclick="setQaScore3('criteria_id','wrong')">&#10007; Wrong</button>
+            <button class="qa-3pt-btn" data-v="partial" onclick="setQaScore3('criteria_id','partial')">~ Partial</button>
+            <button class="qa-3pt-btn" data-v="correct" onclick="setQaScore3('criteria_id','correct')">&#10003; Correct</button>
+          </div>
         </div>
-        <div class="qa-score-labels"><span>Very inaccurate</span><span>Very accurate</span></div>
-        <div id="qaScoreLabel" style="font-size:12px;color:var(--accent);font-weight:600;margin-top:6px;min-height:18px"></div>
+        <div class="qa-score-row">
+          <span class="qa-score-lbl">Suggestion quality</span>
+          <div class="qa-3pt-group" id="scoreGroup_suggestion_quality">
+            <button class="qa-3pt-btn" data-v="wrong" onclick="setQaScore3('suggestion_quality','wrong')">&#10007; Wrong</button>
+            <button class="qa-3pt-btn" data-v="partial" onclick="setQaScore3('suggestion_quality','partial')">~ Partial</button>
+            <button class="qa-3pt-btn" data-v="correct" onclick="setQaScore3('suggestion_quality','correct')">&#10003; Correct</button>
+          </div>
+        </div>
+        <div class="qa-score-row">
+          <span class="qa-score-lbl">Compound handling</span>
+          <div class="qa-3pt-group" id="scoreGroup_compound_handling">
+            <button class="qa-3pt-btn" data-v="wrong" onclick="setQaScore3('compound_handling','wrong')">&#10007; Wrong</button>
+            <button class="qa-3pt-btn" data-v="partial" onclick="setQaScore3('compound_handling','partial')">~ Partial</button>
+            <button class="qa-3pt-btn" data-v="correct" onclick="setQaScore3('compound_handling','correct')">&#10003; Correct</button>
+          </div>
+        </div>
+        <div class="qa-score-row" style="border-bottom:none">
+          <span class="qa-score-lbl">Safety / redirect</span>
+          <div class="qa-3pt-group" id="scoreGroup_safety_redirect">
+            <button class="qa-3pt-btn" data-v="wrong" onclick="setQaScore3('safety_redirect','wrong')">&#10007; Wrong</button>
+            <button class="qa-3pt-btn" data-v="partial" onclick="setQaScore3('safety_redirect','partial')">~ Partial</button>
+            <button class="qa-3pt-btn" data-v="correct" onclick="setQaScore3('safety_redirect','correct')">&#10003; Correct</button>
+          </div>
+        </div>
       </div>
 
-      <div style="margin-bottom:14px">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:6px">What was correct? <span style="font-weight:400;text-transform:none">(optional)</span></div>
-        <textarea id="qaCommentCorrect" placeholder="e.g. Correctly identified exam, met criteria accurate..." style="width:100%;border:1px solid var(--rule);border-radius:6px;padding:8px 10px;font-family:var(--sans);font-size:12px;color:var(--ink);resize:vertical;min-height:52px;box-sizing:border-box"></textarea>
+      <!-- Overall Assessment -->
+      <div style="margin-bottom:10px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:6px">Overall assessment <span style="color:#c62828">*</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px" id="qaOverallGroup">
+          <button class="qa-opt-btn" data-val="accurate" onclick="setQaOverall('accurate')">Accurate — no changes needed</button>
+          <button class="qa-opt-btn" data-val="minor_issues" onclick="setQaOverall('minor_issues')">Minor issues — clinically acceptable</button>
+          <button class="qa-opt-btn" data-val="significant_issues" onclick="setQaOverall('significant_issues')">Significant issues — could mislead</button>
+          <button class="qa-opt-btn" data-val="wrong" onclick="setQaOverall('wrong')">Wrong — fundamentally incorrect</button>
+        </div>
       </div>
 
-      <div style="margin-bottom:16px">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:6px">What was wrong or missing? <span style="font-weight:400;text-transform:none">(optional)</span></div>
-        <textarea id="qaCommentWrong" placeholder="e.g. Missed mandatory gateway requirement, wrong priority assigned..." style="width:100%;border:1px solid var(--rule);border-radius:6px;padding:8px 10px;font-family:var(--sans);font-size:12px;color:var(--ink);resize:vertical;min-height:52px;box-sizing:border-box"></textarea>
+      <!-- Comments -->
+      <div style="margin-bottom:12px">
+        <textarea id="qaComments" placeholder="Any specific observations, errors, or suggestions? (optional)" style="width:100%;border:1px solid var(--rule);border-radius:4px;padding:8px 10px;font-family:var(--sans);font-size:12px;color:var(--ink);resize:vertical;min-height:44px;box-sizing:border-box"></textarea>
       </div>
 
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div id="qaEntryCount" style="font-size:11px;color:var(--mid)"></div>
         <div style="display:flex;gap:8px">
           <button class="btn-mc" onclick="closeQaModal()">Cancel</button>
-          <button class="btn-ms" id="qaSubmitBtn" onclick="submitQaEntry()" disabled style="opacity:.5">Save to QA Log</button>
+          <button class="btn-ms" id="qaSubmitBtn" onclick="submitQaEntry()" disabled style="opacity:.5">Submit QA</button>
         </div>
       </div>
     </div>
@@ -2052,7 +2096,8 @@ function renderCriteriaBrowser(r) {
   // Header
   h += '<div style="background:var(--navy);color:#fff;font-size:11px;font-weight:700;letter-spacing:0.7px;text-transform:uppercase;padding:9px 14px;display:flex;align-items:center;justify-content:space-between;">';
   h += '<span>&#128196; Criteria Reference</span>';
-  h += '<span style="font-size:10px;font-weight:400;opacity:.7;letter-spacing:0">' + esc(site.exam_title) + ' \u2014 ' + esc(site.site_label) + '</span>';
+  var _hpUrlRef = getHpUrl(site);
+  if (_hpUrlRef) h += '<a href="' + _hpUrlRef + '" target="_blank" rel="noopener" style="font-size:11px;color:#7ecdf5;font-weight:500;text-decoration:none;text-transform:none;letter-spacing:0">View HealthPathways &rsaquo;</a>';
   h += '</div>';
 
   h += '<div style="padding:12px 14px">';
@@ -2064,7 +2109,6 @@ function renderCriteriaBrowser(r) {
 
   // Guidance box — prefer guidanceNarrative (fuller version); fall back to guidance
   var _guideText = site.guidanceNarrative || site.guidance;
-  var _hpUrlRef = getHpUrl(site);
   if (_guideText) {
     h += '<div class="guidance-box" style="margin:8px 0 4px">' + esc(_guideText);
     if (_hpUrlRef) {
@@ -2338,36 +2382,49 @@ function sendAssessmentToForm() {
 // ═══════════════════════════════════════════════
 //  CLINICAL QA SYSTEM
 // ═══════════════════════════════════════════════
-var LS_QA_KEY = 'crr_triage_qa_log';
-var qaScore = 0;
+var qaScenario = null;
+var qaScores = { criteria_id: null, suggestion_quality: null, compound_handling: null, safety_redirect: null };
+var qaOverall = null;
+var qaRole = '';
+var qaSessionCount = 0;
 
-var QA_SCORE_LABELS = {
-  1: 'Very inaccurate — significant errors',
-  2: 'Mostly inaccurate — some correct elements',
-  3: 'Partially correct — key issues present',
-  4: 'Mostly accurate — minor issues only',
-  5: 'Very accurate — correct in all key aspects'
-};
-
-function loadQaLog() {
-  try { return JSON.parse(localStorage.getItem(LS_QA_KEY) || '[]'); } catch(e){ return []; }
-}
-function saveQaLog(log) {
-  try { localStorage.setItem(LS_QA_KEY, JSON.stringify(log, null, 2)); } catch(e){}
-}
+var QA_SESSION_ID = (function(){
+  try {
+    var id = sessionStorage.getItem('crr-qa-session-id');
+    if (!id) {
+      id = 'sess_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+      sessionStorage.setItem('crr-qa-session-id', id);
+    }
+    return id;
+  } catch(e) { return 'sess_' + Math.random().toString(36).slice(2, 10); }
+})();
 
 function openQaModal() {
   if (!lastAiResult) return;
-  qaScore = 0;
-  // Reset form
-  ['qaReviewerName','qaReviewerRole','qaCommentCorrect','qaCommentWrong'].forEach(function(id){
-    var el = document.getElementById(id); if(el) el.value = '';
-  });
-  setQaScore(0);
-  // Update entry count
-  var log = loadQaLog();
+  qaScenario = null;
+  qaScores = { criteria_id: null, suggestion_quality: null, compound_handling: null, safety_redirect: null };
+  qaOverall = null;
+  qaRole = '';
+
+  // Pre-populate reviewer from localStorage
+  try {
+    var savedName = localStorage.getItem('crr-qa-reviewer-name');
+    var savedRole = localStorage.getItem('crr-qa-reviewer-role');
+    var nameEl = document.getElementById('qaReviewerName');
+    if (nameEl && savedName) nameEl.value = savedName;
+    if (savedRole) setQaRole(savedRole);
+  } catch(e) {}
+
+  // Reset all selection buttons
+  document.querySelectorAll('.qa-opt-btn').forEach(function(b){ b.classList.remove('selected'); });
+  document.querySelectorAll('.qa-3pt-btn').forEach(function(b){ b.classList.remove('selected'); });
+  var commentsEl = document.getElementById('qaComments');
+  if (commentsEl) commentsEl.value = '';
+
   var countEl = document.getElementById('qaEntryCount');
-  if (countEl) countEl.textContent = log.length + ' entries in QA log';
+  if (countEl) countEl.textContent = 'You have submitted ' + qaSessionCount + (qaSessionCount === 1 ? ' QA review' : ' QA reviews') + ' this session';
+
+  checkQaSubmitEnabled();
   document.getElementById('qaModal').classList.add('open');
 }
 
@@ -2375,87 +2432,123 @@ function closeQaModal() {
   document.getElementById('qaModal').classList.remove('open');
 }
 
-function setQaScore(n) {
-  qaScore = n;
-  document.querySelectorAll('.qa-star').forEach(function(s){
-    s.classList.toggle('selected', parseInt(s.getAttribute('data-score')) <= n);
+function setQaRole(val) {
+  qaRole = val;
+  document.querySelectorAll('#qaRoleGroup .qa-role-btn').forEach(function(b){
+    b.classList.toggle('selected', b.getAttribute('data-val') === val);
   });
-  var lbl = document.getElementById('qaScoreLabel');
-  if (lbl) lbl.textContent = n ? n + ' / 5 — ' + QA_SCORE_LABELS[n] : '';
+  var otherEl = document.getElementById('qaRoleOther');
+  if (otherEl) otherEl.style.display = (val === 'Other') ? 'block' : 'none';
+  checkQaSubmitEnabled();
+}
+
+function setQaScenario(val) {
+  qaScenario = val;
+  document.querySelectorAll('#qaScenarioGroup .qa-opt-btn').forEach(function(b){
+    b.classList.toggle('selected', b.getAttribute('data-val') === val);
+  });
+  checkQaSubmitEnabled();
+}
+
+function setQaScore3(field, val) {
+  qaScores[field] = val;
+  var group = document.getElementById('scoreGroup_' + field);
+  if (group) group.querySelectorAll('.qa-3pt-btn').forEach(function(b){
+    b.classList.toggle('selected', b.getAttribute('data-v') === val);
+  });
+  checkQaSubmitEnabled();
+}
+
+function setQaOverall(val) {
+  qaOverall = val;
+  document.querySelectorAll('#qaOverallGroup .qa-opt-btn').forEach(function(b){
+    b.classList.toggle('selected', b.getAttribute('data-val') === val);
+  });
+  checkQaSubmitEnabled();
+}
+
+function checkQaSubmitEnabled() {
+  var ok = !!(qaScenario && qaOverall && qaRole
+    && qaScores.criteria_id && qaScores.suggestion_quality
+    && qaScores.compound_handling && qaScores.safety_redirect);
   var btn = document.getElementById('qaSubmitBtn');
-  if (btn) { btn.disabled = n === 0; btn.style.opacity = n === 0 ? '.5' : '1'; }
+  if (btn) { btn.disabled = !ok; btn.style.opacity = ok ? '1' : '.5'; }
 }
 
 function submitQaEntry() {
-  if (!qaScore || !lastAiResult) return;
+  if (!lastAiResult) return;
   var r = lastAiResult;
-  var entry = {
-    tool: 'CRR Triage Advisor',
-    tool_version: VER,
-    datetime: new Date().toISOString(),
-    reviewer_name: (document.getElementById('qaReviewerName').value || '').trim() || null,
-    reviewer_role: (document.getElementById('qaReviewerRole').value || '').trim() || null,
-    qa_score: qaScore,
-    qa_score_label: QA_SCORE_LABELS[qaScore],
-    comment_correct: (document.getElementById('qaCommentCorrect').value || '').trim() || null,
-    comment_wrong:   (document.getElementById('qaCommentWrong').value || '').trim() || null,
-    assessment: {
-      exam: r.exam || null,
-      modality: r.modality || null,
-      verdict: r.verdict || null,
-      priority: r.priority || null,
-      doc_mode: r._docMode || null,
-      safety_alert: r.safety_alert || null,
-      met_criteria_count: (r.met_criteria || []).length,
-      missing_criteria_count: (r.missing_criteria || []).length,
-      not_funded: r.not_funded_flag || false
-    },
-    note: {
-      original: r._originalNote || null,
-      interpreted: r._correctedNote || null
-    },
-    token_usage: r._usage || null
+  var reviewerName = (document.getElementById('qaReviewerName').value || '').trim();
+  var reviewerRole = qaRole === 'Other'
+    ? ((document.getElementById('qaRoleOther').value || '').trim() || 'Other')
+    : qaRole;
+  if (!reviewerName || !reviewerRole) {
+    alert('Please enter your name and select your role before submitting.');
+    return;
+  }
+
+  try { localStorage.setItem('crr-qa-reviewer-name', reviewerName); } catch(e) {}
+  try { localStorage.setItem('crr-qa-reviewer-role', reviewerRole); } catch(e) {}
+
+  var aiSummary = [
+    r.verdict_title || r.verdict || '',
+    r.verdict_summary || '',
+    (r.met_criteria || []).length ? 'Met: ' + r.met_criteria.join('; ') : '',
+    (r.missing_criteria || []).length ? 'Missing: ' + r.missing_criteria.join('; ') : '',
+    r.safety_alert ? 'SAFETY: ' + r.safety_alert : '',
+    r.redirect ? 'Redirect: ' + r.redirect : ''
+  ].filter(Boolean).join('\n');
+
+  var payload = {
+    timestamp: new Date().toISOString(),
+    session_id: QA_SESSION_ID,
+    reviewer_name: reviewerName,
+    reviewer_role: reviewerRole,
+    scenario_type: qaScenario,
+    score_criteria_id: qaScores.criteria_id,
+    score_suggestion_quality: qaScores.suggestion_quality,
+    score_compound_handling: qaScores.compound_handling,
+    score_safety_redirect: qaScores.safety_redirect,
+    overall_assessment: qaOverall,
+    comments: (document.getElementById('qaComments').value || '').trim() || null,
+    presentation_text: lastNote || '',
+    ai_response_summary: aiSummary,
+    exam_identified: r.exam || r.modality || null,
+    model_used: 'claude-sonnet-4-20250514',
+    documentation_standard: docMode,
+    region: null
   };
-  var log = loadQaLog();
-  log.push(entry);
-  saveQaLog(log);
+
   closeQaModal();
-  // Show export button
-  var expBtn = document.getElementById('qaExportBtn');
-  if (expBtn) expBtn.style.display = 'inline-block';
-  // Brief confirmation
+  qaSessionCount++;
+
+  // Update badge on QA button
+  var qaBtn = document.querySelector('.btn-qa');
+  if (qaBtn) {
+    var badge = qaBtn.querySelector('.qa-count-badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'qa-count-badge';
+      badge.style.cssText = 'display:inline-block;background:#2a7d4f;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px;line-height:1.4;vertical-align:middle;margin-left:4px';
+      qaBtn.appendChild(badge);
+    }
+    badge.textContent = qaSessionCount;
+  }
+
   var aiPanel = document.getElementById('aiPanel');
   if (aiPanel) {
     var banner = document.createElement('div');
     banner.style.cssText = 'background:#e8f5e9;border:1px solid #a8d8a8;border-radius:2px;padding:8px 12px;font-size:12px;color:#2e7d32;margin-bottom:8px;font-weight:600';
-    banner.innerHTML = '&#10003; QA entry saved (score: ' + qaScore + '/5). ' + log.length + ' total entries in log.';
+    banner.innerHTML = '&#10003; QA review submitted. ' + qaSessionCount + (qaSessionCount === 1 ? ' review' : ' reviews') + ' this session.';
     aiPanel.insertBefore(banner, aiPanel.firstChild);
     setTimeout(function(){ if(banner.parentNode) banner.parentNode.removeChild(banner); }, 4000);
   }
-}
 
-function exportQaLog() {
-  var log = loadQaLog();
-  if (!log.length) { alert('No QA entries to export yet.'); return; }
-  var json = JSON.stringify(log, null, 2);
-  var blob = new Blob([json], { type: 'application/json' });
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  var ts = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
-  a.download = 'crr_triage_advisor_qa_' + ts + '.json';
-  a.href = url;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-function clearQaLog() {
-  if (confirm('Clear all QA entries? This cannot be undone.')) {
-    try { localStorage.removeItem(LS_QA_KEY); } catch(e){}
-    var expBtn = document.getElementById('qaExportBtn');
-    if (expBtn) expBtn.style.display = 'none';
-  }
+  fetch('https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/qa-review', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).catch(function(e) { console.warn('QA submission failed:', e); });
 }
 
 
@@ -2809,8 +2902,6 @@ document.getElementById('qaModal').addEventListener('click', function(e){ if(e.t
 document.getElementById('compLogModal').addEventListener('click', function(e){ if(e.target===this) closeCompLogModal(); });
 // Show comp log button if entries exist
 (function(){ var cl = loadCompLog(); if(cl.length){ var b=document.getElementById('compLogBtn'); if(b){b.style.display='inline-block';b.textContent='Ⓡ Log ('+cl.length+')';} } })();
-// Show QA export button if log already has entries
-if (loadQaLog().length > 0) { var _qeb = document.getElementById('qaExportBtn'); if(_qeb) _qeb.style.display = 'inline-block'; }
 document.getElementById('noteInput').addEventListener('keydown', function(e){ if((e.ctrlKey||e.metaKey)&&e.key==='Enter') runCheck(); });
 </script>
 </body>

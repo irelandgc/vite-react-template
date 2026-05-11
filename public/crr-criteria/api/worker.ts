@@ -430,6 +430,171 @@ app.post('/api/admin/versions/:id/rollback', requireAccess, async (c) => {
   return c.json({ success: true, version: restoredLabel, publishedAt: now, data });
 });
 
+// POST /api/qa-review — QA review submission (no auth, rate-limited 100/hr/IP)
+app.post('/api/qa-review', async (c) => {
+  const db = c.env.DB;
+  const kv = c.env.KV;
+
+  // IP-based rate limit: 100 per hour
+  const ip = c.req.header('CF-Connecting-IP') || 'unknown';
+  const hour = new Date().toISOString().slice(0, 13);
+  const rlKey = `ratelimit:qa:${ip}:${hour}`;
+  try {
+    const countRaw = await kv.get(rlKey);
+    const count = countRaw ? parseInt(countRaw) : 0;
+    if (count >= 100) {
+      return c.json({ error: 'Rate limit exceeded — try again in an hour' }, 429);
+    }
+    await kv.put(rlKey, String(count + 1), { expirationTtl: 3600 });
+  } catch (_) {}
+
+  const body = await c.req.json();
+  const now = new Date().toISOString();
+  try {
+    const result = await db.prepare(`
+      INSERT INTO qa_reviews (
+        timestamp, session_id, reviewer_name, reviewer_role,
+        scenario_type, score_criteria_id, score_suggestion_quality,
+        score_compound_handling, score_safety_redirect,
+        overall_assessment, comments,
+        presentation_text, ai_response_summary,
+        exam_identified, model_used, documentation_standard, region
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      body.timestamp || now,
+      body.session_id || '',
+      body.reviewer_name || '',
+      body.reviewer_role || '',
+      body.scenario_type || '',
+      body.score_criteria_id || 0,
+      body.score_suggestion_quality || 0,
+      body.score_compound_handling || 0,
+      body.score_safety_redirect || 0,
+      body.overall_assessment || '',
+      body.comments || null,
+      body.presentation_text || '',
+      body.ai_response_summary || '',
+      body.exam_identified || null,
+      body.model_used || null,
+      body.documentation_standard || null,
+      body.region || null
+    ).run();
+    return c.json({ success: true, id: result.meta.last_row_id });
+  } catch (e: any) {
+    return c.json({ error: 'Failed to save QA review: ' + e.message }, 500);
+  }
+});
+
+// POST /api/qa-viewer-review — Viewer QA submission (no auth, rate-limited)
+app.post('/api/qa-viewer-review', async (c) => {
+  const db = c.env.DB;
+  const kv = c.env.KV;
+
+  const ip = c.req.header('CF-Connecting-IP') || 'unknown';
+  const hour = new Date().toISOString().slice(0, 13);
+  const rlKey = `ratelimit:qa-viewer:${ip}:${hour}`;
+  try {
+    const countRaw = await kv.get(rlKey);
+    const count = countRaw ? parseInt(countRaw) : 0;
+    if (count >= 100) return c.json({ error: 'Rate limit exceeded' }, 429);
+    await kv.put(rlKey, String(count + 1), { expirationTtl: 3600 });
+  } catch (_) {}
+
+  const body = await c.req.json();
+  const now = new Date().toISOString();
+  try {
+    const result = await db.prepare(`
+      INSERT INTO qa_viewer_reviews (
+        timestamp, session_id, reviewer_name, reviewer_role,
+        exam_type, site_code, site_label, region, view_mode,
+        score_accuracy, score_usability, score_value,
+        checklist_criteria_correct, checklist_priority_correct, checklist_gateway_correct,
+        checklist_labvalue_correct, checklist_altmgmt_correct, checklist_notfunded_correct,
+        checklist_guidance_correct, checklist_healthpathways_works, checklist_groupings_correct,
+        comments
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      body.timestamp || now,
+      body.session_id || '',
+      body.reviewer_name || '',
+      body.reviewer_role || '',
+      body.exam_type || '',
+      body.site_code || '',
+      body.site_label || '',
+      body.region || '',
+      body.view_mode || null,
+      body.score_accuracy || '',
+      body.score_usability || '',
+      body.score_value || '',
+      body.checklist_criteria_correct ? 1 : 0,
+      body.checklist_priority_correct ? 1 : 0,
+      body.checklist_gateway_correct ? 1 : 0,
+      body.checklist_labvalue_correct ? 1 : 0,
+      body.checklist_altmgmt_correct ? 1 : 0,
+      body.checklist_notfunded_correct ? 1 : 0,
+      body.checklist_guidance_correct ? 1 : 0,
+      body.checklist_healthpathways_works ? 1 : 0,
+      body.checklist_groupings_correct ? 1 : 0,
+      body.comments || null
+    ).run();
+    return c.json({ success: true, id: result.meta.last_row_id });
+  } catch (e: any) {
+    return c.json({ error: 'Failed to save viewer QA review: ' + e.message }, 500);
+  }
+});
+
+// GET /api/qa-viewer-reviews — Admin: viewer QA reviews with optional filters
+app.get('/api/qa-viewer-reviews', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const reviewer = c.req.query('reviewer');
+  const exam = c.req.query('exam');
+  const site = c.req.query('site');
+  const from = c.req.query('from');
+  const to = c.req.query('to');
+
+  let sql = 'SELECT * FROM qa_viewer_reviews';
+  const params: any[] = [];
+  const conditions: string[] = [];
+  if (reviewer) { conditions.push('reviewer_name = ?'); params.push(reviewer); }
+  if (exam) { conditions.push('exam_type = ?'); params.push(exam); }
+  if (site) { conditions.push('site_code = ?'); params.push(site); }
+  if (from) { conditions.push('timestamp >= ?'); params.push(from); }
+  if (to) { conditions.push('timestamp <= ?'); params.push(to + 'T23:59:59Z'); }
+  if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
+  sql += ' ORDER BY id DESC';
+
+  try {
+    const rows = await db.prepare(sql).bind(...params).all();
+    return c.json(rows.results);
+  } catch (e: any) {
+    return c.json({ error: 'Failed to fetch viewer QA reviews: ' + e.message }, 500);
+  }
+});
+
+// GET /api/qa-reviews — Admin: all QA reviews with optional filters
+app.get('/api/qa-reviews', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const reviewer = c.req.query('reviewer');
+  const from = c.req.query('from');
+  const to = c.req.query('to');
+
+  let sql = 'SELECT * FROM qa_reviews';
+  const params: any[] = [];
+  const conditions: string[] = [];
+  if (reviewer) { conditions.push('reviewer_name = ?'); params.push(reviewer); }
+  if (from) { conditions.push('timestamp >= ?'); params.push(from); }
+  if (to) { conditions.push('timestamp <= ?'); params.push(to + 'T23:59:59Z'); }
+  if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
+  sql += ' ORDER BY id DESC';
+
+  try {
+    const rows = await db.prepare(sql).bind(...params).all();
+    return c.json(rows.results);
+  } catch (e: any) {
+    return c.json({ error: 'Failed to fetch QA reviews: ' + e.message }, 500);
+  }
+});
+
 // POST /api/triage/assess — Proxy Anthropic API calls for the Triage Advisor
 // No admin auth — public endpoint; API key kept server-side
 app.post('/api/triage/assess', async (c) => {

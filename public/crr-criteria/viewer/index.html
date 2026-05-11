@@ -37,8 +37,9 @@
 .search-clear { position:absolute; right:20px; top:50%; transform:translateY(-50%); background:none; border:none; color:#5f6b7c; cursor:pointer; font-size:16px; line-height:1; padding:2px 6px; }
 
 /* ═══ TWO-COLUMN LAYOUT ═════════════════════════════════ */
-/* tool-layout height: disclaimer (~37px) + identity footer (~33px) = 70px */
-.tool-layout { display:flex; flex-direction:row; height:calc(100vh - 70px); }
+html { height:100%; overflow:hidden; }
+body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+.tool-layout { display:flex; flex-direction:row; flex:1; min-height:0; }
 .left-col { width:40%; flex-shrink:0; display:flex; flex-direction:column; border-right:1px solid #dde1e6; height:100%; }
 .tool-main { flex:1 1 0; min-height:0; overflow-y:auto; padding:12px 14px 20px; background:#f5f6f8; box-sizing:border-box; }
 .tool-criteria { width:60%; flex:1 1 auto; padding:12px 16px 20px; height:100%; overflow-y:auto; box-sizing:border-box; background:var(--mist); }
@@ -111,20 +112,25 @@
 /* ═══ QA MODAL ══════════════════════════════════════════ */
 .qa-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000; display:none; align-items:center; justify-content:center; }
 .qa-modal-overlay.open { display:flex; }
-.qa-modal { background:#fff; border-radius:10px; width:520px; max-width:96vw; max-height:88vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.15); }
-.qa-modal-hd { background:#1a6fa0; color:#fff; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; }
+.qa-modal { background:#fff; border-radius:10px; width:560px; max-width:96vw; max-height:90vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.15); }
+.qa-modal-hd { background:var(--navy,#003B5C); color:#fff; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; border-radius:10px 10px 0 0; }
 .qa-modal-title { font-size:13px; font-weight:700; }
 .qa-modal-close { background:none; border:none; color:#fff; font-size:18px; cursor:pointer; padding:2px 6px; line-height:1; }
 .qa-modal-body { padding:14px 16px; }
-.qa-score-row { display:flex; gap:6px; margin:8px 0; }
-.qa-star-btn { width:36px; height:36px; border:2px solid #dde1e6; border-radius:6px; background:#fff; font-size:18px; cursor:pointer; color:#5f6b7c; font-family:inherit; }
-.qa-star-btn.on { border-color:#f0a020; background:#fff8e1; color:#b45309; }
-.qa-log-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
-.qa-log-table th { background:#f0f2f5; padding:5px 8px; text-align:left; font-size:10px; color:#5f6b7c; font-weight:600; border-bottom:1px solid #dde1e6; text-transform:uppercase; letter-spacing:0.8px; }
-.qa-log-table td { padding:5px 8px; border-bottom:1px solid #f0f2f5; color:#1a1d21; vertical-align:top; }
-.qa-log-table tr:last-child td { border-bottom:none; }
-.btn-qa { background:none; border:1px solid #ffe082; color:#92400e; padding:4px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; font-family:inherit; }
+.qa-role-btn { padding:5px 10px; border:2px solid #d0dce4; border-radius:14px; background:#fff; font-size:12px; cursor:pointer; color:#0d1f2d; font-family:inherit; transition:all .1s; white-space:nowrap; }
+.qa-role-btn:hover { border-color:#008B8B; background:#eaf2f7; }
+.qa-role-btn.sel { border-color:#008B8B; background:#eaf2f7; color:#003B5C; font-weight:600; }
+.qa-3way { display:flex; gap:4px; }
+.qa-3way-btn { flex:1; padding:6px 4px; border:2px solid #d0dce4; border-radius:4px; background:#fff; font-size:12px; font-weight:600; cursor:pointer; color:#5a7a8a; font-family:inherit; transition:all .1s; text-align:center; }
+.qa-3way-btn:hover { border-color:#008B8B; background:#eaf2f7; }
+.qa-3way-btn.sel[data-v="significant_errors"],.qa-3way-btn.sel[data-v="difficult"],.qa-3way-btn.sel[data-v="would_not_use"] { border-color:#c62828; background:#fdecea; color:#c62828; }
+.qa-3way-btn.sel[data-v="minor_issues"],.qa-3way-btn.sel[data-v="adequate"],.qa-3way-btn.sel[data-v="maybe"] { border-color:#f0a020; background:#fff8e1; color:#b45309; }
+.qa-3way-btn.sel[data-v="accurate"],.qa-3way-btn.sel[data-v="easy"],.qa-3way-btn.sel[data-v="definitely"] { border-color:#2a7d4f; background:#e8f5e9; color:#2a7d4f; }
+.qa-dim-row { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid #f0f2f5; }
+.qa-dim-lbl { flex:1; font-size:12px; color:#0d1f2d; }
+.btn-qa { background:none; border:1px solid #ffe082; color:#92400e; padding:4px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; font-family:inherit; position:relative; }
 .btn-qa:hover { background:#fff8e1; }
+.qa-count-badge { display:inline-block; background:#2a7d4f; color:#fff; font-size:9px; font-weight:700; padding:1px 5px; border-radius:8px; line-height:1.4; vertical-align:middle; margin-left:4px; }
 
 /* ═══ LOADER ERROR ══════════════════════════════════════ */
 .loader-error { background:#fdecea; border:1px solid #f0b0b0; border-radius:10px; padding:16px 20px; max-width:400px; }
@@ -156,7 +162,7 @@
 /* ═══ PRINT STYLES ══════════════════════════════════════ */
 @media print {
   #toolIdentityFooter, .region-bar, .left-col, .loader-overlay { display:none !important; }
-  .tool-layout { display:block !important; height:auto !important; }
+  .tool-layout { display:block !important; flex:none !important; height:auto !important; }
   .tool-criteria { width:100% !important; height:auto !important; overflow:visible !important; padding:12px !important; }
   .emergency-block { break-inside:avoid; }
   .crit-card-detail { display:block !important; }
@@ -185,35 +191,89 @@
 <div class="qa-modal-overlay" id="ceQaModal">
   <div class="qa-modal">
     <div class="qa-modal-hd">
-      <span class="qa-modal-title">&#9733; CE / QA Log</span>
+      <span class="qa-modal-title">&#9733; Clinical QA — Rate This Criteria Display</span>
       <button class="qa-modal-close" onclick="closeCeQaModal()">&#215;</button>
     </div>
     <div class="qa-modal-body">
-      <div id="ceQaEntryArea">
-        <div style="font-size:12px;font-weight:700;color:#1a1d21;margin-bottom:6px">Rate this referral criteria decision:</div>
-        <div style="font-size:12px;color:#5a6068;margin-bottom:6px" id="ceQaExamLabel"></div>
-        <div class="qa-score-row" id="ceQaStars">
-          <button class="qa-star-btn" id="qastar1" onclick="setCeQaScore(1)">&#9733;</button>
-          <button class="qa-star-btn" id="qastar2" onclick="setCeQaScore(2)">&#9733;</button>
-          <button class="qa-star-btn" id="qastar3" onclick="setCeQaScore(3)">&#9733;</button>
-          <button class="qa-star-btn" id="qastar4" onclick="setCeQaScore(4)">&#9733;</button>
-          <button class="qa-star-btn" id="qastar5" onclick="setCeQaScore(5)">&#9733;</button>
+      <div style="font-size:11px;color:#5a7a8a;margin-bottom:10px">Rate whether the criteria displayed are accurate and complete according to the national document.</div>
+
+      <!-- Reviewer -->
+      <div style="margin-bottom:12px">
+        <input id="vqaReviewerName" type="text" placeholder="Your name" style="width:100%;border:1px solid #d0dce4;border-radius:4px;padding:7px 10px;font-family:inherit;font-size:13px;color:#0d1f2d;box-sizing:border-box;margin-bottom:6px">
+        <div id="vqaRoleGroup" style="display:flex;flex-wrap:wrap;gap:5px">
+          <button class="qa-role-btn" data-val="GP" onclick="setVqaRole('GP')">GP</button>
+          <button class="qa-role-btn" data-val="Nurse Practitioner" onclick="setVqaRole('Nurse Practitioner')">Nurse Practitioner</button>
+          <button class="qa-role-btn" data-val="PCRL" onclick="setVqaRole('PCRL')">PCRL</button>
+          <button class="qa-role-btn" data-val="MIT" onclick="setVqaRole('MIT')">MIT</button>
+          <button class="qa-role-btn" data-val="Radiologist" onclick="setVqaRole('Radiologist')">Radiologist</button>
+          <button class="qa-role-btn" data-val="Other" onclick="setVqaRole('Other')">Other</button>
         </div>
-        <div style="margin:8px 0">
-          <label style="font-size:11px;font-weight:600;color:#8b919a;display:block;margin-bottom:4px">Comment (optional):</label>
-          <textarea id="ceQaComment" style="width:100%;border:1px solid #dde1e6;border-radius:6px;padding:8px 10px;font-family:inherit;font-size:12px;resize:vertical;min-height:60px;outline:none;color:#1a1d21" placeholder="e.g. criteria met, appropriate referral, missing information..."></textarea>
+        <input id="vqaRoleOther" type="text" placeholder="Specify role" style="display:none;width:100%;margin-top:5px;border:1px solid #d0dce4;border-radius:4px;padding:6px 10px;font-family:inherit;font-size:12px;color:#0d1f2d;box-sizing:border-box">
+      </div>
+
+      <!-- What are you reviewing (auto-populated) -->
+      <div style="margin-bottom:12px;background:#f2f6f8;border-radius:4px;padding:8px 10px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#5a7a8a;margin-bottom:3px">Reviewing</div>
+        <div style="font-size:13px;font-weight:600;color:#003B5C" id="vqaExamLabel">—</div>
+      </div>
+
+      <!-- 3 three-point scores -->
+      <div style="margin-bottom:10px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#5a7a8a;margin-bottom:4px">Scores <span style="color:#c62828">*</span></div>
+        <div class="qa-dim-row" id="vqaAccuracyRow">
+          <span class="qa-dim-lbl">Content accuracy</span>
+          <div class="qa-3way" id="vqaGroup_accuracy">
+            <button class="qa-3way-btn" data-v="significant_errors" onclick="setVqaScore('accuracy','significant_errors')">&#10007; Errors</button>
+            <button class="qa-3way-btn" data-v="minor_issues" onclick="setVqaScore('accuracy','minor_issues')">~ Minor issues</button>
+            <button class="qa-3way-btn" data-v="accurate" onclick="setVqaScore('accuracy','accurate')">&#10003; Accurate</button>
+          </div>
         </div>
-        <div style="display:-ms-flexbox;display:flex;gap:8px;margin-top:8px">
-          <button class="btn btn-p btn-sm" onclick="saveCeQaEntry()">Save Entry</button>
+        <div class="qa-dim-row">
+          <span class="qa-dim-lbl">Usability</span>
+          <div class="qa-3way" id="vqaGroup_usability">
+            <button class="qa-3way-btn" data-v="difficult" onclick="setVqaScore('usability','difficult')">&#10007; Difficult</button>
+            <button class="qa-3way-btn" data-v="adequate" onclick="setVqaScore('usability','adequate')">~ Adequate</button>
+            <button class="qa-3way-btn" data-v="easy" onclick="setVqaScore('usability','easy')">&#10003; Easy</button>
+          </div>
+        </div>
+        <div class="qa-dim-row" style="border-bottom:none">
+          <span class="qa-dim-lbl">Value in practice</span>
+          <div class="qa-3way" id="vqaGroup_value">
+            <button class="qa-3way-btn" data-v="would_not_use" onclick="setVqaScore('value','would_not_use')">&#10007; Would not use</button>
+            <button class="qa-3way-btn" data-v="maybe" onclick="setVqaScore('value','maybe')">~ Maybe</button>
+            <button class="qa-3way-btn" data-v="definitely" onclick="setVqaScore('value','definitely')">&#10003; Definitely</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Checklist -->
+      <div style="margin-bottom:10px" id="vqaChecklistSection">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#5a7a8a;margin-bottom:6px">Tick what is correct for this exam</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px" id="vqaChecklist">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_criteria" style="width:14px;height:14px;cursor:pointer"> Criteria items correct</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_priority" style="width:14px;height:14px;cursor:pointer"> Priority tiers correct</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_gateway" style="width:14px;height:14px;cursor:pointer"> Gateway flags correct</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_labvalue" style="width:14px;height:14px;cursor:pointer"> Lab value flags correct</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_altmgmt" style="width:14px;height:14px;cursor:pointer"> Alternative management correct</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_notfunded" style="width:14px;height:14px;cursor:pointer"> Not-funded items correct</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_guidance" style="width:14px;height:14px;cursor:pointer"> Guidance text correct</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_hp" style="width:14px;height:14px;cursor:pointer"> HealthPathways link works</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_groupings" style="width:14px;height:14px;cursor:pointer"> Indication groupings make sense</label>
+        </div>
+      </div>
+
+      <!-- Comments -->
+      <div style="margin-bottom:12px">
+        <textarea id="vqaComments" placeholder="Describe any specific errors, missing items, or suggestions (optional)" style="width:100%;border:1px solid #d0dce4;border-radius:4px;padding:8px 10px;font-family:inherit;font-size:12px;color:#0d1f2d;resize:vertical;min-height:44px;box-sizing:border-box"></textarea>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div id="vqaEntryCount" style="font-size:11px;color:#5a7a8a"></div>
+        <div style="display:flex;gap:8px">
           <button class="btn btn-s btn-sm" onclick="closeCeQaModal()">Cancel</button>
+          <button class="btn btn-p btn-sm" id="vqaSubmitBtn" onclick="submitVqaEntry()" disabled style="opacity:.5">Save to QA Log</button>
         </div>
       </div>
-      <hr style="border:none;border-top:1px solid #d6dfe8;margin:14px 0">
-      <div style="display:-ms-flexbox;display:flex;-ms-flex-align:center;align-items:center;-ms-flex-pack:justify;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:12px;font-weight:700;color:#1a1d21">QA Log (<span id="ceQaLogCount">0</span> entries)</span>
-        <button class="btn-qa" onclick="exportCeQaLog()">&#8659; Export CSV</button>
-      </div>
-      <div id="ceQaLogArea"><div style="font-size:12px;color:#a0aab4;font-style:italic">No entries yet.</div></div>
     </div>
   </div>
 </div>
@@ -250,14 +310,15 @@
 
 
 <!-- Tool identity footer (item 16) -->
-<div id="toolIdentityFooter" style="padding:8px 16px;font-size:10px;color:#8b919a;border-top:1px solid #dde1e6;background:#fff;display:flex;align-items:center;gap:12px;flex-shrink:0;">
+<div id="toolIdentityFooter" style="padding:6px 16px;font-size:10px;color:#8b919a;border-top:1px solid #dde1e6;background:#fff;display:flex;align-items:center;gap:12px;flex-shrink:0;">
   <span>CRR Criteria Viewer v5.3.0</span>
   <span style="color:#dde1e6">·</span>
   <span id="footerContentVer">content v4.0.1</span>
   <span style="color:#dde1e6">·</span>
   <span>Health New Zealand | Te Whatu Ora — CRR Programme</span>
   <span style="color:#dde1e6">·</span>
-  <span class="data-source-badge" id="dataSourceBadge" style="margin-left:auto"></span>
+  <span class="data-source-badge" id="dataSourceBadge"></span>
+  <button class="btn-qa" id="vqaOpenBtn" onclick="openVqa()" title="Rate the accuracy of the criteria displayed" style="margin-left:auto">&#9733; QA</button>
 </div>
 
 <textarea id="clipHelper" readonly></textarea>
@@ -1324,29 +1385,29 @@ function toolRenderIndicCb(item, tier, groupTitle) {
 function toolRenderSitePanel(site, exam) {
   var siteHpUrl = getHealthPathwaysUrl(site);
   var h = "<div class='card'>";
-  var examPart = (exam && exam.title) ? exam.title + " " : "";
-  var leftLabel = isPassive ? "Criteria Reference" : ("Select " + examPart + site.label + " Indicators");
   h += "<div class='crit-panel-hd'>";
-  h += "<span class='crit-panel-hd-left'>" + esc(leftLabel) + "</span>";
+  h += "<span class='crit-panel-hd-left'>&#128196; Criteria Reference</span>";
   h += "<span style='display:flex;align-items:center;gap:10px'>";
   if (siteHpUrl) {
     h += "<a href='" + esc(siteHpUrl) + "' target='_blank' class='crit-panel-hd-link'>View HealthPathways &#8250;</a>";
   }
   h += "</span></div>";
   h += "<div class='card-bd'>";
+  var _examTitle = (exam && exam.title) ? exam.title + " — " + site.label : site.label;
+  var _pageRef = site.page ? "<span style='font-size:10px;font-weight:700;color:var(--accent);background:var(--lite);padding:2px 7px;border-radius:2px;border:1px solid var(--rule);margin-left:6px'>&#128196; p" + site.page + "</span>" : "";
+  h += "<div style='font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px;display:flex;align-items:center'>" + esc(_examTitle) + _pageRef + "</div>";
 
   if (site.inlineGuidance) {
-    h += "<div class='ib-green'>" + esc(site.inlineGuidance);
-    // Standalone: HP link stays in guide block (item 19)
-    if (!isIntegration && siteHpUrl) h += " <a href='" + esc(siteHpUrl) + "' target='_blank' style='color:#2a7a40;font-weight:600'>View HealthPathways &#8250;</a>";
+    h += "<div class='guidance-box'>" + esc(site.inlineGuidance);
+    if (!isIntegration && siteHpUrl) h += " <a href='" + esc(siteHpUrl) + "' target='_blank' style='color:var(--accent);font-weight:600'>View HealthPathways &#8250;</a>";
     if (window._currentGuidNarr) {
       var _gnId = "guidNarr_" + (site.id||"x").replace(/[^a-zA-Z0-9_]/g, "_");
-      h += "<div style='margin-top:6px'><a href='javascript:void(0)' id='" + _gnId + "_lnk' style='font-size:11px;color:#2a7a40;text-decoration:none;font-weight:600' onclick='toggleGuidNarr(\"" + _gnId + "\")'>More detail &#8250;</a>";
-      h += "<div id='" + _gnId + "' style='display:none;border-top:1px solid #c8e6c9;padding-top:8px;margin-top:6px;font-size:12px;color:#1a4a28'>" + esc(window._currentGuidNarr) + "</div></div>";
+      h += "<div style='margin-top:6px'><a href='javascript:void(0)' id='" + _gnId + "_lnk' style='font-size:11px;color:var(--accent);text-decoration:none;font-weight:600' onclick='toggleGuidNarr(\"" + _gnId + "\")'>More detail &#8250;</a>";
+      h += "<div id='" + _gnId + "' style='display:none;border-top:1px solid var(--rule);padding-top:8px;margin-top:6px;font-size:12px;color:var(--mid)'>" + esc(window._currentGuidNarr) + "</div></div>";
     }
     h += "</div>";
   } else if (!isIntegration && siteHpUrl) {
-    h += "<div class='ib-green'><a href='" + esc(siteHpUrl) + "' target='_blank' style='color:#2a7a40;font-weight:600'>View HealthPathways &#8250;</a></div>";
+    h += "<div class='guidance-box'><a href='" + esc(siteHpUrl) + "' target='_blank' style='color:var(--accent);font-weight:600'>View HealthPathways &#8250;</a></div>";
   }
   var siteLi = getLocalisedInfo(site.id);
   if (siteLi) h += "<div class='local-info-box'><div class='local-hd'>" + esc(getRegionLabel()) + "</div>" + esc(siteLi) + "</div>";
@@ -1394,16 +1455,17 @@ function toolRenderSitePanel(site, exam) {
 
 function toolRenderSinglesite(exam) {
   var examHpUrl = getHealthPathwaysUrl(exam);
-  var leftLabel = isPassive ? "Criteria Reference" : ("Select " + exam.title + " Indicators");
   var h = "<div class='card'>";
   h += "<div class='crit-panel-hd'>";
-  h += "<span class='crit-panel-hd-left'>" + esc(leftLabel) + "</span>";
+  h += "<span class='crit-panel-hd-left'>&#128196; Criteria Reference</span>";
   h += "<span style='display:flex;align-items:center;gap:10px'>";
   if (examHpUrl) {
     h += "<a href='" + esc(examHpUrl) + "' target='_blank' class='crit-panel-hd-link'>View HealthPathways &#8250;</a>";
   }
   h += "</span></div>";
   h += "<div class='card-bd'>";
+  var _pageRef = exam.page ? "<span style='font-size:10px;font-weight:700;color:var(--accent);background:var(--lite);padding:2px 7px;border-radius:2px;border:1px solid var(--rule);margin-left:6px'>&#128196; p" + exam.page + "</span>" : "";
+  h += "<div style='font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px;display:flex;align-items:center'>" + esc(exam.title) + _pageRef + "</div>";
   var emergencyItems = [];
   var nonEmergencyGroups = [];
   for (var g = 0; g < exam.groups.length; g++) {
@@ -1443,26 +1505,28 @@ function toolRenderSinglesite(exam) {
 function toolRenderSitePanelPassive(site, exam) {
   var siteHpUrl = getHealthPathwaysUrl(site);
   var h = "<div class='card'>";
-  var examPart = (exam && exam.title) ? exam.title + " " : "";
   h += "<div class='crit-panel-hd'>";
-  h += "<span class='crit-panel-hd-left'>" + esc("Criteria Reference — " + examPart + site.label) + "</span>";
+  h += "<span class='crit-panel-hd-left'>&#128196; Criteria Reference</span>";
   h += "<span style='display:flex;align-items:center;gap:10px'>";
   if (siteHpUrl) {
     h += "<a href='" + esc(siteHpUrl) + "' target='_blank' class='crit-panel-hd-link'>View HealthPathways &#8250;</a>";
   }
   h += "</span></div>";
   h += "<div class='card-bd'>";
+  var _examTitleP = (exam && exam.title) ? exam.title + " — " + site.label : site.label;
+  var _pageRefP = site.page ? "<span style='font-size:10px;font-weight:700;color:var(--accent);background:var(--lite);padding:2px 7px;border-radius:2px;border:1px solid var(--rule);margin-left:6px'>&#128196; p" + site.page + "</span>" : "";
+  h += "<div style='font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px;display:flex;align-items:center'>" + esc(_examTitleP) + _pageRefP + "</div>";
   if (site.inlineGuidance) {
-    h += "<div class='ib-green'>" + esc(site.inlineGuidance);
-    if (!isIntegration && siteHpUrl) h += " <a href='" + esc(siteHpUrl) + "' target='_blank' style='color:#2a7a40;font-weight:600'>View HealthPathways &#8250;</a>";
+    h += "<div class='guidance-box'>" + esc(site.inlineGuidance);
+    if (!isIntegration && siteHpUrl) h += " <a href='" + esc(siteHpUrl) + "' target='_blank' style='color:var(--accent);font-weight:600'>View HealthPathways &#8250;</a>";
     if (window._currentGuidNarr) {
       var _gnIdP = "guidNarrP_" + (site.id||"x").replace(/[^a-zA-Z0-9_]/g, "_");
-      h += "<div style='margin-top:6px'><a href='javascript:void(0)' id='" + _gnIdP + "_lnk' style='font-size:11px;color:#2a7a40;text-decoration:none;font-weight:600' onclick='toggleGuidNarr(\"" + _gnIdP + "\")'>More detail &#8250;</a>";
-      h += "<div id='" + _gnIdP + "' style='display:none;border-top:1px solid #c8e6c9;padding-top:8px;margin-top:6px;font-size:12px;color:#1a4a28'>" + esc(window._currentGuidNarr) + "</div></div>";
+      h += "<div style='margin-top:6px'><a href='javascript:void(0)' id='" + _gnIdP + "_lnk' style='font-size:11px;color:var(--accent);text-decoration:none;font-weight:600' onclick='toggleGuidNarr(\"" + _gnIdP + "\")'>More detail &#8250;</a>";
+      h += "<div id='" + _gnIdP + "' style='display:none;border-top:1px solid var(--rule);padding-top:8px;margin-top:6px;font-size:12px;color:var(--mid)'>" + esc(window._currentGuidNarr) + "</div></div>";
     }
     h += "</div>";
   } else if (!isIntegration && siteHpUrl) {
-    h += "<div class='ib-green'><a href='" + esc(siteHpUrl) + "' target='_blank' style='color:#2a7a40;font-weight:600'>View HealthPathways &#8250;</a></div>";
+    h += "<div class='guidance-box'><a href='" + esc(siteHpUrl) + "' target='_blank' style='color:var(--accent);font-weight:600'>View HealthPathways &#8250;</a></div>";
   }
   var emergencyItems = [];
   var nonEmergencyGroups = [];
@@ -1488,13 +1552,15 @@ function toolRenderSinglesitePassive(exam) {
   var examHpUrl = getHealthPathwaysUrl(exam);
   var h = "<div class='card'>";
   h += "<div class='crit-panel-hd'>";
-  h += "<span class='crit-panel-hd-left'>" + esc("Criteria Reference — " + exam.title) + "</span>";
+  h += "<span class='crit-panel-hd-left'>&#128196; Criteria Reference</span>";
   h += "<span style='display:flex;align-items:center;gap:10px'>";
   if (examHpUrl) {
     h += "<a href='" + esc(examHpUrl) + "' target='_blank' class='crit-panel-hd-link'>View HealthPathways &#8250;</a>";
   }
   h += "</span></div>";
   h += "<div class='card-bd'>";
+  var _pageRef2 = exam.page ? "<span style='font-size:10px;font-weight:700;color:var(--accent);background:var(--lite);padding:2px 7px;border-radius:2px;border:1px solid var(--rule);margin-left:6px'>&#128196; p" + exam.page + "</span>" : "";
+  h += "<div style='font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px;display:flex;align-items:center'>" + esc(exam.title) + _pageRef2 + "</div>";
   var emergencyItems = [];
   var nonEmergencyGroups = [];
   for (var g = 0; g < exam.groups.length; g++) {
@@ -2066,111 +2132,183 @@ function handleCopyAll() {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  QA / CE LOG
+//  VIEWER QA SYSTEM
 // ══════════════════════════════════════════════════════════════
-function openCeQa() {
-  var exam = getExamById(TS.examId);
-  ceQaActive = {
-    examId: TS.examId,
-    examTitle: exam ? exam.title : TS.examId,
-    score: 0,
-    comment: "",
-    ts: new Date().toISOString(),
-    indicators: getAllChecked().map(function(it){ return it.label; })
-  };
-  var lbl = document.getElementById("ceQaExamLabel");
-  if (lbl) lbl.textContent = "Exam: " + (exam ? exam.title : TS.examId) + " — " + ceQaActive.indicators.length + " indicator(s) selected";
-  setCeQaScore(0);
-  var cm = document.getElementById("ceQaComment");
-  if (cm) cm.value = "";
-  renderCeQaLog();
-  var modal = document.getElementById("ceQaModal");
-  if (modal) modal.className = "qa-modal-overlay open";
-}
 
-function openCeQaLog() {
-  ceQaActive = null;
-  var lbl = document.getElementById("ceQaExamLabel");
-  if (lbl) lbl.textContent = "";
-  setCeQaScore(0);
-  var cm = document.getElementById("ceQaComment");
-  if (cm) cm.value = "";
-  renderCeQaLog();
-  var modal = document.getElementById("ceQaModal");
-  if (modal) modal.className = "qa-modal-overlay open";
+var vqaRole = '';
+var vqaScores = { accuracy: null, usability: null, value: null };
+var vqaSessionCount = 0;
+
+var VQA_SESSION_ID = (function(){
+  try {
+    var id = sessionStorage.getItem('crr-qa-session-id');
+    if (!id) {
+      id = 'sess_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+      sessionStorage.setItem('crr-qa-session-id', id);
+    }
+    return id;
+  } catch(e) { return 'sess_' + Math.random().toString(36).slice(2, 10); }
+})();
+
+function openVqa() {
+  vqaRole = '';
+  vqaScores = { accuracy: null, usability: null, value: null };
+
+  // Pre-populate from localStorage
+  try {
+    var savedName = localStorage.getItem('crr-qa-reviewer-name');
+    var savedRole = localStorage.getItem('crr-qa-reviewer-role');
+    var nameEl = document.getElementById('vqaReviewerName');
+    if (nameEl && savedName) nameEl.value = savedName;
+    if (savedRole) setVqaRole(savedRole);
+  } catch(e) {}
+
+  // Reset score buttons and checklist
+  document.querySelectorAll('.qa-3way-btn').forEach(function(b){ b.classList.remove('sel'); });
+  document.querySelectorAll('#vqaChecklist input[type=checkbox]').forEach(function(cb){ cb.checked = false; });
+  var cm = document.getElementById('vqaComments');
+  if (cm) cm.value = '';
+
+  // Auto-populate exam label
+  var exam = getExamById(TS.examId);
+  var siteKeys = Object.keys(TS.sites || {});
+  var siteLabel = '';
+  if (exam && exam.type === 'multisite' && siteKeys.length) {
+    var site = (exam.sites || []).find(function(s){ return TS.sites[s.id]; });
+    siteLabel = site ? exam.title + ' — ' + site.label : exam.title;
+  } else if (exam) {
+    siteLabel = exam.title;
+  }
+  var regionLbl = getRegionLabel();
+  var fullLabel = siteLabel + (regionLbl ? ' · ' + regionLbl : '');
+  var lblEl = document.getElementById('vqaExamLabel');
+  if (lblEl) lblEl.textContent = fullLabel || '(no exam selected)';
+
+  var countEl = document.getElementById('vqaEntryCount');
+  if (countEl) countEl.textContent = 'You have submitted ' + vqaSessionCount + (vqaSessionCount === 1 ? ' QA review' : ' QA reviews') + ' this session';
+
+  checkVqaSubmitEnabled();
+  var modal = document.getElementById('ceQaModal');
+  if (modal) modal.className = 'qa-modal-overlay open';
 }
 
 function closeCeQaModal() {
-  var modal = document.getElementById("ceQaModal");
-  if (modal) modal.className = "qa-modal-overlay";
+  var modal = document.getElementById('ceQaModal');
+  if (modal) modal.className = 'qa-modal-overlay';
 }
 
-function setCeQaScore(n) {
-  if (ceQaActive) ceQaActive.score = n;
-  for (var i = 1; i <= 5; i++) {
-    var btn = document.getElementById("qastar" + i);
-    if (btn) {
-      if (i <= n) btn.className = "qa-star-btn on";
-      else btn.className = "qa-star-btn";
-    }
+function setVqaRole(val) {
+  vqaRole = val;
+  document.querySelectorAll('#vqaRoleGroup .qa-role-btn').forEach(function(b){
+    b.classList.toggle('sel', b.getAttribute('data-val') === val);
+  });
+  var otherEl = document.getElementById('vqaRoleOther');
+  if (otherEl) otherEl.style.display = (val === 'Other') ? 'block' : 'none';
+  var isSimple = (val === 'GP' || val === 'Nurse Practitioner');
+  var accRow = document.getElementById('vqaAccuracyRow');
+  var ckSection = document.getElementById('vqaChecklistSection');
+  if (accRow) accRow.style.display = isSimple ? 'none' : '';
+  if (ckSection) ckSection.style.display = isSimple ? 'none' : '';
+  if (isSimple) {
+    vqaScores.accuracy = null;
+    document.querySelectorAll('#vqaGroup_accuracy .qa-3way-btn').forEach(function(b){ b.classList.remove('sel'); });
   }
+  checkVqaSubmitEnabled();
 }
 
-function saveCeQaEntry() {
-  if (!ceQaActive) { showToolStatus("No active QA entry.", "warn"); return; }
-  if (!ceQaActive.score) { showToolStatus("Please select a score (1-5 stars) before saving.", "warn"); return; }
-  var cm = document.getElementById("ceQaComment");
-  ceQaActive.comment = cm ? cm.value : "";
-  ceQaActive.ts = new Date().toISOString();
-  ceQaLog.push(ceQaActive);
-  ceQaActive = null;
-  renderCeQaLog();
-  var lbl = document.getElementById("ceQaExamLabel");
-  if (lbl) lbl.textContent = "Entry saved.";
-  setCeQaScore(0);
-  if (cm) cm.value = "";
-  showToolStatus("&#10003; QA entry saved.", "success");
+function setVqaScore(dim, val) {
+  vqaScores[dim] = val;
+  var group = document.getElementById('vqaGroup_' + dim);
+  if (group) group.querySelectorAll('.qa-3way-btn').forEach(function(b){
+    b.classList.toggle('sel', b.getAttribute('data-v') === val);
+  });
+  checkVqaSubmitEnabled();
 }
 
-function renderCeQaLog() {
-  var area = document.getElementById("ceQaLogArea");
-  var countEl = document.getElementById("ceQaLogCount");
-  if (countEl) countEl.textContent = ceQaLog.length;
-  if (!area) return;
-  if (!ceQaLog.length) {
-    area.innerHTML = "<div style='font-size:12px;color:#a0aab4;font-style:italic'>No entries yet.</div>";
+function checkVqaSubmitEnabled() {
+  var isSimple = (vqaRole === 'GP' || vqaRole === 'Nurse Practitioner');
+  var ok = !!(vqaRole && vqaScores.usability && vqaScores.value && (isSimple || vqaScores.accuracy));
+  var btn = document.getElementById('vqaSubmitBtn');
+  if (btn) { btn.disabled = !ok; btn.style.opacity = ok ? '1' : '.5'; }
+}
+
+function ck(id) {
+  var el = document.getElementById(id);
+  return el ? el.checked : false;
+}
+
+function submitVqaEntry() {
+  var reviewerName = (document.getElementById('vqaReviewerName').value || '').trim();
+  var reviewerRole = vqaRole === 'Other'
+    ? ((document.getElementById('vqaRoleOther').value || '').trim() || 'Other')
+    : vqaRole;
+  if (!reviewerName || !reviewerRole) {
+    alert('Please enter your name and select your role.');
     return;
   }
-  var h = "<table class='qa-log-table'><thead><tr><th>Time</th><th>Exam</th><th>Score</th><th>Comment</th></tr></thead><tbody>";
-  for (var i = ceQaLog.length - 1; i >= 0; i--) {
-    var e = ceQaLog[i];
-    var dt = e.ts ? e.ts.replace("T"," ").substring(0,16) : "";
-    var stars = "";
-    for (var s = 1; s <= 5; s++) stars += (s <= e.score) ? "&#9733;" : "&#9734;";
-    h += "<tr><td style='white-space:nowrap'>" + esc(dt) + "</td><td>" + esc(e.examTitle||e.examId) + "</td><td style='color:#f0a020'>" + stars + "</td><td>" + esc(e.comment||"") + "</td></tr>";
-  }
-  h += "</tbody></table>";
-  area.innerHTML = h;
-}
 
-function exportCeQaLog() {
-  if (!ceQaLog.length) { showToolStatus("No QA entries to export.", "warn"); return; }
-  var rows = ["Timestamp,Exam,Score,Comment,Indicators"];
-  for (var i = 0; i < ceQaLog.length; i++) {
-    var e = ceQaLog[i];
-    var indStr = (e.indicators || []).join("; ").replace(/"/g, '""');
-    var cm = (e.comment||"").replace(/"/g, '""');
-    var examStr = (e.examTitle||e.examId||"").replace(/"/g, '""');
-    rows.push('"' + e.ts + '","' + examStr + '",' + e.score + ',"' + cm + '","' + indStr + '"');
+  try { localStorage.setItem('crr-qa-reviewer-name', reviewerName); } catch(e) {}
+  try { localStorage.setItem('crr-qa-reviewer-role', reviewerRole); } catch(e) {}
+
+  var exam = getExamById(TS.examId);
+  var siteKeys = Object.keys(TS.sites || {});
+  var siteCode = siteKeys.length ? siteKeys[0] : (TS.examId || '');
+  var siteLabel = '';
+  if (exam && exam.type === 'multisite' && siteKeys.length) {
+    var site = (exam.sites || []).find(function(s){ return TS.sites[s.id]; });
+    siteLabel = site ? exam.title + ' — ' + site.label : exam.title;
+  } else if (exam) {
+    siteLabel = exam.title;
   }
-  var csv = rows.join("\r\n");
-  var ta = document.getElementById("clipHelper");
-  ta.value = csv;
-  ta.style.position = "fixed"; ta.style.left = "0"; ta.style.top = "0";
-  ta.style.width = "100px"; ta.style.height = "50px";
-  ta.removeAttribute("readonly"); ta.focus(); ta.select();
-  try { document.execCommand("copy"); showToolStatus("&#10003; QA log CSV copied to clipboard.", "success"); } catch(ex) { showToolStatus("Could not copy CSV — try a modern browser.", "error"); }
-  ta.setAttribute("readonly",""); ta.style.position = "absolute"; ta.style.left = "-9999px";
+
+  var isSimple = (reviewerRole === 'GP' || reviewerRole === 'Nurse Practitioner');
+  var payload = {
+    timestamp: new Date().toISOString(),
+    session_id: VQA_SESSION_ID,
+    reviewer_name: reviewerName,
+    reviewer_role: reviewerRole,
+    exam_type: (exam && exam.modality) ? exam.modality.toLowerCase() : '',
+    site_code: siteCode,
+    site_label: siteLabel,
+    region: selectedRegion || '',
+    view_mode: viewLayout || null,
+    score_accuracy: isSimple ? null : vqaScores.accuracy,
+    score_usability: vqaScores.usability,
+    score_value: vqaScores.value,
+    checklist_criteria_correct: isSimple ? null : ck('vqaCk_criteria'),
+    checklist_priority_correct: isSimple ? null : ck('vqaCk_priority'),
+    checklist_gateway_correct: isSimple ? null : ck('vqaCk_gateway'),
+    checklist_labvalue_correct: isSimple ? null : ck('vqaCk_labvalue'),
+    checklist_altmgmt_correct: isSimple ? null : ck('vqaCk_altmgmt'),
+    checklist_notfunded_correct: isSimple ? null : ck('vqaCk_notfunded'),
+    checklist_guidance_correct: isSimple ? null : ck('vqaCk_guidance'),
+    checklist_healthpathways_works: isSimple ? null : ck('vqaCk_hp'),
+    checklist_groupings_correct: isSimple ? null : ck('vqaCk_groupings'),
+    comments: (document.getElementById('vqaComments').value || '').trim() || null
+  };
+
+  closeCeQaModal();
+  vqaSessionCount++;
+
+  // Update badge on QA button
+  var qaBtn = document.getElementById('vqaOpenBtn');
+  if (qaBtn) {
+    var badge = qaBtn.querySelector('.qa-count-badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'qa-count-badge';
+      qaBtn.appendChild(badge);
+    }
+    badge.textContent = vqaSessionCount;
+  }
+
+  showToolStatus('&#10003; QA review submitted. ' + vqaSessionCount + (vqaSessionCount === 1 ? ' review' : ' reviews') + ' this session.', 'success');
+
+  fetch('https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/qa-viewer-review', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).catch(function(e) { console.warn('Viewer QA submission failed:', e); });
 }
 function handleClear() {
   TS.cbs = {}; TS.radios = {}; TS.notes = "";
