@@ -323,6 +323,14 @@ function CRRAdmin() {
           </button>
         ))}
       </div>
+      {/* Draft state banner */}
+      <div style={{background:dirty?"#fff3cd":"#e8f4fd",borderBottom:`1px solid ${dirty?"#ffe082":"#bee3f8"}`,padding:"6px 20px",fontSize:12,color:dirty?"#7a4f00":"#1a5276",display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+        <span style={{fontSize:14}}>{dirty?"⚠️":"ℹ️"}</span>
+        {dirty
+          ? <span><strong>Unsaved changes</strong> — these are only visible to you. Save your edits, then publish from the <strong>Versions</strong> tab to make them live.</span>
+          : <span>Changes are saved to a <strong>local working copy</strong> and are only visible to you until you publish from the <strong>Versions</strong> tab.</span>
+        }
+      </div>
       {/* Content */}
       <div style={{flex:1,overflow:"hidden"}}>
         {tab==="editor" && <EditorTab criteria={criteria} selected={selected} setSelected={setSelected} dirty={dirty} setDirty={setDirty} show={show} updateCriteriaItem={updateCriteriaItem} />}
