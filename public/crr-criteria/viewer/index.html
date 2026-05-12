@@ -318,7 +318,7 @@ body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
   <span>Health New Zealand | Te Whatu Ora — CRR Programme</span>
   <span style="color:#dde1e6">·</span>
   <span class="data-source-badge" id="dataSourceBadge"></span>
-  <button class="btn-qa" id="vqaOpenBtn" onclick="openVqa()" title="Rate the accuracy of the criteria displayed" style="margin-left:auto">&#9733; QA</button>
+  <button class="btn-qa" id="vqaOpenBtn" onclick="openVqa()" title="Rate the accuracy of the criteria displayed" style="margin-left:auto">Submit Feedback</button>
 </div>
 
 <textarea id="clipHelper" readonly></textarea>
@@ -1399,15 +1399,12 @@ function toolRenderSitePanel(site, exam) {
 
   if (site.inlineGuidance) {
     h += "<div class='guidance-box'>" + esc(site.inlineGuidance);
-    if (!isIntegration && siteHpUrl) h += " <a href='" + esc(siteHpUrl) + "' target='_blank' style='color:var(--accent);font-weight:600'>View HealthPathways &#8250;</a>";
     if (window._currentGuidNarr) {
       var _gnId = "guidNarr_" + (site.id||"x").replace(/[^a-zA-Z0-9_]/g, "_");
       h += "<div style='margin-top:6px'><a href='javascript:void(0)' id='" + _gnId + "_lnk' style='font-size:11px;color:var(--accent);text-decoration:none;font-weight:600' onclick='toggleGuidNarr(\"" + _gnId + "\")'>More detail &#8250;</a>";
       h += "<div id='" + _gnId + "' style='display:none;border-top:1px solid var(--rule);padding-top:8px;margin-top:6px;font-size:12px;color:var(--mid)'>" + esc(window._currentGuidNarr) + "</div></div>";
     }
     h += "</div>";
-  } else if (!isIntegration && siteHpUrl) {
-    h += "<div class='guidance-box'><a href='" + esc(siteHpUrl) + "' target='_blank' style='color:var(--accent);font-weight:600'>View HealthPathways &#8250;</a></div>";
   }
   var siteLi = getLocalisedInfo(site.id);
   if (siteLi) h += "<div class='local-info-box'><div class='local-hd'>" + esc(getRegionLabel()) + "</div>" + esc(siteLi) + "</div>";
@@ -1518,15 +1515,12 @@ function toolRenderSitePanelPassive(site, exam) {
   h += "<div style='font-size:14px;font-weight:700;color:var(--navy);margin-bottom:6px;display:flex;align-items:center'>" + esc(_examTitleP) + _pageRefP + "</div>";
   if (site.inlineGuidance) {
     h += "<div class='guidance-box'>" + esc(site.inlineGuidance);
-    if (!isIntegration && siteHpUrl) h += " <a href='" + esc(siteHpUrl) + "' target='_blank' style='color:var(--accent);font-weight:600'>View HealthPathways &#8250;</a>";
     if (window._currentGuidNarr) {
       var _gnIdP = "guidNarrP_" + (site.id||"x").replace(/[^a-zA-Z0-9_]/g, "_");
       h += "<div style='margin-top:6px'><a href='javascript:void(0)' id='" + _gnIdP + "_lnk' style='font-size:11px;color:var(--accent);text-decoration:none;font-weight:600' onclick='toggleGuidNarr(\"" + _gnIdP + "\")'>More detail &#8250;</a>";
       h += "<div id='" + _gnIdP + "' style='display:none;border-top:1px solid var(--rule);padding-top:8px;margin-top:6px;font-size:12px;color:var(--mid)'>" + esc(window._currentGuidNarr) + "</div></div>";
     }
     h += "</div>";
-  } else if (!isIntegration && siteHpUrl) {
-    h += "<div class='guidance-box'><a href='" + esc(siteHpUrl) + "' target='_blank' style='color:var(--accent);font-weight:600'>View HealthPathways &#8250;</a></div>";
   }
   var emergencyItems = [];
   var nonEmergencyGroups = [];

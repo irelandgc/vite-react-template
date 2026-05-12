@@ -13,8 +13,8 @@ This document covers everything needed to embed or link to the CRR Criteria tool
 
 | Tool | URL |
 |------|-----|
-| Criteria Viewer | `https://vite-react-template.fk4dsrmq5r.workers.dev/crr-criteria/viewer/` |
-| Triage Advisor | `https://vite-react-template.fk4dsrmq5r.workers.dev/crr-criteria/triage/` |
+| Criteria Viewer | `https://iteratio.nz/crr-criteria/viewer/` |
+| Triage Advisor | `https://iteratio.nz/crr-criteria/triage/` |
 
 Both tools load criteria data from the API at runtime and require no local installation.
 
@@ -57,7 +57,7 @@ window.addEventListener('message', function(event) {
 
 ```javascript
 window.open(
-  'https://vite-react-template.fk4dsrmq5r.workers.dev/crr-criteria/viewer/'
+  'https://iteratio.nz/crr-criteria/viewer/'
   + '?exam=ct&sites=ct_head&region=aucklandregion&sendButton=on',
   'crr-viewer',
   'width=960,height=720,resizable=yes,scrollbars=yes'
@@ -108,7 +108,7 @@ The Triage Advisor posts the same message format as the Viewer:
 ```javascript
 var noteText = document.getElementById('referralNote').value;
 window.open(
-  'https://vite-react-template.fk4dsrmq5r.workers.dev/crr-criteria/triage/'
+  'https://iteratio.nz/crr-criteria/triage/'
   + '?presentation=' + encodeURIComponent(noteText) + '&sendButton=on',
   'crr-triage',
   'width=1100,height=760,resizable=yes,scrollbars=yes'

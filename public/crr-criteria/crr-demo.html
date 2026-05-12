@@ -548,7 +548,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-var BASE = 'https://vite-react-template.fk4dsrmq5r.workers.dev/crr-criteria';
+var BASE = 'https://iteratio.nz/crr-criteria';
 var DEFAULTS = { tool:'popup', mode:'passive', platform:'healthlink', hlExam:'us', region:'3d', launch:'popup', scenario:null };
 var config = JSON.parse(JSON.stringify(DEFAULTS));
 try { var s = localStorage.getItem('crr-demo-config'); if(s) { var p = JSON.parse(s); for(var k in p) config[k]=p[k]; } } catch(e) {}
@@ -795,7 +795,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal()
 // The popup/viewer sends: window.opener.postMessage({ type: 'crr-output', text: '...', source: 'viewer'|'triage' }, '*')
 // In a real integration, HealthLink/BPAC/ERMS would add this same listener to their form page.
 window.addEventListener('message', function(event) {
-    // In production you'd check: if (event.origin !== 'https://your-tool-domain.workers.dev') return;
+    // In production you'd check: if (event.origin !== 'https://iteratio.nz') return;
     if (!event.data) return;
     if (event.data.type === 'crr-output') receiveCRROutput(event.data);
     if (event.data.type === 'crr-close') closeModal();

@@ -1360,12 +1360,6 @@ function renderMatchCard(r, idx) {
     h += '<div class="guidance-box" style="margin-top:8px">' + esc(site.guidance) + '</div>';
   }
 
-  // HealthPathways link
-  var _hpUrl = getHpUrl(site);
-  if (_hpUrl) {
-    h += '<div style="margin-top:6px"><a href="' + _hpUrl + '" target="_blank" rel="noopener" style="font-size:11px;font-weight:600;color:var(--teal);text-decoration:none">View HealthPathways ›</a></div>';
-  }
-
   // Alternative management — important for redirects
   if (site.alternativeManagement) {
     h += '<div class="alt-mgmt-box" style="margin-top:6px"><strong style="display:block;margin-bottom:2px;font-size:10px;letter-spacing:0.4px;text-transform:uppercase;">Alternative management / redirect</strong>' + esc(site.alternativeManagement) + '</div>';
@@ -2110,13 +2104,7 @@ function renderCriteriaBrowser(r) {
   // Guidance box — prefer guidanceNarrative (fuller version); fall back to guidance
   var _guideText = site.guidanceNarrative || site.guidance;
   if (_guideText) {
-    h += '<div class="guidance-box" style="margin:8px 0 4px">' + esc(_guideText);
-    if (_hpUrlRef) {
-      h += ' <a href="' + _hpUrlRef + '" target="_blank" rel="noopener" style="color:#2a7a40;font-weight:600;white-space:nowrap;text-decoration:none">View HealthPathways &rsaquo;</a>';
-    }
-    h += '</div>';
-  } else if (_hpUrlRef) {
-    h += '<div class="guidance-box" style="margin:8px 0 4px"><a href="' + _hpUrlRef + '" target="_blank" rel="noopener" style="color:#2a7a40;font-weight:600;text-decoration:none">View HealthPathways &rsaquo;</a></div>';
+    h += '<div class="guidance-box" style="margin:8px 0 4px">' + esc(_guideText) + '</div>';
   }
   if (_guideText || _hpUrlRef) h += '<div style="margin-bottom:10px"></div>';
 
@@ -2285,7 +2273,7 @@ function renderAIResult(r) {
       h += '<button class="btn-send-assessment" onclick="sendAssessmentToForm()" style="flex:0 0 auto;padding:10px 14px;background:var(--teal);color:#fff;border:none;font-family:var(--sans);font-size:12px;font-weight:600;border-radius:2px;cursor:pointer">&#8593; Send to Form</button>';
     }
   }
-  h += '<button class="btn-qa" onclick="openQaModal()" title="Rate the accuracy of this assessment for clinical QA">&#9733; QA</button>';
+  h += '<button class="btn-qa" onclick="openQaModal()" title="Rate the accuracy of this assessment for clinical QA">Submit Feedback</button>';
   h += '</div>';
   h += '</div></div>';
 

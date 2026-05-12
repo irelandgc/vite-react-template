@@ -14,7 +14,7 @@ Internal reference — not for external distribution. Contains infrastructure de
 | Component | Details |
 |-----------|---------|
 | Main site worker | `vite-react-template` on Cloudflare Workers |
-| Main site URL | `https://vite-react-template.fk4dsrmq5r.workers.dev` |
+| Main site URL | `https://iteratio.nz` |
 | API worker | `crr-criteria-api` on Cloudflare Workers |
 | API URL | `https://crr-criteria-api.fk4dsrmq5r.workers.dev` |
 | D1 database | `crr-criteria` (ID: `1a8307f9-69e9-4315-a8f3-7f6737dd9c55`) |
