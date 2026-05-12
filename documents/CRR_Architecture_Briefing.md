@@ -1,7 +1,7 @@
 # CRR Decision Support Tools — Architecture Briefing
 ## Decoupled Design, Privacy by Design, and Integration Pathway
 
-**Version:** 0.1 · April 2026
+**Version:** 0.2 · May 2026
 **Author:** CRR Programme — Digital & Integration
 **Audience:** CRR Steering Group, HNZ Digital, Cybersecurity Review
 
@@ -68,14 +68,14 @@ The CRR programme deliberately removed tick-box criteria logic from new referral
 │  │                                                                   │   │
 │  │  ┌─────────────────────┐    ┌─────────────────────┐              │   │
 │  │  │  CRR CRITERIA       │    │  CRR TRIAGE          │              │   │
-│  │  │  EXPLORER           │    │  ADVISOR              │              │   │
+│  │  │  VIEWER             │    │  ADVISOR              │              │   │
 │  │  │                     │    │                       │              │   │
 │  │  │  • Browse criteria  │    │  • Paste clinical note│              │   │
 │  │  │  • Self-assess      │    │  • PII auto-redaction │              │   │
-│  │  │  • Copy structured  │    │  • Rule-based check   │              │   │
-│  │  │    text to form     │    │  • AI assessment      │              │   │
+│  │  │  • Copy structured  │    │  • AI assessment      │              │   │
+│  │  │    text to form     │    │    (primary path)     │              │   │
 │  │  │  • HealthPathways   │    │  • "What to add"      │              │   │
-│  │  │    links (10 rgns)  │    │    guidance            │              │   │
+│  │  │    links (8 rgns)   │    │    guidance            │              │   │
 │  │  │                     │    │                       │              │   │
 │  │  │  URL: ?exam=ct_head │    │  No PII leaves       │              │   │
 │  │  │  &region=canterbury │    │  the browser          │              │   │
@@ -90,13 +90,14 @@ The CRR programme deliberately removed tick-box criteria logic from new referral
 │                    CLOUDFLARE EDGE PLATFORM                                │
 │                                                                           │
 │  ┌─────────────────────────────────┐  ┌────────────────────────────────┐ │
-│  │  Cloudflare Pages               │  │  Cloudflare Workers (Hono)     │ │
-│  │  Static hosting                 │  │  API proxy + PII gate          │ │
-│  │  • Criteria Explorer HTML/JS    │  │  • x-admin-key auth            │ │
-│  │  • Triage Advisor HTML/JS       │  │  • Server-side PII detection   │ │
-│  │  • Admin tool                   │  │  • API key secured server-side │ │
-│  └─────────────────────────────────┘  │  • Rejects PII with 422        │ │
-│                                        └──────────────┬─────────────────┘ │
+│  │  Cloudflare Workers (Static)    │  │  Cloudflare Workers (Hono)     │ │
+│  │  Static asset hosting           │  │  API proxy + auth              │ │
+│  │  • Criteria Viewer HTML/JS      │  │  • x-admin-key auth            │ │
+│  │  • Triage Advisor HTML/JS       │  │  • Anthropic API key secured   │ │
+│  │  • Admin tool                   │  │    server-side only            │ │
+│  │  • Demo harness                 │  │  • Usage + QA logging to D1    │ │
+│  └─────────────────────────────────┘  └──────────────┬─────────────────┘ │
+│                                                        │                   │
 │  ┌─────────────────────────────────┐                  │                   │
 │  │  D1 Database + KV Cache         │                  │                   │
 │  │  • Criteria content             │                  │                   │
@@ -104,6 +105,7 @@ The CRR programme deliberately removed tick-box criteria logic from new referral
 │  │  • HealthPathways links         │                  │                   │
 │  │  • Version control              │                  │                   │
 │  │  • Audit log                    │                  │                   │
+│  │  • Triage QA + usage logs       │                  │                   │
 │  └─────────────────────────────────┘                  │                   │
 │                                                        │                   │
 │  ┌─────────────────────────────────┐                  │                   │
@@ -117,7 +119,9 @@ The CRR programme deliberately removed tick-box criteria logic from new referral
                                                          ▼
                                             ┌────────────────────────┐
                                             │  Anthropic API         │
-                                            │  Claude Sonnet         │
+                                            │  Claude Sonnet 4       │
+                                            │  (claude-sonnet-4-     │
+                                            │   20250514)            │
                                             │  • De-identified text  │
                                             │    only                │
                                             │  • Zero data retention │
@@ -146,7 +150,7 @@ A standalone tool linked from each platform achieves the same clinical outcome �
 
 ### 4.2 Two Users, One Source of Truth
 
-The Criteria Explorer serves both user types from the same content:
+The Criteria Viewer serves both user types from the same content via two launch modes:
 
 ```
 ┌─────────────────────────────────┐
@@ -157,20 +161,21 @@ The Criteria Explorer serves both user types from the same content:
         ┌───────┴───────┐
         ▼               ▼
 ┌───────────────┐ ┌───────────────┐
-│   REFERRER    │ │    TRIAGER    │
-│   VIEW        │ │    VIEW       │
+│   PASSIVE     │ │  INTERACTIVE  │
+│   MODE        │ │  MODE         │
 │               │ │               │
-│ • Self-assess │ │ • Reference   │
-│ • Checkboxes  │ │ • Read-only   │
-│ • Copy text   │ │ • Denser      │
-│ • HP links    │ │ • Quick-nav   │
+│ • Read-only   │ │ • Checkboxes  │
+│ • Reference   │ │ • Copy text   │
+│ • Action      │ │ • Send to     │
+│   buttons     │ │   form        │
+│   hidden      │ │ • Clear all   │
 │               │ │               │
-│ ?mode=assess  │ │ ?mode=refer-  │
-│ &region=tmk   │ │  ence         │
+│ ?mode=passive │ │ ?mode=        │
+│ &region=tmk   │ │  interactive  │
 └───────────────┘ └───────────────┘
 ```
 
-If the referrer checks their referral against the criteria in the Explorer, and the triager reviews the same criteria in the same tool, there is guaranteed consistency. A decline is never arbitrary — the triager is applying exactly the criteria the referrer was shown.
+If the referrer checks their referral against the criteria in the Viewer, and the triager reviews the same criteria in the same tool, there is guaranteed consistency. A decline is never arbitrary — the triager is applying exactly the criteria the referrer was shown.
 
 ### 4.3 Privacy by Design — PII Never Leaves the Browser
 
@@ -218,9 +223,9 @@ The Triage Advisor's four-stage PII pipeline ensures patient-identifiable inform
                            ▼
                 ┌──────────────────────┐
                 │ Cloudflare Worker    │
-                │ PII gate (belt &     │
-                │ braces — rejects if  │
-                │ PII detected)        │
+                │ API proxy            │
+                │ (Anthropic key held  │
+                │  server-side only)   │
                 └──────────┬───────────┘
                            │ De-identified clinical scenario
                            ▼
@@ -231,6 +236,8 @@ The Triage Advisor's four-stage PII pipeline ensures patient-identifiable inform
                 │  REDACTED]."         │
                 └──────────────────────┘
 ```
+
+**Note on server-side PII gate:** The client-side four-stage pipeline is the primary PII control. A server-side PII gate in the Cloudflare Worker (which would reject requests where PII is detected after transmission) is a planned enhancement but is not yet implemented. See §9.
 
 **Security classification impact:** Because PII is removed before transmission, the data reaching the Anthropic API is a de-identified clinical scenario — functionally equivalent to a clinician typing a clinical question into HealthPathways search, UpToDate, or Google. The tool has materially stronger PII controls than any of these commonly-used clinical reference tools, yet requires no special security treatment beyond standard web application controls.
 
@@ -279,7 +286,7 @@ The Cloudflare Workers API and D1/KV database that power the standalone tools to
 
 ## 5. Component Summary
 
-### 5.1 CRR Criteria Explorer (v4.0.0)
+### 5.1 CRR Criteria Viewer (v5.3.0)
 
 **Purpose:** Browse and self-assess against National Radiology Access Criteria.
 
@@ -287,12 +294,17 @@ The Cloudflare Workers API and D1/KV database that power the standalone tools to
 
 **Key features:**
 - Modality → body region → criteria navigation
+- Global full-text search across all criteria items (live dropdown, 3+ character trigger)
 - Checkbox-based self-assessment with structured text generation
-- HealthPathways links with regional localisation (10 NZ regions)
+- Left-column summary panel: selected criteria count, urgency determination, notes field, action buttons
+- HealthPathways links with regional localisation (8 NZ regions)
 - Localised information panels per modality and exam type
-- URL parameter launch for context-aware linking from forms
-- Admin/content editor for criteria maintenance
-- Dual mode: assessment view (referrers) and reference view (triagers)
+- URL parameter launch for context-aware linking from forms (`?exam=`, `?region=`, `?mode=`)
+- Two launch modes: `?mode=passive` (read-only reference) and `?mode=interactive` (full interaction)
+- Modal embed mode (`?embed=modal`) for iframe integration with `postMessage` close/output
+- `postMessage` output (`crr-output`) delivers structured criteria text back to the calling form
+- QA/feedback modal collecting reviewer role, usability, and value-in-practice scores (posts to `/api/qa-viewer-review`)
+- Embedded fallback criteria data for offline resilience
 
 **Data:** National Access Criteria stored in D1 database with KV cache. No patient data.
 
@@ -300,47 +312,99 @@ The Cloudflare Workers API and D1/KV database that power the standalone tools to
 
 **Purpose:** AI-assisted assessment of clinical referral notes against access criteria.
 
-**Users:** Referrers (pre-submission check: "will this referral be accepted?").
+**Users:** Referrers (pre-submission check: "will this referral be accepted?") and evaluators during pilot.
 
 **Key features:**
-- Free-text clinical note input
-- Four-stage PII detection and auto-redaction pipeline
-- Rule-based criteria matching (instant, no cost, no API)
-- AI assessment via Claude Sonnet (deeper analysis, "Check with AI" option)
+- Three-column layout: (1) note input + demographics, (2) AI assessment result, (3) criteria reference browser
+- Free-text clinical note input with example scenarios
+- Four-stage PII detection and auto-redaction pipeline (client-side)
+- Paediatric patient detection with automatic switch to paediatric criteria dataset
+- **AI assessment is the primary path** — fires on every "Check Referral" click via `POST /api/triage/assess`
+- Rule-based criteria matching still runs client-side to populate the criteria reference panel (column 3)
 - "What to add" guidance for improving documentation
-- Safety redirect detection (SP-01: redirects before criteria assessment)
-- Model comparison capability for clinical validation
+- Safety redirect detection (fires before criteria assessment — redirects emergency presentations)
+- Temporal ambiguity flagging (identifies uncertain timeframes that need clarification)
+- Live NZD API cost tracker per session with stats modal
+- Model comparison mode: Sonnet 4 vs Opus 4.6 side-by-side with Markdown export
+- User identity prompt (name + role) before first assessment — logged with each assessment
+- Usage logging to D1 (`POST /api/triage/usage-log`): exam, verdict, note, AI summary, tokens, NZD cost
+- QA feedback modal for structured evaluator review (posts to `/api/qa-review`)
+- Prompt caching: the ~21,000-token criteria block is cached server-side, reducing latency after the first call
 
-**Data:** De-identified clinical scenarios processed transiently. No storage. PII blocked at client and server.
+**Data:** De-identified clinical scenarios processed transiently. Assessment content and usage metadata logged to D1 for pilot evaluation. PII blocked by 4-stage client pipeline before any transmission.
 
-### 5.3 Admin Tool (v1.1.0)
+### 5.3 Admin Tool (v1.5.8)
 
-**Purpose:** Maintain criteria content, manage regional localisation, publish updates.
+**Purpose:** Maintain criteria content, manage regional localisation, publish updates, and review evaluation data.
 
-**Users:** Programme team (clinical content editors).
+**Users:** Programme team (clinical content editors) and programme evaluators.
+
+**Eight tabs:**
+
+| Tab | Function |
+|-----|----------|
+| **Criteria Editor** | Add/edit/remove criteria by modality and exam; working copy saved locally until published |
+| **PDF Import** | Bulk criteria updates from national documents; diff mode (change detection) and replace mode (full reimport) |
+| **Regions** | 8 NZ regions with HealthPathways URL override configuration per exam |
+| **Versions** | Version control with publish workflow; rollback to prior versions |
+| **Triage QA** | Review structured QA feedback from Triage Advisor evaluators; filter by reviewer/date/scenario; CSV export |
+| **Viewer QA** | Review structured feedback from Criteria Viewer users; filter by reviewer/date/exam; CSV export |
+| **Usage Log** | Per-assessment usage log from Triage Advisor pilot: user, exam, verdict, note, AI summary, tokens, NZD cost |
+| **Audit Log** | Every create/update/delete/publish/rollback action with actor and timestamp |
+
+**Data:** Criteria content and configuration. QA reviews and usage logs (de-identified clinical content). No patient-identifiable data.
+
+### 5.4 Demo Harness (`crr-demo.html`)
+
+**Purpose:** Demonstrate tool integration for platform stakeholders and gather evaluator feedback.
 
 **Key features:**
-- Criteria editor (add/edit/remove criteria by modality and exam)
-- PDF import for bulk criteria updates from national documents
-- Region management (10 NZ regions with HealthPathways URL configuration)
-- Version control with publish workflow
-- Audit log
+- Two modes: **Explore Tools** (standalone preview in embedded pane) and **Integration Demo** (tool embedded in mock referral form)
+- Mock referral forms: HealthLink SmartForms, BPAC bestpractice, ERMS — all three referral platform UIs
+- `postMessage` listener receives `crr-output` from viewer/triage and inserts structured text into the mock form's clinical notes field
+- `sendButton=on` URL parameter activates Send to Form button in integration context
+- Three tool configurations: popup Criteria Viewer, full Criteria Viewer, Triage Advisor
+- URL debug bar, feedback collection with CSV export, scenario test cards for the Triage Advisor
 
-**Data:** Criteria content and configuration. No patient data.
+**Data:** No data stored. Demo only.
 
-### 5.4 Cloudflare Workers API
+### 5.5 Cloudflare Workers API
 
-**Purpose:** Content service and API proxy.
+**Purpose:** Content service, API proxy, and data logging.
 
-**Endpoints:**
-- `GET /api/criteria` — serve criteria content (public, cacheable)
-- `POST /api/assess` — proxy to Anthropic API with PII gate (authenticated)
-- `POST /api/seed` — admin content management (admin-key auth)
+**Public endpoints (no auth):**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/criteria` | Published criteria snapshot from KV (used by Viewer and Triage Advisor) |
+| `GET` | `/api/criteria/:id` | Single exam/site criteria record |
+| `GET` | `/api/version` | Current published version info |
+| `GET` | `/api/match-data` | Criteria in match format for Triage Advisor rule engine |
+| `GET` | `/api/regions` | Region HealthPathways URL overrides |
+| `POST` | `/api/triage/assess` | Proxy to Anthropic API (Anthropic key stays server-side) |
+| `POST` | `/api/triage/usage-log` | Log each triage assessment (rate-limited 200/hr/IP) |
+| `POST` | `/api/qa-review` | Triage Advisor QA submission (rate-limited 100/hr/IP) |
+| `POST` | `/api/qa-viewer-review` | Criteria Viewer QA submission (rate-limited 100/hr/IP) |
+
+**Admin endpoints (`x-admin-key` or Cloudflare Access JWT required):**
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET/POST/PUT/DELETE` | `/api/admin/criteria[/:id]` | Criteria CRUD on D1 working copy |
+| `GET` | `/api/admin/versions` | List saved version snapshots |
+| `POST` | `/api/admin/versions/:id/publish` | Publish a version snapshot to KV (makes it live) |
+| `POST` | `/api/admin/versions/:id/rollback` | Restore a past version to KV |
+| `POST` | `/api/admin/publish` | Direct publish to KV (bypasses snapshot flow) |
+| `GET/PUT` | `/api/admin/regions[/:regionId]` | Region HealthPathways URL overrides |
+| `POST` | `/api/admin/extract-pdf` | Server-side PDF processing via Anthropic; streams SSE |
+| `GET` | `/api/admin/audit` | Audit log |
+| `GET` | `/api/qa-reviews` | Triage Advisor QA reviews (with filters) |
+| `GET` | `/api/qa-viewer-reviews` | Criteria Viewer QA reviews (with filters) |
+| `GET` | `/api/triage/usage-logs` | Triage usage log entries (with filters) |
 
 **Security:**
-- `x-admin-key` authentication for write operations
-- Cloudflare Access for user-facing tools (SSO/email restriction)
-- Server-side PII gate on `/assess` endpoint
+- `x-admin-key` authentication for all admin write operations
+- Cloudflare Access for the Admin Tool UI (SSO/email restriction)
 - Anthropic API key held server-side only (never in browser)
 - TLS everywhere, WAF, DDoS protection (Cloudflare platform)
 
@@ -363,15 +427,17 @@ The Cloudflare Workers API and D1/KV database that power the standalone tools to
 │  DE-IDENTIFIED CLINICAL SCENARIOS                             │
 │  ├─ Free-text clinical notes with PII removed                 │
 │  └─ Processed transiently by Anthropic API                    │
-│     ► Never stored by CRR tools                               │
 │     ► Anthropic zero-retention API policy                     │
-│     ► PII blocked by 4-stage client pipeline + server gate    │
+│     ► PII blocked by 4-stage client pipeline                  │
 │                                                               │
-│  OPERATIONAL METADATA                                         │
-│  ├─ PII detection event logs (pattern types only)             │
-│  ├─ Usage analytics (aggregated, non-identifiable)            │
-│  └─ Criteria version history and audit trail                  │
-│     ► No clinical content · No patient identifiers            │
+│  OPERATIONAL METADATA (stored in D1 for pilot evaluation)     │
+│  ├─ Usage log: de-identified note text, AI summary,           │
+│  │   exam identified, verdict, tokens, NZD cost               │
+│  ├─ QA reviews: evaluator scores and comments                 │
+│  ├─ Criteria version history and audit trail                  │
+│  └─ PII detection event logs (pattern types only)             │
+│     ► Usage log content is de-identified text only            │
+│     ► No patient identifiers in any stored record             │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -396,12 +462,12 @@ The Cloudflare Workers API and D1/KV database that power the standalone tools to
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|-----------|
-| PII bypasses client-side detection | Low | High | Server-side PII gate (Layer 3), no data storage, Anthropic zero-retention |
+| PII bypasses client-side detection | Low | High | Four-stage client-side pipeline; server-side PII gate planned (not yet implemented — see §9); Anthropic zero-retention policy |
 | Clinicians don't use the tools | Medium | Medium | Link placement in referral forms, working group endorsement, decline rate feedback |
 | Criteria content becomes stale | Medium | Medium | Admin tool with version control, audit log, programme-owned update process |
-| Anthropic API availability | Low | Medium | Rule-based assessment works without API, graceful fallback |
+| Anthropic API availability | Low | Medium | Graceful error handling; rule-based criteria panel still renders without AI |
 | Platform vendors refuse to add links | Low | Medium | Tools accessible by direct URL/bookmark regardless of form links |
-| NHI format change (July 2026) breaks detection | Low | High | Dual-format detection implemented (old mod-11, new mod-23/mod-24) |
+| NHI format change (July 2026) breaks detection | Low | High | Dual-format detection implemented (old mod-11, new mod-23) |
 
 ---
 
@@ -411,10 +477,10 @@ The Cloudflare Workers API and D1/KV database that power the standalone tools to
 
 2. **Get links into referral forms** as the immediate high-value action. Even simple "Check access criteria ›" links in BPAC, HealthLink, and ERMS guidance panels would make the tools accessible at the point of referral with zero platform redesign.
 
-3. **Validate criteria content** with the CRR working group (Tim, James, Alex) to ensure the Criteria Explorer covers all modalities and exam types in the national access criteria.
+3. **Validate criteria content** with the CRR working group (Tim, James, Alex) to ensure the Criteria Viewer covers all modalities and exam types in the national access criteria.
 
-4. **Populate regional content** — the localisation architecture supports 10 regions but content is currently sparse. HealthPathways links and region-specific guidance need to be gathered and entered via the Admin tool.
+4. **Populate regional content** — the localisation architecture supports 8 regions with HealthPathways URL override configuration. Content for non-Auckland regions needs to be gathered and entered via the Admin tool's Regions tab.
 
 5. **Establish criteria content governance** — define who owns updates, how frequently they're reviewed, and what the publish workflow looks like. The Admin tool supports this but the process needs to be agreed.
 
-6. **Plan server-side PII gate implementation** — the client-side pipeline is built and tested; the server-side gate in the Cloudflare Worker is the remaining implementation item before the full three-layer architecture is complete.
+6. **Implement server-side PII gate** — the client-side pipeline is built and tested; a server-side gate in the Cloudflare Worker (rejecting requests where PII is detected after transmission) is the remaining implementation item before the full belt-and-braces architecture is complete.

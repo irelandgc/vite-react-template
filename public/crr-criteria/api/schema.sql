@@ -45,3 +45,26 @@ CREATE INDEX IF NOT EXISTS idx_criteria_population ON criteria(population);
 CREATE INDEX IF NOT EXISTS idx_versions_status ON versions(status);
 CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity_type, entity_id);
 CREATE INDEX IF NOT EXISTS idx_audit_date ON audit_log(performed_at);
+
+-- Triage usage log — every AI assessment during pilot
+CREATE TABLE IF NOT EXISTS triage_usage_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  timestamp TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  user_name TEXT,
+  user_role TEXT,
+  exam_identified TEXT,
+  verdict TEXT,
+  model_used TEXT,
+  documentation_standard TEXT,
+  input_tokens INTEGER DEFAULT 0,
+  cache_read_tokens INTEGER DEFAULT 0,
+  cache_write_tokens INTEGER DEFAULT 0,
+  output_tokens INTEGER DEFAULT 0,
+  cost_nzd REAL DEFAULT 0,
+  presentation_text TEXT,
+  ai_response_summary TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_usage_log_timestamp ON triage_usage_log(timestamp);
+CREATE INDEX IF NOT EXISTS idx_usage_log_user ON triage_usage_log(user_name);

@@ -191,11 +191,11 @@ body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
 <div class="qa-modal-overlay" id="ceQaModal">
   <div class="qa-modal">
     <div class="qa-modal-hd">
-      <span class="qa-modal-title">&#9733; Clinical QA — Rate This Criteria Display</span>
+      <span class="qa-modal-title">Tell us what you think</span>
       <button class="qa-modal-close" onclick="closeCeQaModal()">&#215;</button>
     </div>
     <div class="qa-modal-body">
-      <div style="font-size:11px;color:#5a7a8a;margin-bottom:10px">Rate whether the criteria displayed are accurate and complete according to the national document.</div>
+      <div style="font-size:11px;color:#5a7a8a;margin-bottom:10px">Share your experience with this tool. Your feedback helps us improve.</div>
 
       <!-- Reviewer -->
       <div style="margin-bottom:12px">
@@ -220,14 +220,6 @@ body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
       <!-- 3 three-point scores -->
       <div style="margin-bottom:10px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#5a7a8a;margin-bottom:4px">Scores <span style="color:#c62828">*</span></div>
-        <div class="qa-dim-row" id="vqaAccuracyRow">
-          <span class="qa-dim-lbl">Content accuracy</span>
-          <div class="qa-3way" id="vqaGroup_accuracy">
-            <button class="qa-3way-btn" data-v="significant_errors" onclick="setVqaScore('accuracy','significant_errors')">&#10007; Errors</button>
-            <button class="qa-3way-btn" data-v="minor_issues" onclick="setVqaScore('accuracy','minor_issues')">~ Minor issues</button>
-            <button class="qa-3way-btn" data-v="accurate" onclick="setVqaScore('accuracy','accurate')">&#10003; Accurate</button>
-          </div>
-        </div>
         <div class="qa-dim-row">
           <span class="qa-dim-lbl">Usability</span>
           <div class="qa-3way" id="vqaGroup_usability">
@@ -246,22 +238,6 @@ body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
         </div>
       </div>
 
-      <!-- Checklist -->
-      <div style="margin-bottom:10px" id="vqaChecklistSection">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#5a7a8a;margin-bottom:6px">Tick what is correct for this exam</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px" id="vqaChecklist">
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_criteria" style="width:14px;height:14px;cursor:pointer"> Criteria items correct</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_priority" style="width:14px;height:14px;cursor:pointer"> Priority tiers correct</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_gateway" style="width:14px;height:14px;cursor:pointer"> Gateway flags correct</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_labvalue" style="width:14px;height:14px;cursor:pointer"> Lab value flags correct</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_altmgmt" style="width:14px;height:14px;cursor:pointer"> Alternative management correct</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_notfunded" style="width:14px;height:14px;cursor:pointer"> Not-funded items correct</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_guidance" style="width:14px;height:14px;cursor:pointer"> Guidance text correct</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_hp" style="width:14px;height:14px;cursor:pointer"> HealthPathways link works</label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="vqaCk_groupings" style="width:14px;height:14px;cursor:pointer"> Indication groupings make sense</label>
-        </div>
-      </div>
-
       <!-- Comments -->
       <div style="margin-bottom:12px">
         <textarea id="vqaComments" placeholder="Describe any specific errors, missing items, or suggestions (optional)" style="width:100%;border:1px solid #d0dce4;border-radius:4px;padding:8px 10px;font-family:inherit;font-size:12px;color:#0d1f2d;resize:vertical;min-height:44px;box-sizing:border-box"></textarea>
@@ -271,7 +247,7 @@ body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
         <div id="vqaEntryCount" style="font-size:11px;color:#5a7a8a"></div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-s btn-sm" onclick="closeCeQaModal()">Cancel</button>
-          <button class="btn btn-p btn-sm" id="vqaSubmitBtn" onclick="submitVqaEntry()" disabled style="opacity:.5">Save to QA Log</button>
+          <button class="btn btn-p btn-sm" id="vqaSubmitBtn" onclick="submitVqaEntry()" disabled style="opacity:.5">Submit feedback</button>
         </div>
       </div>
     </div>
@@ -2130,7 +2106,7 @@ function handleCopyAll() {
 // ══════════════════════════════════════════════════════════════
 
 var vqaRole = '';
-var vqaScores = { accuracy: null, usability: null, value: null };
+var vqaScores = { usability: null, value: null };
 var vqaSessionCount = 0;
 
 var VQA_SESSION_ID = (function(){
@@ -2146,7 +2122,7 @@ var VQA_SESSION_ID = (function(){
 
 function openVqa() {
   vqaRole = '';
-  vqaScores = { accuracy: null, usability: null, value: null };
+  vqaScores = { usability: null, value: null };
 
   // Pre-populate from localStorage
   try {
@@ -2157,9 +2133,8 @@ function openVqa() {
     if (savedRole) setVqaRole(savedRole);
   } catch(e) {}
 
-  // Reset score buttons and checklist
+  // Reset score buttons
   document.querySelectorAll('.qa-3way-btn').forEach(function(b){ b.classList.remove('sel'); });
-  document.querySelectorAll('#vqaChecklist input[type=checkbox]').forEach(function(cb){ cb.checked = false; });
   var cm = document.getElementById('vqaComments');
   if (cm) cm.value = '';
 
@@ -2198,15 +2173,6 @@ function setVqaRole(val) {
   });
   var otherEl = document.getElementById('vqaRoleOther');
   if (otherEl) otherEl.style.display = (val === 'Other') ? 'block' : 'none';
-  var isSimple = (val === 'GP' || val === 'Nurse Practitioner');
-  var accRow = document.getElementById('vqaAccuracyRow');
-  var ckSection = document.getElementById('vqaChecklistSection');
-  if (accRow) accRow.style.display = isSimple ? 'none' : '';
-  if (ckSection) ckSection.style.display = isSimple ? 'none' : '';
-  if (isSimple) {
-    vqaScores.accuracy = null;
-    document.querySelectorAll('#vqaGroup_accuracy .qa-3way-btn').forEach(function(b){ b.classList.remove('sel'); });
-  }
   checkVqaSubmitEnabled();
 }
 
@@ -2220,8 +2186,7 @@ function setVqaScore(dim, val) {
 }
 
 function checkVqaSubmitEnabled() {
-  var isSimple = (vqaRole === 'GP' || vqaRole === 'Nurse Practitioner');
-  var ok = !!(vqaRole && vqaScores.usability && vqaScores.value && (isSimple || vqaScores.accuracy));
+  var ok = !!(vqaRole && vqaScores.usability && vqaScores.value);
   var btn = document.getElementById('vqaSubmitBtn');
   if (btn) { btn.disabled = !ok; btn.style.opacity = ok ? '1' : '.5'; }
 }
@@ -2255,7 +2220,6 @@ function submitVqaEntry() {
     siteLabel = exam.title;
   }
 
-  var isSimple = (reviewerRole === 'GP' || reviewerRole === 'Nurse Practitioner');
   var payload = {
     timestamp: new Date().toISOString(),
     session_id: VQA_SESSION_ID,
@@ -2266,18 +2230,8 @@ function submitVqaEntry() {
     site_label: siteLabel,
     region: selectedRegion || '',
     view_mode: viewLayout || null,
-    score_accuracy: isSimple ? null : vqaScores.accuracy,
     score_usability: vqaScores.usability,
     score_value: vqaScores.value,
-    checklist_criteria_correct: isSimple ? null : ck('vqaCk_criteria'),
-    checklist_priority_correct: isSimple ? null : ck('vqaCk_priority'),
-    checklist_gateway_correct: isSimple ? null : ck('vqaCk_gateway'),
-    checklist_labvalue_correct: isSimple ? null : ck('vqaCk_labvalue'),
-    checklist_altmgmt_correct: isSimple ? null : ck('vqaCk_altmgmt'),
-    checklist_notfunded_correct: isSimple ? null : ck('vqaCk_notfunded'),
-    checklist_guidance_correct: isSimple ? null : ck('vqaCk_guidance'),
-    checklist_healthpathways_works: isSimple ? null : ck('vqaCk_hp'),
-    checklist_groupings_correct: isSimple ? null : ck('vqaCk_groupings'),
     comments: (document.getElementById('vqaComments').value || '').trim() || null
   };
 

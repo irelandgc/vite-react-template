@@ -184,6 +184,7 @@ textarea.note::placeholder{color:#8b919a}
 .qa-3pt-btn.selected[data-v="wrong"]{border-color:#c62828;background:#fdecea;color:#c62828}
 .qa-3pt-btn.selected[data-v="partial"]{border-color:#f0a020;background:#fff8e1;color:#b45309}
 .qa-3pt-btn.selected[data-v="correct"]{border-color:#2a7d4f;background:#e8f5e9;color:#2a7d4f}
+.qa-3pt-btn.selected[data-v="na"]{border-color:#4a86b5;background:#e8f0f8;color:#1a5080}
 .qa-badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;background:var(--pass-bg);color:var(--pass);border:1px solid var(--pass-bd)}
 
 /* ── Comparison Mode ──────────────────────────────────────── */
@@ -464,7 +465,7 @@ textarea.note::placeholder{color:#8b919a}
 <div class="modal-bg" id="qaModal">
   <div class="modal" style="width:540px;max-width:96vw">
     <div class="modal-hd" style="display:flex;justify-content:space-between;align-items:center">
-      <span>&#9733; Clinical QA Evaluation</span>
+      <span>Provide feedback on assessment result</span>
       <button onclick="closeQaModal()" style="background:none;border:none;color:#8ab4c8;font-size:16px;cursor:pointer;padding:0 4px">&#10005;</button>
     </div>
     <div class="modal-bd">
@@ -485,7 +486,7 @@ textarea.note::placeholder{color:#8b919a}
 
       <!-- Scenario Type -->
       <div style="margin-bottom:10px">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:6px">Scenario type <span style="color:#c62828">*</span></div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:6px">What I expected from the tool <span style="color:#c62828">*</span></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px" id="qaScenarioGroup">
           <button class="qa-opt-btn" data-val="clear_approve" onclick="setQaScenario('clear_approve')">Clear-cut approve</button>
           <button class="qa-opt-btn" data-val="borderline" onclick="setQaScenario('borderline')">Borderline / partial criteria</button>
@@ -496,9 +497,9 @@ textarea.note::placeholder{color:#8b919a}
 
       <!-- 4 Score rows (3-point scale) -->
       <div style="margin-bottom:10px">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:4px">Assessment scores <span style="color:#c62828">*</span></div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:4px">Tool outcome <span style="color:#c62828">*</span></div>
         <div class="qa-score-row">
-          <span class="qa-score-lbl">Criteria identification</span>
+          <span class="qa-score-lbl">Exam and criteria identified</span>
           <div class="qa-3pt-group" id="scoreGroup_criteria_id">
             <button class="qa-3pt-btn" data-v="wrong" onclick="setQaScore3('criteria_id','wrong')">&#10007; Wrong</button>
             <button class="qa-3pt-btn" data-v="partial" onclick="setQaScore3('criteria_id','partial')">~ Partial</button>
@@ -516,6 +517,7 @@ textarea.note::placeholder{color:#8b919a}
         <div class="qa-score-row">
           <span class="qa-score-lbl">Compound handling</span>
           <div class="qa-3pt-group" id="scoreGroup_compound_handling">
+            <button class="qa-3pt-btn" data-v="na" onclick="setQaScore3('compound_handling','na')">N/A</button>
             <button class="qa-3pt-btn" data-v="wrong" onclick="setQaScore3('compound_handling','wrong')">&#10007; Wrong</button>
             <button class="qa-3pt-btn" data-v="partial" onclick="setQaScore3('compound_handling','partial')">~ Partial</button>
             <button class="qa-3pt-btn" data-v="correct" onclick="setQaScore3('compound_handling','correct')">&#10003; Correct</button>
@@ -524,6 +526,7 @@ textarea.note::placeholder{color:#8b919a}
         <div class="qa-score-row" style="border-bottom:none">
           <span class="qa-score-lbl">Safety / redirect</span>
           <div class="qa-3pt-group" id="scoreGroup_safety_redirect">
+            <button class="qa-3pt-btn" data-v="na" onclick="setQaScore3('safety_redirect','na')">N/A</button>
             <button class="qa-3pt-btn" data-v="wrong" onclick="setQaScore3('safety_redirect','wrong')">&#10007; Wrong</button>
             <button class="qa-3pt-btn" data-v="partial" onclick="setQaScore3('safety_redirect','partial')">~ Partial</button>
             <button class="qa-3pt-btn" data-v="correct" onclick="setQaScore3('safety_redirect','correct')">&#10003; Correct</button>
@@ -551,7 +554,7 @@ textarea.note::placeholder{color:#8b919a}
         <div id="qaEntryCount" style="font-size:11px;color:var(--mid)"></div>
         <div style="display:flex;gap:8px">
           <button class="btn-mc" onclick="closeQaModal()">Cancel</button>
-          <button class="btn-ms" id="qaSubmitBtn" onclick="submitQaEntry()" disabled style="opacity:.5">Submit QA</button>
+          <button class="btn-ms" id="qaSubmitBtn" onclick="submitQaEntry()" disabled style="opacity:.5">Send feedback</button>
         </div>
       </div>
     </div>
@@ -1231,7 +1234,6 @@ function _showAssessLoading() {
 
 function runCheck() {
   if (compareMode) {
-    // PII scan before comparison too
     var compNote = getEffectiveNote();
     if (!compNote) return;
     var compPii = detectAndRedactPII(compNote);
@@ -1248,19 +1250,19 @@ function runCheck() {
 
   var note = getEffectiveNote();
   if (!note) return;
-  lastAiResult = null;
 
-  var pii = detectAndRedactPII(note);
-  if (Object.keys(pii.findings).length > 0) {
-    _piiPending = { redacted: pii.redacted, isCompare: false };
-    _showPIIReview(pii.findings, pii.redacted, note);
-    return;
-  }
-
-  // No PII — proceed
-  lastNote = note;
-  _showAssessLoading();
-  runAI();
+  getOrPromptUserIdentity(function() {
+    lastAiResult = null;
+    var pii = detectAndRedactPII(note);
+    if (Object.keys(pii.findings).length > 0) {
+      _piiPending = { redacted: pii.redacted, isCompare: false };
+      _showPIIReview(pii.findings, pii.redacted, note);
+      return;
+    }
+    lastNote = note;
+    _showAssessLoading();
+    runAI();
+  });
 }
 
 function ruleVerdict(r) {
@@ -1727,6 +1729,7 @@ function runAI() {
     lastAiResult = result;
     renderAIResult(result);
     renderCriteriaBrowser(result);
+    logTriageUsage(result, data.usage || {});
   })
   .catch(function(err) {
     clearInterval(ticker);
@@ -2367,6 +2370,117 @@ function sendAssessmentToForm() {
   setTimeout(function(){ window.close(); }, 1000);
 }
 
+// ── Usage logging ─────────────────────────────────────────
+function calcCostNzd(usage) {
+  var inputTokens = (usage.input_tokens || 0) - (usage.cache_read_input_tokens || 0) - (usage.cache_creation_input_tokens || 0);
+  if (inputTokens < 0) inputTokens = 0;
+  var cacheRead = usage.cache_read_input_tokens || 0;
+  var cacheWrite = usage.cache_creation_input_tokens || 0;
+  var output = usage.output_tokens || 0;
+  // Sonnet pricing USD/M tokens: input $3, cache_write $3.75, cache_read $0.30, output $15
+  var costUsd = (inputTokens * 3 + cacheWrite * 3.75 + cacheRead * 0.30 + output * 15) / 1000000;
+  return Math.round(costUsd * 1.67 * 10000) / 10000; // NZD, 4 decimal places
+}
+
+function logTriageUsage(result, usage) {
+  try {
+    var userName = localStorage.getItem('crr-triage-user-name') || '';
+    var userRole = localStorage.getItem('crr-triage-user-role') || '';
+    var aiSummary = [
+      result.verdict_title || result.verdict || '',
+      result.verdict_summary || '',
+      (result.met_criteria || []).length ? 'Met: ' + result.met_criteria.join('; ') : '',
+      (result.missing_criteria || []).length ? 'Missing: ' + result.missing_criteria.join('; ') : '',
+      result.safety_alert ? 'SAFETY: ' + result.safety_alert : '',
+      result.redirect ? 'Redirect: ' + result.redirect : ''
+    ].filter(Boolean).join('\n');
+    var payload = {
+      timestamp: new Date().toISOString(),
+      session_id: QA_SESSION_ID,
+      user_name: userName,
+      user_role: userRole,
+      exam_identified: result.exam || result.modality || null,
+      verdict: result.verdict_title || result.verdict || null,
+      model_used: 'claude-sonnet-4-20250514',
+      documentation_standard: docMode,
+      input_tokens: usage.input_tokens || 0,
+      cache_read_tokens: usage.cache_read_input_tokens || 0,
+      cache_write_tokens: usage.cache_creation_input_tokens || 0,
+      output_tokens: usage.output_tokens || 0,
+      cost_nzd: calcCostNzd(usage),
+      presentation_text: result._originalNote || lastNote || '',
+      ai_response_summary: aiSummary
+    };
+    fetch('https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/triage/usage-log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(function(){});
+  } catch(e) {}
+}
+
+// ── User identity for usage logging ─────────────────────
+function getOrPromptUserIdentity(callback) {
+  try {
+    var name = localStorage.getItem('crr-triage-user-name');
+    var role = localStorage.getItem('crr-triage-user-role');
+    if (name && role) { callback(name, role); return; }
+  } catch(e) {}
+  showUserIdentityModal(callback);
+}
+
+function showUserIdentityModal(callback) {
+  var overlay = document.createElement('div');
+  overlay.id = 'userIdentityOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML = '<div style="background:#fff;border-radius:8px;width:440px;max-width:94vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);padding:24px">' +
+    '<div style="font-size:15px;font-weight:700;color:#003B5C;margin-bottom:8px">Before you begin</div>' +
+    '<div style="font-size:13px;color:#4a5a6a;margin-bottom:16px;line-height:1.5">For the evaluation we will log all usage of the tool. Please provide your name and role. You will only be asked once.</div>' +
+    '<input id="uidName" type="text" placeholder="Your name" style="width:100%;border:1px solid #c8d8e4;border-radius:4px;padding:8px 10px;font-family:inherit;font-size:13px;box-sizing:border-box;margin-bottom:10px">' +
+    '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:16px" id="uidRoleGroup">' +
+    ['GP','Nurse Practitioner','PCRL','MIT','Radiologist','Other'].map(function(r){
+      return '<button class="qa-role-btn" data-val="'+r+'" onclick="setUidRole(\''+r+'\')">'+r+'</button>';
+    }).join('') +
+    '</div>' +
+    '<input id="uidRoleOther" type="text" placeholder="Specify role" style="display:none;width:100%;border:1px solid #c8d8e4;border-radius:4px;padding:6px 10px;font-family:inherit;font-size:12px;box-sizing:border-box;margin-bottom:12px">' +
+    '<div style="display:flex;justify-content:flex-end"><button id="uidSubmitBtn" onclick="submitUserIdentity()" style="padding:8px 20px;background:#1a6fa0;color:#fff;border:none;border-radius:4px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;opacity:.5" disabled>Continue</button></div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  window._uidCallback = callback;
+  window._uidRole = '';
+  document.getElementById('uidName').focus();
+  document.getElementById('uidName').addEventListener('input', checkUidReady);
+}
+
+var _uidRole = '';
+function setUidRole(val) {
+  _uidRole = val;
+  document.querySelectorAll('#uidRoleGroup .qa-role-btn').forEach(function(b){
+    b.classList.toggle('selected', b.getAttribute('data-val') === val);
+  });
+  var otherEl = document.getElementById('uidRoleOther');
+  if (otherEl) otherEl.style.display = (val === 'Other') ? 'block' : 'none';
+  checkUidReady();
+}
+
+function checkUidReady() {
+  var name = (document.getElementById('uidName') && document.getElementById('uidName').value || '').trim();
+  var ok = !!(name && _uidRole);
+  var btn = document.getElementById('uidSubmitBtn');
+  if (btn) { btn.disabled = !ok; btn.style.opacity = ok ? '1' : '.5'; }
+}
+
+function submitUserIdentity() {
+  var name = (document.getElementById('uidName').value || '').trim();
+  var role = _uidRole === 'Other' ? ((document.getElementById('uidRoleOther').value || '').trim() || 'Other') : _uidRole;
+  if (!name || !role) return;
+  try { localStorage.setItem('crr-triage-user-name', name); } catch(e) {}
+  try { localStorage.setItem('crr-triage-user-role', role); } catch(e) {}
+  var overlay = document.getElementById('userIdentityOverlay');
+  if (overlay) overlay.remove();
+  if (window._uidCallback) { window._uidCallback(name, role); window._uidCallback = null; }
+}
+
 // ═══════════════════════════════════════════════
 //  CLINICAL QA SYSTEM
 // ═══════════════════════════════════════════════
@@ -2396,8 +2510,8 @@ function openQaModal() {
 
   // Pre-populate reviewer from localStorage
   try {
-    var savedName = localStorage.getItem('crr-qa-reviewer-name');
-    var savedRole = localStorage.getItem('crr-qa-reviewer-role');
+    var savedName = localStorage.getItem('crr-qa-reviewer-name') || localStorage.getItem('crr-triage-user-name') || '';
+    var savedRole = localStorage.getItem('crr-qa-reviewer-role') || localStorage.getItem('crr-triage-user-role') || '';
     var nameEl = document.getElementById('qaReviewerName');
     if (nameEl && savedName) nameEl.value = savedName;
     if (savedRole) setQaRole(savedRole);

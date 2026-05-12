@@ -3,8 +3,8 @@
 > **Purpose:** Single source of truth for how criteria data is categorised, displayed, and interacted with across the CRR tools. These rules govern the viewer, popup, and triage advisor. They must be preserved through any data restructure or platform migration (including future CQL/FHIR Questionnaire migration).
 >
 > **Maintained by:** CRR Programme  
-> **Last updated:** 2026-05-09  
-> **Version:** 1.0
+> **Last updated:** 2026-05-13  
+> **Version:** 1.2
 
 ---
 
@@ -153,10 +153,17 @@ When `exam`, `sites`, and `region` URL parameters are all present:
 ### Rule 6.4: Send to Form visibility
 The "Send to Form" button appears only when BOTH conditions are true:
 - URL contains `sendButton=on`
-- `window.opener` exists and is not closed
+- `window.opener` exists and is not closed, OR `?embed=modal` is active
 
 ### Rule 6.5: Copy-and-close in popup context
 When `window.opener` exists (opened as popup from a form), Copy and Send to Form both close the popup window after a brief confirmation delay (~700ms–1s). When standalone (no opener), Copy shows confirmation but does NOT close the window.
+
+### Rule 6.6: Modal embed mode
+`?embed=modal` — The viewer is loaded inside an iframe (e.g. the demo harness modal). In this mode:
+- The viewer uses `window.parent.postMessage({ type: 'crr-output', text: ..., source: 'viewer' }, '*')` to send structured text back to the parent page
+- On Send to Form or Copy-and-close, the viewer also posts `{ type: 'crr-close' }` to the parent to dismiss the modal
+- The `sendButton=on` parameter must still be present for the Send to Form button to appear
+- `isModal` is set when `?embed=modal` is detected at load time
 
 ---
 
@@ -172,7 +179,20 @@ Items tagged with `Gateway` show a badge indicating an access gateway requiremen
 Some exams have emergency redirect items (e.g., "Refer for acute assessment — without initial imaging" for US Carotid). These display as a prominent red banner above the criteria list. They are NOT tickable — they are directives.
 
 ### Rule 7.4: HealthPathways link — regional domain swap
-HealthPathways URLs use regional domains. The viewer swaps the domain based on the selected region. The seven confirmed regional instances are: `aucklandregion`, `northland`, `midland`, `hawkesbay`, `3d` (Central), `canterbury` (Waitaha), `southern`. Page IDs are generally consistent across regions — domain swapping is the correct default behaviour.
+HealthPathways URLs use regional domains. The viewer swaps the domain based on the selected region. The eight confirmed regional instances are:
+
+| Key | Label |
+|---|---|
+| `aucklandregion` | Auckland Region |
+| `northland` | Northland |
+| `midland` | Midland |
+| `hawkesbay` | Hawke's Bay |
+| `3d` | Central (3D) |
+| `canterbury` | Waitaha Canterbury |
+| `southern` | Southern |
+| `ccp` | Whanganui & MidCentral CHP |
+
+Page IDs are generally consistent across regions — domain swapping is the correct default behaviour. When no region is selected, Auckland Region URLs are used as the default.
 
 ### Rule 7.5: Eligibility requirements block
 Universal qualifying conditions (e.g., CTC's "must tolerate bowel prep AND no previous colonoscopy/CTC within 5 years") display in an amber "Eligibility requirements" block at the top of the criteria area. This block is informational and not tickable. It tells the referrer what must also be true for any criteria to apply.
@@ -210,3 +230,4 @@ These rules map to FHIR Questionnaire and CQL concepts as follows:
 |---|---|---|
 | 1.0 | 2026-05-09 | Initial version — consolidated from conversation history, instruction files, and code review |
 | 1.1 | 2026-05-09 | Added S1/S2/S3 priority codes (X-ray). Added Rule 1.3: not-funded items may be stored as groups in the data, not just separate fields — transform must filter by group name |
+| 1.2 | 2026-05-13 | Rule 7.4: updated region list to 8 (added `ccp` / Whanganui & MidCentral CHP; corrected Canterbury label to "Waitaha Canterbury"). Rule 6.4: added modal embed condition. Added Rule 6.6: modal embed mode (`?embed=modal`) behaviour |

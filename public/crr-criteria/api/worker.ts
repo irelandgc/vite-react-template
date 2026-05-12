@@ -836,4 +836,76 @@ app.post('/api/seed', async (c) => {
 });
 
 
+// POST /api/triage/usage-log — Log every triage assessment (no auth, rate-limited)
+app.post('/api/triage/usage-log', async (c) => {
+  const db = c.env.DB;
+  const kv = c.env.KV;
+
+  const ip = c.req.header('CF-Connecting-IP') || 'unknown';
+  const hour = new Date().toISOString().slice(0, 13);
+  const rlKey = `ratelimit:usage:${ip}:${hour}`;
+  try {
+    const countRaw = await kv.get(rlKey);
+    const count = countRaw ? parseInt(countRaw) : 0;
+    if (count >= 200) return c.json({ error: 'Rate limit exceeded' }, 429);
+    await kv.put(rlKey, String(count + 1), { expirationTtl: 3600 });
+  } catch (_) {}
+
+  const body = await c.req.json();
+  const now = new Date().toISOString();
+  try {
+    const result = await db.prepare(`
+      INSERT INTO triage_usage_log (
+        timestamp, session_id, user_name, user_role,
+        exam_identified, verdict, model_used, documentation_standard,
+        input_tokens, cache_read_tokens, cache_write_tokens, output_tokens, cost_nzd,
+        presentation_text, ai_response_summary
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      body.timestamp || now,
+      body.session_id || '',
+      body.user_name || '',
+      body.user_role || '',
+      body.exam_identified || null,
+      body.verdict || null,
+      body.model_used || null,
+      body.documentation_standard || null,
+      body.input_tokens || 0,
+      body.cache_read_tokens || 0,
+      body.cache_write_tokens || 0,
+      body.output_tokens || 0,
+      body.cost_nzd || 0,
+      body.presentation_text || null,
+      body.ai_response_summary || null
+    ).run();
+    return c.json({ success: true, id: result.meta.last_row_id });
+  } catch (e: any) {
+    return c.json({ error: 'Failed to log usage: ' + e.message }, 500);
+  }
+});
+
+// GET /api/triage/usage-logs — Admin: all usage log entries
+app.get('/api/triage/usage-logs', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const from = c.req.query('from');
+  const to = c.req.query('to');
+  const user = c.req.query('user');
+
+  let sql = 'SELECT * FROM triage_usage_log';
+  const params: any[] = [];
+  const conditions: string[] = [];
+  if (user) { conditions.push('user_name = ?'); params.push(user); }
+  if (from) { conditions.push('timestamp >= ?'); params.push(from); }
+  if (to) { conditions.push('timestamp <= ?'); params.push(to + 'T23:59:59Z'); }
+  if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
+  sql += ' ORDER BY id DESC LIMIT 500';
+
+  try {
+    const rows = await db.prepare(sql).bind(...params).all();
+    return c.json(rows.results);
+  } catch (e: any) {
+    return c.json({ error: 'Failed to fetch usage logs: ' + e.message }, 500);
+  }
+});
+
 export default app;
