@@ -25,7 +25,7 @@ textarea,input,select,button{font-family:inherit}
 
 const API = "https://crr-criteria-api.fk4dsrmq5r.workers.dev";
 const VER = "v1.0.0 DEV";
-const BUILD = "2026-05-14"; // bump on each deployment
+const BUILD = "2026-05-16"; // bump on each deployment
 
 // Changelog:
 // v1.0.0 DEV — version reset for review cycle (2026-05-14); previously v1.5.8
@@ -289,6 +289,7 @@ function CRRAdmin() {
     {id:"import",label:"PDF Import",icon:"📄"},
     {id:"regions",label:"Regions",icon:"🗺️"},
     {id:"versions",label:"Versions",icon:"🏷️"},
+    {id:"releases",label:"Releases",icon:"📣"},
     {id:"qa",label:"Triage QA",icon:"⭐"},
     {id:"viewerqa",label:"Viewer QA",icon:"📋"},
     {id:"usagelog",label:"Usage Log",icon:"📋"},
@@ -341,6 +342,7 @@ function CRRAdmin() {
         {tab==="import" && <ImportTab criteria={criteria} show={show} updateCriteriaItem={updateCriteriaItem} setDirty={setDirty} handleReplaceAll={handleReplaceAll} />}
         {tab==="regions" && <RegionsTab criteria={criteria} show={show} adminKeyVersion={adminKeyVersion} openKeyModal={()=>setShowKeyModal(true)} />}
         {tab==="versions" && <VersionsTab show={show} pubVer={pubVer} handlePublish={handlePublish} handleRollback={handleRollback} criteria={criteria} origData={origData} dirty={dirty} adminKeyVersion={adminKeyVersion} openKeyModal={()=>setShowKeyModal(true)} />}
+        {tab==="releases" && <ReleasesTab show={show} />}
         {tab==="qa" && <QAReviewsTab />}
         {tab==="viewerqa" && <ViewerQATab />}
         {tab==="usagelog" && <UsageLogTab />}
@@ -1714,6 +1716,164 @@ function UsageLogTab(){
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+//  RELEASES TAB — create/edit release notes & announcements
+// ══════════════════════════════════════════════════════════
+
+function ReleasesTab({show}){
+  const [entries,setEntries]=React.useState([]);
+  const [loading,setLoading]=React.useState(true);
+  const [error,setError]=React.useState(null);
+  const [editing,setEditing]=React.useState(null); // null | {} (new) | row (existing)
+
+  const empty = ()=>({title:'',body:'',type:'announcement',apps:'all',status:'draft'});
+
+  const load = React.useCallback(async()=>{
+    setLoading(true); setError(null);
+    try{
+      const res=await api('/api/admin/releases');
+      if(res?.entries) setEntries(res.entries);
+      else if(res?.error) setError(res.error);
+    }catch(e){ setError(e.message); }
+    finally{ setLoading(false); }
+  },[]);
+
+  React.useEffect(()=>{ load(); },[load]);
+
+  async function save(){
+    if(!editing) return;
+    if(!editing.title?.trim() || !editing.body?.trim()){ show('Title and body are required','warn'); return; }
+    const payload={
+      title: editing.title.trim(),
+      body: editing.body,
+      type: editing.type || 'announcement',
+      apps: editing.apps || 'all',
+      status: editing.status || 'draft',
+    };
+    try{
+      const res = editing.id
+        ? await api(`/api/admin/releases/${editing.id}`,{method:'PUT',body:JSON.stringify(payload)})
+        : await api('/api/admin/releases',{method:'POST',body:JSON.stringify(payload)});
+      if(res?.success){
+        show(editing.id?'Release updated':'Release created','ok');
+        setEditing(null);
+        load();
+      } else {
+        show(res?.error||'Save failed','warn');
+      }
+    }catch(e){ show('Save failed: '+e.message,'warn'); }
+  }
+
+  async function remove(id){
+    if(!confirm('Delete this entry? This cannot be undone.')) return;
+    try{
+      const res = await api(`/api/admin/releases/${id}`,{method:'DELETE'});
+      if(res?.success){ show('Deleted','ok'); load(); }
+      else show(res?.error||'Delete failed','warn');
+    }catch(e){ show('Delete failed: '+e.message,'warn'); }
+  }
+
+  const typeLabel = (t)=> t==='release'?'Release': t==='criteria_update'?'Criteria update':'Announcement';
+  const typeColor = (t)=> t==='release'?{bg:'#e8f2fa',fg:'#145a84'}: t==='criteria_update'?{bg:'#fff8e1',fg:'#92400e'}:{bg:'#e6f4ec',fg:'#1a6640'};
+  const APP_OPTIONS = [
+    {val:'all',label:'All apps'},
+    {val:'viewer',label:'Viewer only'},
+    {val:'triage',label:'Triage only'},
+    {val:'viewer,triage',label:'Viewer + Triage'},
+  ];
+
+  if(editing){
+    return (
+      <div style={{padding:20,overflow:'auto',height:'calc(100vh - 130px)'}}>
+        <div style={{maxWidth:760,margin:'0 auto'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+            <h2 style={{fontSize:16,fontWeight:700,color:C.navy}}>{editing.id?'Edit release':'New release'}</h2>
+            <button onClick={()=>setEditing(null)} style={{fontSize:12,padding:'5px 12px',background:'#fff',color:C.mid,border:`1px solid ${C.rule}`,borderRadius:3,cursor:'pointer',fontFamily:font}}>Cancel</button>
+          </div>
+          <div style={{background:'#fff',border:`1px solid ${C.rule}`,borderRadius:3,padding:16}}>
+            <label style={{display:'block',fontSize:11,fontWeight:600,color:C.navy,marginBottom:4}}>Title</label>
+            <input value={editing.title||''} onChange={e=>setEditing({...editing,title:e.target.value})}
+                   style={{width:'100%',fontSize:13,padding:'7px 10px',border:`1px solid ${C.rule}`,borderRadius:3,fontFamily:font,marginBottom:12}}/>
+
+            <div style={{display:'flex',gap:12,marginBottom:12}}>
+              <div style={{flex:1}}>
+                <label style={{display:'block',fontSize:11,fontWeight:600,color:C.navy,marginBottom:4}}>Type</label>
+                <select value={editing.type||'announcement'} onChange={e=>setEditing({...editing,type:e.target.value})}
+                        style={{width:'100%',fontSize:13,padding:'6px 10px',border:`1px solid ${C.rule}`,borderRadius:3,fontFamily:font}}>
+                  <option value='release'>Release</option>
+                  <option value='criteria_update'>Criteria update</option>
+                  <option value='announcement'>Announcement</option>
+                </select>
+              </div>
+              <div style={{flex:1}}>
+                <label style={{display:'block',fontSize:11,fontWeight:600,color:C.navy,marginBottom:4}}>Show in</label>
+                <select value={editing.apps||'all'} onChange={e=>setEditing({...editing,apps:e.target.value})}
+                        style={{width:'100%',fontSize:13,padding:'6px 10px',border:`1px solid ${C.rule}`,borderRadius:3,fontFamily:font}}>
+                  {APP_OPTIONS.map(o=><option key={o.val} value={o.val}>{o.label}</option>)}
+                </select>
+              </div>
+              <div style={{flex:1}}>
+                <label style={{display:'block',fontSize:11,fontWeight:600,color:C.navy,marginBottom:4}}>Status</label>
+                <select value={editing.status||'draft'} onChange={e=>setEditing({...editing,status:e.target.value})}
+                        style={{width:'100%',fontSize:13,padding:'6px 10px',border:`1px solid ${C.rule}`,borderRadius:3,fontFamily:font}}>
+                  <option value='draft'>Draft (hidden)</option>
+                  <option value='published'>Published (visible)</option>
+                </select>
+              </div>
+            </div>
+
+            <label style={{display:'block',fontSize:11,fontWeight:600,color:C.navy,marginBottom:4}}>Body (Markdown)</label>
+            <textarea value={editing.body||''} onChange={e=>setEditing({...editing,body:e.target.value})}
+                      placeholder={'Supports headings (#, ##), **bold**, *italic*, lists, [links](https://…) and `code`.'}
+                      style={{width:'100%',minHeight:240,fontSize:13,padding:10,border:`1px solid ${C.rule}`,borderRadius:3,fontFamily:mono,resize:'vertical'}}/>
+
+            <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:12}}>
+              <button onClick={()=>setEditing(null)} style={{fontSize:12,padding:'6px 14px',background:'#fff',color:C.mid,border:`1px solid ${C.rule}`,borderRadius:3,cursor:'pointer',fontFamily:font}}>Cancel</button>
+              <button onClick={save} style={{fontSize:12,padding:'6px 16px',background:C.teal,color:'#fff',border:'none',borderRadius:3,cursor:'pointer',fontFamily:font,fontWeight:600}}>{editing.status==='published'?'Save & publish':'Save draft'}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{padding:20,overflow:'auto',height:'calc(100vh - 130px)'}}>
+      <div style={{maxWidth:900,margin:'0 auto'}}>
+        <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:12}}>
+          <div>
+            <h2 style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:2}}>Releases &amp; announcements</h2>
+            <p style={{fontSize:12,color:C.mid}}>Published entries are visible on <a href='/crr-criteria/releases/' target='_blank' rel='noopener' style={{color:C.teal}}>the shared releases page</a> and trigger the bell indicator in the selected apps.</p>
+          </div>
+          <button onClick={()=>setEditing(empty())} style={{fontSize:12,padding:'6px 14px',background:C.teal,color:'#fff',border:'none',borderRadius:3,cursor:'pointer',fontFamily:font,fontWeight:600}}>+ New entry</button>
+        </div>
+
+        {error && <div style={{padding:10,background:C.failBg,color:C.fail,border:`1px solid ${C.fail}`,borderRadius:3,fontSize:12,marginBottom:12}}>{error}</div>}
+
+        <div style={{background:'#fff',border:`1px solid ${C.rule}`,borderRadius:3}}>
+          {loading?<div style={{padding:20,textAlign:'center',color:C.mid}}>Loading…</div>
+          : entries.length===0?<div style={{padding:20,textAlign:'center',color:C.mid}}>No entries yet — click <strong>+ New entry</strong> to add the first one.</div>
+          : entries.map(e=>{
+              const tc=typeColor(e.type);
+              const isDraft = e.status!=='published';
+              return (
+                <div key={e.id} style={{padding:'12px 14px',borderBottom:`1px solid ${C.mist}`,display:'flex',alignItems:'center',gap:10}}>
+                  <span style={{fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:2,background:tc.bg,color:tc.fg,textTransform:'uppercase',letterSpacing:0.4}}>{typeLabel(e.type)}</span>
+                  {isDraft && <span style={{fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:2,background:'#fee2e2',color:'#991b1b',textTransform:'uppercase',letterSpacing:0.4}}>Draft</span>}
+                  <span style={{fontSize:13,color:C.navy,fontWeight:600,flex:1}}>{e.title}</span>
+                  <span style={{fontSize:11,color:C.mid}}>{e.apps==='all'?'All apps':e.apps}</span>
+                  <span style={{fontSize:11,color:C.mid,minWidth:90,textAlign:'right'}}>{e.published_at?new Date(e.published_at).toLocaleDateString():'—'}</span>
+                  <button onClick={()=>setEditing(e)} style={{fontSize:11,padding:'4px 10px',background:'#fff',color:C.teal,border:`1px solid ${C.teal}`,borderRadius:3,cursor:'pointer',fontFamily:font}}>Edit</button>
+                  <button onClick={()=>remove(e.id)} style={{fontSize:11,padding:'4px 10px',background:'#fff',color:C.fail,border:`1px solid ${C.fail}`,borderRadius:3,cursor:'pointer',fontFamily:font}}>Delete</button>
+                </div>
+              );
+            })}
+        </div>
+      </div>
     </div>
   );
 }

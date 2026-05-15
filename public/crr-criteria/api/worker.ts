@@ -936,4 +936,138 @@ app.get('/api/triage/usage-logs', requireAccess, async (c) => {
   }
 });
 
+// ══════════════════════════════════════════════════════════════
+//  RELEASES / ANNOUNCEMENTS — shared release log
+// ══════════════════════════════════════════════════════════════
+
+function releaseAppsMatch(rowApps: string, app: string | null | undefined): boolean {
+  if (!app) return true;
+  const list = (rowApps || 'all').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  return list.includes('all') || list.includes(app.toLowerCase());
+}
+
+// GET /api/releases — Published entries, optionally filtered by ?app=viewer|triage|admin
+app.get('/api/releases', async (c) => {
+  const db = c.env.DB;
+  const app_ = c.req.query('app');
+  try {
+    const rows = await db.prepare(
+      "SELECT id, title, body, type, apps, published_at FROM releases WHERE status='published' ORDER BY published_at DESC, id DESC LIMIT 100"
+    ).all();
+    const all = (rows.results as any[]) || [];
+    const filtered = all.filter(r => releaseAppsMatch(r.apps, app_));
+    return c.json({ entries: filtered });
+  } catch (e: any) {
+    return c.json({ error: 'Failed to fetch releases: ' + e.message }, 500);
+  }
+});
+
+// GET /api/releases/latest-id — Lightweight: latest published id + published_at for the app indicator
+app.get('/api/releases/latest-id', async (c) => {
+  const db = c.env.DB;
+  const app_ = c.req.query('app');
+  try {
+    const rows = await db.prepare(
+      "SELECT id, apps, published_at FROM releases WHERE status='published' ORDER BY published_at DESC, id DESC LIMIT 50"
+    ).all();
+    const all = (rows.results as any[]) || [];
+    const match = all.find(r => releaseAppsMatch(r.apps, app_));
+    if (!match) return c.json({ id: null, published_at: null });
+    return c.json({ id: match.id, published_at: match.published_at });
+  } catch (e: any) {
+    return c.json({ error: 'Failed to fetch latest release: ' + e.message }, 500);
+  }
+});
+
+// ── Admin routes ──
+// GET /api/admin/releases — all entries (any status)
+app.get('/api/admin/releases', requireAccess, async (c) => {
+  const db = c.env.DB;
+  try {
+    const rows = await db.prepare(
+      "SELECT * FROM releases ORDER BY COALESCE(published_at, updated_at) DESC, id DESC"
+    ).all();
+    return c.json({ entries: rows.results || [] });
+  } catch (e: any) {
+    return c.json({ error: 'Failed to fetch releases: ' + e.message }, 500);
+  }
+});
+
+// POST /api/admin/releases — create entry (draft or published)
+app.post('/api/admin/releases', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const body = await c.req.json();
+  const now = new Date().toISOString();
+  const status = body.status === 'published' ? 'published' : 'draft';
+  const publishedAt = status === 'published' ? (body.published_at || now) : null;
+  const type = ['release', 'criteria_update', 'announcement'].includes(body.type) ? body.type : 'announcement';
+  const apps = typeof body.apps === 'string' && body.apps.trim() ? body.apps.trim() : 'all';
+
+  if (!body.title || !body.body) return c.json({ error: 'title and body required' }, 400);
+
+  try {
+    const result: any = await db.prepare(
+      'INSERT INTO releases (title, body, type, apps, status, published_at, created_at, updated_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(
+      body.title, body.body, type, apps, status, publishedAt, now, now,
+      body.created_by || c.req.header('x-admin-email') || 'admin'
+    ).run();
+    const id = result.meta?.last_row_id;
+    await db.prepare(
+      'INSERT INTO audit_log (action, entity_type, entity_id, changes, performed_by, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind('create', 'release', String(id), JSON.stringify({ title: body.title, type, apps, status }), body.created_by || 'admin', now).run();
+    return c.json({ success: true, id }, 201);
+  } catch (e: any) {
+    return c.json({ error: 'Failed to create release: ' + e.message }, 500);
+  }
+});
+
+// PUT /api/admin/releases/:id — update entry
+app.put('/api/admin/releases/:id', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const id = c.req.param('id');
+  const body = await c.req.json();
+  const now = new Date().toISOString();
+  const status = body.status === 'published' ? 'published' : 'draft';
+  const type = ['release', 'criteria_update', 'announcement'].includes(body.type) ? body.type : 'announcement';
+  const apps = typeof body.apps === 'string' && body.apps.trim() ? body.apps.trim() : 'all';
+
+  try {
+    const existing: any = await db.prepare('SELECT * FROM releases WHERE id = ?').bind(id).first();
+    if (!existing) return c.json({ error: 'Not found' }, 404);
+    // Publish timestamp: keep existing if already published, set now if newly publishing, clear if reverting to draft
+    let publishedAt = existing.published_at;
+    if (status === 'published' && !existing.published_at) publishedAt = now;
+    if (status === 'draft') publishedAt = null;
+
+    await db.prepare(
+      'UPDATE releases SET title = ?, body = ?, type = ?, apps = ?, status = ?, published_at = ?, updated_at = ? WHERE id = ?'
+    ).bind(body.title, body.body, type, apps, status, publishedAt, now, id).run();
+
+    await db.prepare(
+      'INSERT INTO audit_log (action, entity_type, entity_id, changes, performed_by, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind('update', 'release', String(id), JSON.stringify({ title: body.title, type, apps, status }), body.updated_by || c.req.header('x-admin-email') || 'admin', now).run();
+
+    return c.json({ success: true, id });
+  } catch (e: any) {
+    return c.json({ error: 'Failed to update release: ' + e.message }, 500);
+  }
+});
+
+// DELETE /api/admin/releases/:id
+app.delete('/api/admin/releases/:id', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const id = c.req.param('id');
+  const now = new Date().toISOString();
+  try {
+    await db.prepare('DELETE FROM releases WHERE id = ?').bind(id).run();
+    await db.prepare(
+      'INSERT INTO audit_log (action, entity_type, entity_id, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
+    ).bind('delete', 'release', String(id), c.req.header('x-admin-email') || 'admin', now).run();
+    return c.json({ success: true });
+  } catch (e: any) {
+    return c.json({ error: 'Failed to delete release: ' + e.message }, 500);
+  }
+});
+
 export default app;

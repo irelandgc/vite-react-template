@@ -236,3 +236,14 @@ input, textarea, select, button { font-family: inherit; }
 
 /* ─── NO SITE / EMPTY STATES ─────────────────────────────────────────── */
 .no-site-msg { background: #fff; border: 1px dashed var(--rule); border-radius: 10px; padding: 20px 16px; text-align: center; color: #5f6b7c; font-size: 13px; margin-bottom: 12px; }
+
+/* ─── RELEASE BELL ───────────────────────────────────────────────────── */
+.release-bell { background: #f0f2f5; border: 1px solid var(--rule); color: #5f6b7c; padding: 4px 9px; border-radius: 6px; font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; line-height: 1; position: relative; }
+.release-bell:hover { color: var(--accent); border-color: var(--accent); }
+.release-bell .release-bell-icon { display: inline-block; width: 14px; height: 14px; }
+.release-bell.release-bell-new { background: #fff8e1; border-color: #ffd54f; color: #92400e; animation: release-bell-pulse 1.8s ease-in-out infinite; }
+.release-bell.release-bell-new::after { content: ''; position: absolute; top: 2px; right: 2px; width: 7px; height: 7px; border-radius: 50%; background: #d32f2f; box-shadow: 0 0 0 2px #fff; }
+@keyframes release-bell-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4); }
+  50%      { box-shadow: 0 0 0 6px rgba(255, 193, 7, 0); }
+}

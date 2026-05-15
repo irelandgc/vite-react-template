@@ -68,3 +68,20 @@ CREATE TABLE IF NOT EXISTS triage_usage_log (
 
 CREATE INDEX IF NOT EXISTS idx_usage_log_timestamp ON triage_usage_log(timestamp);
 CREATE INDEX IF NOT EXISTS idx_usage_log_user ON triage_usage_log(user_name);
+
+-- Release log / announcements — visible across all apps via the shared releases page
+CREATE TABLE IF NOT EXISTS releases (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,                 -- markdown
+  type TEXT NOT NULL DEFAULT 'announcement',  -- 'release' | 'criteria_update' | 'announcement'
+  apps TEXT NOT NULL DEFAULT 'all',   -- CSV: 'all' or any of 'viewer','triage','admin'
+  status TEXT NOT NULL DEFAULT 'draft', -- 'draft' | 'published'
+  published_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  created_by TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_releases_status ON releases(status);
+CREATE INDEX IF NOT EXISTS idx_releases_published_at ON releases(published_at);

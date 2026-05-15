@@ -240,6 +240,10 @@ textarea.note::placeholder{color:#8b919a}
     </div>
   </div>
   <div class="hd-right">
+    <button id="releaseBell" class="release-bell" type="button" aria-label="Release notes">
+      <svg class="release-bell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span>News</span>
+    </button>
     <span class="method-badge method-rule" id="methodBadge">Ready</span>
     <button id="compareBtn" onclick="toggleCompareMode()" class="btn-compare" title="Compare Sonnet 4 vs Opus 4.6 side by side">
       &#9316; Compare Models
@@ -3021,5 +3025,7 @@ document.getElementById('compLogModal').addEventListener('click', function(e){ i
 (function(){ var cl = loadCompLog(); if(cl.length){ var b=document.getElementById('compLogBtn'); if(b){b.style.display='inline-block';b.textContent='Ⓡ Log ('+cl.length+')';} } })();
 document.getElementById('noteInput').addEventListener('keydown', function(e){ if((e.ctrlKey||e.metaKey)&&e.key==='Enter') runCheck(); });
 </script>
+<script src="/crr-criteria/shared/release-bell.js"></script>
+<script>crrReleaseBell.init({ app: 'triage', selector: '#releaseBell' });</script>
 </body>
 </html>
