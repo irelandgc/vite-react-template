@@ -22,8 +22,18 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>();
 
 // ── Middleware ────────────────────────────────────────────────
+// CORS allowlist: production frontend + local dev. Add partner origins (BPAC, HealthLink, ERMS)
+// here when integration is wired up. Keep `*` out — the unauthenticated endpoints
+// (/api/triage/assess, /api/qa-review) rely on same-origin policy as a primary defence.
+const ALLOWED_ORIGINS = [
+  'https://iteratio.nz',
+  'https://www.iteratio.nz',
+  'http://localhost:5173',
+  'http://localhost:8787',
+  'http://127.0.0.1:5173',
+];
 app.use('*', cors({
-  origin: '*',
+  origin: (origin) => (origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]),
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'cf-access-jwt-assertion', 'x-admin-key', 'x-admin-email'],
 }));
@@ -601,6 +611,24 @@ app.post('/api/triage/assess', async (c) => {
   const apiKey = c.env.ANTHROPIC_API_KEY;
   if (!apiKey) return c.json({ error: 'ANTHROPIC_API_KEY not configured' }, 500);
 
+  // Origin check: only allow calls from the production frontend (server-side calls have no Origin header)
+  const origin = c.req.header('Origin');
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+    return c.json({ error: 'Origin not permitted' }, 403);
+  }
+
+  // Per-IP rate limit: 30 requests / hour
+  const kv = c.env.KV;
+  const ip = c.req.header('CF-Connecting-IP') || 'unknown';
+  const hour = new Date().toISOString().slice(0, 13);
+  const rlKey = `ratelimit:triage:${ip}:${hour}`;
+  try {
+    const countRaw = await kv.get(rlKey);
+    const count = countRaw ? parseInt(countRaw) : 0;
+    if (count >= 30) return c.json({ error: 'Rate limit exceeded (30/hour). Try again later.' }, 429);
+    await kv.put(rlKey, String(count + 1), { expirationTtl: 3600 });
+  } catch (_) { /* fail-open on rate-limit KV errors */ }
+
   const body = await c.req.json();
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -808,7 +836,7 @@ app.get('/api/debug/seed', async (c) => {
 
 // Seed endpoint — POST data directly into KV through the worker
 // Usage: curl -X POST ".../api/seed?key=published" -d @kv-published.json
-app.post('/api/seed', async (c) => {
+app.post('/api/seed', requireAccess, async (c) => {
   const kv = c.env.KV;
   const keyParam = c.req.query('key');
   const keyMap: Record<string, string> = {
