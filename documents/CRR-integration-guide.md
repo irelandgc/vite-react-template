@@ -1,12 +1,13 @@
 # CRR Criteria Tools — Integration Guide
 
-**Last updated:** 2026-05-14
+**Last updated:** 2026-05-12
 **Criteria Viewer:** v1.0.0 DEV
 **Triage Advisor:** v1.0.0 DEV
-**Criteria dataset:** v4.0.0 (April 2026)
+**Criteria dataset:** v4.0.1 (April 2026)
 
-This document covers everything needed to embed or link to the CRR Criteria tools from a referral system, patient management system, or clinical portal. Share freely with vendors and developers.
+This document covers everything needed to embed or link to the prototype CRR Criteria tools from a referral system, patient management system, or clinical portal. This version of the tools are for clinical evaluation only.
 
+claud
 ---
 
 ## Tool URLs
@@ -32,33 +33,23 @@ The Viewer displays the published referral criteria for a given exam/site. It ca
 | `sites` | site ID(s), comma-separated | none | Pre-ticks one or more anatomical sites |
 | `region` | region key (see below) | `aucklandregion` | Sets the HealthPathways region; persists to `localStorage` on visit |
 | `mode` | `interactive` \| `passive` | `interactive` | Fixes the view mode. If omitted, mode toggle is shown in-page |
-| `embed` | `modal` | unset | Marks the tool as embedded in a modal iframe — hides the disclaimer banner and compact header. In this mode the viewer posts back to `window.parent` (not `window.opener`) — see below |
-| `sendButton` | `on` | unset | Shows a **Send to Form** button (only active when opened via `window.open()` or as a modal). On click, posts the selected criteria text back to the opener (or parent, in modal mode) via `postMessage` and closes the window |
-| `popup` | `1` | unset | Escape hatch — forces popup-mode behaviour (Send button visibility, copy-and-close) when `window.opener` is unavailable (e.g. some PMS/embedded WebView contexts that strip `opener`) |
+| `embed` | `modal` | unset | Marks the tool as embedded in a modal iframe — hides the disclaimer banner and compact header |
+| `sendButton` | `on` | unset | Shows a **Send to Form** button (only active when opened via `window.open()` or as a modal). On click, posts the selected criteria text back to the opener via `postMessage` and closes the window |
 
 ### Receiving the `postMessage` from `sendButton`
 
-When `?sendButton=on` is set and the user clicks **Send to Form**, the viewer posts:
+When `?sendButton=on` is set and the user clicks **Send to Form**, the viewer posts to `window.opener`:
 
 ```javascript
 { type: 'crr-output', text: '<selected criteria text>', source: 'viewer' }
 ```
 
-**Target window depends on launch mode:**
-
-- **Popup launch** (`window.open(...)`): posted to `window.opener`.
-- **Modal iframe launch** (`?embed=modal`): posted to `window.parent`. The viewer also posts `{ type: 'crr-close' }` after Send to Form (and after Copy) so the parent can dismiss the modal.
-
-Listen in your referral form page (works for both):
+Listen in your referral form page:
 
 ```javascript
 window.addEventListener('message', function(event) {
-  if (!event.data) return;
-  if (event.data.type === 'crr-output') {
+  if (event.data && event.data.type === 'crr-output') {
     document.getElementById('referralNotes').value = event.data.text;
-  }
-  if (event.data.type === 'crr-close') {
-    // dismiss the modal iframe if you opened one
   }
 });
 ```
