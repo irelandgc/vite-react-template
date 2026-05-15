@@ -34,7 +34,8 @@
 	},
 	"private": true,
 	"scripts": {
-		"build": "tsc -b && vite build",
+		"build": "tsc -b && vite build && npm run postbuild:clean",
+		"postbuild:clean": "rm -rf dist/client/crr-criteria/.claude dist/client/crr-criteria/.wrangler dist/client/crr-criteria/api dist/client/crr-criteria/migration-output dist/client/crr-criteria/node_modules && rm -f dist/client/crr-criteria/CLAUDE.md dist/client/crr-criteria/package.json dist/client/crr-criteria/package-lock.json dist/client/crr-criteria/wrangler.json dist/client/crr-criteria/viewer/viewer.html dist/client/crr-criteria/viewer/popup.html",
 		"cf-typegen": "wrangler types",
 		"check": "tsc && vite build && wrangler deploy --dry-run",
 		"deploy": "wrangler deploy",

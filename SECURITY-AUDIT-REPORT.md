@@ -268,23 +268,26 @@ Confirms the pattern is in place — just needs extending to `/api/triage/assess
 
 | # | Finding | Severity | Status | Fix applied |
 |---|---|---|---|---|
-| 1 | `/api/triage/assess` open Anthropic proxy | CRITICAL | OPEN | rate-limit + origin-check planned this session |
-| 2 | `/api/seed` unauthenticated KV writes | CRITICAL | OPEN | add `requireAccess` middleware this session |
-| 3 | `.claude/settings.local.json` exposes admin-key history | CRITICAL | OPEN | delete from `public/` and rotate `ADMIN_KEY` |
-| 4 | CORS `*` on all endpoints | CRITICAL | OPEN | restrict to `https://iteratio.nz` (+ partner origins) |
-| 5 | Backend source served publicly | IMPORTANT | OPEN | move `api/` out of `public/` |
-| 6 | `wrangler.json` exposes D1/KV IDs | IMPORTANT | OPEN | move with api/ |
-| 7 | `migration-output/` publicly served | IMPORTANT | OPEN | move out of `public/` |
-| 8 | `CLAUDE.md` publicly served | IMPORTANT | OPEN | delete from `public/` |
-| 9 | `package.json/lock` publicly served | IMPORTANT | OPEN | move with api/ |
-| 10 | Old HTML files (`viewer.html`, `popup.html`, `crr-demo.html`, `hl/`) | IMPORTANT | OPEN | delete unused |
-| 11 | No rate limit on `/api/triage/assess` | IMPORTANT | OPEN | mirror `/api/qa-review` pattern |
+| 1 | `/api/triage/assess` open Anthropic proxy | CRITICAL | **FIXED** | Origin allowlist + 30 req/hr/IP rate limit added to handler (`worker.ts:610`). Worker version `97d25c83`. Verified live: `evil.example.com` → 403; iteratio.nz still works. |
+| 2 | `/api/seed` unauthenticated KV writes | CRITICAL | **FIXED** | `requireAccess` middleware added (`worker.ts:821`). Verified live: anonymous POST → 401. |
+| 3 | `.claude/settings.local.json` exposes admin-key history | CRITICAL | **FIXED (deployment)** | Build script (`postbuild:clean`) now strips `.claude/`, `.wrangler/`, `api/`, `migration-output/`, `node_modules/`, `CLAUDE.md`, `package*.json`, `wrangler.json`, old viewer HTML from `dist/client/` after every Vite build. Verified live: `https://iteratio.nz/crr-criteria/.claude/settings.local.json` → 404. **Still TODO:** rotate `ADMIN_KEY` to a value never logged (the historical `admin` value appears in the now-deleted file). |
+| 4 | CORS `*` on all endpoints | CRITICAL | **FIXED** | Replaced with allowlist of `https://iteratio.nz`, `https://www.iteratio.nz`, and local dev hosts (`worker.ts:25`). Verified live: preflight from `evil.example.com` returns `access-control-allow-origin: https://iteratio.nz` (the fallback), not `*`. Partner-platform origins (BPAC/HealthLink/ERMS) need to be added when integration is wired. |
+| 5 | Backend source served publicly | IMPORTANT | **FIXED (deployment)** | `dist/client/crr-criteria/api/` removed by `postbuild:clean`. Verified live: `api/worker.ts`, `api/schema.sql`, `api/migrate.py` all 404. Source still lives at `public/crr-criteria/api/` for API-worker deploy convenience — recommended follow-up is to move it out of `public/` entirely for defence-in-depth. |
+| 6 | `wrangler.json` exposes D1/KV IDs | IMPORTANT | **FIXED (deployment)** | Removed from `dist/client/` by postbuild script. Verified 404 live. |
+| 7 | `migration-output/` publicly served | IMPORTANT | **FIXED (deployment)** | Same. `migration-output/seed.sql` → 404. |
+| 8 | `CLAUDE.md` publicly served | IMPORTANT | **FIXED (deployment)** | Same. `CLAUDE.md` → 404. |
+| 9 | `package.json/lock` publicly served | IMPORTANT | **FIXED (deployment)** | Same. |
+| 10 | Old HTML files (`viewer.html`, `popup.html`, `crr-demo.html`, `hl/`) | IMPORTANT | **PARTIAL** | `viewer/viewer.html` and `viewer/popup.html` removed by postbuild. `crr-demo.html` and `hl/index.html` are still deployed (used as integration demos). Recommendation: move behind Cloudflare Access alongside the admin tool. |
+| 11 | No rate limit on `/api/triage/assess` | IMPORTANT | **FIXED** | 30 req/hr/IP via KV (same pattern as `/api/qa-review`). |
 
 ---
 
-## Recommended action sequence
+## Outstanding actions (post-fix)
 
-1. **Immediate (today):** Apply CRITICAL fixes 1, 2, 4 (worker code) and CRITICAL 3 (delete settings.local.json from `public/`). Deploy. Rotate `ADMIN_KEY`.
-2. **Same day:** Apply IMPORTANT 7, 8 (delete migration-output + CLAUDE.md from `public/`). Rebuild + deploy frontend.
-3. **Within a week:** Restructure project to move `api/` and related worker config out of `public/`. Update deploy commands. Delete unused HTML.
-4. **Before pilot:** Set Anthropic spend cap in dashboard, add request-token / HMAC validation for `/api/triage/assess`, add CSP headers.
+1. **Rotate `ADMIN_KEY`** — the historical `admin` value was visible in `.claude/settings.local.json` for some period; rotate via `npx wrangler secret put ADMIN_KEY` and update the admin tool localStorage prompt.
+2. **Set Anthropic monthly spend cap** in the Anthropic dashboard — defence-in-depth against bypass of the 30/hr/IP limit (e.g. distributed abuse).
+3. **Move `public/crr-criteria/api/` and related worker config out of `public/`** — eliminates the dependency on the postbuild scrub. Update the API-worker deploy command to point at the new location.
+4. **Move `crr-demo.html` and `hl/index.html` behind Cloudflare Access** if they're only for stakeholder demos.
+5. **Add request-token / HMAC validation** for `/api/triage/assess` — the current origin check is bypassable by a server-side caller that omits the Origin header. The rate limit caps abuse at 30/hr/IP but a determined attacker with distributed IPs could still spend the budget.
+6. **Add CSP headers** to Pages responses (Workers Static Assets supports `_headers`).
+7. **Add `.claude/`, `.wrangler/`, `node_modules/` to `.gitignore`** if not already present, to prevent re-introduction.
