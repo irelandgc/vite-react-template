@@ -1,7 +1,7 @@
 # CRR Decision Support Tools — Architecture Briefing
 ## Decoupled Design, Privacy by Design, and Integration Pathway
 
-**Version:** 0.2 · May 2026
+**Version:** 0.3 · May 2026
 **Author:** CRR Programme — Digital & Integration
 **Audience:** CRR Steering Group, HNZ Digital, Cybersecurity Review
 
@@ -286,7 +286,7 @@ The Cloudflare Workers API and D1/KV database that power the standalone tools to
 
 ## 5. Component Summary
 
-### 5.1 CRR Criteria Viewer (v5.3.0)
+### 5.1 CRR Criteria Viewer (v1.0.0 DEV)
 
 **Purpose:** Browse and self-assess against National Radiology Access Criteria.
 
@@ -308,7 +308,7 @@ The Cloudflare Workers API and D1/KV database that power the standalone tools to
 
 **Data:** National Access Criteria stored in D1 database with KV cache. No patient data.
 
-### 5.2 CRR Triage Advisor (v2.1.1)
+### 5.2 CRR Triage Advisor (v1.0.0 DEV)
 
 **Purpose:** AI-assisted assessment of clinical referral notes against access criteria.
 
@@ -333,7 +333,7 @@ The Cloudflare Workers API and D1/KV database that power the standalone tools to
 
 **Data:** De-identified clinical scenarios processed transiently. Assessment content and usage metadata logged to D1 for pilot evaluation. PII blocked by 4-stage client pipeline before any transmission.
 
-### 5.3 Admin Tool (v1.5.8)
+### 5.3 Admin Tool (v1.0.0 DEV)
 
 **Purpose:** Maintain criteria content, manage regional localisation, publish updates, and review evaluation data.
 

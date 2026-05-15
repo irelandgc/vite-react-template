@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CRR Triage Advisor v2.1.1</title>
+<title>CRR Triage Advisor v1.0.0 DEV</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/crr-criteria/shared/crr-design-system.css">
 <style>
@@ -166,8 +166,8 @@ textarea.note::placeholder{color:#8b919a}
 .btn-md{padding:7px 14px;background:none;border:1px solid #f0b0b0;color:var(--fail);font-family:var(--sans);font-size:12px;font-weight:500;border-radius:6px;cursor:pointer}
 
 /* ── QA System ───────────────────────────────────────────── */
-.btn-qa{padding:7px 12px;background:#fff;border:1px solid var(--warn-bd);color:var(--warn);font-family:var(--sans);font-size:11px;font-weight:500;border-radius:6px;cursor:pointer;transition:all .12s;white-space:nowrap}
-.btn-qa:hover{background:var(--warn-bg)}
+.btn-qa{padding:7px 14px;background:#d97706;border:1px solid #b45309;color:#fff;font-family:var(--sans);font-size:12px;font-weight:700;border-radius:6px;cursor:pointer;transition:all .12s;white-space:nowrap;box-shadow:0 1px 3px rgba(180,83,9,0.25)}
+.btn-qa:hover{background:#b45309}
 .btn-qa-export{padding:5px 12px;background:none;border:1px solid var(--rule);color:var(--mid);font-family:var(--sans);font-size:11px;font-weight:500;border-radius:6px;cursor:pointer}
 .btn-qa-export:hover{border-color:var(--accent);color:var(--accent)}
 .qa-opt-btn{padding:7px 10px;border:2px solid var(--rule);border-radius:6px;background:#fff;font-size:12px;cursor:pointer;color:var(--ink);font-family:var(--sans);text-align:left;line-height:1.3;transition:all .1s;width:100%}
@@ -236,7 +236,7 @@ textarea.note::placeholder{color:#8b919a}
     <span class="logo">CRR</span>
     <div>
       <div class="hd-title">CRR Triage Advisor</div>
-      <div class="hd-sub">Community Referred Radiology — AI Triage Assessment &nbsp;·&nbsp; <button id="verBtn" onclick="openProvenanceModal()" style="background:none;border:none;color:#5f6b7c;font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:inherit;opacity:.8" title="Criteria provenance and version information">v2.1.1</button></div>
+      <div class="hd-sub">Community Referred Radiology — AI Triage Assessment &nbsp;·&nbsp; <button id="verBtn" onclick="openProvenanceModal()" style="background:none;border:none;color:#5f6b7c;font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:inherit;opacity:.8" title="Criteria provenance and version information">v1.0.0 DEV</button></div>
     </div>
   </div>
   <div class="hd-right">
@@ -402,7 +402,7 @@ textarea.note::placeholder{color:#8b919a}
         <div style="background:var(--lite);border-radius:3px;padding:10px 12px;border:1px solid var(--rule)">
           <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:5px">Tool &amp; criteria version</div>
           <table style="width:100%;border-collapse:collapse;font-size:12px">
-            <tr><td style="padding:2px 0;color:var(--mid);width:55%">Tool version</td><td id="provToolVer" style="font-weight:600;color:var(--navy)">v2.1.1</td></tr>
+            <tr><td style="padding:2px 0;color:var(--mid);width:55%">Tool version</td><td id="provToolVer" style="font-weight:600;color:var(--navy)">v1.0.0 DEV</td></tr>
             <tr><td style="padding:2px 0;color:var(--mid)">Criteria data</td><td style="font-weight:600;color:var(--navy)">Aug 2025 reissue 3</td></tr>
             <tr><td style="padding:2px 0;color:var(--mid)">Adult updated</td><td style="font-weight:600;color:var(--navy)">March 2026</td></tr>
             <tr><td style="padding:2px 0;color:var(--mid)">Paediatric updated</td><td style="font-weight:600;color:var(--navy)">March 2026</td></tr>
@@ -579,14 +579,15 @@ textarea.note::placeholder{color:#8b919a}
 <script>
 // ══════════════════════════════════════════════════════════════
 //  CRR TRIAGE ADVISOR — DECOUPLED
-//  Version: v2.1.1
+//  Version: v1.0.0 DEV
 //  Data source: API endpoint (with embedded fallback)
 // ══════════════════════════════════════════════════════════════
 
-var VER = "v2.1.1";
-var BUILD = "2026-04-03"; // bump on each deployment
+var VER = "v1.0.0 DEV";
+var BUILD = "2026-05-14"; // bump on each deployment
 
 // Changelog:
+// v1.0.0 DEV — version reset for review cycle (2026-05-14); previously v2.1.1
 // v2.1.1 — API key proxy (key removed from browser), wide provenance modal, single-source VER
 // v2.0.0 — decoupled from viewer, loads criteria from API
 
@@ -2064,14 +2065,27 @@ function renderCriteriaBrowser(r) {
   var siteId = siteIdFromExamString(r.exam);
   var site = siteId ? findSiteById(siteId) : null;
 
-  // If not found by exam string, try the criteria_page to hint modality
+  // If not found by exam string, try partial label match — use modality to disambiguate
   if (!site && r.exam) {
-    // Try partial match
     var el = r.exam.toLowerCase();
     var allSites = detectPaediatric() ? PAED_INDEX : SITE_INDEX;
-    for (var i = 0; i < allSites.length; i++) {
-      var s = allSites[i];
-      if (el.indexOf(s.site_label.toLowerCase()) !== -1) { site = s; break; }
+    var modalityFilter = r.modality ? r.modality.toLowerCase() : null;
+    // First pass: label match filtered by modality to avoid CT/XR/US collision
+    if (modalityFilter) {
+      for (var i = 0; i < allSites.length; i++) {
+        var s = allSites[i];
+        if (el.indexOf(s.site_label.toLowerCase()) !== -1 &&
+            s.modality && s.modality.toLowerCase() === modalityFilter) {
+          site = s; break;
+        }
+      }
+    }
+    // Second pass: label only if modality pass found nothing
+    if (!site) {
+      for (var j = 0; j < allSites.length; j++) {
+        var t = allSites[j];
+        if (el.indexOf(t.site_label.toLowerCase()) !== -1) { site = t; break; }
+      }
     }
   }
 

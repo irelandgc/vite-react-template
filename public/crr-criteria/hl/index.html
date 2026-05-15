@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRR HealthLink Integration Mockup</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f5f6f8; --surface: #ffffff; --surface-alt: #f0f2f5;
+            --border: #dde1e6; --border-focus: #4a86b5;
+            --text: #1a1d21; --text-secondary: #5a6068; --text-muted: #8b919a;
+            --accent: #1a6fa0; --accent-hover: #145a84; --accent-light: #e8f2fa; --accent-surface: #d4e8f5;
+            --warning: #d97706; --warning-bg: #fef3c7;
+            --success: #059669; --danger: #dc2626;
+            --teal: #009688; --teal-dark: #00796b;
+            --panel-width: 330px; --header-height: 52px;
+            --radius: 6px; --radius-lg: 10px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.06); --shadow: 0 2px 8px rgba(0,0,0,0.08); --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 13px; line-height: 1.5; min-height: 100vh; }
+
+        .app-header { height: var(--header-height); background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
+        .app-header-left { display: flex; align-items: center; gap: 12px; }
+        .app-logo { font-size: 14px; font-weight: 700; color: var(--accent); letter-spacing: -0.3px; }
+        .app-badge { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; background: var(--warning-bg); color: var(--warning); padding: 2px 8px; border-radius: 99px; }
+
+        .app-layout { display: flex; height: calc(100vh - var(--header-height)); }
+
+        .config-panel { width: var(--panel-width); background: var(--surface); border-right: 1px solid var(--border); overflow-y: auto; flex-shrink: 0; }
+        .config-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+        .config-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 8px; }
+
+        .disclaimer-box { background: #fff8e1; border: 1px solid #ffe082; border-radius: var(--radius); padding: 12px 14px; }
+        .disclaimer-box h4 { font-size: 12px; font-weight: 700; color: var(--warning); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+        .disclaimer-box p { font-size: 11px; color: #5d4037; line-height: 1.5; margin-bottom: 6px; }
+        .disclaimer-box p:last-child { margin-bottom: 0; }
+        .disclaimer-box .hp-badge { display: inline-flex; align-items: center; gap: 4px; background: white; border: 1px solid #ffe082; border-radius: 3px; padding: 2px 6px; font-size: 10px; font-weight: 600; color: var(--teal-dark); margin-top: 4px; }
+
+        .seg-control { display: flex; background: var(--surface-alt); border-radius: var(--radius); padding: 2px; gap: 2px; }
+        .seg-btn { flex: 1; padding: 6px 4px; border: none; background: none; font-size: 11px; font-family: inherit; font-weight: 500; color: var(--text-secondary); border-radius: calc(var(--radius) - 2px); cursor: pointer; transition: all 0.15s; text-align: center; white-space: nowrap; }
+        .seg-btn:hover { color: var(--text); }
+        .seg-btn.active { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-sm); }
+
+        .config-select { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius); font-family: inherit; font-size: 13px; background: var(--surface); color: var(--text); cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%235a6068'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+        .config-select:focus { outline: none; border-color: var(--border-focus); }
+        .config-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; line-height: 1.4; }
+
+        .mockup-area { flex: 1; overflow: auto; position: relative; }
+        .mockup-source-badge { position: sticky; top: 0; z-index: 10; background: var(--accent); color: white; padding: 6px 18px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; display: flex; align-items: center; justify-content: space-between; }
+        .mockup-source-badge .badge-right { font-weight: 400; opacity: 0.8; }
+
+        /* HL styles */
+        .hl-body { font-family: Arial, sans-serif; font-size: 12px; background: #f0f0f0; color: #333; }
+        .hl-top-header { background: white; padding: 5px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; }
+        .hl-logo-area { display: flex; align-items: center; color: #007bbd; font-weight: bold; font-size: 18px; }
+        .hl-logo-area span { color: #888; font-size: 12px; margin-left: 5px; }
+        .hl-logo-mark { color: #005aab; font-size: 24px; font-weight: 900; border-bottom: 3px solid #005aab; }
+        .hl-action-bar { background: #cedbe9; padding: 4px; display: flex; justify-content: flex-end; gap: 2px; border-bottom: 1px solid #999; }
+        .hl-btn { background: #fff; border: 1px solid #888; padding: 2px 10px; cursor: pointer; font-size: 11px; font-family: Arial; }
+        .hl-wrapper { display: flex; padding: 10px; gap: 10px; max-width: 1200px; margin: 0 auto; }
+        .hl-sidebar { width: 220px; display: flex; flex-direction: column; gap: 8px; }
+        .hl-sidebar-box { background: #8fbcd4; border: 1px solid #5a8fb2; border-radius: 5px; overflow: hidden; }
+        .hl-sidebar-title { background: rgba(0,0,0,0.1); padding: 4px 8px; font-weight: bold; border-bottom: 1px solid rgba(0,0,0,0.1); }
+        .hl-sidebar-content { padding: 6px 8px; font-size: 11px; line-height: 1.3; }
+        .hl-main-form { flex: 1; background: #d0e0eb; border: 1px solid #999; border-radius: 5px; padding: 15px; }
+        .hl-form-title { font-weight: bold; font-size: 14px; margin-bottom: 15px; border-bottom: 1px solid #999; padding-bottom: 5px; }
+        .hl-form-section { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #b4c7d8; }
+        .hl-row { display: flex; align-items: center; margin-bottom: 8px; }
+        .hl-label-cell { width: 280px; }
+        .hl-required { color: red; }
+        .hl-grid-options { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 5px; margin: 10px 0; }
+        .hl-guidelines-box { background: rgba(255,255,255,0.4); padding: 10px; border: 1px solid #a4b7c8; border-radius: 3px; margin: 10px 0; }
+        .hl-guide-link { color: #005aab; text-decoration: underline; cursor: pointer; font-weight: bold; display: block; margin: 6px 0; font-size: 12px; }
+        .hl-guide-link:hover { color: #003d7a; }
+        .hl-body textarea { width: 100%; border: 1px solid #888; border-radius: 2px; padding: 5px; box-sizing: border-box; font-family: Arial; font-size: 12px; }
+        .hl-endorsing { background: #e8d8c8; border: 1px solid #c4a882; border-radius: 3px; padding: 10px; margin-top: 10px; display: none; }
+        .hl-endorsing-label { font-weight: bold; font-size: 11px; margin-bottom: 4px; color: #5a3e1e; }
+
+        /* Check indications link */
+        .hl-clinical-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .hl-check-indications { background: #4b6ea9; color: white; border: 1px solid #3a5a8f; padding: 4px 12px; border-radius: var(--radius); font-size: 11px; font-family: Arial, sans-serif; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(75,110,169,0.25); transition: background 0.15s; }
+        .hl-check-indications:hover { background: #3a5a8f; }
+        .hl-check-indications:disabled, .hl-check-indications.disabled { background: #b0bec5; border-color: #90a4ae; cursor: not-allowed; box-shadow: none; }
+
+        .toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 10px 18px; border-radius: var(--radius); font-size: 13px; font-weight: 500; box-shadow: var(--shadow-lg); opacity: 0; transform: translateY(10px); transition: all 0.3s; z-index: 300; pointer-events: none; }
+        .toast.show { opacity: 1; transform: translateY(0); }
+
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 500; justify-content: center; align-items: center; }
+        .modal-overlay.open { display: flex; }
+        .modal-frame { background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); width: 90vw; height: 90vh; overflow: hidden; display: flex; flex-direction: column; }
+        .modal-header { padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { font-size: 14px; font-weight: 600; }
+        .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-secondary); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius); }
+        .modal-close:hover { background: var(--surface-alt); }
+        .modal-body { flex: 1; }
+        .modal-body iframe { width: 100%; height: 100%; border: none; }
+
+        /* Received-data indicator */
+        .received-flash {
+            background: #d1fae5; border: 1px solid #6ee7b7; border-radius: var(--radius);
+            padding: 8px 12px; margin-top: 8px; font-size: 11px; color: #065f46;
+            display: none; animation: flashIn 0.3s ease;
+        }
+        .received-flash.visible { display: flex; align-items: center; gap: 8px; }
+        .received-flash .flash-icon { font-size: 14px; }
+        .received-flash .flash-text { flex: 1; }
+        .received-flash .flash-dismiss { background: none; border: none; color: #065f46; cursor: pointer; font-size: 14px; opacity: 0.5; }
+        .received-flash .flash-dismiss:hover { opacity: 1; }
+        @keyframes flashIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+        textarea.field-highlight { animation: fieldPulse 1.5s ease; }
+        @keyframes fieldPulse { 0% { box-shadow: 0 0 0 3px rgba(16,185,129,0.4); } 100% { box-shadow: none; } }
+
+        @media (max-width: 900px) { .config-panel { width: 280px; } .hl-wrapper { flex-direction: column; } .hl-sidebar { width: 100%; } }
+    </style>
+</head>
+<body>
+
+<header class="app-header">
+    <div class="app-header-left">
+        <div class="app-logo">CRR HealthLink Integration Mockup</div>
+        <span class="app-badge">Concept</span>
+    </div>
+</header>
+
+<div class="app-layout">
+    <aside class="config-panel">
+
+        <!-- Disclaimer (info panel) -->
+        <div class="config-section">
+            <div class="disclaimer-box">
+                <h4>&#9888; Concept Demonstration</h4>
+                <p>Prototype showing how CRR criteria reference and decision support tools could integrate with the HealthLink referral form. For evaluation and feedback only.</p>
+                <p><strong>HealthPathways remains the authoritative source for radiology access criteria.</strong></p>
+                <div class="hp-badge">&#10047; HealthPathways = Authoritative Source</div>
+            </div>
+        </div>
+
+        <!-- Region -->
+        <div class="config-section">
+            <div class="config-label">Region</div>
+            <select class="config-select" id="regionSelect" onchange="setConfig('region',this.value)">
+                <option value="aucklandregion">Auckland Region</option>
+                <option value="northland">Northland</option>
+                <option value="midland">Midland</option>
+                <option value="hawkesbay">Hawke's Bay</option>
+                <option value="3d" selected>3D Health Pathways</option>
+                <option value="canterbury">Canterbury</option>
+                <option value="southern">Southern</option>
+                <option value="ccp">Whanganui &amp; MidCentral CHP</option>
+            </select>
+        </div>
+
+        <!-- Exam Type -->
+        <div class="config-section">
+            <div class="config-label">Exam Type</div>
+            <select class="config-select" id="examSelect" onchange="setConfig('hlExam',this.value); buildHLForm();">
+                <option value="us" selected>Ultrasound</option>
+                <option value="ct">CT Scan</option>
+                <option value="xr">X-ray</option>
+                <option value="mri">MRI</option>
+            </select>
+        </div>
+
+        <!-- Launch Style -->
+        <div class="config-section">
+            <div class="config-label">Launch Style</div>
+            <div class="seg-control" data-config="launch">
+                <button class="seg-btn active" data-val="popup" onclick="setConfig('launch','popup',this)">Popup</button>
+                <button class="seg-btn" data-val="modal" onclick="setConfig('launch','modal',this)">Modal</button>
+                <button class="seg-btn" data-val="tab" onclick="setConfig('launch','tab',this)">New Tab</button>
+            </div>
+        </div>
+
+        <!-- Mode -->
+        <div class="config-section">
+            <div class="config-label">Mode</div>
+            <div class="seg-control" data-config="mode">
+                <button class="seg-btn active" data-val="interactive" onclick="setConfig('mode','interactive',this)">Interactive</button>
+                <button class="seg-btn" data-val="passive" onclick="setConfig('mode','passive',this)">Passive</button>
+            </div>
+            <p class="config-hint">Interactive = tickable criteria with send-to-form. Passive = read-only reference.</p>
+        </div>
+
+    </aside>
+
+    <main class="mockup-area">
+        <div id="mockup-healthlink">
+            <div class="mockup-source-badge">
+                <span id="hlBadgeTitle">HealthLink SmartForm &mdash; Ultrasound Referral (Mockup)</span>
+                <span class="badge-right" id="hlRegionBadge">Region: 3D Health Pathways</span>
+            </div>
+            <div class="hl-body">
+                <div class="hl-top-header"><div class="hl-logo-area">CareConnect <span>eReferrals Mockup</span></div><div class="hl-logo-mark">HL</div></div>
+                <div class="hl-action-bar"><button class="hl-btn" style="background:#4b6ea9;color:white;">Submit</button><button class="hl-btn">Preview</button><button class="hl-btn">Park</button><button class="hl-btn">Help &#9662;</button></div>
+                <div class="hl-wrapper">
+                    <div class="hl-sidebar">
+                        <div class="hl-sidebar-box" style="background:#d0e0eb;border:2px solid #ff6666;"><div class="hl-sidebar-title">Clinical Information</div><div class="hl-sidebar-content" id="hlSidebarService">Ultrasound</div></div>
+                        <div class="hl-sidebar-box"><div class="hl-sidebar-title">Patient Information</div><div class="hl-sidebar-content"><strong>CHAPLIN, Charlie</strong><br><strong>NHI: ABC1234</strong><br>Age: 60yrs (DOB: 16/04/1889)</div></div>
+                    </div>
+                    <div class="hl-main-form">
+                        <div class="hl-form-title" id="hlFormTitle">Ultrasound Referral for Investigation/Test Only</div>
+                        <div class="hl-form-section">
+                            <label><strong id="hlExamGroupLabel">Ultrasound</strong><span class="hl-required">*</span></label>
+                            <div class="hl-grid-options" id="hlExamGrid"></div>
+                        </div>
+                        <div class="hl-guidelines-box" id="hlGuidanceBox" style="display:none;">
+                            <strong>Guidelines</strong><br>
+                            <span style="font-size:11px;color:#555;">Please use the following guidelines to support your referral</span>
+                            <div id="hlGuidanceLinks"></div>
+                            <div class="hl-row" style="margin-top:12px;" id="hlCriteriaQuestion">
+                                <div>Does this investigation meet criteria?<span class="hl-required">*</span>
+                                    <input type="radio" name="hp" style="margin-left:15px;" onclick="hlCriteriaAnswer('yes')"> Yes
+                                    <input type="radio" name="hp" onclick="hlCriteriaAnswer('no')"> No
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hl-endorsing" id="hlEndorsing">
+                            <div class="hl-endorsing-label">Endorsing Clinician Name, Specialty and Role<span class="hl-required">*</span></div>
+                            <textarea style="height:40px;"></textarea>
+                            <p style="font-size:10px;color:#8a6d3b;margin-top:4px;">Required when criteria are not met</p>
+                        </div>
+                        <div class="hl-form-section" style="border:none;margin-top:15px;">
+                            <div class="hl-clinical-header">
+                                <label><strong>Clinical question to be answered (1000 character limit)</strong><span class="hl-required">*</span></label>
+                                <a href="javascript:void(0)" class="hl-check-indications" id="hlCheckIndications" onclick="checkIndications()" title="Open the Triage Advisor with the clinical question text">&#128270; Check indications</a>
+                            </div>
+                            <textarea id="hlClinicalQuestion" style="height:60px;margin-top:5px;"></textarea>
+                            <div class="received-flash" id="hlReceivedFlash"><span class="flash-icon">&#10003;</span><span class="flash-text" id="hlReceivedText">Criteria assessment received from tool</span><button class="flash-dismiss" onclick="this.parentElement.classList.remove('visible')">&times;</button></div>
+                            <label style="display:block;margin-top:15px;"><strong>Relevant history &amp; physical examination findings</strong><span class="hl-required">*</span></label>
+                            <textarea id="hlClinicalHistory" style="height:60px;margin-top:5px;" placeholder="Please include relevant bloods and previous imaging done outside of your district"></textarea>
+                        </div>
+                        <div class="hl-form-section">
+                            <label><strong>I have attached all supporting radiology and laboratory results</strong><span class="hl-required">*</span></label>
+                            <div style="margin-top:5px;"><input type="radio" name="results"> Yes <input type="radio" name="results"> No</div>
+                        </div>
+                        <div class="hl-form-section">
+                            <div class="hl-row"><div class="hl-label-cell">Patient weight*</div><div><input type="text" style="width:60px;border:1px solid #888;padding:2px;" value="82"> Kgs</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal-frame"><div class="modal-header"><h3 id="modalTitle">CRR Criteria</h3><button class="modal-close" onclick="closeModal()">&times;</button></div><div class="modal-body"><iframe id="modalIframe"></iframe></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var BASE = 'https://iteratio.nz/crr-criteria';
+var DEFAULTS = { mode:'interactive', hlExam:'us', region:'3d', launch:'popup' };
+var config = JSON.parse(JSON.stringify(DEFAULTS));
+try { var s = localStorage.getItem('crr-hl-config'); if(s) { var p = JSON.parse(s); for(var k in p) config[k]=p[k]; } } catch(e) {}
+
+var HL_US = [
+    {l:'Abdominal',c:'us_abdomen'},{l:'Carotid',c:'us_carotid'},{l:'Child Hip',c:'us_hip_paed'},
+    {l:'DVT',c:'us_dvt'},{l:'MSK',c:'us_msk'},
+    {l:'Neck/Thyroid',c:'us_neck_thyroid'},{l:'Pelvis',c:'us_pelvis'},{l:'Renal',c:'us_renal'},
+    {l:'Scrotum/Testis',c:'us_scrotum'},{l:'Soft Tissue Lump',c:'us_soft_tissue'},
+    {l:'Other',c:'other'}
+];
+var HL_CT = [
+    {l:'Abdo-Pelvis',c:'ct_other'},{l:'Chest-Abdo-Pelvis',c:'ct_cap'},
+    {l:'Chest',c:'ct_chest'},{l:'CT Colonography',c:'ct_colonography'},
+    {l:'Head',c:'ct_head'},{l:'IVU',c:'ct_ivu'},{l:'KUB',c:'ct_kub'},{l:'Sinus',c:'ct_sinus'}
+];
+var HL_XR = [
+    {l:'Chest',c:'xr_chest'},{l:'Abdomen',c:'xr_abdomen'},{l:'Spine',c:'xr_spine'},
+    {l:'Shoulder',c:'xr_shoulder'},{l:'Elbow',c:'xr_elbow'},{l:'Wrist/Hand',c:'xr_wrist_hand'},
+    {l:'Knee',c:'xr_knee'},{l:'Ankle/Foot',c:'xr_ankle_foot'},
+    {l:'Pelvis/Hip',c:'xr_pelvis_hip'},{l:'Other',c:'other'}
+];
+var HL_MRI = [
+    {l:'Lumbar Spine',c:'mri_lumbar'},{l:'Other',c:'other'}
+];
+function getSites(e) { return {us:HL_US,ct:HL_CT,xr:HL_XR,mri:HL_MRI}[e]||HL_US; }
+var EL = {us:'Ultrasound',ct:'CT Scan',xr:'X-ray',mri:'MRI'};
+var RN = {aucklandregion:'Auckland Region',northland:'Northland',midland:'Midland',hawkesbay:"Hawke's Bay",'3d':'3D Health Pathways',canterbury:'Waitaha Canterbury',southern:'Southern',ccp:'Whanganui & MidCentral CHP'};
+
+// URL building
+function buildViewerUrl(exam, sites) {
+    return BASE+'/viewer/?exam='+exam+'&sites='+sites+'&region='+config.region+'&mode='+config.mode+'&sendButton=on';
+}
+function buildTriageUrl(exam, sites, presentation) {
+    var url = BASE+'/triage/?exam='+exam+'&sites='+sites+'&region='+config.region+'&sendButton=on';
+    if (presentation) url += '&presentation='+encodeURIComponent(presentation);
+    return url;
+}
+
+function openUrl(url, title) {
+    if (config.launch === 'popup') {
+        var isInteractive = (config.mode === 'interactive' || url.indexOf('/triage/') >= 0);
+        var w = isInteractive ? 1100 : 800;
+        w = Math.min(w, Math.round(window.innerWidth * 0.95));
+        var h = Math.round(window.innerHeight * 0.9);
+        var left = window.screenX + Math.round((window.innerWidth - w) / 2);
+        var top = window.screenY + Math.round((window.innerHeight - h) / 2);
+        window.open(url,'CRRTool','width='+w+',height='+h+',top='+top+',left='+left+',toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes');
+    } else if (config.launch === 'modal') {
+        document.getElementById('modalTitle').textContent=title;
+        document.getElementById('modalIframe').src=url+(url.indexOf('?')>=0?'&':'?')+'embed=modal';
+        document.getElementById('modalOverlay').classList.add('open');
+    } else {
+        window.open(url,'_blank');
+    }
+}
+
+function launchViewer(exam, sites) {
+    openUrl(buildViewerUrl(exam, sites), 'CRR Criteria Viewer');
+}
+
+function checkIndications() {
+    var pres = (document.getElementById('hlClinicalQuestion').value||'').trim();
+    if (!pres) { showToast('Add a clinical question first'); return; }
+    var exam = config.hlExam||'us';
+    var checked = [];
+    document.querySelectorAll('#hlExamGrid input:checked').forEach(function(cb){ checked.push(cb.dataset.code); });
+    var sites = checked.length ? checked.join(',') : (getSites(exam)[0]||{}).c || '';
+    openUrl(buildTriageUrl(exam, sites, pres), 'CRR Triage Advisor');
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); document.getElementById('modalIframe').src=''; }
+
+// HL form
+function buildHLForm() {
+    var exam = config.hlExam||'us', sites = getSites(exam), lbl = EL[exam]||exam;
+    document.getElementById('hlFormTitle').textContent=lbl+' Referral for Investigation/Test Only';
+    document.getElementById('hlExamGroupLabel').textContent=lbl;
+    document.getElementById('hlSidebarService').textContent=lbl;
+    document.getElementById('hlBadgeTitle').textContent='HealthLink SmartForm — '+lbl+' Referral (Mockup)';
+    var grid = document.getElementById('hlExamGrid');
+    grid.innerHTML = sites.map(function(s,i){
+        return '<label><input type="checkbox" data-code="'+s.c+'" data-label="'+s.l+'" '+(i===1||i===4?'checked':'')+' onchange="updateHLLinks()"> '+s.l+'</label>';
+    }).join('');
+    document.getElementById('hlEndorsing').style.display='none';
+    updateHLLinks();
+}
+
+function updateHLLinks() {
+    var exam = config.hlExam||'us';
+    var box = document.getElementById('hlGuidanceBox');
+    var container = document.getElementById('hlGuidanceLinks');
+    var checked = [];
+    document.querySelectorAll('#hlExamGrid input:checked').forEach(function(cb){
+        checked.push({c:cb.dataset.code, l:cb.dataset.label});
+    });
+    if (!checked.length) {
+        box.style.display='none';
+        return;
+    }
+    box.style.display='block';
+    var rShort = config.region==='aucklandregion'?'Auckland':(RN[config.region]||config.region);
+    var links = checked.map(function(s){
+        return '<span class="hl-guide-link" onclick="launchViewer(\''+exam+'\',\''+s.c+'\')">— '+rShort+' Guidelines: '+EL[exam]+' '+s.l+'</span>';
+    }).join('');
+    if (checked.length>1) {
+        var all = checked.map(function(s){return s.c;}).join(',');
+        links += '<span class="hl-guide-link" onclick="launchViewer(\''+exam+'\',\''+all+'\')" style="margin-top:6px;font-style:italic;">— View all selected criteria together</span>';
+    }
+    container.innerHTML=links;
+}
+
+function hlCriteriaAnswer(val) {
+    document.getElementById('hlEndorsing').style.display = val==='no' ? 'block' : 'none';
+}
+
+// Config
+function setConfig(key,value,btn) {
+    config[key]=value;
+    if(btn) { btn.closest('.seg-control').querySelectorAll('.seg-btn').forEach(function(b){b.classList.remove('active');}); btn.classList.add('active'); }
+    saveConfig(); applyConfig();
+}
+function saveConfig() { try{localStorage.setItem('crr-hl-config',JSON.stringify(config));}catch(e){} }
+function restoreConfig() {
+    document.querySelectorAll('.seg-control').forEach(function(ctrl){
+        var key=ctrl.dataset.config;
+        if(key&&config[key]) ctrl.querySelectorAll('.seg-btn').forEach(function(btn){btn.classList.toggle('active',btn.dataset.val===config[key]);});
+    });
+    document.getElementById('regionSelect').value=config.region||'3d';
+    document.getElementById('examSelect').value=config.hlExam||'us';
+}
+function applyConfig() {
+    var rn=RN[config.region]||config.region;
+    document.getElementById('hlRegionBadge').textContent='Region: '+rn;
+    updateHLLinks();
+}
+
+function showToast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},2500);}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+
+// postMessage listener — receives data back from popup/viewer/triage tools
+window.addEventListener('message', function(event) {
+    if (!event.data) return;
+    if (event.data.type === 'crr-output') receiveCRROutput(event.data);
+    if (event.data.type === 'crr-close') closeModal();
+});
+
+function receiveCRROutput(data) {
+    var text = data.text || '';
+    var source = data.source || 'tool';
+    if (!text) return;
+    var target = document.getElementById('hlClinicalQuestion');
+    if (target) {
+        if (target.value.trim()) {
+            target.value = target.value.trim() + '\n\n' + text;
+        } else {
+            target.value = text;
+        }
+        target.classList.remove('field-highlight');
+        void target.offsetWidth;
+        target.classList.add('field-highlight');
+        target.style.height = 'auto';
+        target.style.height = Math.max(80, target.scrollHeight + 4) + 'px';
+    }
+    var flash = document.getElementById('hlReceivedFlash');
+    var flashText = document.getElementById('hlReceivedText');
+    if (flash) {
+        flash.classList.remove('visible');
+        void flash.offsetWidth;
+        flash.classList.add('visible');
+    }
+    if (flashText) {
+        var label = source === 'triage' ? 'Triage assessment' : 'Criteria summary';
+        flashText.textContent = label + ' received from CRR tool and applied to notes';
+    }
+    showToast('Data received from ' + source);
+}
+
+(function init(){buildHLForm();restoreConfig();applyConfig();})();
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CRR Criteria Viewer v5.3.0</title>
+<title>CRR Criteria Viewer v1.0.0 DEV</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/crr-criteria/shared/crr-design-system.css">
 <style>
@@ -128,8 +128,8 @@ body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
 .qa-3way-btn.sel[data-v="accurate"],.qa-3way-btn.sel[data-v="easy"],.qa-3way-btn.sel[data-v="definitely"] { border-color:#2a7d4f; background:#e8f5e9; color:#2a7d4f; }
 .qa-dim-row { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid #f0f2f5; }
 .qa-dim-lbl { flex:1; font-size:12px; color:#0d1f2d; }
-.btn-qa { background:none; border:1px solid #ffe082; color:#92400e; padding:4px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; font-family:inherit; position:relative; }
-.btn-qa:hover { background:#fff8e1; }
+.btn-qa { background:#d97706; border:1px solid #b45309; color:#fff; padding:6px 14px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; position:relative; box-shadow:0 1px 3px rgba(180,83,9,0.25); }
+.btn-qa:hover { background:#b45309; }
 .qa-count-badge { display:inline-block; background:#2a7d4f; color:#fff; font-size:9px; font-weight:700; padding:1px 5px; border-radius:8px; line-height:1.4; vertical-align:middle; margin-left:4px; }
 
 /* ═══ LOADER ERROR ══════════════════════════════════════ */
@@ -287,7 +287,7 @@ body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
 
 <!-- Tool identity footer (item 16) -->
 <div id="toolIdentityFooter" style="padding:6px 16px;font-size:10px;color:#8b919a;border-top:1px solid #dde1e6;background:#fff;display:flex;align-items:center;gap:12px;flex-shrink:0;">
-  <span>CRR Criteria Viewer v5.3.0</span>
+  <span>CRR Criteria Viewer v1.0.0 DEV</span>
   <span style="color:#dde1e6">·</span>
   <span id="footerContentVer">content v4.0.1</span>
   <span style="color:#dde1e6">·</span>
@@ -300,7 +300,7 @@ body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
 <textarea id="clipHelper" readonly></textarea>
 
 <script>
-var VER = "v5.3.0";
+var VER = "v1.0.0 DEV";
 var API_BASE = "https://crr-criteria-api.fk4dsrmq5r.workers.dev";
 
 var DATA = null;
@@ -568,7 +568,7 @@ function priorityBadgeHtml(groupTitle) {
   if (t.indexOf("acute") !== -1) return "<span class='priority-badge pri-acute'>Acute 48 (within 48 hours)</span>";
   if (t.indexOf("p2") !== -1) return "<span class='priority-badge pri-p2'>Urgent (within two weeks)</span>";
   if (t.indexOf("p3") !== -1) return "<span class='priority-badge pri-p3'>Non-deferrable (within six weeks)</span>";
-  if (t.indexOf("p4") !== -1) return "<span class='priority-badge pri-p4'>Routine (within six weeks)</span>";
+  if (t.indexOf("p4") !== -1) return "<span class='priority-badge pri-p4'>Routine (within 6–12 weeks)</span>";
   if (t.indexOf("s1") !== -1) return "<span class='priority-badge pri-s1'>Urgent (within one week)</span>";
   if (t.indexOf("s2") !== -1) return "<span class='priority-badge pri-s2'>Urgent (within two weeks)</span>";
   if (t.indexOf("s3") !== -1) return "<span class='priority-badge pri-s3'>Non-deferrable (within six weeks)</span>";
@@ -582,8 +582,9 @@ function isGateway(label) {
 
 function isLabValue(label) {
   var l = (label||"").toLowerCase();
-  var labTerms = ["alp", "ggt", "d-dimer", "wells score", "ca-125", "ca125", "haemoglobin", " hb ", "crp", "ferritin", "egfr", "creatinine", "alt", "mmol"];
-  for (var i = 0; i < labTerms.length; i++) if (l.indexOf(labTerms[i]) !== -1) return true;
+  // Word-boundary patterns prevent false positives like "alp" matching "palpable" or "alt" matching "altered".
+  var patterns = [/\balp\b/, /\bggt\b/, /\bd-dimer\b/, /\bwells score\b/, /\bca-?125\b/, /\bhaemoglobin\b/, /\bhb\b/, /\bcrp\b/, /\bferritin\b/, /\begfr\b/, /\bcreatinine\b/, /\balt\b/, /\bmmol\b/, /\bacr\b/, /\bpsa\b/];
+  for (var i = 0; i < patterns.length; i++) if (patterns[i].test(l)) return true;
   return false;
 }
 
@@ -956,7 +957,7 @@ function toolRender() {
         "<ul id='leftColSummaryList'></ul>" +
         "<div id='leftColSummaryActions'>" +
           "<button class='btn btn-p btn-sm' onclick='handleCopySelected()'>Copy</button>" +
-          (_sendVisInt ? "<button class='btn btn-p btn-sm' style='background:#059669' onclick='handleSendToForm()'>Send to Form</button>" : "") +
+          (_sendVisInt ? "<button id='btnSendToForm' class='btn btn-p btn-sm' style='background:#059669' onclick='handleSendToForm()'>Send to Form</button>" : "") +
           "<button class='btn-clr' style='font-size:11px' onclick='handleClear()'>Clear all</button>" +
         "</div>" +
       "</div>";
@@ -1020,7 +1021,7 @@ function toolRender() {
         "<ul id='leftColSummaryList'></ul>" +
         "<div id='leftColSummaryActions'>" +
           "<button class='btn btn-p btn-sm' onclick='handleCopySelected()'>Copy</button>" +
-          (_sendVis ? "<button class='btn btn-p btn-sm' style='background:#059669' onclick='handleSendToForm()'>Send to Form</button>" : "") +
+          (_sendVis ? "<button id='btnSendToForm' class='btn btn-p btn-sm' style='background:#059669' onclick='handleSendToForm()'>Send to Form</button>" : "") +
           "<button class='btn-clr' style='font-size:11px' onclick='handleClear()'>Clear all</button>" +
         "</div>" +
       "</div>";
@@ -1061,133 +1062,325 @@ function setViewLayout(l) {
 }
 
 var INDICATION_THEME_MAP = {
-  "cth_a1":"TIA / stroke","cth_a2":"TIA / stroke","cth_a3":"Seizure","cth_a4":"Specialist-endorsed referral",
-  "cth_p2_1":"Headache","cth_p2_2":"Cognitive impairment","cth_p2_3":"Seizure","cth_p2_4":"Specialist-endorsed referral",
-  "cth_p4_1":"Cognitive impairment","cth_p4_2":"Specialist-endorsed referral",
-  "ctcap_1":"Suspected occult malignancy","ctcap_2":"Suspected occult malignancy","ctcap_3":"Specialist-endorsed referral",
-  "ctc_p2_1":"Haemoptysis","ctc_p2_2":"Lung cancer risk","ctc_p2_3":"Abnormal CXR / nodule","ctc_p2_4":"Abnormal CXR / nodule",
-  "ctc_p2_5":"Staging","ctc_p2_6":"Specialist-endorsed referral","ctc_p3_1":"Abnormal CXR / nodule","ctc_p3_2":"Specialist-endorsed referral",
-  "ctc_col_p2_1":"Bowel symptoms","ctc_col_p2_2":"Anaemia / blood results","ctc_col_p2_3":"Known or suspected colorectal cancer",
-  "ctc_col_p2_4":"Specialist-endorsed referral","ctc_col_p3_1":"Bowel symptoms","ctc_col_p3_2":"Bowel symptoms",
-  "ctc_col_p3_3":"Rectal bleeding","ctc_col_p3_4":"Anaemia / blood results","ctc_col_p3_5":"Family history",
-  "ctc_col_p3_6":"Family history","ctc_col_p3_7":"Specialist-endorsed referral",
-  "ctivu_p2_1":"Haematuria","ctivu_p2_2":"Haematuria","ctivu_p2_3":"Specialist-endorsed referral",
-  "ctivu_p3_1":"Haematuria","ctivu_p3_2":"Incidental renal lesion","ctivu_p3_3":"Specialist-endorsed referral",
-  "kub_acute_1":"Complicated stone — refer urgently","kub_acute_2":"Complicated stone — refer urgently",
-  "kub_acute_3":"Complicated stone — refer urgently","kub_acute_4":"Complicated stone — refer urgently",
-  "kub_acute_5":"Complicated stone — refer urgently","kub_48_1":"Renal colic","kub_48_2":"Specialist-endorsed referral",
-  "kub_s2_1":"Stone follow-up","kub_s2_2":"Specialist-endorsed referral",
-  "sin_p3_1":"Chronic rhinosinusitis","sin_p3_2":"Specialist-endorsed referral",
-  "cto_acute_1":"Specialist-endorsed referral","cto_p2_1":"Specialist-endorsed referral","cto_p2_2":"Suspected malignancy",
-  "cto_p3_1":"Specialist-endorsed referral","cto_p3_2":"Suspected malignancy",
-  "usa_emerg_1":"Acute abdominal emergency","usa_emerg_2":"Acute abdominal emergency",
-  "usa_emerg_3":"Acute abdominal emergency","usa_emerg_4":"Acute abdominal emergency",
-  "usa_48_1":"Liver and biliary","usa_48_2":"Liver and biliary","usa_48_3":"Specialist-endorsed referral",
-  "usa_p2_1":"Liver and biliary","usa_p2_2":"Liver and biliary","usa_p2_3":"Specialist-endorsed referral",
-  "usa_p3_1":"Liver and biliary","usa_p3_2":"Liver and biliary","usa_p3_3":"Liver and biliary",
-  "usa_p3_4":"Liver and biliary","usa_p3_5":"Liver and biliary","usa_p3_6":"Aortic aneurysm",
-  "usa_p3_7":"Abdominal mass or organomegaly","usa_p3_8":"Specialist-endorsed referral",
-  "usa_s3_1":"Cancer surveillance","usa_s3_2":"Aortic aneurysm","usa_s3_3":"Cancer surveillance",
-  "usc_emerg_1":"TIA / stroke risk","usc_48_1":"TIA / stroke risk",
-  "usd_24_1":"Superficial venous thrombosis","usd_24_2":"Suspected upper limb DVT","usd_24_3":"Specialist-endorsed referral",
-  "usd_48_1":"Suspected lower limb DVT","usd_48_2":"Suspected lower limb DVT",
-  "usd_s1_1":"DVT follow-up","usd_s1_2":"DVT follow-up","usd_s2_1":"DVT follow-up",
-  "usmsk_1":"Specialist-endorsed referral",
-  "usnt_p2_1":"Thyroid nodule — suspected malignancy","usnt_p2_2":"Thyroid nodule — suspected malignancy",
-  "usnt_p2_3":"Neck mass","usnt_p2_4":"Specialist-endorsed referral",
-  "usnt_p3_1":"Thyroid nodule — initial assessment","usnt_p3_2":"Specialist-endorsed referral",
-  "usnt_p4_1":"Incidental thyroid nodule","usnt_p4_2":"Incidental thyroid nodule",
-  "usnt_s2_1":"Specialist-endorsed referral","usnt_s2_2":"Thyroid nodule — follow-up",
-  "usp_emerg_1":"Acute pelvic pain","usp_24_1":"Acute pelvic pain","usp_24_2":"Acute pelvic pain",
-  "usp_24_3":"Acute pelvic pain","usp_48_1":"Acute pelvic pain","usp_48_2":"Specialist-endorsed referral",
-  "usp_p2_1":"Suspected gynaecological malignancy","usp_p2_2":"Post-menopausal bleeding",
-  "usp_p2_3":"Post-menopausal bleeding","usp_p2_4":"Suspected gynaecological malignancy",
-  "usp_p2_5":"Abnormal uterine bleeding","usp_p2_6":"Suspected gynaecological malignancy",
-  "usp_p2_7":"Specialist-endorsed referral","usp_p3_1":"Abnormal uterine bleeding",
-  "usp_p3_2":"Abnormal uterine bleeding","usp_p3_3":"Abnormal uterine bleeding",
-  "usp_p3_4":"Post-menopausal bleeding","usp_p3_5":"Post-menopausal bleeding",
-  "usp_p3_6":"Ovarian cyst or pelvic mass","usp_p3_7":"Chronic pelvic conditions",
-  "usp_p3_8":"Chronic pelvic conditions","usp_p3_9":"Chronic pelvic conditions",
-  "usp_p3_10":"Specialist-endorsed referral","usp_p3_11":"Suspected gynaecological malignancy",
-  "usp_p4_1":"Chronic pelvic conditions","usp_p4_2":"Chronic pelvic conditions","usp_p4_3":"Specialist-endorsed referral",
-  "usr_24_1":"Renal colic","usr_48_2":"Urinary symptoms","usr_48_3":"Specialist-endorsed referral",
-  "usr_p2_1":"Haematuria — macroscopic","usr_p2_2":"Haematuria — macroscopic","usr_p2_3":"Specialist-endorsed referral",
-  "usr_p3_1":"Haematuria — microscopic","usr_p3_2":"CKD / kidney function","usr_p3_3":"Varicocele",
-  "usr_p3_4":"Urinary symptoms","usr_p3_5":"Urinary symptoms","usr_p3_6":"Urinary symptoms",
-  "usr_p3_7":"Loin pain","usr_p3_8":"Specialist-endorsed referral",
-  "usr_p4_1":"Haematuria — microscopic","usr_p4_2":"Haematuria — microscopic","usr_p4_3":"Haematuria — microscopic",
-  "ussc_emerg_1":"Acute scrotal emergency","ussc_emerg_2":"Acute scrotal emergency",
-  "ussc_48_1":"Suspected testicular cancer","ussc_48_2":"Specialist-endorsed referral",
-  "ussc_p2_1":"Suspected testicular cancer","ussc_p2_2":"Specialist-endorsed referral",
-  "ussc_p3_1":"Scrotal lump","ussc_p3_2":"Infection / inflammation","ussc_p3_3":"Specialist-endorsed referral",
+  "cth_p2_1":"Headache",
+  "cth_p2_2":"Cognitive impairment",
+  "cth_p2_3":"Seizure",
+  "cth_p2_4":"Specialist-endorsed referral",
+  "cth_p4_1":"Cognitive impairment",
+  "cth_p4_2":"Specialist-endorsed referral",
+  "ctivu_p2_1":"Haematuria",
+  "ctivu_p2_2":"Haematuria",
+  "ctivu_p2_3":"Specialist-endorsed referral",
+  "ctivu_p3_1":"Haematuria",
+  "ctivu_p3_2":"Incidental renal lesion",
+  "ctivu_p3_3":"Specialist-endorsed referral",
+  "usnt_p2_1":"Thyroid nodule — suspected malignancy",
+  "usnt_p2_2":"Thyroid nodule — suspected malignancy",
+  "usnt_p2_3":"Neck mass",
+  "usnt_p2_4":"Specialist-endorsed referral",
+  "usnt_p3_1":"Thyroid nodule — initial assessment",
+  "usnt_p3_2":"Specialist-endorsed referral",
+  "usnt_p4_1":"Incidental thyroid nodule",
+  "usnt_p4_2":"Incidental thyroid nodule",
+  "usnt_s2_1":"Specialist-endorsed referral",
+  "usnt_s2_2":"Thyroid nodule — follow-up",
+  "ussc_48_1":"Suspected testicular cancer",
+  "ussc_p2_1":"Suspected testicular cancer",
+  "ussc_p2_2":"Specialist-endorsed referral",
+  "ussc_p3_1":"Scrotal lump",
+  "ussc_p3_2":"Infection / inflammation",
+  "ussc_p3_3":"Specialist-endorsed referral",
   "ussc_p4_1":"Scrotal lump",
-  "usst_48_1":"Foreign body","usst_p2_1":"Suspected sarcoma or malignant lump","usst_p2_2":"Specialist-endorsed referral",
-  "usst_p3_1":"Uncertain lump","usst_p3_2":"Specialist-endorsed referral",
-  "xrc_emerg_1":"Acute deterioration — refer urgently","xrc_emerg_2":"Acute deterioration — refer urgently",
-  "xrc_emerg_3":"Acute deterioration — refer urgently","xrc_emerg_4":"Acute deterioration — refer urgently",
-  "xrc_24_1":"Acute deterioration — refer urgently","xrc_24_2":"Acute deterioration — refer urgently",
-  "xrc_48_1":"Respiratory symptoms","xrc_48_2":"Respiratory symptoms","xrc_48_3":"Respiratory symptoms",
-  "xrc_48_4":"Chronic respiratory disease","xrc_48_5":"Suspected malignancy","xrc_48_6":"Respiratory infection",
-  "xrc_48_7":"Suspected malignancy","xrc_48_8":"Suspected malignancy","xrc_48_9":"Suspected malignancy",
-  "xrc_48_10":"Suspected malignancy","xrc_48_11":"Suspected malignancy","xrc_48_12":"Suspected malignancy",
-  "xrc_48_13":"Respiratory symptoms","xrc_48_14":"Respiratory infection","xrc_48_15":"Respiratory symptoms",
-  "xrc_48_16":"Specialist-endorsed referral","xrc_p2_1":"Respiratory infection","xrc_p2_2":"Specialist-endorsed referral",
-  "xrc_p2_3":"Medication-related","xrc_p2_4":"Suspected malignancy","xrc_p2_5":"Medication-related",
-  "xrc_p3_1":"Chronic respiratory disease","xrc_p3_2":"Chronic respiratory disease",
-  "xrc_p3_3":"Chronic respiratory disease","xrc_p3_4":"Occupational and environmental exposure",
-  "xrc_p3_5":"Specialist-endorsed referral","xrc_s2_1":"Respiratory infection",
-  "xrc_s2_2":"Cancer surveillance and follow-up","xrc_s2_3":"Cancer surveillance and follow-up",
-  "xrc_s2_4":"Specialist-endorsed referral",
-  "xra_emerg_1":"Acute abdomen — refer urgently","xra_48_1":"Constipation","xra_48_2":"Specialist-endorsed referral",
-  "xra_p3_1":"Specialist-endorsed referral","xra_p3_2":"Urinary tract / stones","xra_s2_1":"Urinary tract / stones",
-  "xraf_emerg_1":"Acute infection — refer urgently","xraf_acute_1":"Acute infection — refer urgently",
-  "xraf_48_1":"Specialist-endorsed referral",
-  "xraf_p2_1":"Red flag pain — possible malignancy","xraf_p2_2":"Red flag pain — possible malignancy","xraf_p2_3":"Red flag pain — possible malignancy",
-  "xraf_p3_1":"Undiagnosed persistent pain","xraf_p3_2":"Osteoarthritis — surgical assessment",
-  "xraf_p3_3":"Osteoarthritis — surgical assessment","xraf_p3_4":"Inflammatory arthritis","xraf_p3_5":"Specialist-endorsed referral",
-  "xre_emerg_1":"Acute infection — refer urgently","xre_acute_1":"Acute infection — refer urgently",
-  "xre_p2_1":"Red flag pain — possible malignancy","xre_p2_2":"Red flag pain — possible malignancy","xre_p2_4":"Red flag pain — possible malignancy",
-  "xre_p2_3":"Specialist-endorsed referral","xre_p3_1":"Undiagnosed persistent pain",
-  "xre_p3_2":"Osteoarthritis — surgical assessment","xre_p3_3":"Osteoarthritis — surgical assessment","xre_p3_4":"Specialist-endorsed referral",
-  "xrk_emerg_1":"Acute infection — refer urgently","xrk_acute_1":"Acute infection — refer urgently",
-  "xrk_p2_1":"Red flag pain — possible malignancy","xrk_p2_2":"Red flag pain — possible malignancy","xrk_p2_4":"Red flag pain — possible malignancy",
-  "xrk_p2_3":"Specialist-endorsed referral","xrk_p3_1":"Undiagnosed persistent pain",
-  "xrk_p3_2":"Osteoarthritis — surgical assessment","xrk_p3_3":"Osteoarthritis — surgical assessment","xrk_p3_4":"Specialist-endorsed referral",
-  "xrph_emerg_1":"Acute infection — refer urgently","xrph_acute_1":"Acute infection — refer urgently",
-  "xrph_p2_1":"Red flag pain — possible malignancy","xrph_p2_3":"Red flag pain — possible malignancy","xrph_p2_4":"Red flag pain — possible malignancy",
-  "xrph_p2_2":"Specialist-endorsed referral","xrph_p3_1":"Undiagnosed persistent pain",
-  "xrph_p3_2":"Osteoarthritis — surgical assessment","xrph_p3_3":"Osteoarthritis — surgical assessment","xrph_p3_4":"Specialist-endorsed referral",
-  "xrs_emerg_1":"Acute infection — refer urgently","xrs_acute_1":"Acute infection — refer urgently",
-  "xrs_p2_1":"Red flag pain — possible malignancy","xrs_p2_2":"Red flag pain — possible malignancy","xrs_p2_4":"Red flag pain — possible malignancy",
-  "xrs_p2_3":"Specialist-endorsed referral","xrs_p3_1":"Unresponsive to conservative management",
-  "xrs_p3_2":"Unresponsive to conservative management","xrs_p3_3":"Osteoarthritis — surgical assessment",
-  "xrs_p3_4":"Osteoarthritis — surgical assessment","xrs_p3_5":"Specialist-endorsed referral",
-  "xrsp_emerg_1":"Emergency — refer urgently","xrsp_emerg_2":"Emergency — refer urgently",
-  "xrsp_48_1":"Specialist-endorsed referral","xrsp_p2_1":"Suspected fracture","xrsp_p2_2":"Red flags for malignancy",
-  "xrsp_p2_3":"Specialist-endorsed referral","xrsp_p3_2":"Inflammatory spinal disease","xrsp_p3_3":"Specialist-endorsed referral",
-  "xrwh_emerg_1":"Acute infection — refer urgently","xrwh_acute_1":"Acute infection — refer urgently",
-  "xrwh_p2_1":"Red flag pain — possible malignancy","xrwh_p2_2":"Red flag pain — possible malignancy","xrwh_p2_4":"Red flag pain — possible malignancy",
-  "xrwh_p2_3":"Specialist-endorsed referral","xrwh_p3_1":"Undiagnosed persistent pain",
-  "xrwh_p3_2":"Osteoarthritis — surgical assessment","xrwh_p3_3":"Inflammatory arthritis",
-  "xrwh_p3_4":"Osteoarthritis — surgical assessment","xrwh_p3_5":"Specialist-endorsed referral",
-  "xrhu_emerg_1":"Acute infection — refer urgently","xrhu_acute_1":"Acute infection — refer urgently",
-  "xrhu_p2_1":"Red flag pain — possible malignancy","xrhu_p2_2":"Red flag pain — possible malignancy","xrhu_p2_3":"Red flag pain — possible malignancy",
-  "xrhu_p2_4":"Specialist-endorsed referral","xrhu_p3_1":"Undiagnosed persistent pain",
-  "xrhu_p3_2":"Osteoarthritis — surgical assessment","xrhu_p3_3":"Osteoarthritis — surgical assessment","xrhu_p3_4":"Specialist-endorsed referral",
-  "xrfa_emerg_1":"Acute infection — refer urgently","xrfa_acute_1":"Acute infection — refer urgently",
-  "xrfa_p2_1":"Red flag pain — possible malignancy","xrfa_p2_2":"Red flag pain — possible malignancy","xrfa_p2_3":"Red flag pain — possible malignancy",
-  "xrfa_p2_4":"Specialist-endorsed referral","xrfa_p3_1":"Undiagnosed persistent pain",
-  "xrfa_p3_2":"Osteoarthritis — surgical assessment","xrfa_p3_3":"Osteoarthritis — surgical assessment","xrfa_p3_4":"Specialist-endorsed referral",
-  "xrfe_emerg_1":"Acute infection — refer urgently","xrfe_acute_1":"Acute infection — refer urgently",
-  "xrfe_p2_1":"Red flag pain — possible malignancy","xrfe_p2_2":"Red flag pain — possible malignancy","xrfe_p2_3":"Red flag pain — possible malignancy",
-  "xrfe_p2_4":"Specialist-endorsed referral","xrfe_p3_1":"Undiagnosed persistent pain",
-  "xrfe_p3_2":"Osteoarthritis — surgical assessment","xrfe_p3_3":"Osteoarthritis — surgical assessment","xrfe_p3_4":"Specialist-endorsed referral",
-  "xrtf_emerg_1":"Acute infection — refer urgently","xrtf_acute_1":"Acute infection — refer urgently",
-  "xrtf_p2_1":"Red flag pain — possible malignancy","xrtf_p2_2":"Red flag pain — possible malignancy","xrtf_p2_3":"Red flag pain — possible malignancy",
-  "xrtf_p2_4":"Specialist-endorsed referral","xrtf_p3_1":"Undiagnosed persistent pain",
-  "xrtf_p3_2":"Osteoarthritis — surgical assessment","xrtf_p3_3":"Osteoarthritis — surgical assessment","xrtf_p3_4":"Specialist-endorsed referral",
-  "mril_emerg_1":"Emergency — refer urgently","mril_emerg_2":"Emergency — refer urgently",
-  "mril1":"Neurological symptoms","mril2":"Suspected serious spinal pathology","mril3":"Neurological symptoms","mril4":"Specialist-endorsed referral"
+  "usst_48_1":"Foreign body",
+  "usst_p2_1":"Suspected sarcoma or malignant lump",
+  "usst_p2_2":"Specialist-endorsed referral",
+  "usst_p3_1":"Uncertain lump",
+  "usst_p3_2":"Specialist-endorsed referral",
+  "xrhu_p2_1":"Red flag pain — possible malignancy",
+  "xrhu_p2_2":"Red flag pain — possible malignancy",
+  "xrhu_p2_3":"Red flag pain — possible malignancy",
+  "xrhu_p2_4":"Specialist-endorsed referral",
+  "xrhu_p3_1":"Undiagnosed persistent pain",
+  "xrhu_p3_2":"Osteoarthritis — surgical assessment",
+  "xrhu_p3_3":"Osteoarthritis — surgical assessment",
+  "xrfa_p2_1":"Red flag pain — possible malignancy",
+  "xrfa_p2_2":"Red flag pain — possible malignancy",
+  "xrfa_p2_3":"Red flag pain — possible malignancy",
+  "xrfa_p2_4":"Specialist-endorsed referral",
+  "xrfa_p3_1":"Undiagnosed persistent pain",
+  "xrfa_p3_2":"Osteoarthritis — surgical assessment",
+  "xrfa_p3_3":"Osteoarthritis — surgical assessment",
+  "xrwh_p2_1":"Red flag pain — possible malignancy",
+  "xrwh_p2_2":"Red flag pain — possible malignancy",
+  "xrwh_p2_3":"Specialist-endorsed referral",
+  "xrwh_p2_4":"Red flag pain — possible malignancy",
+  "xrwh_p3_1":"Undiagnosed persistent pain",
+  "xrwh_p3_2":"Osteoarthritis — surgical assessment",
+  "xrwh_p3_3":"Inflammatory arthritis",
+  "xrwh_p3_4":"Osteoarthritis — surgical assessment",
+  "xrwh_p3_5":"Specialist-endorsed referral",
+  "xrph_p2_1":"Red flag pain — possible malignancy",
+  "xrph_p2_2":"Specialist-endorsed referral",
+  "xrph_p2_3":"Red flag pain — possible malignancy",
+  "xrph_p2_4":"Red flag pain — possible malignancy",
+  "xrph_p3_1":"Undiagnosed persistent pain",
+  "xrph_p3_2":"Osteoarthritis — surgical assessment",
+  "xrph_p3_3":"Osteoarthritis — surgical assessment",
+  "xrph_p3_4":"Specialist-endorsed referral",
+  "xrfe_p2_1":"Red flag pain — possible malignancy",
+  "xrfe_p2_2":"Red flag pain — possible malignancy",
+  "xrfe_p2_3":"Red flag pain — possible malignancy",
+  "xrfe_p2_4":"Specialist-endorsed referral",
+  "xrfe_p3_1":"Undiagnosed persistent pain",
+  "xrfe_p3_2":"Osteoarthritis — surgical assessment",
+  "xrfe_p3_3":"Osteoarthritis — surgical assessment",
+  "xrfe_p3_4":"Specialist-endorsed referral",
+  "xrtf_p2_1":"Red flag pain — possible malignancy",
+  "xrtf_p2_2":"Red flag pain — possible malignancy",
+  "xrtf_p2_3":"Red flag pain — possible malignancy",
+  "xrtf_p2_4":"Specialist-endorsed referral",
+  "xrtf_p3_1":"Undiagnosed persistent pain",
+  "xrtf_p3_2":"Osteoarthritis — surgical assessment",
+  "xrtf_p3_3":"Osteoarthritis — surgical assessment",
+  "xrtf_p3_4":"Specialist-endorsed referral",
+  "xraf_p2_1":"Red flag pain — possible malignancy",
+  "xraf_p2_2":"Red flag pain — possible malignancy",
+  "xraf_p2_3":"Red flag pain — possible malignancy",
+  "xraf_p3_1":"Undiagnosed persistent pain",
+  "xraf_p3_2":"Osteoarthritis — surgical assessment",
+  "xraf_p3_3":"Osteoarthritis — surgical assessment",
+  "xraf_p3_4":"Inflammatory arthritis",
+  "xraf_p3_5":"Specialist-endorsed referral",
+  "xrsp_48_1":"Specialist-endorsed referral",
+  "xrsp_p2_1":"Suspected fracture",
+  "xrsp_p2_2":"Red flags for malignancy",
+  "xrsp_p2_3":"Specialist-endorsed referral",
+  "xrsp_p3_2":"Inflammatory spinal disease",
+  "xrsp_p3_3":"Specialist-endorsed referral",
+  "ctcap_p2_1":"Suspected occult malignancy",
+  "ctcap_p2_2":"Suspected occult malignancy",
+  "ctcap_p2_3":"Specialist-endorsed referral",
+  "ctch_em_1":"Emergency — refer immediately",
+  "ctch_em_2":"Emergency — refer immediately",
+  "ctch_p2_1":"Haemoptysis",
+  "ctch_p2_2":"Lung cancer risk",
+  "ctch_p2_3":"Abnormal CXR / nodule",
+  "ctch_p2_4":"Abnormal CXR / nodule",
+  "ctch_p2_5":"Specialist-endorsed referral",
+  "ctch_p2_6":"Specialist-endorsed referral",
+  "ctch_p3_1":"Abnormal CXR / nodule",
+  "ctch_p3_2":"Specialist-endorsed referral",
+  "ctcol_p2_1":"Bowel symptoms",
+  "ctcol_p2_2":"Rectal bleeding",
+  "ctcol_p2_3":"Known or suspected colorectal cancer",
+  "ctcol_p2_4":"Specialist-endorsed referral",
+  "ctcol_p3_1":"Bowel symptoms",
+  "ctcol_p3_2":"Bowel symptoms",
+  "ctcol_p3_3":"Rectal bleeding",
+  "ctcol_p3_4":"Anaemia / blood results",
+  "ctcol_p3_5":"Family history",
+  "ctcol_p3_6":"Family history",
+  "ctcol_p3_7":"Specialist-endorsed referral",
+  "cth_a48_1":"TIA / stroke",
+  "cth_a48_2":"Focal neurological signs",
+  "cth_a48_3":"Seizure",
+  "cth_a48_4":"Specialist-endorsed referral",
+  "ctkub_em_1":"Complicated stone — refer urgently",
+  "ctkub_a24_1":"Complicated stone — refer urgently",
+  "ctkub_a48_1":"Renal colic",
+  "ctkub_a48_2":"Specialist-endorsed referral",
+  "ctkub_s2_1":"Stone follow-up",
+  "ctkub_s2_2":"Specialist-endorsed referral",
+  "ctoth_a48_1":"Specialist-endorsed referral",
+  "ctoth_p2_1":"Specialist-endorsed referral",
+  "ctoth_p2_2":"Specialist-endorsed referral",
+  "ctoth_p3_1":"Specialist-endorsed referral",
+  "ctoth_p3_2":"Specialist-endorsed referral",
+  "ctsin_em_1":"Red flags — refer urgently",
+  "ctsin_p3_1":"Chronic rhinosinusitis",
+  "ctsin_p3_2":"Specialist-endorsed referral",
+  "usab_em_1":"Acute abdominal emergency",
+  "usab_em_2":"Acute abdominal emergency",
+  "usab_em_3":"Aortic aneurysm",
+  "usab_em_4":"Acute abdominal emergency",
+  "usab_em_5":"Liver and biliary",
+  "usab_48_1":"Specialist-endorsed referral",
+  "usab_48_2":"Specialist-endorsed referral",
+  "usab_p2_1":"Liver and biliary",
+  "usab_p2_2":"Liver and biliary",
+  "usab_p2_3":"Specialist-endorsed referral",
+  "usab_p3_1":"Liver and biliary",
+  "usab_p3_2":"Liver and biliary",
+  "usab_p3_3":"Liver and biliary",
+  "usab_p3_4":"Liver and biliary",
+  "usab_p3_5":"Liver and biliary",
+  "usab_p3_6":"Aortic aneurysm",
+  "usab_p3_7":"Abdominal mass or organomegaly",
+  "usab_p3_8":"Specialist-endorsed referral",
+  "usab_s3_1":"Cancer surveillance",
+  "usab_s3_2":"Aortic aneurysm",
+  "usab_s3_3":"Specialist-endorsed referral",
+  "usca_em_1":"TIA / stroke risk",
+  "usca_48_1":"TIA / stroke risk",
+  "usdvt_24_1":"Superficial venous thrombosis",
+  "usdvt_24_2":"Suspected upper limb DVT",
+  "usdvt_24_3":"Specialist-endorsed referral",
+  "usdvt_48_1":"Suspected lower limb DVT",
+  "usdvt_s1_1":"DVT follow-up",
+  "usdvt_s1_2":"DVT follow-up",
+  "usdvt_s1_3":"Specialist-endorsed referral",
+  "usdvt_s2_1":"DVT follow-up",
+  "usfna_p2_1":"Specialist-endorsed referral",
+  "usfna_p3_1":"Specialist-endorsed referral",
+  "usmsk_p3_1":"Specialist-endorsed referral",
+  "uspv_em_1":"Acute pelvic pain",
+  "uspv_24_1":"Acute pelvic pain",
+  "uspv_24_2":"Acute pelvic pain",
+  "uspv_48_1":"Acute pelvic pain",
+  "uspv_48_2":"Specialist-endorsed referral",
+  "uspv_p2_1":"Suspected gynaecological malignancy",
+  "uspv_p2_2":"Post-menopausal bleeding",
+  "uspv_p2_3":"Post-menopausal bleeding",
+  "uspv_p2_4":"Abnormal uterine bleeding",
+  "uspv_p2_5":"Abnormal uterine bleeding",
+  "uspv_p2_6":"Abnormal uterine bleeding",
+  "uspv_p2_7":"Specialist-endorsed referral",
+  "uspv_p3_1":"Abnormal uterine bleeding",
+  "uspv_p3_2":"Abnormal uterine bleeding",
+  "uspv_p3_3":"Abnormal uterine bleeding",
+  "uspv_p3_4":"Abnormal uterine bleeding",
+  "uspv_p3_5":"Abnormal uterine bleeding",
+  "uspv_p3_6":"Ovarian cyst or pelvic mass",
+  "uspv_p3_7":"Ovarian cyst or pelvic mass",
+  "uspv_p3_8":"Chronic pelvic conditions",
+  "uspv_p3_9":"Chronic pelvic conditions",
+  "uspv_p3_10":"Chronic pelvic conditions",
+  "uspv_p3_11":"Chronic pelvic conditions",
+  "uspv_p3_12":"Specialist-endorsed referral",
+  "uspv_p4_1":"Chronic pelvic conditions",
+  "uspv_p4_2":"Chronic pelvic conditions",
+  "uspv_p4_3":"Specialist-endorsed referral",
+  "uspv_s2_1":"Ovarian cyst or pelvic mass",
+  "uspv_s2_2":"Ovarian cyst or pelvic mass",
+  "uspv_s2_3":"Ovarian cyst or pelvic mass",
+  "uspv_s2_4":"Specialist-endorsed referral",
+  "uspv_s3_1":"Ovarian cyst or pelvic mass",
+  "uspv_s3_2":"Ovarian cyst or pelvic mass",
+  "uspv_s3_3":"Ovarian cyst or pelvic mass",
+  "uspv_s3_4":"Specialist-endorsed referral",
+  "usrn_em_1":"Renal colic",
+  "usrn_48_1":"Renal colic",
+  "usrn_48_2":"Urinary symptoms",
+  "usrn_48_3":"Specialist-endorsed referral",
+  "usrn_p2_1":"Haematuria — macroscopic",
+  "usrn_p2_2":"Haematuria — macroscopic",
+  "usrn_p2_3":"Specialist-endorsed referral",
+  "usrn_p3_1":"Haematuria — microscopic",
+  "usrn_p3_2":"CKD / kidney function",
+  "usrn_p3_3":"Varicocele",
+  "usrn_p3_4":"Urinary symptoms",
+  "usrn_p3_5":"Urinary symptoms",
+  "usrn_p3_6":"Urinary symptoms",
+  "usrn_p3_7":"Loin pain",
+  "usrn_p3_8":"Specialist-endorsed referral",
+  "usrn_p4_1":"Haematuria — microscopic",
+  "usrn_p4_2":"Haematuria — microscopic",
+  "usrn_p4_3":"Haematuria — microscopic",
+  "usrn_s2_1":"Renal colic",
+  "ussc_em_1":"Acute scrotal emergency",
+  "ussc_em_2":"Acute scrotal emergency",
+  "ussc_p2_3":"Specialist-endorsed referral",
+  "ussc_p4_2":"Specialist-endorsed referral",
+  "xrab_em_1":"Acute abdomen",
+  "xrab_48_1":"Constipation",
+  "xrab_48_2":"Specialist-endorsed referral",
+  "xrab_p3_1":"Urinary tract / stones",
+  "xrab_p3_2":"Urinary tract / stones",
+  "xrab_p3_3":"Urinary tract / stones",
+  "xrab_p3_4":"Specialist-endorsed referral",
+  "xrab_s2_1":"Urinary tract / stones",
+  "xrab_s2_2":"Specialist-endorsed referral",
+  "xrch_em_1":"Emergency — refer immediately",
+  "xrch_em_2":"Emergency — refer immediately",
+  "xrch_em_3":"Emergency — refer immediately",
+  "xrch_em_4":"Emergency — refer immediately",
+  "xrch_em_5":"Emergency — refer immediately",
+  "xrch_em_6":"Emergency — refer immediately",
+  "xrch_em_7":"Emergency — refer immediately",
+  "xrch_24_1":"Respiratory infection",
+  "xrch_24_2":"Respiratory symptoms",
+  "xrch_48_1":"Lung cancer risk",
+  "xrch_48_2":"Lung cancer risk",
+  "xrch_48_3":"Lung cancer risk",
+  "xrch_48_4":"Lung cancer risk",
+  "xrch_48_5":"Lung cancer risk",
+  "xrch_48_6":"Lung cancer risk",
+  "xrch_48_7":"Lung cancer risk",
+  "xrch_48_8":"Lung cancer risk",
+  "xrch_48_9":"Lung cancer risk",
+  "xrch_48_10":"Lung cancer risk",
+  "xrch_48_11":"Lung cancer risk",
+  "xrch_48_12":"Lung cancer risk",
+  "xrch_48_13":"Respiratory symptoms",
+  "xrch_48_14":"Respiratory symptoms",
+  "xrch_48_15":"Respiratory symptoms",
+  "xrch_48_16":"Specialist-endorsed referral",
+  "xrch_p2_1":"Respiratory infection",
+  "xrch_p2_2":"Medication-related",
+  "xrch_p2_3":"Cancer surveillance and follow-up",
+  "xrch_p2_4":"Medication-related",
+  "xrch_p2_5":"Specialist-endorsed referral",
+  "xrch_p3_1":"Chronic respiratory disease",
+  "xrch_p3_2":"Respiratory symptoms",
+  "xrch_p3_3":"Respiratory symptoms",
+  "xrch_p3_4":"Chronic respiratory disease",
+  "xrch_p3_5":"Occupational and environmental exposure",
+  "xrch_p3_6":"Specialist-endorsed referral",
+  "xrch_s2_1":"Specialist-endorsed referral",
+  "xrch_s2_2":"Cancer surveillance and follow-up",
+  "xrch_s2_3":"Specialist-endorsed referral",
+  "xrch_s2_4":"Specialist-endorsed referral",
+  "xrsh_p2_1":"Red flag pain — possible malignancy",
+  "xrsh_p2_2":"Red flag pain — possible malignancy",
+  "xrsh_p2_3":"Red flag pain — possible malignancy",
+  "xrsh_p2_4":"Red flag pain — possible malignancy",
+  "xrsh_p2_5":"Specialist-endorsed referral",
+  "xrsh_p3_1":"Undiagnosed persistent pain",
+  "xrsh_p3_2":"Undiagnosed persistent pain",
+  "xrsh_p3_3":"Osteoarthritis — surgical assessment",
+  "xrsh_p3_4":"Osteoarthritis — surgical assessment",
+  "xrsh_p3_5":"Specialist-endorsed referral",
+  "xrhu_p2_5":"Specialist-endorsed referral",
+  "xrel_p2_1":"Red flag pain — possible malignancy",
+  "xrel_p2_2":"Red flag pain — possible malignancy",
+  "xrel_p2_3":"Red flag pain — possible malignancy",
+  "xrel_p2_4":"Red flag pain — possible malignancy",
+  "xrel_p2_5":"Specialist-endorsed referral",
+  "xrel_p3_1":"Osteoarthritis — surgical assessment",
+  "xrel_p3_2":"Osteoarthritis — surgical assessment",
+  "xrel_p3_3":"Osteoarthritis — surgical assessment",
+  "xrel_p3_4":"Specialist-endorsed referral",
+  "xrfa_p2_5":"Specialist-endorsed referral",
+  "xrwh_p2_5":"Specialist-endorsed referral",
+  "xrph_p2_5":"Specialist-endorsed referral",
+  "xrfe_p2_5":"Specialist-endorsed referral",
+  "xrkn_p2_1":"Red flag pain — possible malignancy",
+  "xrkn_p2_2":"Red flag pain — possible malignancy",
+  "xrkn_p2_3":"Red flag pain — possible malignancy",
+  "xrkn_p2_4":"Red flag pain — possible malignancy",
+  "xrkn_p2_5":"Specialist-endorsed referral",
+  "xrkn_p3_1":"Osteoarthritis — surgical assessment",
+  "xrkn_p3_2":"Osteoarthritis — surgical assessment",
+  "xrkn_p3_3":"Osteoarthritis — surgical assessment",
+  "xrkn_p3_4":"Specialist-endorsed referral",
+  "xrtf_p2_5":"Specialist-endorsed referral",
+  "xraf_p2_4":"Red flag pain — possible malignancy",
+  "xraf_p2_5":"Specialist-endorsed referral",
+  "xrsp_p2_4":"Red flags for malignancy",
+  "xrsp_p2_5":"Red flags for malignancy",
+  "xrsp_p2_6":"Red flags for malignancy",
+  "xrsp_p2_7":"Specialist-endorsed referral",
+  "xrsp_p3_1":"Inflammatory spinal disease"
 };
 
 var INDICATION_THEME_ORDER = {
@@ -1203,6 +1396,7 @@ var INDICATION_THEME_ORDER = {
   "us_carotid":["TIA / stroke risk"],
   "us_dvt":["Suspected lower limb DVT","Suspected upper limb DVT","Superficial venous thrombosis","DVT follow-up","Specialist-endorsed referral"],
   "us_msk":["Specialist-endorsed referral"],
+  "us_fna_biopsy":["Specialist-endorsed referral"],
   "us_neck_thyroid":["Thyroid nodule — suspected malignancy","Neck mass","Thyroid nodule — initial assessment","Incidental thyroid nodule","Thyroid nodule — follow-up","Specialist-endorsed referral"],
   "us_pelvis":["Acute pelvic pain","Suspected gynaecological malignancy","Post-menopausal bleeding","Abnormal uterine bleeding","Ovarian cyst or pelvic mass","Chronic pelvic conditions","Specialist-endorsed referral"],
   "us_renal":["Haematuria — macroscopic","Haematuria — microscopic","Renal colic","Urinary symptoms","CKD / kidney function","Loin pain","Varicocele","Specialist-endorsed referral"],
@@ -1239,10 +1433,11 @@ function getIndicationTheme(id, label) {
 function getPriorityShortFromGroup(title) {
   var t = (title || "").toLowerCase();
   if (t.indexOf("acute assessment") !== -1 || t.indexOf("emergency") !== -1) return "Emergency";
+  if (t.indexOf("24 hour") !== -1 || t.indexOf("24hr") !== -1) return "Acute 24 (within 24 hours)";
   if (t.indexOf("acute") !== -1) return "Acute 48 (within 48 hours)";
   if (t.indexOf("p2") !== -1) return "Urgent (within two weeks)";
   if (t.indexOf("p3") !== -1) return "Non-deferrable (within six weeks)";
-  if (t.indexOf("p4") !== -1) return "Routine (within six weeks)";
+  if (t.indexOf("p4") !== -1) return "Routine (within 6–12 weeks)";
   if (t.indexOf("s1") !== -1) return "Urgent (within one week)";
   if (t.indexOf("s2") !== -1) return "Urgent (within two weeks)";
   if (t.indexOf("s3") !== -1) return "Non-deferrable (within six weeks)";
@@ -1399,16 +1594,9 @@ function toolRenderSitePanel(site, exam) {
   // Emergency block (always shown regardless of view layout)
   if (emergencyItems.length) h += renderEmergencyBlock(emergencyItems);
 
-  // Prerequisites
-  var prereqs = gatherPrereqs(site);
-  var prereqLabels = {};
-  for (var p = 0; p < prereqs.length; p++) prereqLabels[prereqs[p]] = true;
-
-  // Eligibility / prereq block comes before the toggle (gives context before choosing view)
+  // Eligibility block — indication view only. Urgency view shows items in their priority groups.
   if (viewLayout === 'indication') {
     h += renderIndicationPrereqs(site);
-  } else {
-    if (prereqs.length) h += renderPrereqBlock(prereqs);
   }
 
   // View toggle (interactive mode only)
@@ -1417,7 +1605,7 @@ function toolRenderSitePanel(site, exam) {
   if (viewLayout === 'indication') {
     h += toolRenderIndicationPanel(site, {});
   } else {
-    for (var ng = 0; ng < nonEmergencyGroups.length; ng++) h += toolRenderGroup(nonEmergencyGroups[ng], prereqLabels);
+    for (var ng = 0; ng < nonEmergencyGroups.length; ng++) h += toolRenderGroup(nonEmergencyGroups[ng], {});
   }
 
   // Footer blocks
@@ -1449,14 +1637,9 @@ function toolRenderSinglesite(exam) {
     }
   }
   if (emergencyItems.length) h += renderEmergencyBlock(emergencyItems);
-  var prereqs = gatherPrereqs(exam);
-  var prereqLabels = {};
-  for (var p = 0; p < prereqs.length; p++) prereqLabels[prereqs[p]] = true;
 
   if (viewLayout === 'indication') {
     h += renderIndicationPrereqs(exam);
-  } else {
-    if (prereqs.length) h += renderPrereqBlock(prereqs);
   }
 
   if (viewMode !== "passive") h += renderViewToggle();
@@ -1464,7 +1647,7 @@ function toolRenderSinglesite(exam) {
   if (viewLayout === 'indication') {
     h += toolRenderIndicationPanel(exam, {});
   } else {
-    for (var ng = 0; ng < nonEmergencyGroups.length; ng++) h += toolRenderGroup(nonEmergencyGroups[ng], prereqLabels);
+    for (var ng = 0; ng < nonEmergencyGroups.length; ng++) h += toolRenderGroup(nonEmergencyGroups[ng], {});
   }
 
   h += renderFooterBlocks(exam);
@@ -1508,11 +1691,7 @@ function toolRenderSitePanelPassive(site, exam) {
     }
   }
   if (emergencyItems.length) h += renderEmergencyBlock(emergencyItems);
-  var prereqs = gatherPrereqs(site);
-  if (prereqs.length) h += renderPrereqBlock(prereqs);
-  var prereqLabels = {};
-  for (var p = 0; p < prereqs.length; p++) prereqLabels[prereqs[p]] = true;
-  for (var ng = 0; ng < nonEmergencyGroups.length; ng++) h += toolRenderGroupPassive(nonEmergencyGroups[ng], prereqLabels);
+  for (var ng = 0; ng < nonEmergencyGroups.length; ng++) h += toolRenderGroupPassive(nonEmergencyGroups[ng], {});
   h += renderFooterBlocks(site);
   h += "</div></div>";
   return h;
@@ -1541,11 +1720,7 @@ function toolRenderSinglesitePassive(exam) {
     }
   }
   if (emergencyItems.length) h += renderEmergencyBlock(emergencyItems);
-  var prereqs = gatherPrereqs(exam);
-  if (prereqs.length) h += renderPrereqBlock(prereqs);
-  var prereqLabels = {};
-  for (var p = 0; p < prereqs.length; p++) prereqLabels[prereqs[p]] = true;
-  for (var ng = 0; ng < nonEmergencyGroups.length; ng++) h += toolRenderGroupPassive(nonEmergencyGroups[ng], prereqLabels);
+  for (var ng = 0; ng < nonEmergencyGroups.length; ng++) h += toolRenderGroupPassive(nonEmergencyGroups[ng], {});
   h += renderFooterBlocks(exam);
   h += "</div></div>";
   return h;
@@ -1836,14 +2011,15 @@ function getHighestPriorityTier(items) {
         if (it.type === "cb" && TS.cbs[it.id]) {
           var t = (grp.title||"").toLowerCase();
           if (t.indexOf("refer for acute") !== -1 || t.indexOf("red flag") !== -1) tiers.push(0);
-          else if (t.indexOf("acute") !== -1) tiers.push(1);
-          else if (t.indexOf("p2") !== -1) tiers.push(2);
-          else if (t.indexOf("s1") !== -1) tiers.push(2);
-          else if (t.indexOf("s2") !== -1) tiers.push(2);
-          else if (t.indexOf("p3") !== -1) tiers.push(3);
-          else if (t.indexOf("s3") !== -1) tiers.push(3);
-          else if (t.indexOf("p4") !== -1) tiers.push(4);
-          else tiers.push(5);
+          else if (t.indexOf("24 hour") !== -1 || t.indexOf("24hr") !== -1) tiers.push(1);
+          else if (t.indexOf("acute") !== -1) tiers.push(2);
+          else if (t.indexOf("p2") !== -1) tiers.push(3);
+          else if (t.indexOf("s1") !== -1) tiers.push(3);
+          else if (t.indexOf("s2") !== -1) tiers.push(3);
+          else if (t.indexOf("p3") !== -1) tiers.push(4);
+          else if (t.indexOf("s3") !== -1) tiers.push(4);
+          else if (t.indexOf("p4") !== -1) tiers.push(5);
+          else tiers.push(6);
         }
       }
     }
@@ -1857,7 +2033,7 @@ function getHighestPriorityTier(items) {
   }
   if (!tiers.length) return "";
   var min = Math.min.apply(null, tiers);
-  var labels = ["Emergency — refer immediately","Acute (within 48 hours)","Urgent (within two weeks)","Non-deferrable (within six weeks)","Routine (within six weeks)","Scheduled"];
+  var labels = ["Emergency — refer immediately","Acute (within 24 hours)","Acute (within 48 hours)","Urgent (within two weeks)","Non-deferrable (within six weeks)","Routine (within 6–12 weeks)","Scheduled"];
   return labels[min];
 }
 

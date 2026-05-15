@@ -91,6 +91,7 @@ input, textarea, select, button { font-family: inherit; }
 .group-title.gt-s      { color: #5a6068; border-left: 4px solid #8b919a; }
 .group-sep { border-bottom: 1px solid var(--lite); }
 .group-sep:last-child { border-bottom: none; }
+.group-sep + .group-sep { margin-top: 8px; }
 
 /* ─── CRITERIA ITEM ROWS (triage display) ────────────────────────────── */
 .criteria-item { font-size: 12px; padding: 4px 0 4px 14px; border-left: 2px solid var(--rule); margin-bottom: 3px; color: var(--ink); line-height: 1.6; }

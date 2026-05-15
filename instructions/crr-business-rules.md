@@ -3,8 +3,8 @@
 > **Purpose:** Single source of truth for how criteria data is categorised, displayed, and interacted with across the CRR tools. These rules govern the viewer, popup, and triage advisor. They must be preserved through any data restructure or platform migration (including future CQL/FHIR Questionnaire migration).
 >
 > **Maintained by:** CRR Programme  
-> **Last updated:** 2026-05-13  
-> **Version:** 1.2
+> **Last updated:** 2026-05-14  
+> **Version:** 1.3
 
 ---
 
@@ -231,3 +231,4 @@ These rules map to FHIR Questionnaire and CQL concepts as follows:
 | 1.0 | 2026-05-09 | Initial version — consolidated from conversation history, instruction files, and code review |
 | 1.1 | 2026-05-09 | Added S1/S2/S3 priority codes (X-ray). Added Rule 1.3: not-funded items may be stored as groups in the data, not just separate fields — transform must filter by group name |
 | 1.2 | 2026-05-13 | Rule 7.4: updated region list to 8 (added `ccp` / Whanganui & MidCentral CHP; corrected Canterbury label to "Waitaha Canterbury"). Rule 6.4: added modal embed condition. Added Rule 6.6: modal embed mode (`?embed=modal`) behaviour |
+| 1.3 | 2026-05-14 | Tool version numbers reset to v1.0.0 DEV across all three tools (Viewer, Triage Advisor, Admin) to mark entry into review cycle |

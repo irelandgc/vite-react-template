@@ -1,0 +1,317 @@
+{
+  "_meta": {
+    "extracted_at": "2026-05-14",
+    "source_dataset_version": "v4.0.4",
+    "description": "Snapshot of HealthPathways URLs (default + per-region overrides) and any per-region text overrides. Re-apply after wiping/repopulating criteria from PDF."
+  },
+  "default_healthpathways_urls": {
+    "ct": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20717.htm",
+    "ct_head": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=15616.htm",
+    "ct_cap": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=17650.htm",
+    "ct_chest": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=448214.htm",
+    "ct_colonography": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=53111.htm",
+    "ct_ivu": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=177141.htm",
+    "ct_kub": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20717.htm",
+    "ct_sinus": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=29072.htm",
+    "us": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20716.htm",
+    "us_abdomen": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=15607.htm",
+    "us_carotid": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=29069.htm",
+    "us_dvt": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=32358.htm",
+    "us_msk": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=15606.htm",
+    "us_neck_thyroid": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20738.htm",
+    "us_pelvis": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=15608.htm",
+    "us_renal": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=19858.htm",
+    "us_scrotum": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=29070.htm",
+    "us_soft_tissue": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=479698.htm",
+    "xr": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm",
+    "xr_chest": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm",
+    "xr_abdomen": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm",
+    "xr_ankle_foot": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm",
+    "xr_elbow": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm",
+    "xr_knee": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm",
+    "xr_pelvis_hip": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm",
+    "xr_shoulder": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm",
+    "xr_spine": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm",
+    "xr_wrist_hand": "https://aucklandregion.communityhealthpathways.org/loginfiles/Landing.aspx?from=e39c2299b17441b693394b71ee8af7a9&page=20715.htm"
+  },
+  "region_overrides": {
+    "3d": {
+      "ct": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=17650.htm"
+      },
+      "ct_head": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=15616.htm",
+        "text": "Im in Central now."
+      },
+      "ct_cap": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=17650.htm"
+      },
+      "ct_chest": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=448214.htm"
+      },
+      "ct_colonography": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=53111.htm"
+      },
+      "ct_ivu": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=17369.htm"
+      },
+      "ct_kub": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=17987.htm"
+      },
+      "ct_sinus": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=29072.htm"
+      },
+      "us": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=20716.htm"
+      },
+      "us_abdomen": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=15607.htm"
+      },
+      "us_carotid": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=29069.htm"
+      },
+      "us_dvt": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=32358.htm"
+      },
+      "us_msk": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=15606.htm"
+      },
+      "us_neck_thyroid": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=20738.htm"
+      },
+      "us_pelvis": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=15608.htm"
+      },
+      "us_renal": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=19858.htm"
+      },
+      "us_scrotum": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=29070.htm"
+      },
+      "us_soft_tissue": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=479698.htm"
+      },
+      "xr_chest": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=1565718.htm"
+      },
+      "xr_abdomen": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=20704.htm"
+      },
+      "xr_shoulder": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=1563693.htm"
+      },
+      "xr_ankle_foot": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=1563693.htm"
+      },
+      "xr_elbow": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=1563693.htm"
+      },
+      "xr_knee": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=1563693.htm"
+      },
+      "xr_pelvis_hip": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=1563693.htm"
+      },
+      "xr_spine": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=1563693.htm"
+      },
+      "xr_wrist_hand": {
+        "healthPathwaysUrl": "https://3d.communityhealthpathways.org/LoginFiles/Landing.aspx?from=ac28d9b5-c7f2-40c3-918f-ead6abe8d84e&page=1563693.htm"
+      }
+    },
+    "hawkesbay": {
+      "ct": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=17650.htm"
+      },
+      "ct_head": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=15616.htm",
+        "text": "This is localised text for Hawkes's Bay - for CT Chest."
+      },
+      "ct_cap": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=17650.htm",
+        "text": "This is localised text for Hawkes's Bay - for CT CAB."
+      },
+      "ct_chest": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=448214.htm"
+      },
+      "ct_colonography": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=53111.htm"
+      },
+      "ct_ivu": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=17369.htm"
+      },
+      "ct_kub": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=17987.htm"
+      },
+      "ct_sinus": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=29072.htm"
+      },
+      "us": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=20716.htm"
+      },
+      "us_abdomen": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=15607.htm"
+      },
+      "us_carotid": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=29069.htm"
+      },
+      "us_dvt": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=32358.htm"
+      },
+      "us_msk": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=15606.htm"
+      },
+      "us_neck_thyroid": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=20738.htm"
+      },
+      "us_pelvis": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=15608.htm"
+      },
+      "us_renal": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=19858.htm"
+      },
+      "us_scrotum": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=29070.htm"
+      },
+      "us_soft_tissue": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=479698.htm"
+      },
+      "xr_chest": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=1565718.htm"
+      },
+      "xr_abdomen": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=20704.htm"
+      },
+      "xr_shoulder": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=1563693.htm"
+      },
+      "xr_ankle_foot": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=1563693.htm"
+      },
+      "xr_elbow": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=1563693.htm"
+      },
+      "xr_knee": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=1563693.htm"
+      },
+      "xr_pelvis_hip": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=1563693.htm"
+      },
+      "xr_spine": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=1563693.htm"
+      },
+      "xr_wrist_hand": {
+        "healthPathwaysUrl": "https://hawkesbay.communityhealthpathways.org/LoginFiles/Landing.aspx?from=f2d9f0b8-dcaa-4361-b03b-6f7b204239b5&page=1563693.htm"
+      }
+    },
+    "ccp": {
+      "ct": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=17650.htm"
+      },
+      "ct_head": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=15616.htm"
+      },
+      "ct_cap": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=17650.htm"
+      },
+      "ct_chest": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=448214.htm"
+      },
+      "ct_colonography": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=53111.htm"
+      },
+      "ct_ivu": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=17369.htm"
+      },
+      "ct_kub": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=17987.htm"
+      },
+      "ct_sinus": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=29072.htm"
+      },
+      "us": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=20716.htm"
+      },
+      "us_abdomen": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=15607.htm"
+      },
+      "us_carotid": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=29069.htm"
+      },
+      "us_dvt": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=32358.htm"
+      },
+      "us_msk": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=15606.htm"
+      },
+      "us_neck_thyroid": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=20738.htm"
+      },
+      "us_pelvis": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=15608.htm"
+      },
+      "us_renal": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=19858.htm"
+      },
+      "us_scrotum": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=29070.htm"
+      },
+      "us_soft_tissue": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=479698.htm"
+      },
+      "xr_chest": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=1565718.htm"
+      },
+      "xr_abdomen": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=20704.htm"
+      },
+      "xr_shoulder": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=1563693.htm"
+      },
+      "xr_ankle_foot": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=1563693.htm"
+      },
+      "xr_elbow": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=1563693.htm"
+      },
+      "xr_knee": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=1563693.htm"
+      },
+      "xr_pelvis_hip": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=1563693.htm"
+      },
+      "xr_spine": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=1563693.htm"
+      },
+      "xr_wrist_hand": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=1563693.htm"
+      },
+      "_landing": {
+        "healthPathwaysUrl": "https://ccp.communityhealthpathways.org/LoginFiles/Landing.aspx?from=a8d350c3-190b-4c68-8223-03bd905e8d68&page=32056.htm",
+        "text": "Community Radiology Access and Funding"
+      }
+    },
+    "aucklandregion": {
+      "ct_head": {
+        "text": " This is to demonstrate localised text for Auckland Region.",
+        "healthPathwaysUrl": ""
+      },
+      "ct_cap": {
+        "text": "  This is to demonstrate localised text for Auckland Region.",
+        "healthPathwaysUrl": ""
+      }
+    },
+    "canterbury": {
+      "ct_head": {
+        "text": " Contact Waihata Radiology on 03 78888888",
+        "healthPathwaysUrl": ""
+      }
+    },
+    "northland": {
+      "ct_head": {
+        "text": "  This is to demonstrate localised text for Northland.",
+        "healthPathwaysUrl": ""
+      }
+    }
+  }
+}
