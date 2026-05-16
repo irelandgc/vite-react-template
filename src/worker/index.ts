@@ -73,6 +73,12 @@ async function proxy(c: any, requireAdmin: boolean): Promise<Response> {
 }
 
 app.all("/crr-api/api/admin/*", (c) => proxy(c, true));
+// Admin endpoints that live outside the /api/admin/* namespace on the upstream
+// worker. These are protected by requireAccess on the API and need x-admin-key
+// injected by the proxy.
+app.all("/crr-api/api/qa-reviews", (c) => proxy(c, true));
+app.all("/crr-api/api/qa-viewer-reviews", (c) => proxy(c, true));
+app.all("/crr-api/api/triage/usage-logs", (c) => proxy(c, true));
 app.all("/crr-api/api/*", (c) => proxy(c, false));
 
 export default app;
