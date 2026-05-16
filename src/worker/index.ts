@@ -5,6 +5,7 @@ type Bindings = {
   // when forwarding admin requests to crr-criteria-api. Set with:
   //   npx wrangler secret put ADMIN_KEY
   ADMIN_KEY: string;
+  ASSETS: Fetcher;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -88,5 +89,8 @@ app.all("/crr-api/api/qa-reviews", (c) => proxy(c, true));
 app.all("/crr-api/api/qa-viewer-reviews", (c) => proxy(c, true));
 app.all("/crr-api/api/triage/usage-logs", (c) => proxy(c, true));
 app.all("/crr-api/api/*", (c) => proxy(c, false));
+
+// Fall through to static assets for everything the worker doesn't handle
+app.all("*", (c) => c.env.ASSETS.fetch(c.req.raw));
 
 export default app;
