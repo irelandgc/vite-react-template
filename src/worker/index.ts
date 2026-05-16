@@ -72,6 +72,14 @@ async function proxy(c: any, requireAdmin: boolean): Promise<Response> {
   });
 }
 
+app.get("/crr-api/debug-headers", (c) => {
+  const headers: Record<string, string> = {};
+  c.req.raw.headers.forEach((v: string, k: string) => {
+    headers[k] = k.toLowerCase().includes("cookie") ? "[redacted]" : v;
+  });
+  return c.json(headers);
+});
+
 app.all("/crr-api/api/admin/*", (c) => proxy(c, true));
 // Admin endpoints that live outside the /api/admin/* namespace on the upstream
 // worker. These are protected by requireAccess on the API and need x-admin-key
