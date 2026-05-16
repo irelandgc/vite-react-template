@@ -8,7 +8,7 @@
 
 ## 1. Why we need your input
 
-The Triage Advisor reads a free-text referral note and decides whether the referral **proceeds**, is **at risk** (missing some documentation), or will be **declined**. It applies the National Primary Care Referral Criteria for Imaging (August 2025 reissue) verbatim.
+The Triage Advisor reads a free-text referral note and decides whether the referral **proceeds**, is **at risk** (missing some documentation), or will be **declined**. It applies the National Primary Care Referral Criteria for Imaging (April 2026 reissue) verbatim.
 
 For most clear-cut cases the verdict is stable. But on **borderline notes** — where the criterion wording leaves room for interpretation — the AI can give two defensible answers on the same input. Below is one such case. We need a clinical ruling on how the tool should behave so the answer is consistent every time.
 
@@ -145,7 +145,7 @@ These are the rules the AI is given on every assessment. The lettered/numbered s
 >
 > **8. ALWAYS POPULATE met_criteria:** Even when the verdict is declined, you must list every criterion sub-element that IS documented in the note in met_criteria. A declined referral may still have several things documented correctly — the GP needs to see what they got right as well as what is missing. Never return an empty met_criteria array without explicitly checking each criterion sub-element against the note.
 >
-> **9. PAGE REFERENCES:** Include page references from the National Primary Care Referral Criteria for Imaging (August 2025 reissue) using [pXX] notation shown in the criteria. Include in met_criteria and missing_criteria.
+> **9. PAGE REFERENCES:** Include page references from the National Primary Care Referral Criteria for Imaging (April 2026 reissue) using [pXX] notation shown in the criteria. Include in met_criteria and missing_criteria.
 >
 > *(If the patient is paediatric, an additional line is added: "This patient is PAEDIATRIC. Use ONLY the paediatric criteria below. Adult criteria do not apply." The full published criteria — about 21,000 tokens — are then appended below these instructions; the AI consults that block when assessing each note.)*
 >

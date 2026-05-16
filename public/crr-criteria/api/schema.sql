@@ -63,7 +63,59 @@ CREATE TABLE IF NOT EXISTS triage_usage_log (
   output_tokens INTEGER DEFAULT 0,
   cost_nzd REAL DEFAULT 0,
   presentation_text TEXT,
-  ai_response_summary TEXT
+  ai_response_summary TEXT,
+  ip_address TEXT
+);
+
+-- Triage Advisor QA reviews
+CREATE TABLE IF NOT EXISTS qa_reviews (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  timestamp TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  reviewer_name TEXT NOT NULL,
+  reviewer_role TEXT NOT NULL,
+  scenario_type TEXT NOT NULL,
+  score_criteria_id TEXT NOT NULL,
+  score_suggestion_quality TEXT NOT NULL,
+  score_compound_handling TEXT NOT NULL,
+  score_safety_redirect TEXT NOT NULL,
+  overall_assessment TEXT NOT NULL,
+  comments TEXT,
+  presentation_text TEXT NOT NULL,
+  ai_response_summary TEXT NOT NULL,
+  exam_identified TEXT,
+  model_used TEXT,
+  documentation_standard TEXT,
+  region TEXT,
+  ip_address TEXT
+);
+
+-- Criteria Viewer QA reviews
+CREATE TABLE IF NOT EXISTS qa_viewer_reviews (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  timestamp TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  reviewer_name TEXT NOT NULL,
+  reviewer_role TEXT NOT NULL,
+  exam_type TEXT NOT NULL,
+  site_code TEXT NOT NULL,
+  site_label TEXT NOT NULL,
+  region TEXT NOT NULL,
+  view_mode TEXT,
+  score_accuracy TEXT NOT NULL,
+  score_usability TEXT NOT NULL,
+  score_value TEXT NOT NULL,
+  checklist_criteria_correct INTEGER DEFAULT 0,
+  checklist_priority_correct INTEGER DEFAULT 0,
+  checklist_gateway_correct INTEGER DEFAULT 0,
+  checklist_labvalue_correct INTEGER DEFAULT 0,
+  checklist_altmgmt_correct INTEGER DEFAULT 0,
+  checklist_notfunded_correct INTEGER DEFAULT 0,
+  checklist_guidance_correct INTEGER DEFAULT 0,
+  checklist_healthpathways_works INTEGER DEFAULT 0,
+  checklist_groupings_correct INTEGER DEFAULT 0,
+  comments TEXT,
+  ip_address TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_usage_log_timestamp ON triage_usage_log(timestamp);

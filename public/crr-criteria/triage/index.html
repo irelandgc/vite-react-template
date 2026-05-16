@@ -396,7 +396,7 @@ textarea.note::placeholder{color:#8b919a}
         <div style="background:var(--lite);border-radius:3px;padding:10px 12px;border:1px solid var(--rule)">
           <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:5px">Source document</div>
           <div style="font-weight:700;color:var(--navy);margin-bottom:2px">National Primary Care Referral Criteria for Imaging</div>
-          <div style="color:var(--mid);margin-bottom:6px">Phase 1 · August 2025 reissue (reissue 3) · Health New Zealand | Te Whatu Ora</div>
+          <div style="color:var(--mid);margin-bottom:6px">Phase 1 · April 2026 reissue · Health New Zealand | Te Whatu Ora</div>
           <div style="color:var(--mid)">
             <span style="font-weight:600">Adult:</span> 247 items, 25 exam/site combinations<br>
             <span style="font-weight:600">Paediatric:</span> 89 items, 14 exam/site combinations<br>
@@ -444,7 +444,7 @@ textarea.note::placeholder{color:#8b919a}
           <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:5px">Important limitations</div>
           <ul style="font-size:12px;color:var(--ink);line-height:1.6;padding-left:16px;margin:0">
             <li>This tool is a <strong>prototype</strong> not validated for clinical use.</li>
-            <li>Criteria reflect the August 2025 reissue and must be updated separately if the document changes.</li>
+            <li>Criteria reflect the April 2026 reissue and must be updated separately if the document changes.</li>
             <li>AI assessments are probabilistic — results may vary for the same note.</li>
             <li>Always verify against the source document before submitting.</li>
             <li style="color:#c07800"><strong>Do not enter identifiable patient information.</strong></li>
@@ -1300,7 +1300,7 @@ function renderMatchCard(r, idx) {
   var site = r.site;
   var title = site.exam_title + (site.site_label !== site.exam_title ? ' \u2014 ' + site.site_label : '');
   var pageRef = site.page
-    ? '<span style="font-size:10px;font-weight:700;color:var(--teal);background:var(--lite);padding:2px 6px;border-radius:2px;border:1px solid var(--rule);margin-left:4px;" title="National Primary Care Referral Criteria for Imaging, August 2025 reissue">&#128196; p' + site.page + '</span>'
+    ? '<span style="font-size:10px;font-weight:700;color:var(--teal);background:var(--lite);padding:2px 6px;border-radius:2px;border:1px solid var(--rule);margin-left:4px;" title="National Primary Care Referral Criteria for Imaging, April 2026 reissue">&#128196; p' + site.page + '</span>'
     : '';
   var p = pct(r.score);
   var vd = ruleVerdict(r);
@@ -1615,11 +1615,11 @@ function buildSystemPrompt() {
     + '5. SUGGESTED WORDING: Complete finished note using specific clinical details. All required sub-elements explicitly documented.\n\n'
     + '6. add_to_note: Specific sentences only \u2014 not generic advice.\n\n'
     + '8. ALWAYS POPULATE met_criteria: Even when the verdict is declined, you must list every criterion sub-element that IS documented in the note in met_criteria. A declined referral may still have several things documented correctly — the GP needs to see what they got right as well as what is missing. Never return an empty met_criteria array without explicitly checking each criterion sub-element against the note.\n\n'
-    + '9. PAGE REFERENCES: Include page references from the National Primary Care Referral Criteria for Imaging (August 2025 reissue) using [pXX] notation shown in the criteria. Include in met_criteria and missing_criteria.\n\n'
+    + '9. PAGE REFERENCES: Include page references from the National Primary Care Referral Criteria for Imaging (April 2026 reissue) using [pXX] notation shown in the criteria. Include in met_criteria and missing_criteria.\n\n'
     + (isPaed
         ? 'NOTE: This patient is PAEDIATRIC (age ' + ageFld + '). Use ONLY the paediatric criteria below. Adult criteria do not apply.\n\n'
         : '')
-    + 'CRITERIA (National Primary Care Referral Criteria for Imaging, August 2025 reissue):\n\n'
+    + 'CRITERIA (National Primary Care Referral Criteria for Imaging, April 2026 reissue):\n\n'
     + criteriaBlock
     + '\nRespond ONLY with valid JSON (no markdown fences):\n'
     + '{\n'
@@ -2109,7 +2109,7 @@ function renderCriteriaBrowser(r) {
   }
 
   var pageRef = site.page
-    ? '<span style="font-size:10px;font-weight:700;color:var(--teal);background:var(--lite);padding:2px 7px;border-radius:2px;border:1px solid var(--rule);margin-left:6px;" title="National Primary Care Referral Criteria for Imaging, August 2025 reissue">&#128196; p' + site.page + '</span>'
+    ? '<span style="font-size:10px;font-weight:700;color:var(--teal);background:var(--lite);padding:2px 7px;border-radius:2px;border:1px solid var(--rule);margin-left:6px;" title="National Primary Care Referral Criteria for Imaging, April 2026 reissue">&#128196; p' + site.page + '</span>'
     : '';
 
   var h = '<div class="panel">';
@@ -2247,7 +2247,7 @@ function renderAIResult(r) {
     h += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 3px">Exam identified</div>';
     h += '<div style="font-size:12px;font-weight:600;color:var(--navy);display:flex;align-items:center;gap:8px;">' + esc(r.exam);
     if (r.criteria_page) {
-      h += '<span style="font-size:10px;font-weight:700;color:var(--teal);background:var(--lite);padding:2px 7px;border-radius:2px;border:1px solid var(--rule);" title="National Primary Care Referral Criteria for Imaging, August 2025 reissue">&#128196; ' + esc(r.criteria_page) + '</span>';
+      h += '<span style="font-size:10px;font-weight:700;color:var(--teal);background:var(--lite);padding:2px 7px;border-radius:2px;border:1px solid var(--rule);" title="National Primary Care Referral Criteria for Imaging, April 2026 reissue">&#128196; ' + esc(r.criteria_page) + '</span>';
     }
     h += '</div>';
   }

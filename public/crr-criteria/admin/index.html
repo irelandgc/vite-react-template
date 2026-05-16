@@ -23,9 +23,12 @@ textarea,input,select,button{font-family:inherit}
 <div id="root"></div>
 <script type="text/babel">
 
-const API = "https://crr-criteria-api.fk4dsrmq5r.workers.dev";
+// Admin tool calls the API via the same-origin proxy at /crr-api/*
+// (handled by src/worker/index.ts), so the Cloudflare Access cookie travels
+// and we never hold an admin key in the browser.
+const API = "/crr-api";
 const VER = "v1.0.0 DEV";
-const BUILD = "2026-05-16"; // bump on each deployment
+const BUILD = "2026-05-16c"; // bump on each deployment
 
 // Changelog:
 // v1.0.0 DEV — version reset for review cycle (2026-05-14); previously v1.5.8
@@ -63,85 +66,21 @@ const REGIONS = {
   ccp:{label:"Whanganui & MidCentral CHP",domain:"ccp.communityhealthpathways.org"},
 };
 
-// Admin key — stored in localStorage so it persists across browser sessions
-// Wrapped in try/catch: Safari private mode can throw on storage access
-let ADMIN_KEY = (() => { try { return localStorage.getItem('crr-admin-key') || ''; } catch(_) { return ''; } })();
-function setAdminKey(key) { ADMIN_KEY = key; try { localStorage.setItem('crr-admin-key', key); } catch(_) {} }
+// Auth: handled by Cloudflare Access on iteratio.nz/crr-api/api/admin/*.
+// The browser sends the CF_Authorization cookie automatically; the same-origin
+// proxy injects the upstream admin key server-side. No client-side key needed.
 
 async function api(path, opts={}) {
   const {headers:extraHeaders, ...rest} = opts;
   const method = (rest.method || 'GET').toUpperCase();
-  // Don't send Content-Type on GET/HEAD — it's non-standard and triggers unnecessary
-  // CORS preflights that Safari handles more strictly than Chromium.
   const ctHeader = (method !== 'GET' && method !== 'HEAD') ? {"Content-Type":"application/json"} : {};
   const res = await fetch(`${API}${path}`, {
     cache: 'no-store',
-    headers:{...ctHeader,"x-admin-key":ADMIN_KEY,...extraHeaders},
+    credentials: 'include',
+    headers:{...ctHeader,...extraHeaders},
     ...rest
   });
   return res.json();
-}
-
-// Streaming fetch for extract-pdf — reads SSE from Anthropic via the worker proxy,
-// accumulates content_block_delta text, then parses and returns the completed JSON.
-// onProgress(charsReceived) called periodically so the UI can show activity.
-async function extractPdfStreaming(payload, onProgress) {
-  const res = await fetch(`${API}/api/admin/extract-pdf`, {
-    method: 'POST',
-    headers: {"Content-Type":"application/json","x-admin-key":ADMIN_KEY},
-    body: JSON.stringify(payload),
-  });
-
-  // Non-200 responses are JSON errors (bad auth, missing key, etc.)
-  if (!res.ok) {
-    try { return await res.json(); } catch(_) { return { error: `HTTP ${res.status}` }; }
-  }
-
-  const contentType = res.headers.get('Content-Type') || '';
-
-  // If the worker returned JSON directly (e.g. error before streaming started)
-  if (contentType.includes('application/json')) {
-    return await res.json();
-  }
-
-  // Read the SSE stream
-  const reader = res.body.getReader();
-  const dec = new TextDecoder();
-  let buf = '';
-  let text = '';
-  let errorEvent = null;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += dec.decode(value, { stream: true });
-    const lines = buf.split('\n');
-    buf = lines.pop(); // hold last incomplete line
-    for (const line of lines) {
-      if (!line.startsWith('data: ')) continue;
-      const data = line.slice(6).trim();
-      if (!data || data === '[DONE]') continue;
-      try {
-        const ev = JSON.parse(data);
-        if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
-          text += ev.delta.text;
-          onProgress && onProgress(text.length);
-        }
-        if (ev.type === 'error') {
-          errorEvent = ev.error?.message || JSON.stringify(ev.error);
-        }
-      } catch(_) {}
-    }
-  }
-
-  if (errorEvent) return { error: errorEvent };
-
-  // Parse accumulated JSON
-  try {
-    return JSON.parse(text.replace(/^```json\s*/,'').replace(/```\s*$/,'').trim());
-  } catch(_) {
-    return { error: 'Failed to parse Claude response', raw: text.substring(0, 500) };
-  }
 }
 
 function priColor(t) {
@@ -170,8 +109,6 @@ function CRRAdmin() {
   const [toast, setToast] = React.useState(null);
   const [pubVer, setPubVer] = React.useState(null);
   const [origData, setOrigData] = React.useState(null);
-  const [showKeyModal, setShowKeyModal] = React.useState(!ADMIN_KEY);
-  const [adminKeyVersion, setAdminKeyVersion] = React.useState(0); // increments each time key is saved → triggers tab refetches
 
   React.useEffect(() => {
     (async () => {
@@ -286,7 +223,6 @@ function CRRAdmin() {
 
   const tabs = [
     {id:"editor",label:"Criteria Editor",icon:"✏️"},
-    {id:"import",label:"PDF Import",icon:"📄"},
     {id:"regions",label:"Regions",icon:"🗺️"},
     {id:"versions",label:"Versions",icon:"🏷️"},
     {id:"releases",label:"Releases",icon:"📣"},
@@ -316,7 +252,6 @@ function CRRAdmin() {
         <div style={{display:"flex",alignItems:"center",gap:12}}>
           {pubVer && <span style={{fontSize:10,background:"rgba(255,255,255,0.12)",color:"#8ab4c8",padding:"3px 8px",borderRadius:2}}>Published: {pubVer.version}</span>}
           {dirty && <span style={{fontSize:10,background:"#c07800",color:"#fff",padding:"3px 8px",borderRadius:2,fontWeight:700}}>UNSAVED</span>}
-          <button onClick={()=>setShowKeyModal(true)} title="Change admin key" style={{fontSize:10,background:"rgba(255,255,255,0.12)",color:"#8ab4c8",border:"1px solid rgba(255,255,255,0.2)",padding:"2px 8px",borderRadius:2,cursor:"pointer",fontFamily:font}}>{ADMIN_KEY?"🔑 Key set":"🔓 Set key"}</button>
           <span title={`Build ${BUILD}`} style={{fontSize:10,background:"rgba(255,255,255,0.15)",color:"#fff",padding:"2px 8px",borderRadius:2,fontWeight:600,cursor:"default"}}>{VER} · {BUILD}</span>
         </div>
       </div>
@@ -339,9 +274,8 @@ function CRRAdmin() {
       {/* Content */}
       <div style={{flex:1,overflow:"hidden"}}>
         {tab==="editor" && <EditorTab criteria={criteria} selected={selected} setSelected={setSelected} dirty={dirty} setDirty={setDirty} show={show} updateCriteriaItem={updateCriteriaItem} />}
-        {tab==="import" && <ImportTab criteria={criteria} show={show} updateCriteriaItem={updateCriteriaItem} setDirty={setDirty} handleReplaceAll={handleReplaceAll} />}
-        {tab==="regions" && <RegionsTab criteria={criteria} show={show} adminKeyVersion={adminKeyVersion} openKeyModal={()=>setShowKeyModal(true)} />}
-        {tab==="versions" && <VersionsTab show={show} pubVer={pubVer} handlePublish={handlePublish} handleRollback={handleRollback} criteria={criteria} origData={origData} dirty={dirty} adminKeyVersion={adminKeyVersion} openKeyModal={()=>setShowKeyModal(true)} />}
+        {tab==="regions" && <RegionsTab criteria={criteria} show={show} />}
+        {tab==="versions" && <VersionsTab show={show} pubVer={pubVer} handlePublish={handlePublish} handleRollback={handleRollback} criteria={criteria} origData={origData} dirty={dirty} />}
         {tab==="releases" && <ReleasesTab show={show} />}
         {tab==="qa" && <QAReviewsTab />}
         {tab==="viewerqa" && <ViewerQATab />}
@@ -355,30 +289,6 @@ function CRRAdmin() {
           <span style={{opacity:0.6,fontSize:15,lineHeight:1,flexShrink:0}}>✕</span>
         </div>
       )}
-      {/* Admin key modal */}
-      {showKeyModal && <KeyModal onSave={key=>{setAdminKey(key);setShowKeyModal(false);setAdminKeyVersion(v=>v+1);}} onClose={()=>setShowKeyModal(false)} hasKey={!!ADMIN_KEY} />}
-    </div>
-  );
-}
-
-function KeyModal({onSave,onClose,hasKey}){
-  const [val,setVal]=React.useState('');
-  function submit(e){e.preventDefault();if(val.trim())onSave(val.trim());}
-  return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,30,50,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:2000}} onClick={hasKey?onClose:undefined}>
-      <form onSubmit={submit} onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:4,padding:28,width:360,boxShadow:"0 8px 40px rgba(0,0,0,0.3)"}}>
-        <div style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:6}}>Admin Key</div>
-        <div style={{fontSize:12,color:C.mid,marginBottom:16,lineHeight:1.5}}>
-          Enter the admin key set via <code style={{background:C.lite,padding:"1px 4px",borderRadius:2,fontSize:11}}>wrangler secret put ADMIN_KEY</code>.<br/>
-          Stored in sessionStorage — clears when you close the browser.
-        </div>
-        <input autoFocus value={val} onChange={e=>setVal(e.target.value)} placeholder="Enter admin key…"
-          style={{width:"100%",padding:"8px 10px",border:`1px solid ${C.rule}`,borderRadius:2,fontSize:13,fontFamily:font,outline:"none",boxSizing:"border-box",marginBottom:12}} />
-        <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
-          {hasKey && <button type="button" onClick={onClose} style={{padding:"7px 14px",background:"#fff",border:`1px solid ${C.rule}`,borderRadius:2,fontSize:12,cursor:"pointer",fontFamily:font,color:C.mid}}>Cancel</button>}
-          <button type="submit" disabled={!val.trim()} style={{padding:"7px 16px",background:val.trim()?C.teal:C.rule,color:val.trim()?"#fff":C.mid,border:"none",borderRadius:2,fontSize:12,fontWeight:700,cursor:val.trim()?"pointer":"default",fontFamily:font}}>Save Key</button>
-        </div>
-      </form>
     </div>
   );
 }
@@ -625,369 +535,10 @@ function Field({label,value,onChange,multi,lc}){
 }
 
 // ══════════════════════════════════════════════════════════
-//  PDF IMPORT TAB
-// ══════════════════════════════════════════════════════════
-
-function ImportTab({criteria,show,updateCriteriaItem,setDirty,handleReplaceAll}){
-  const [file,setFile]=React.useState(null);
-  const [fileData,setFileData]=React.useState(null);
-  const [mode,setMode]=React.useState("diff"); // "diff" | "replace"
-  const [processing,setProcessing]=React.useState(false);
-  const [progress,setProgress]=React.useState("");
-  const [result,setResult]=React.useState(null); // {type:"diff",data:{...}} | {type:"replace",data:{exams:[...]},docTitle}
-  const [accepted,setAccepted]=React.useState({});
-  const [errorLog,setErrorLog]=React.useState([]); // [{ts, msg, detail}]
-  const fileRef=React.useRef(null);
-
-  function logError(msg, detail=""){
-    const ts=new Date().toLocaleTimeString();
-    setErrorLog(prev=>[{ts,msg,detail},...prev.slice(0,19)]); // keep last 20
-  }
-
-  function reset(){setResult(null);setAccepted({});setFile(null);setFileData(null);}
-  function handleFile(e){const f=e.target.files[0];if(!f)return;setFile(f);setResult(null);const r=new FileReader();r.onload=ev=>setFileData(ev.target.result.split(",")[1]);r.readAsDataURL(f);}
-
-  async function processDocument(){
-    if(!fileData){show("Upload a PDF first","warn");return;}
-    setProcessing(true);
-    try{
-      setProgress("Loading PDF…");
-      const bytes=Uint8Array.from(atob(fileData),c=>c.charCodeAt(0));
-      const srcDoc=await PDFLib.PDFDocument.load(bytes);
-      const totalPages=srcDoc.getPageCount();
-      const summary=mode==="diff"?criteria.map(c=>c.title).join("\n"):"";
-
-      async function extractRange(start,end){
-        const doc=await PDFLib.PDFDocument.create();
-        const copied=await doc.copyPages(srcDoc,Array.from({length:end-start},(_,i)=>start+i));
-        copied.forEach(p=>doc.addPage(p));
-        const out=await doc.save();
-        let bin="";const SZ=8192;
-        for(let i=0;i<out.length;i+=SZ)bin+=String.fromCharCode(...out.subarray(i,i+SZ));
-        return btoa(bin);
-      }
-
-      const CHUNK_PAGES=30;
-      const allResults=[];
-
-      // Recursively process a page range — if too long for context window, halve and retry;
-      // if rate-limited, wait 25s and retry once before failing
-      async function processRange(start,end,attempt=1){
-        const label=totalPages>CHUNK_PAGES?`pages ${start+1}–${end} of ${totalPages}`:`document`;
-        setProgress(`Sending ${label} to Claude…`);
-        const base64=await extractRange(start,end);
-        const chunkInfo=totalPages>(end-start)?`Pages ${start+1} to ${end} of ${totalPages}.`:undefined;
-        const res=await extractPdfStreaming({mode,pdf:base64,currentCriteria:summary,chunkInfo},(chars)=>{
-          setProgress(`Receiving ${label}… (${(chars/1000).toFixed(1)}k chars)`);
-        });
-        if(res.error&&(res.error.includes("prompt is too long")||res.error.includes("exceed context limit"))&&end-start>1){
-          const mid=Math.floor((start+end)/2);
-          await processRange(start,mid);
-          await processRange(mid,end);
-          return;
-        }
-        if(res.error&&res.error.includes("rate_limit_error")){
-          if(attempt>=2)throw new Error(`Pages ${start+1}–${end}: rate limit hit twice — wait a minute then retry.`);
-          const WAIT=25;
-          for(let t=WAIT;t>0;t--){
-            setProgress(`Rate limit hit — retrying pages ${start+1}–${end} in ${t}s…`);
-            await new Promise(r=>setTimeout(r,1000));
-          }
-          return processRange(start,end,attempt+1);
-        }
-        if(res.error)throw new Error(`Pages ${start+1}–${end}: ${res.error}`);
-        allResults.push(res);
-      }
-
-      for(let s=0;s<totalPages;s+=CHUNK_PAGES)await processRange(s,Math.min(s+CHUNK_PAGES,totalPages));
-
-      let docTitle="";
-      if(mode==="diff"){
-        const allChanges=[],summaries=[];
-        for(const r of allResults){
-          if(r.documentTitle)docTitle=r.documentTitle;
-          if(r.summary)summaries.push(r.summary);
-          allChanges.push(...(r.changes||[]));
-        }
-        setResult({type:"diff",data:{documentTitle:docTitle,changes:allChanges,summary:summaries.join(" | ")}});
-        const acc={};allChanges.forEach((_,i)=>{acc[i]=true;});setAccepted(acc);
-        show(`Found ${allChanges.length} changes`,"ok");
-      }else{
-        const allExams=[];
-        for(const r of allResults){if(r.documentTitle)docTitle=r.documentTitle;allExams.push(...(r.exams||[]));}
-        const byId={};for(const e of allExams)byId[e.id]=e;
-        const deduped=Object.values(byId);
-        const existingById={};for(const c of criteria)existingById[c.id]=c.data;
-
-        // ── Title similarity matching ─────────────────────────────────────
-        // Uses Jaccard word-set similarity so variations like:
-        //   "CT Chest, Abdomen and Pelvis" vs "CT Chest/Abdomen/Pelvis"
-        //   "CT Intravenous Urogram (IVU)" vs "CT IVU / CT Renal"
-        //   "Ultrasound Musculoskeletal" vs "Ultrasound MSK (incl. Shoulder)"
-        //   "CT Colonography (or Colonoscopy)" vs "CT Colonography (CTC)"
-        // …all score high enough to match.
-
-        // Stop words stripped before comparison (don't affect similarity)
-        const TSTOP=new Set(['and','or','the','a','an','of','incl','including','paediatric','paed','pediatric','adult']);
-
-        function titleWords(s){
-          const t=(s||'')
-            .toLowerCase()
-            .replace(/\s*[-—–]\s*(adult|paediatric|paed|pediatric)\s*$/,'') // strip pop suffix
-            .replace(/[-—–\/,().]/g,' ')   // punctuation → space
-            .replace(/[^a-z0-9 ]/g,'')
-            .replace(/\s+/g,' ').trim();
-          return new Set(t.split(' ').filter(w=>w&&!TSTOP.has(w)));
-        }
-
-        function jaccard(a,b){
-          const inter=[...a].filter(w=>b.has(w)).length;
-          const union=new Set([...a,...b]).size;
-          return union?inter/union:0;
-        }
-
-        // Returns data for the best-scoring existing criterion in same population
-        // Only accepts if Jaccard >= 0.4 (avoids cross-modality false positives)
-        function findBestMatch(fullTitle,pop){
-          const wt=titleWords(fullTitle);
-          const p=pop||'adult';
-          let best=null,bestScore=0;
-          for(const c of criteria){
-            if((c.population||'adult')!==p)continue;
-            const s=jaccard(wt,titleWords(c.title));
-            if(s>bestScore){bestScore=s;best=c.data;}
-          }
-          return bestScore>=0.4?best:null;
-        }
-
-        const PRESERVED=['healthPathwaysUrl','inlineGuidance','guidance','alternativeManagement','notFundedDetail','outOfCriteriaNote','guidanceNarrative','footnotes'];
-
-        // mergeFields: exact ID first, then best Jaccard title match within same population
-        function mergeFields(node,eid,fullTitle,pop){
-          let old=existingById[eid];
-          if(!old&&fullTitle)old=findBestMatch(fullTitle,pop);
-          if(old){for(const f of PRESERVED)if(old[f]&&!node[f])node[f]=old[f];node._merged=true;}
-          else node._new=true;
-        }
-        let mergedCount=0,newCount=0;
-        for(const exam of deduped){
-          const pop=exam.population||'adult';
-          if(exam.type==="multisite"){
-            for(const site of exam.sites||[]){
-              mergeFields(site,site.id,`${exam.title} — ${site.label}`,pop);
-              if(site._merged)mergedCount++;else newCount++;
-            }
-          }else{
-            mergeFields(exam,exam.id,exam.title,pop);
-            if(exam._merged)mergedCount++;else newCount++;
-          }
-        }
-        setResult({type:"replace",data:{exams:deduped.filter(e=>e.population!=="paediatric"),paedExams:deduped.filter(e=>e.population==="paediatric")},docTitle,mergedCount,newCount});
-        show(`Extracted ${deduped.length} entries — ${mergedCount} matched (URLs/guidance retained), ${newCount} new`,"ok");
-      }
-    }catch(e){
-      const detail=e.stack||"";
-      logError(e.message,detail);
-      show("Failed — see error log below","error");
-      console.error(e);
-    }
-    finally{setProcessing(false);setProgress("");}
-  }
-
-  function applyDiff(){
-    const changes=result.data.changes||[];
-    const selected=changes.filter((_,i)=>accepted[i]);
-    if(!selected.length){show("No changes selected","warn");return;}
-    const bySite={};
-    for(const ch of selected){if(!bySite[ch.examSite])bySite[ch.examSite]=[];bySite[ch.examSite].push(ch);}
-    let applied=0;const unmatched=[];
-    for(const[examSite,siteChanges]of Object.entries(bySite)){
-      const esl=examSite.toLowerCase();
-      const item=criteria.find(c=>c.title.toLowerCase().includes(esl)||esl.includes(c.title.toLowerCase()));
-      if(!item){unmatched.push(examSite);continue;}
-      const newData=JSON.parse(JSON.stringify(item.data));
-      for(const ch of siteChanges){
-        if(ch.type==="added"){
-          const pgl=(ch.priorityGroup||"").toLowerCase();
-          let grp=(newData.groups||[]).find(g=>g.title.toLowerCase().includes(pgl)||pgl.includes(g.title.toLowerCase()));
-          if(!grp){if(!newData.groups)newData.groups=[];grp={title:ch.priorityGroup||"General",mandatory:false,items:[]};newData.groups.push(grp);}
-          grp.items.push({type:"cb",id:`imp_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,label:ch.newText||"",shortLabel:ch.shortLabel||"",mandatory:false});
-          applied++;
-        }else if(ch.type==="removed"){
-          outer:for(const g of newData.groups||[]){for(let j=0;j<g.items.length;j++){if(g.items[j].label===ch.currentText||g.items[j].shortLabel===ch.currentText){g.items.splice(j,1);applied++;break outer;}}}
-        }else if(ch.type==="changed"){
-          outer:for(const g of newData.groups||[]){for(const it of g.items){if(it.label===ch.currentText||it.shortLabel===ch.currentText){if(ch.newText)it.label=ch.newText;if(ch.shortLabel)it.shortLabel=ch.shortLabel;applied++;break outer;}}}
-        }
-      }
-      updateCriteriaItem(item.id,newData);
-    }
-    if(applied>0)setDirty(true);
-    const unmatchedUniq=[...new Set(unmatched)];
-    if(unmatchedUniq.length){
-      show(`Applied ${applied}, skipped ${unmatchedUniq.length} unrecognised: ${unmatchedUniq.slice(0,3).join(", ")}${unmatchedUniq.length>3?"…":""}. Add via Editor first.`,"warn");
-    }else{
-      show(`Applied ${applied} change${applied!==1?"s":""} — publish via Versions tab to go live`,"ok");
-    }
-    reset();
-  }
-
-  function confirmReplace(){
-    const total=(result.data.exams||[]).length+(result.data.paedExams||[]).length;
-    const newWarn=result.newCount>0?`\n\n⚠ ${result.newCount} new entries will need HealthPathways URLs added manually in the Editor.`:"";
-    if(!confirm(`Replace ALL ${criteria.length} existing criteria entries with ${total} entries from "${result.docTitle||"this document"}"?${newWarn}\n\nChanges only go live when you Publish. Reload the page to discard without publishing.`))return;
-    // Strip internal _merged/_new flags before handing off
-    const clean=JSON.parse(JSON.stringify(result.data));
-    for(const exam of [...(clean.exams||[]),...(clean.paedExams||[])]){
-      delete exam._merged;delete exam._new;
-      for(const site of exam.sites||[]){delete site._merged;delete site._new;}
-    }
-    handleReplaceAll(clean);
-    show(`Replaced criteria database (${(clean.exams||[]).length} adult + ${(clean.paedExams||[]).length} paediatric) — review in Editor, then publish`,"ok");
-    reset();
-  }
-
-  const cc={added:{bg:C.addBg,fg:C.add,icon:"+"},removed:{bg:C.delBg,fg:C.del,icon:"−"},changed:{bg:C.chgBg,fg:C.chg,icon:"~"}};
-
-  // Group replace preview by modality
-  const replaceByMod=React.useMemo(()=>{
-    if(!result||result.type!=="replace")return null;
-    const all=[...(result.data.exams||[]),...(result.data.paedExams||[])];
-    const g={};for(const e of all){const k=e.modality||"Other";if(!g[k])g[k]=[];g[k].push(e);}
-    return g;
-  },[result]);
-
-  return (
-    <div style={{padding:20,maxWidth:900,margin:"0 auto",overflowY:"auto",height:"calc(100vh - 95px)"}}>
-      <h2 style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:4}}>Import Guideline Document</h2>
-      <p style={{fontSize:12,color:C.mid,marginBottom:16,lineHeight:1.5}}>Upload a CRR criteria PDF and choose how to apply it.</p>
-
-      {/* Mode selector */}
-      <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3,padding:14,marginBottom:14,display:"flex",gap:0}}>
-        {[["diff","Diff","Compare against current — review additions, removals and changes"],["replace","Replace","Claude rebuilds the full database from the PDF — best for major updates"]].map(([val,label,desc])=>(
-          <div key={val} onClick={()=>{setMode(val);setResult(null);}} style={{flex:1,padding:"10px 14px",cursor:"pointer",borderRadius:2,border:`2px solid ${mode===val?C.teal:C.rule}`,background:mode===val?C.lite:"#fff",marginRight:val==="diff"?8:0}}>
-            <div style={{fontSize:12,fontWeight:700,color:mode===val?C.teal:C.navy,marginBottom:3}}>{label}</div>
-            <div style={{fontSize:11,color:C.mid,lineHeight:1.4}}>{desc}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* File picker */}
-      <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3,padding:14,marginBottom:14}}>
-        <div style={{display:"flex",gap:10,alignItems:"center"}}>
-          <input ref={fileRef} type="file" accept=".pdf" onChange={handleFile} style={{display:"none"}} />
-          <button onClick={()=>fileRef.current?.click()} style={{padding:"8px 16px",background:C.lite,border:`1px solid ${C.rule}`,borderRadius:2,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:font,color:C.navy}}>Choose PDF…</button>
-          {file && <span style={{fontSize:12,color:C.navy,fontWeight:600}}>{file.name}</span>}
-          <button onClick={processDocument} disabled={!fileData||processing} style={{padding:"8px 16px",background:fileData&&!processing?C.teal:C.rule,color:fileData?"#fff":C.mid,border:"none",borderRadius:2,fontSize:12,fontWeight:700,cursor:fileData?"pointer":"default",fontFamily:font,marginLeft:"auto"}}>
-            {processing?"Processing…":mode==="diff"?"🔍 Analyse":"⬇ Extract"}
-          </button>
-        </div>
-        {progress && <div style={{marginTop:8,fontSize:12,color:C.teal,fontStyle:"italic"}}>{progress}</div>}
-      </div>
-
-      {/* Error log */}
-      {errorLog.length>0 && (
-        <div style={{background:"#fff",border:`1px solid #f0b0b0`,borderRadius:3,marginBottom:14}}>
-          <div style={{background:C.failBg,padding:"8px 14px",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid #f0b0b0"}}>
-            <span style={{color:C.fail}}>⚠ Error Log ({errorLog.length})</span>
-            <button onClick={()=>setErrorLog([])} style={{fontSize:10,padding:"2px 8px",background:"#fff",border:"1px solid #f0b0b0",borderRadius:2,cursor:"pointer",fontFamily:font,color:C.fail}}>Clear</button>
-          </div>
-          {errorLog.map((e,i)=>(
-            <div key={i} style={{padding:"8px 14px",borderBottom:i<errorLog.length-1?"1px solid #fde8e8":"none",display:"flex",gap:10,alignItems:"flex-start"}}>
-              <span style={{fontSize:10,color:C.mid,whiteSpace:"nowrap",paddingTop:2,flexShrink:0}}>{e.ts}</span>
-              <span style={{flex:1,fontSize:12,color:C.fail,lineHeight:1.5,wordBreak:"break-word"}}>{e.msg}</span>
-              <button onClick={()=>navigator.clipboard?.writeText(e.msg+(e.detail?"\n\n"+e.detail:"")).catch(()=>{})} title="Copy error" style={{fontSize:10,padding:"2px 7px",background:C.failBg,border:"1px solid #f0b0b0",borderRadius:2,cursor:"pointer",fontFamily:font,color:C.fail,flexShrink:0}}>Copy</button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Diff results */}
-      {result?.type==="diff" && (()=>{const changes=result.data.changes||[];return(
-        <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3}}>
-          <div style={{background:C.navy,color:"#fff",padding:"10px 14px",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",display:"flex",justifyContent:"space-between"}}>
-            <span>Changes — {result.data.documentTitle||"Document"}</span>
-            <span style={{fontWeight:400,textTransform:"none"}}>{changes.length} found</span>
-          </div>
-          {result.data.summary && <div style={{padding:"10px 14px",background:C.lite,borderBottom:`1px solid ${C.rule}`,fontSize:12,color:C.ink,lineHeight:1.5}}>{result.data.summary}</div>}
-          <div style={{padding:"10px 14px"}}>
-            {changes.map((ch,i)=>{const col=cc[ch.type]||cc.changed;return(
-              <div key={i} style={{border:`1px solid ${C.rule}`,borderRadius:3,marginBottom:8,opacity:accepted[i]?1:0.4}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:col.bg,cursor:"pointer"}} onClick={()=>setAccepted(p=>({...p,[i]:!p[i]}))}>
-                  <input type="checkbox" checked={!!accepted[i]} readOnly style={{accentColor:C.teal}} />
-                  <span style={{fontSize:12,fontWeight:700,color:col.fg}}>{col.icon}</span>
-                  <span style={{fontSize:10,fontWeight:700,textTransform:"uppercase",color:col.fg,padding:"1px 6px",borderRadius:2,border:`1px solid ${col.fg}40`}}>{ch.type}</span>
-                  <span style={{fontSize:12,fontWeight:600,color:C.navy}}>{ch.examSite}</span>
-                  {ch.priorityGroup && <span style={{fontSize:10,color:C.mid}}>· {ch.priorityGroup}</span>}
-                </div>
-                <div style={{padding:"8px 12px"}}>
-                  {ch.currentText && <div style={{fontSize:12,color:C.del,padding:"4px 8px",background:C.delBg,borderRadius:2,marginBottom:4,borderLeft:`3px solid ${C.del}`}}><strong>Was:</strong> {ch.currentText}</div>}
-                  {ch.newText && <div style={{fontSize:12,color:C.add,padding:"4px 8px",background:C.addBg,borderRadius:2,marginBottom:4,borderLeft:`3px solid ${C.add}`}}><strong>Now:</strong> {ch.newText}</div>}
-                  <div style={{fontSize:11,color:C.mid,fontStyle:"italic"}}>{ch.reason}</div>
-                </div>
-              </div>
-            );})}
-          </div>
-          <div style={{padding:"12px 14px",borderTop:`1px solid ${C.rule}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <span style={{fontSize:12,color:C.mid}}>{Object.values(accepted).filter(Boolean).length} of {changes.length} selected</span>
-            <button onClick={applyDiff} style={{padding:"8px 16px",background:C.teal,color:"#fff",border:"none",borderRadius:2,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:font}}>Apply Selected</button>
-          </div>
-        </div>
-      );})()}
-
-      {/* Replace preview */}
-      {result?.type==="replace" && replaceByMod && (
-        <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3}}>
-          <div style={{background:C.navy,color:"#fff",padding:"10px 14px",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",display:"flex",justifyContent:"space-between"}}>
-            <span>Extracted — {result.docTitle||"Document"}</span>
-            <span style={{fontWeight:400,textTransform:"none"}}>{(result.data.exams||[]).length+(result.data.paedExams||[]).length} entries</span>
-          </div>
-          <div style={{padding:"10px 14px",background:result.newCount>0?C.failBg:C.warnBg,borderBottom:`1px solid ${result.newCount>0?"#f0b0b0":"#e0c060"}`,display:"flex",gap:10,alignItems:"flex-start"}}>
-            <span style={{fontSize:16,lineHeight:1}}>⚠</span>
-            <div style={{fontSize:12,color:result.newCount>0?C.fail:C.warn,lineHeight:1.6}}>
-              <strong>Replace mode</strong> — will overwrite all {criteria.length} existing entries.
-              {result.mergedCount>0&&<span style={{color:C.pass}}> {result.mergedCount} matched: HealthPathways URLs and guidance text retained.</span>}
-              {result.newCount>0&&<span style={{color:C.fail}}> {result.newCount} new entries have no existing URL — add manually in Editor after confirming.</span>}
-              <span style={{color:"inherit"}}> Changes only go live when you Publish.</span>
-            </div>
-          </div>
-          <div style={{padding:"10px 14px"}}>
-            {Object.entries(replaceByMod).map(([mod,exams])=>(
-              <div key={mod} style={{marginBottom:12}}>
-                <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:0.5,color:C.mid,marginBottom:6,borderBottom:`1px solid ${C.rule}`,paddingBottom:4}}>{mod} ({exams.length})</div>
-                {exams.map((e,i)=>{
-                  const itemCount=e.type==="multisite"?(e.sites||[]).reduce((n,s)=>n+(s.groups||[]).reduce((m,g)=>m+(g.items||[]).length,0),0):(e.groups||[]).reduce((n,g)=>n+(g.items||[]).length,0);
-                  const allNew=e.type==="multisite"?(e.sites||[]).every(s=>s._new):!!e._new;
-                  const someNew=!allNew&&e.type==="multisite"&&(e.sites||[]).some(s=>s._new);
-                  return(
-                    <div key={i} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 6px",borderRadius:2,background:i%2===0?"#fafbfc":"#fff"}}>
-                      <span style={{fontSize:12,color:C.navy,flex:1}}>{e.title}</span>
-                      <span style={{fontSize:10,color:C.mid}}>{itemCount} criteria</span>
-                      {e.population==="paediatric"&&<span style={{fontSize:9,fontWeight:700,padding:"1px 5px",borderRadius:2,background:"#e0f0ff",color:"#1a5f9a"}}>PAED</span>}
-                      {e.type==="multisite"&&<span style={{fontSize:9,color:C.mid}}>{(e.sites||[]).length} sites</span>}
-                      {allNew&&<span style={{fontSize:9,fontWeight:700,padding:"1px 5px",borderRadius:2,background:C.failBg,color:C.fail}}>NEW — needs URL</span>}
-                      {someNew&&<span style={{fontSize:9,fontWeight:700,padding:"1px 5px",borderRadius:2,background:C.warnBg,color:C.warn}}>PART NEW</span>}
-                      {!allNew&&!someNew&&<span style={{fontSize:9,padding:"1px 5px",borderRadius:2,background:C.passBg,color:C.pass}}>✓ URL kept</span>}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-          <div style={{padding:"12px 14px",borderTop:`1px solid ${C.rule}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <button onClick={()=>setResult(null)} style={{padding:"8px 14px",background:"#fff",border:`1px solid ${C.rule}`,borderRadius:2,fontSize:12,cursor:"pointer",fontFamily:font,color:C.mid}}>Cancel</button>
-            <button onClick={confirmReplace} style={{padding:"8px 18px",background:C.fail,color:"#fff",border:"none",borderRadius:2,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:font}}>Replace All Criteria</button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ══════════════════════════════════════════════════════════
 //  REGIONS TAB
 // ══════════════════════════════════════════════════════════
 
-function RegionsTab({criteria,show,adminKeyVersion,openKeyModal}){
+function RegionsTab({criteria,show}){
   const [region,setRegion]=React.useState("aucklandregion");
   const [allRegions,setAllRegions]=React.useState({}); // {regionId: {siteId: {...}}}
   const [overrides,setOverrides]=React.useState({}); // {siteId: {text:"...", healthPathwaysUrl:"..."}}
@@ -1013,7 +564,7 @@ function RegionsTab({criteria,show,adminKeyVersion,openKeyModal}){
       }catch(e){console.error(e);setAuthError(true);}
       finally{setLoadingR(false);}
     })();
-  },[adminKeyVersion]);
+  },[]);
 
   // When region changes, load its overrides from allRegions
   React.useEffect(()=>{setOverrides(allRegions[region]||{});setDirty(false);},[region,allRegions]);
@@ -1051,9 +602,8 @@ function RegionsTab({criteria,show,adminKeyVersion,openKeyModal}){
       </p>
 
       {authError && (
-        <div style={{background:C.failBg,border:`1px solid #f0b0b0`,borderRadius:3,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:12}}>
-          <span style={{fontSize:13,color:C.fail,flex:1}}>⚠ Admin key required or invalid — region overrides could not be loaded.</span>
-          <button onClick={openKeyModal} style={{padding:"5px 12px",background:C.fail,color:"#fff",border:"none",borderRadius:2,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:font,whiteSpace:"nowrap"}}>Set key</button>
+        <div style={{background:C.failBg,border:`1px solid #f0b0b0`,borderRadius:3,padding:"12px 16px",marginBottom:16,fontSize:13,color:C.fail}}>
+          ⚠ Could not load region overrides. Check that you're signed in via Cloudflare Access and reload this page.
         </div>
       )}
 
@@ -1125,7 +675,7 @@ function RegionsTab({criteria,show,adminKeyVersion,openKeyModal}){
 //  VERSIONS TAB — with publish wired to API
 // ══════════════════════════════════════════════════════════
 
-function VersionsTab({show,pubVer,handlePublish,handleRollback,criteria,origData,dirty,adminKeyVersion,openKeyModal}){
+function VersionsTab({show,pubVer,handlePublish,handleRollback,criteria,origData,dirty}){
   const [label,setLabel]=React.useState("");
   const [notes,setNotes]=React.useState("");
 
@@ -1164,7 +714,7 @@ function VersionsTab({show,pubVer,handlePublish,handleRollback,criteria,origData
       }catch(e){console.error(e);setAuthError(true);}
       finally{setLoadingV(false);}
     })();
-  },[adminKeyVersion]);
+  },[]);
 
   async function doPublish(){
     if(!label.trim()){show("Enter a version label","warn");return;}
@@ -1224,9 +774,8 @@ function VersionsTab({show,pubVer,handlePublish,handleRollback,criteria,origData
       </div>
 
       {authError && (
-        <div style={{background:C.failBg,border:`1px solid #f0b0b0`,borderRadius:3,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:12}}>
-          <span style={{fontSize:13,color:C.fail,flex:1}}>⚠ Admin key required or invalid — version history could not be loaded.</span>
-          <button onClick={openKeyModal} style={{padding:"5px 12px",background:C.fail,color:"#fff",border:"none",borderRadius:2,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:font,whiteSpace:"nowrap"}}>Set key</button>
+        <div style={{background:C.failBg,border:`1px solid #f0b0b0`,borderRadius:3,padding:"12px 16px",marginBottom:16,fontSize:13,color:C.fail}}>
+          ⚠ Could not load version history. Check that you're signed in via Cloudflare Access and reload this page.
         </div>
       )}
 
@@ -1325,7 +874,7 @@ function QAReviewsTab(){
     if(!filtered.length){alert('No reviews to export.');return;}
     const cols=['id','timestamp','session_id','reviewer_name','reviewer_role','scenario_type',
       'score_criteria_id','score_suggestion_quality','score_compound_handling','score_safety_redirect',
-      'overall_assessment','comments','exam_identified','model_used','documentation_standard'];
+      'overall_assessment','comments','exam_identified','model_used','documentation_standard','ip_address'];
     const esc=v=>v==null?'':'"'+String(v).replace(/"/g,'""')+'"';
     const rows=[cols.join(','),...filtered.map(r=>cols.map(c=>esc(r[c])).join(','))];
     const blob=new Blob([rows.join('\n')],{type:'text/csv'});
@@ -1407,6 +956,7 @@ function QAReviewsTab(){
                 <th style={{padding:'8px 6px',textAlign:'center',fontWeight:600,fontSize:11}}>Safety</th>
                 <th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,fontSize:11}}>Overall</th>
                 <th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,fontSize:11}}>Exam</th>
+                <th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,fontSize:11}}>IP</th>
               </tr>
             </thead>
             <tbody>
@@ -1427,10 +977,11 @@ function QAReviewsTab(){
                       </span>
                     </td>
                     <td style={{padding:'8px 10px',color:C.mid,fontSize:11}}>{r.exam_identified||'—'}</td>
+                    <td style={{padding:'8px 10px',color:C.mid,fontSize:10,fontFamily:mono,whiteSpace:'nowrap'}}>{r.ip_address||'—'}</td>
                   </tr>
                   {expanded===r.id&&(
                     <tr style={{background:C.lite}}>
-                      <td colSpan={9} style={{padding:'10px 14px'}}>
+                      <td colSpan={10} style={{padding:'10px 14px'}}>
                         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                           <div>
                             <div style={{fontWeight:700,color:C.navy,marginBottom:4,fontSize:11,textTransform:'uppercase',letterSpacing:0.4}}>Clinical note</div>
@@ -1500,7 +1051,7 @@ function ViewerQATab(){
 
   function exportCSV(){
     if(!reviews.length){alert('No reviews to export.');return;}
-    const cols=['id','timestamp','session_id','reviewer_name','reviewer_role','exam_type','site_code','site_label','region','view_mode','score_usability','score_value','comments'];
+    const cols=['id','timestamp','session_id','reviewer_name','reviewer_role','exam_type','site_code','site_label','region','view_mode','score_usability','score_value','comments','ip_address'];
     const esc=v=>v==null?'':'"'+String(v).replace(/"/g,'""')+'"';
     const rows=[cols.join(','),...reviews.map(r=>cols.map(c=>esc(r[c])).join(','))];
     const blob=new Blob([rows.join('\n')],{type:'text/csv'});
@@ -1567,6 +1118,7 @@ function ViewerQATab(){
                 <th style={{padding:'8px 6px',textAlign:'center',fontWeight:600,fontSize:11}}>Usability</th>
                 <th style={{padding:'8px 6px',textAlign:'center',fontWeight:600,fontSize:11}}>Value</th>
                 <th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,fontSize:11}}>Region</th>
+                <th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,fontSize:11}}>IP</th>
               </tr>
             </thead>
             <tbody>
@@ -1579,10 +1131,11 @@ function ViewerQATab(){
                     <td style={{padding:'8px 6px',textAlign:'center'}}>{scoreCell3(r.score_usability)}</td>
                     <td style={{padding:'8px 6px',textAlign:'center'}}>{scoreCell3(r.score_value)}</td>
                     <td style={{padding:'8px 10px',color:C.mid,fontSize:11}}>{r.region||'—'}</td>
+                    <td style={{padding:'8px 10px',color:C.mid,fontSize:10,fontFamily:mono,whiteSpace:'nowrap'}}>{r.ip_address||'—'}</td>
                   </tr>
                   {expanded===r.id&&(
                     <tr style={{background:C.lite}}>
-                      <td colSpan={6} style={{padding:'10px 14px'}}>
+                      <td colSpan={7} style={{padding:'10px 14px'}}>
                         {r.comments&&<div><span style={{fontWeight:700,fontSize:11,color:C.navy}}>Comments: </span><span style={{fontSize:12}}>{r.comments}</span></div>}
                         <div style={{marginTop:6,fontSize:10,color:C.mid}}>Session: {r.session_id} · View mode: {r.view_mode||'—'}</div>
                       </td>
@@ -1633,7 +1186,7 @@ function UsageLogTab(){
 
   function exportCSV(){
     if(!logs.length){alert('No logs to export.');return;}
-    const cols=['id','timestamp','session_id','user_name','user_role','exam_identified','verdict','model_used','documentation_standard','input_tokens','cache_read_tokens','cache_write_tokens','output_tokens','cost_nzd'];
+    const cols=['id','timestamp','session_id','user_name','user_role','exam_identified','verdict','model_used','documentation_standard','input_tokens','cache_read_tokens','cache_write_tokens','output_tokens','cost_nzd','ip_address'];
     const esc=v=>v==null?'':'"'+String(v).replace(/"/g,'""')+'"';
     const rows=[cols.join(','),...logs.map(r=>cols.map(c=>esc(r[c])).join(','))];
     const blob=new Blob([rows.join('\n')],{type:'text/csv'});
@@ -1679,6 +1232,7 @@ function UsageLogTab(){
                 <th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,fontSize:11}}>Mode</th>
                 <th style={{padding:'8px 6px',textAlign:'right',fontWeight:600,fontSize:11}}>Tokens</th>
                 <th style={{padding:'8px 10px',textAlign:'right',fontWeight:600,fontSize:11}}>Cost NZD</th>
+                <th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,fontSize:11}}>IP</th>
               </tr>
             </thead>
             <tbody>
@@ -1692,10 +1246,11 @@ function UsageLogTab(){
                     <td style={{padding:'8px 10px',fontSize:11,color:C.mid}}>{r.documentation_standard||'—'}</td>
                     <td style={{padding:'8px 6px',textAlign:'right',color:C.mid,fontSize:11}}>{((r.input_tokens||0)+(r.output_tokens||0)).toLocaleString()}</td>
                     <td style={{padding:'8px 10px',textAlign:'right',fontWeight:600,color:C.navy}}>${(r.cost_nzd||0).toFixed(4)}</td>
+                    <td style={{padding:'8px 10px',color:C.mid,fontSize:10,fontFamily:mono,whiteSpace:'nowrap'}}>{r.ip_address||'—'}</td>
                   </tr>
                   {expanded===r.id&&(
                     <tr style={{background:C.mist}}>
-                      <td colSpan={7} style={{padding:'12px 16px'}}>
+                      <td colSpan={8} style={{padding:'12px 16px'}}>
                         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                           <div>
                             <div style={{fontWeight:700,color:C.navy,fontSize:11,marginBottom:4}}>Clinical note</div>
@@ -1723,6 +1278,65 @@ function UsageLogTab(){
 // ══════════════════════════════════════════════════════════
 //  RELEASES TAB — create/edit release notes & announcements
 // ══════════════════════════════════════════════════════════
+
+// Mirrors public/crr-criteria/releases/index.html. Supports # headings, **bold**, *italic*, `code`,
+// [text](url) with safe-URL coercion, - * • ▪ ◦ ‒ – — bullet chars, 1. ordered lists.
+const BULLET_RE = /^(?:[-*•▪◦‒–—])\s+/;
+function safeUrlPrev(u){
+  u = String(u||'').trim();
+  if(/^(?:javascript|data|vbscript|file):/i.test(u)) return '#';
+  if(/^https?:\/\//i.test(u)) return u;
+  if(/^mailto:|^tel:|^\/|^#/.test(u)) return u;
+  if(/^(?:www\.)?[a-z0-9-]+\.[a-z]{2,}/i.test(u)) return 'https://' + u.replace(/^https?:\/\//i,'');
+  return u;
+}
+function renderReleaseMarkdown(src){
+  if(!src) return '';
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const inl = s => {
+    s = esc(s);
+    s = s.replace(/`([^`]+)`/g,'<code>$1</code>');
+    s = s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+    s = s.replace(/\*([^*]+)\*/g,'<em>$1</em>');
+    s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m,t,u)=>`<a href="${safeUrlPrev(u)}" target="_blank" rel="noopener noreferrer">${t}</a>`);
+    return s;
+  };
+  const lines = src.replace(/\r\n/g,'\n').split('\n');
+  const out = []; let i = 0;
+  while(i<lines.length){
+    const t = lines[i].trim();
+    if(!t){ i++; continue; }
+    const h = t.match(/^(#{1,3})\s+(.+)$/);
+    if(h){ out.push(`<h${h[1].length}>${inl(h[2])}</h${h[1].length}>`); i++; continue; }
+    if(BULLET_RE.test(t)){
+      out.push('<ul>');
+      while(i<lines.length && BULLET_RE.test(lines[i].trim())){
+        out.push('<li>' + inl(lines[i].trim().replace(BULLET_RE,'')) + '</li>');
+        i++;
+      }
+      out.push('</ul>'); continue;
+    }
+    if(/^\d+\.\s+/.test(t)){
+      out.push('<ol>');
+      while(i<lines.length && /^\d+\.\s+/.test(lines[i].trim())){
+        out.push('<li>' + inl(lines[i].trim().replace(/^\d+\.\s+/,'')) + '</li>');
+        i++;
+      }
+      out.push('</ol>'); continue;
+    }
+    const para = [t]; i++;
+    while(i<lines.length){
+      const n = lines[i].trim();
+      if(!n) break;
+      if(/^(#{1,3})\s+/.test(n)) break;
+      if(BULLET_RE.test(n)) break;
+      if(/^\d+\.\s+/.test(n)) break;
+      para.push(n); i++;
+    }
+    out.push('<p>' + inl(para.join(' ')) + '</p>');
+  }
+  return out.join('\n');
+}
 
 function ReleasesTab({show}){
   const [entries,setEntries]=React.useState([]);
@@ -1826,10 +1440,20 @@ function ReleasesTab({show}){
               </div>
             </div>
 
-            <label style={{display:'block',fontSize:11,fontWeight:600,color:C.navy,marginBottom:4}}>Body (Markdown)</label>
-            <textarea value={editing.body||''} onChange={e=>setEditing({...editing,body:e.target.value})}
-                      placeholder={'Supports headings (#, ##), **bold**, *italic*, lists, [links](https://…) and `code`.'}
-                      style={{width:'100%',minHeight:240,fontSize:13,padding:10,border:`1px solid ${C.rule}`,borderRadius:3,fontFamily:mono,resize:'vertical'}}/>
+            <div style={{display:'flex',gap:12,alignItems:'flex-start'}}>
+              <div style={{flex:1,minWidth:0}}>
+                <label style={{display:'block',fontSize:11,fontWeight:600,color:C.navy,marginBottom:4}}>Body (Markdown)</label>
+                <textarea value={editing.body||''} onChange={e=>setEditing({...editing,body:e.target.value})}
+                          placeholder={'# Heading\n**bold**, *italic*, `code`, [link](https://…)\n\n- list item one\n- list item two\n\nLeave a blank line between paragraphs.'}
+                          style={{width:'100%',minHeight:300,fontSize:13,padding:10,border:`1px solid ${C.rule}`,borderRadius:3,fontFamily:mono,resize:'vertical'}}/>
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <label style={{display:'block',fontSize:11,fontWeight:600,color:C.navy,marginBottom:4}}>Preview</label>
+                <div style={{minHeight:300,maxHeight:600,overflow:'auto',padding:'10px 14px',border:`1px solid ${C.rule}`,borderRadius:3,background:'#fff',fontSize:13,lineHeight:1.55,color:'#2a2d33'}}
+                     dangerouslySetInnerHTML={{__html: renderReleaseMarkdown(editing.body||'') || '<span style="color:#8b919a;font-style:italic">Preview will appear here as you type.</span>'}}/>
+              </div>
+            </div>
+            <div style={{fontSize:11,color:C.mid,marginTop:6}}>Tip: leave a blank line between paragraphs. Use <code style={{background:C.lite,padding:'1px 4px',borderRadius:2}}>- item</code> for bullets, <code style={{background:C.lite,padding:'1px 4px',borderRadius:2}}>**word**</code> for bold.</div>
 
             <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:12}}>
               <button onClick={()=>setEditing(null)} style={{fontSize:12,padding:'6px 14px',background:'#fff',color:C.mid,border:`1px solid ${C.rule}`,borderRadius:3,cursor:'pointer',fontFamily:font}}>Cancel</button>

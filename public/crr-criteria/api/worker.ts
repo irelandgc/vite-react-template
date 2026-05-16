@@ -131,19 +131,30 @@ app.get('/api/match-data', async (c) => {
 // ══════════════════════════════════════════════════════════════
 
 // Middleware: check admin access
-// In production, replace with Cloudflare Access JWT verification
-// For now, accepts either cf-access-jwt-assertion OR x-admin-key header
+// Accepts either a Cloudflare Access JWT (set when CF Access fronts a request, or
+// forwarded by the iteratio.nz same-origin proxy), OR a service-token x-admin-key
+// header (kept for Claude Code / scripted use). Either is sufficient.
 async function requireAccess(c: any, next: any) {
   const jwt = c.req.header('cf-access-jwt-assertion');
+  const email = c.req.header('cf-access-authenticated-user-email') || c.req.header('x-admin-email');
   const adminKey = c.req.header('x-admin-key');
-  if (!jwt && !adminKey) {
-    return c.json({ error: 'Unauthorized — set x-admin-key header or use Cloudflare Access' }, 401);
+  if (!jwt && !adminKey && !email) {
+    return c.json({ error: 'Unauthorized' }, 401);
   }
-  // When ADMIN_KEY secret is set, validate it; otherwise accept any non-empty value
   if (adminKey && c.env.ADMIN_KEY && adminKey !== c.env.ADMIN_KEY) {
     return c.json({ error: 'Unauthorized — invalid admin key' }, 401);
   }
   await next();
+}
+
+// Resolve the actor for audit_log / created_by / updated_by attribution.
+// Prefer the Cloudflare Access email (for human admin actions via the iteratio.nz proxy),
+// fall back to the x-admin-email header (legacy / manual override), then "Claude Code"
+// (any other authorised path — service token, scripted call, direct API hit).
+function actorFrom(c: any): string {
+  const email = c.req.header('cf-access-authenticated-user-email') || c.req.header('x-admin-email');
+  if (email) return email;
+  return 'Claude Code';
 }
 
 // GET /api/admin/criteria — All criteria from D1 (working copy)
@@ -178,7 +189,7 @@ app.put('/api/admin/criteria/:id', requireAccess, async (c) => {
   ).bind(
     JSON.stringify(body.data),
     now,
-    body.updatedBy || 'admin',
+    actorFrom(c),
     id
   ).run();
 
@@ -188,7 +199,7 @@ app.put('/api/admin/criteria/:id', requireAccess, async (c) => {
   ).bind(
     'update', 'criteria', id,
     JSON.stringify({ before: existing?.data, after: body.data }),
-    body.updatedBy || 'admin',
+    actorFrom(c),
     now
   ).run();
 
@@ -208,13 +219,13 @@ app.post('/api/admin/criteria', requireAccess, async (c) => {
     body.population || 'adult',
     JSON.stringify(body.data),
     now,
-    body.createdBy || 'admin'
+    actorFrom(c)
   ).run();
 
   // Audit log
   await db.prepare(
     'INSERT INTO audit_log (action, entity_type, entity_id, changes, performed_by, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
-  ).bind('create', 'criteria', body.id, JSON.stringify(body), body.createdBy || 'admin', now)
+  ).bind('create', 'criteria', body.id, JSON.stringify(body), actorFrom(c), now)
   .run();
 
   return c.json({ success: true, id: body.id }, 201);
@@ -225,7 +236,7 @@ app.delete('/api/admin/criteria/:id', requireAccess, async (c) => {
   const db = c.env.DB;
   const id = c.req.param('id');
   const now = new Date().toISOString();
-  const email = c.req.header('cf-access-authenticated-user-email') || 'admin';
+  const email = actorFrom(c);
 
   await db.prepare('DELETE FROM criteria WHERE id = ?').bind(id).run();
 
@@ -263,7 +274,7 @@ app.post('/api/admin/versions', requireAccess, async (c) => {
     JSON.stringify(snapshot),
     'draft',
     now,
-    body.createdBy || 'admin'
+    actorFrom(c)
   ).run();
 
   return c.json({ success: true, versionLabel: body.versionLabel }, 201);
@@ -275,7 +286,7 @@ app.post('/api/admin/versions/:id/publish', requireAccess, async (c) => {
   const kv = c.env.KV;
   const versionId = c.req.param('id');
   const now = new Date().toISOString();
-  const email = c.req.header('cf-access-authenticated-user-email') || 'admin';
+  const email = actorFrom(c);
 
   // Get the version
   const version = await db.prepare('SELECT * FROM versions WHERE id = ?').bind(versionId).first();
@@ -334,7 +345,7 @@ app.post('/api/admin/publish', requireAccess, async (c) => {
   const db = c.env.DB;
   const body = await c.req.json();
   const now = new Date().toISOString();
-  const email = c.req.header('x-admin-email') || 'admin';
+  const email = actorFrom(c);
 
   try {
     const versionLabel = body.versionLabel || 'v' + now.slice(0, 10).replace(/-/g, '.');
@@ -408,7 +419,7 @@ app.post('/api/admin/versions/:id/rollback', requireAccess, async (c) => {
   const kv = c.env.KV;
   const versionId = c.req.param('id');
   const now = new Date().toISOString();
-  const email = c.req.header('x-admin-email') || 'admin';
+  const email = actorFrom(c);
 
   const version = await db.prepare('SELECT * FROM versions WHERE id = ?').bind(versionId).first();
   if (!version) return c.json({ error: 'Version not found' }, 404);
@@ -468,8 +479,8 @@ app.post('/api/qa-review', async (c) => {
         score_compound_handling, score_safety_redirect,
         overall_assessment, comments,
         presentation_text, ai_response_summary,
-        exam_identified, model_used, documentation_standard, region
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        exam_identified, model_used, documentation_standard, region, ip_address
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       body.timestamp || now,
       body.session_id || '',
@@ -487,7 +498,8 @@ app.post('/api/qa-review', async (c) => {
       body.exam_identified || null,
       body.model_used || null,
       body.documentation_standard || null,
-      body.region || null
+      body.region || null,
+      ip
     ).run();
     return c.json({ success: true, id: result.meta.last_row_id });
   } catch (e: any) {
@@ -521,8 +533,8 @@ app.post('/api/qa-viewer-review', async (c) => {
         checklist_criteria_correct, checklist_priority_correct, checklist_gateway_correct,
         checklist_labvalue_correct, checklist_altmgmt_correct, checklist_notfunded_correct,
         checklist_guidance_correct, checklist_healthpathways_works, checklist_groupings_correct,
-        comments
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        comments, ip_address
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       body.timestamp || now,
       body.session_id || '',
@@ -545,7 +557,8 @@ app.post('/api/qa-viewer-review', async (c) => {
       body.checklist_guidance_correct ? 1 : 0,
       body.checklist_healthpathways_works ? 1 : 0,
       body.checklist_groupings_correct ? 1 : 0,
-      body.comments || null
+      body.comments || null,
+      ip
     ).run();
     return c.json({ success: true, id: result.meta.last_row_id });
   } catch (e: any) {
@@ -644,72 +657,6 @@ app.post('/api/triage/assess', async (c) => {
 
   const result: any = await response.json();
   return c.json(result, response.ok ? 200 : (response.status as any));
-});
-
-// POST /api/admin/extract-pdf — Server-side PDF processing via Anthropic API
-// Accepts { pdf: base64string, currentCriteria: string }
-// Returns { documentTitle, changes, summary }
-app.post('/api/admin/extract-pdf', requireAccess, async (c) => {
-  const apiKey = c.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return c.json({ error: 'ANTHROPIC_API_KEY not configured — run: npx wrangler secret put ANTHROPIC_API_KEY' }, 500);
-  }
-
-  const body = await c.req.json();
-  const pdfBase64 = body.pdf;
-  const currentCriteria = body.currentCriteria || '';
-  const chunkInfo = body.chunkInfo || '';
-  const mode = body.mode === 'replace' ? 'replace' : 'diff';
-
-  if (!pdfBase64) return c.json({ error: 'pdf field required' }, 400);
-
-  const chunkNote = chunkInfo ? `\n\nNote: ${chunkInfo}` : '';
-
-  const prompt = mode === 'replace'
-    ? `Extract ALL radiology referral criteria from this NZ CRR document.${chunkNote}
-Output ONLY valid JSON:
-{"documentTitle":"...","exams":[{"id":"snake_case_id","title":"Exam title","modality":"CT|MRI|US|XR|NM|IR|FL","type":"singlesite|multisite","population":"adult|paediatric","inlineGuidance":"...","healthPathwaysUrl":"","groups":[{"title":"Priority group label","mandatory":false,"items":[{"type":"cb","id":"unique_id","label":"Full criteria text","shortLabel":"3-5 word label","mandatory":false}]}]}]}
-For multisite exams use "sites" array instead of "groups": "sites":[{"id":"examid_site","label":"Site name","groups":[...]}]
-Include every complete exam/site you can see. Omit healthPathwaysUrl (leave empty string).`
-    : `Analyze this NZ CRR criteria document. Compare against current exam/site list:\n\n${currentCriteria}${chunkNote}\n\nRespond ONLY with JSON:\n{"documentTitle":"...","changes":[{"id":"1","type":"added"|"removed"|"changed","examSite":"...","priorityGroup":"...","currentText":null,"newText":"...","shortLabel":"...","reason":"..."}],"summary":"..."}`;
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: mode === 'replace' ? 32000 : 8000,
-      stream: true,
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdfBase64 } },
-          { type: 'text', text: prompt },
-        ],
-      }],
-    }),
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    return c.json({ error: 'Anthropic API error: ' + errText }, 502);
-  }
-
-  // Stream SSE back to client immediately — prevents Cloudflare 524 timeout
-  // Client accumulates content_block_delta events and parses the completed JSON
-  return new Response(response.body, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'X-Accel-Buffering': 'no',
-      'Access-Control-Allow-Origin': '*',
-    },
-  });
 });
 
 // ── Transform Functions ──────────────────────────────────
@@ -887,8 +834,8 @@ app.post('/api/triage/usage-log', async (c) => {
         timestamp, session_id, user_name, user_role,
         exam_identified, verdict, model_used, documentation_standard,
         input_tokens, cache_read_tokens, cache_write_tokens, output_tokens, cost_nzd,
-        presentation_text, ai_response_summary
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        presentation_text, ai_response_summary, ip_address
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       body.timestamp || now,
       body.session_id || '',
@@ -904,7 +851,8 @@ app.post('/api/triage/usage-log', async (c) => {
       body.output_tokens || 0,
       body.cost_nzd || 0,
       body.presentation_text || null,
-      body.ai_response_summary || null
+      body.ai_response_summary || null,
+      ip
     ).run();
     return c.json({ success: true, id: result.meta.last_row_id });
   } catch (e: any) {
@@ -1010,12 +958,12 @@ app.post('/api/admin/releases', requireAccess, async (c) => {
       'INSERT INTO releases (title, body, type, apps, status, published_at, created_at, updated_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).bind(
       body.title, body.body, type, apps, status, publishedAt, now, now,
-      body.created_by || c.req.header('x-admin-email') || 'admin'
+      actorFrom(c)
     ).run();
     const id = result.meta?.last_row_id;
     await db.prepare(
       'INSERT INTO audit_log (action, entity_type, entity_id, changes, performed_by, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
-    ).bind('create', 'release', String(id), JSON.stringify({ title: body.title, type, apps, status }), body.created_by || 'admin', now).run();
+    ).bind('create', 'release', String(id), JSON.stringify({ title: body.title, type, apps, status }), actorFrom(c), now).run();
     return c.json({ success: true, id }, 201);
   } catch (e: any) {
     return c.json({ error: 'Failed to create release: ' + e.message }, 500);
@@ -1046,7 +994,7 @@ app.put('/api/admin/releases/:id', requireAccess, async (c) => {
 
     await db.prepare(
       'INSERT INTO audit_log (action, entity_type, entity_id, changes, performed_by, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
-    ).bind('update', 'release', String(id), JSON.stringify({ title: body.title, type, apps, status }), body.updated_by || c.req.header('x-admin-email') || 'admin', now).run();
+    ).bind('update', 'release', String(id), JSON.stringify({ title: body.title, type, apps, status }), actorFrom(c), now).run();
 
     return c.json({ success: true, id });
   } catch (e: any) {
@@ -1063,7 +1011,7 @@ app.delete('/api/admin/releases/:id', requireAccess, async (c) => {
     await db.prepare('DELETE FROM releases WHERE id = ?').bind(id).run();
     await db.prepare(
       'INSERT INTO audit_log (action, entity_type, entity_id, performed_by, performed_at) VALUES (?, ?, ?, ?, ?)'
-    ).bind('delete', 'release', String(id), c.req.header('x-admin-email') || 'admin', now).run();
+    ).bind('delete', 'release', String(id), actorFrom(c), now).run();
     return c.json({ success: true });
   } catch (e: any) {
     return c.json({ error: 'Failed to delete release: ' + e.message }, 500);
