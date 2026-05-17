@@ -229,6 +229,7 @@ function CRRAdmin() {
     {id:"releases",label:"Releases",icon:"📣"},
     {id:"qa",label:"Triage QA",icon:"⭐"},
     {id:"viewerqa",label:"Viewer QA",icon:"📋"},
+    {id:"viewerusage",label:"Viewer Usage",icon:"📊"},
     {id:"usagelog",label:"Usage Log",icon:"📋"},
     {id:"audit",label:"Audit Log",icon:"📋"},
   ];
@@ -280,6 +281,7 @@ function CRRAdmin() {
         {tab==="releases" && <ReleasesTab show={show} />}
         {tab==="qa" && <QAReviewsTab />}
         {tab==="viewerqa" && <ViewerQATab />}
+        {tab==="viewerusage" && <ViewerUsageTab />}
         {tab==="usagelog" && <UsageLogTab />}
         {tab==="audit" && <AuditTab />}
       </div>
@@ -1153,6 +1155,178 @@ function ViewerQATab(){
 }
 
 // ══════════════════════════════════════════════════════════
+//  VIEWER USAGE TAB
+// ══════════════════════════════════════════════════════════
+
+function ViewerUsageTab(){
+  const [events,setEvents]=React.useState([]);
+  const [loading,setLoading]=React.useState(true);
+  const [error,setError]=React.useState(null);
+  const [expanded,setExpanded]=React.useState(null);
+  const [filterFrom,setFilterFrom]=React.useState('');
+  const [filterTo,setFilterTo]=React.useState('');
+  const [filterEventType,setFilterEventType]=React.useState('');
+  const [filterExam,setFilterExam]=React.useState('');
+
+  const fetchEvents=React.useCallback(async()=>{
+    setLoading(true);setError(null);
+    try{
+      const params=new URLSearchParams();
+      if(filterFrom)params.set('from',filterFrom);
+      if(filterTo)params.set('to',filterTo);
+      if(filterEventType)params.set('event_type',filterEventType);
+      if(filterExam)params.set('exam',filterExam);
+      const q=params.toString();
+      const res=await api('/api/admin/viewer-events'+(q?'?'+q:''));
+      if(Array.isArray(res))setEvents(res);
+      else setError(res?.error||'Unexpected response');
+    }catch(e){setError(e.message);}
+    finally{setLoading(false);}
+  },[filterFrom,filterTo,filterEventType,filterExam]);
+
+  React.useEffect(()=>{fetchEvents();},[fetchEvents]);
+
+  const examIds=[...new Set(events.map(r=>r.exam_id).filter(Boolean))].sort();
+  const totalEvents=events.length;
+  const uniqueSessions=new Set(events.map(r=>r.session_id).filter(Boolean)).size;
+  const examSelected=events.filter(r=>r.event_type==='exam_selected');
+  const copyActions=events.filter(r=>r.event_type==='copy_action');
+  const hpClicks=events.filter(r=>r.event_type==='hp_link_click').length;
+  const copyRate=examSelected.length?Math.round(copyActions.length*100/examSelected.length):0;
+  const examCounts={};
+  examSelected.forEach(r=>{if(r.exam_id)examCounts[r.exam_id]=(examCounts[r.exam_id]||0)+1;});
+  const topExam=Object.keys(examCounts).sort((a,b)=>examCounts[b]-examCounts[a])[0]||'—';
+
+  const EVENT_COLORS={
+    exam_selected:{bg:'#e8f2fa',fg:'#1a6fa0'},
+    copy_action:{bg:'#dcfce7',fg:'#166534'},
+    hp_link_click:{bg:'#ccfbf1',fg:'#0f766e'},
+    guidance_expanded:{bg:'#f1f5f9',fg:'#475569'},
+  };
+
+  function fmtDate(s){
+    if(!s)return'—';
+    try{return new Date(s+'Z').toLocaleDateString('en-NZ',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return s;}
+  }
+
+  function exportCSV(){
+    if(!events.length){alert('No events to export.');return;}
+    const cols=['id','created_at','session_id','event_type','exam_id','site_code','event_data','region','user_name','user_role','user_agent','ip_address'];
+    const esc=v=>v==null?'':'"'+String(v).replace(/"/g,'""')+'"';
+    const rows=[cols.join(','),...events.map(r=>cols.map(c=>esc(r[c])).join(','))];
+    const blob=new Blob([rows.join('\n')],{type:'text/csv'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download='viewer_events_'+new Date().toISOString().slice(0,10)+'.csv';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  }
+
+  const cardStyle={background:'#fff',border:`1px solid ${C.rule}`,borderRadius:3,padding:'10px 14px',textAlign:'center'};
+  const cardHdStyle={fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:0.8,color:C.mid,marginBottom:4};
+  const cardValStyle={fontSize:20,fontWeight:700,color:C.navy};
+
+  return(
+    <div style={{padding:20,overflow:'auto',height:'calc(100vh - 130px)'}}>
+      <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:12}}>
+        <div>
+          <h2 style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:2}}>Viewer Usage</h2>
+          <p style={{fontSize:12,color:C.mid}}>{totalEvents} event{totalEvents!==1?'s':''} (max 500 shown)</p>
+        </div>
+        <button onClick={exportCSV} style={{fontSize:12,padding:'5px 14px',background:C.teal,color:'#fff',border:'none',borderRadius:3,cursor:'pointer',fontFamily:font,fontWeight:600}}>Export CSV</button>
+      </div>
+
+      <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12,background:'#fff',border:`1px solid ${C.rule}`,borderRadius:3,padding:'10px 12px'}}>
+        <input type='date' value={filterFrom} onChange={e=>setFilterFrom(e.target.value)} title='From date' style={{fontSize:12,border:`1px solid ${C.rule}`,borderRadius:2,padding:'4px 8px',fontFamily:font}} />
+        <input type='date' value={filterTo} onChange={e=>setFilterTo(e.target.value)} title='To date' style={{fontSize:12,border:`1px solid ${C.rule}`,borderRadius:2,padding:'4px 8px',fontFamily:font}} />
+        <select value={filterEventType} onChange={e=>setFilterEventType(e.target.value)} style={{fontSize:12,border:`1px solid ${C.rule}`,borderRadius:2,padding:'4px 8px',fontFamily:font}}>
+          <option value=''>All event types</option>
+          <option value='exam_selected'>exam_selected</option>
+          <option value='copy_action'>copy_action</option>
+          <option value='hp_link_click'>hp_link_click</option>
+          <option value='guidance_expanded'>guidance_expanded</option>
+        </select>
+        <select value={filterExam} onChange={e=>setFilterExam(e.target.value)} style={{fontSize:12,border:`1px solid ${C.rule}`,borderRadius:2,padding:'4px 8px',fontFamily:font}}>
+          <option value=''>All exams</option>
+          {examIds.map(id=><option key={id} value={id}>{id}</option>)}
+        </select>
+        {(filterFrom||filterTo||filterEventType||filterExam)&&
+          <button onClick={()=>{setFilterFrom('');setFilterTo('');setFilterEventType('');setFilterExam('');}} style={{fontSize:11,padding:'4px 10px',background:C.mist,border:`1px solid ${C.rule}`,borderRadius:2,cursor:'pointer',fontFamily:font}}>Clear</button>}
+        <button onClick={fetchEvents} style={{fontSize:11,padding:'4px 10px',background:C.mist,border:`1px solid ${C.rule}`,borderRadius:2,cursor:'pointer',fontFamily:font}}>Refresh</button>
+      </div>
+
+      {events.length>0&&(
+        <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:8,marginBottom:12}}>
+          <div style={cardStyle}><div style={cardHdStyle}>Total events</div><div style={cardValStyle}>{totalEvents}</div></div>
+          <div style={cardStyle}><div style={cardHdStyle}>Unique sessions</div><div style={cardValStyle}>{uniqueSessions}</div></div>
+          <div style={cardStyle}><div style={cardHdStyle}>Top exam</div><div style={{...cardValStyle,fontSize:14}}>{topExam}</div></div>
+          <div style={cardStyle}><div style={cardHdStyle}>Copy rate</div><div style={cardValStyle}>{copyRate}%</div></div>
+          <div style={cardStyle}><div style={cardHdStyle}>HP clicks</div><div style={cardValStyle}>{hpClicks}</div></div>
+        </div>
+      )}
+
+      {loading?<div style={{padding:20,textAlign:'center',color:C.mid}}>Loading…</div>:
+       error?<div style={{padding:12,background:C.failBg,color:C.fail,borderRadius:3,fontSize:12,marginBottom:12}}>{error}</div>:
+       events.length===0?<div style={{padding:20,textAlign:'center',color:C.mid}}>No viewer events yet</div>:(
+        <div style={{background:'#fff',border:`1px solid ${C.rule}`,borderRadius:3,overflow:'hidden'}}>
+          <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+            <thead>
+              <tr style={{background:C.navy,color:'#fff'}}>
+                <th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,fontSize:11}}>Date</th>
+                <th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,fontSize:11}}>Session</th>
+                <th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,fontSize:11}}>Event</th>
+                <th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,fontSize:11}}>Exam</th>
+                <th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,fontSize:11}}>Site</th>
+                <th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,fontSize:11}}>User</th>
+                <th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,fontSize:11}}>Region</th>
+                <th style={{padding:'8px 10px',textAlign:'left',fontWeight:600,fontSize:11}}>IP</th>
+              </tr>
+            </thead>
+            <tbody>
+              {events.map(r=>{
+                const ec=EVENT_COLORS[r.event_type]||{bg:'#f1f5f9',fg:'#475569'};
+                return(
+                  <React.Fragment key={r.id}>
+                    <tr onClick={()=>setExpanded(expanded===r.id?null:r.id)} style={{borderBottom:`1px solid ${C.mist}`,cursor:'pointer',background:expanded===r.id?C.mist:''}}>
+                      <td style={{padding:'8px 10px',color:C.mid,whiteSpace:'nowrap'}}>{fmtDate(r.created_at)}</td>
+                      <td style={{padding:'8px 10px',fontFamily:mono,fontSize:10,color:C.mid,whiteSpace:'nowrap'}}>{(r.session_id||'').slice(0,12)}</td>
+                      <td style={{padding:'8px 10px'}}><span style={{background:ec.bg,color:ec.fg,fontSize:10,fontWeight:700,padding:'2px 6px',borderRadius:3}}>{r.event_type||'—'}</span></td>
+                      <td style={{padding:'8px 10px',color:C.mid}}>{r.exam_id||'—'}</td>
+                      <td style={{padding:'8px 10px',color:C.mid}}>{r.site_code||'—'}</td>
+                      <td style={{padding:'8px 10px'}}>
+                        {r.user_name?<><div style={{fontWeight:600}}>{r.user_name}</div><div style={{fontSize:10,color:C.mid}}>{r.user_role||''}</div></>:<span style={{color:C.mid,fontSize:11}}>(anonymous)</span>}
+                      </td>
+                      <td style={{padding:'8px 10px',color:C.mid,fontSize:11}}>{r.region||'—'}</td>
+                      <td style={{padding:'8px 10px',fontFamily:mono,fontSize:10,color:C.mid,whiteSpace:'nowrap'}}>{r.ip_address||'—'}</td>
+                    </tr>
+                    {expanded===r.id&&(
+                      <tr style={{background:C.lite}}>
+                        <td colSpan={8} style={{padding:'10px 14px'}}>
+                          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                            <div>
+                              <div style={{fontWeight:700,color:C.navy,fontSize:11,marginBottom:4}}>event_data</div>
+                              <pre style={{whiteSpace:'pre-wrap',fontFamily:mono,fontSize:11,color:C.ink,background:'#fff',border:`1px solid ${C.rule}`,borderRadius:2,padding:'6px 8px',margin:0}}>{r.event_data?JSON.stringify(JSON.parse(r.event_data||'null'),null,2):'—'}</pre>
+                            </div>
+                            <div>
+                              <div style={{fontWeight:700,color:C.navy,fontSize:11,marginBottom:4}}>User agent</div>
+                              <div style={{fontSize:11,color:C.mid,wordBreak:'break-all'}}>{r.user_agent||'—'}</div>
+                            </div>
+                          </div>
+                          <div style={{marginTop:8,fontSize:10,color:C.mid}}>Full session: {r.session_id} · {r.created_at}</div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════
 //  USAGE LOG TAB
 // ══════════════════════════════════════════════════════════
 
@@ -1299,7 +1473,7 @@ function renderReleaseMarkdown(src){
     s = s.replace(/`([^`]+)`/g,'<code>$1</code>');
     s = s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
     s = s.replace(/\*([^*]+)\*/g,'<em>$1</em>');
-    s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m,t,u)=>`<a href="${safeUrlPrev(u)}" target="_blank" rel="noopener noreferrer">${t}</a>`);
+    s = s.replace(/\[([^\]]+)\]\s*\(([^)\s]+)\)/g, (_m,t,u)=>`<a href="${safeUrlPrev(u)}" target="_blank" rel="noopener noreferrer">${t}</a>`);
     return s;
   };
   const lines = src.replace(/\r\n/g,'\n').split('\n');

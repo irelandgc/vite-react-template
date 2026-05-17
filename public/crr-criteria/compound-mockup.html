@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CRR Criteria Viewer — Compound Logic Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/crr-criteria/shared/crr-design-system.css">
+<style>
+
+/* ═══ HEADER ═════════════════════════════════════════════════ */
+.app-header {
+  background: #fff;
+  padding: 0 16px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 300;
+  border-bottom: 1px solid var(--rule);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+.app-title { font-size: 15px; font-weight: 700; color: var(--accent); }
+.app-sub { font-size: 11px; color: #5f6b7c; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+
+/* ═══ MODE BAR ═══════════════════════════════════════════════ */
+.mode-bar {
+  background: var(--lite);
+  border-bottom: 1px solid var(--rule);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.mode-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #5f6b7c;
+  white-space: nowrap;
+}
+
+/* ═══ MAIN CONTENT ═══════════════════════════════════════════ */
+.main-content {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 16px 16px 90px;
+}
+
+/* ═══ EXAM HEADER ════════════════════════════════════════════ */
+.exam-header {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.exam-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #5f6b7c;
+  white-space: nowrap;
+}
+.exam-name { font-size: 14px; font-weight: 600; color: var(--ink); flex: 1; }
+
+/* ═══ CRITERIA PANEL ═════════════════════════════════════════ */
+.criteria-panel {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.indication-group { padding: 10px 12px 8px; }
+
+/* ═══ COMPOUND BLOCKS ════════════════════════════════════════ */
+.compound-card {
+  border-left: 3px solid var(--teal) !important;
+  background: #f5f9fd !important;
+}
+.compound-card.ticked {
+  background: #edf4fa !important;
+}
+.compound-block {
+  padding: 8px 12px 10px 38px;
+  border-top: 1px solid var(--rule);
+  background: #fafcfe;
+}
+.compound-logic-hd {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #5f6b7c;
+  margin-bottom: 6px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--lite);
+}
+.compound-sub-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--lite);
+}
+.compound-sub-row:last-child { border-bottom: none; }
+.compound-sub-check,
+.compound-sub-radio {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--accent);
+  margin-top: 3px;
+}
+.compound-sub-label {
+  flex: 1;
+  font-size: 12px;
+  color: var(--ink);
+  line-height: 1.6;
+  cursor: pointer;
+}
+.compound-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 4px;
+}
+.compound-divider::before, .compound-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+.compound-divider-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #5f6b7c;
+  white-space: nowrap;
+}
+.compound-met-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--rule);
+  background: var(--lite);
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: background 0.12s, border-color 0.12s;
+}
+.compound-met-dot.met {
+  background: var(--pass);
+  border-color: var(--pass);
+}
+
+/* ═══ PASSIVE CONNECTOR ══════════════════════════════════════ */
+.passive-connector-row {
+  padding: 2px 0;
+  text-align: center;
+}
+.passive-connector {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #8b919a;
+  background: var(--lite);
+  padding: 1px 7px;
+  border-radius: 10px;
+  border: 1px solid var(--rule);
+}
+
+/* ═══ TRIAGE INDICATORS ══════════════════════════════════════ */
+.triage-indicator {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.triage-indicator.met { background: var(--pass-bg); color: var(--pass); }
+.triage-indicator.not-met { background: var(--warn-bg); color: var(--warn); }
+.triage-sub-indicator {
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 3px;
+  width: 14px;
+  text-align: center;
+}
+.triage-sub-indicator.met { color: var(--pass); }
+.triage-sub-indicator.not-met { color: var(--warn); }
+
+/* Triage reference mode — panel style changes */
+body.mode-triage .criteria-panel {
+  background: transparent;
+  border-color: var(--rule);
+}
+body.mode-triage .crit-panel-hd {
+  background: #2a3c5a;
+}
+body.mode-triage .indication-group {
+  padding: 8px 10px;
+}
+body.mode-triage .crit-card {
+  border-radius: 0;
+  border-left-width: 2px;
+  margin-bottom: 2px;
+}
+body.mode-triage .compound-card {
+  border-left-width: 3px;
+}
+body.mode-triage .crit-card-header {
+  cursor: default;
+  padding: 4px 10px;
+}
+body.mode-triage .crit-card-header:hover {
+  background: transparent;
+}
+body.mode-triage .compound-block {
+  padding: 6px 10px 8px 26px;
+  background: #fafcfe;
+}
+
+/* ═══ FOOTER SUMMARY BAR ═════════════════════════════════════ */
+#summaryFooter {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-top: 1px solid var(--rule);
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 200;
+  box-shadow: 0 -1px 4px rgba(0,0,0,0.06);
+}
+#summaryCount { font-size: 12px; color: var(--mid); flex: 1; }
+#summaryCount strong { color: var(--accent); }
+
+/* ═══ COPY MODAL ═════════════════════════════════════════════ */
+#copyModal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+}
+#copyModal.open { display: flex; }
+.copy-modal-box {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  max-width: 560px;
+  width: 92%;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+}
+.copy-modal-hd {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.copy-modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #5f6b7c;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+.copy-modal-text {
+  background: var(--mist);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 12px;
+  color: var(--ink);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  max-height: 280px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+  font-family: var(--mono);
+}
+.copy-modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.copy-success { font-size: 11px; color: var(--pass); margin-right: auto; display: none; }
+.copy-success.show { display: block; }
+
+/* ═══ RESPONSIVE ═════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .main-content { padding: 10px 10px 90px; }
+  .compound-sub-check, .compound-sub-radio { width: 18px; height: 18px; }
+  .crit-card-check { width: 18px !important; height: 18px !important; }
+}
+
+</style>
+</head>
+<body class="mode-interactive">
+
+<!-- App header -->
+<header class="app-header">
+  <div class="header-left">
+    <span class="logo">CRR</span>
+    <div>
+      <div class="app-title">CRR Criteria Viewer</div>
+      <div class="app-sub">Compound Logic Mockup</div>
+    </div>
+    <span class="ver-badge">v0.1 MOCKUP</span>
+  </div>
+  <div class="header-right">
+    <span class="data-source-badge">CT Chest &mdash; Adult</span>
+  </div>
+</header>
+
+<!-- Mode switcher -->
+<div class="mode-bar">
+  <span class="mode-label">Render mode</span>
+  <div class="mod-row">
+    <button class="mod-btn active" id="modeBtn-interactive" onclick="setMode('interactive')">Interactive</button>
+    <button class="mod-btn" id="modeBtn-passive" onclick="setMode('passive')">Passive</button>
+    <button class="mod-btn" id="modeBtn-triage" onclick="setMode('triage')">Triage reference</button>
+  </div>
+</div>
+
+<!-- Main content -->
+<div class="main-content">
+
+  <!-- Exam selector (hardcoded display) -->
+  <div class="exam-header">
+    <span class="exam-label">Exam</span>
+    <span class="exam-name">CT Chest &mdash; Adult</span>
+    <span class="data-source-badge">CT</span>
+  </div>
+
+  <!-- View toggle (hardcoded to By indication) -->
+  <div class="view-toggle-bar">
+    <button class="view-toggle-btn active">By indication</button>
+    <button class="view-toggle-btn">By urgency</button>
+  </div>
+
+  <!-- Criteria panel -->
+  <div class="criteria-panel" id="criteriaPanel">
+    <div class="crit-panel-hd">
+      <span class="crit-panel-hd-left">CT &middot; Chest &middot; Adult</span>
+      <span class="crit-panel-hd-right">CT Chest &mdash; Adult</span>
+    </div>
+    <div class="indication-group" id="criteriaList">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+
+</div>
+
+<!-- Summary footer (interactive mode only) -->
+<div id="summaryFooter" style="display:none">
+  <div id="summaryCount"><strong>0</strong> of 5 criteria met</div>
+  <button class="btn btn-s btn-sm" onclick="clearAll()">Clear all</button>
+  <button class="btn btn-p btn-sm" onclick="openCopyModal()">Copy selected</button>
+</div>
+
+<!-- Copy modal -->
+<div id="copyModal">
+  <div class="copy-modal-box">
+    <div class="copy-modal-hd">
+      Copy selected criteria
+      <button class="copy-modal-close" onclick="closeCopyModal()" title="Close">&#215;</button>
+    </div>
+    <pre class="copy-modal-text" id="copyModalText"></pre>
+    <div class="copy-modal-actions">
+      <span class="copy-success" id="copySuccess">Copied to clipboard</span>
+      <button class="btn btn-s btn-sm" onclick="closeCopyModal()">Close</button>
+      <button class="btn btn-p btn-sm" onclick="doCopy()">Copy to clipboard</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════
+const MOCKUP_DATA = {
+  exam: "CT Chest — Adult",
+  modality: "CT",
+  indicationGroup: "Lung cancer investigation",
+  items: [
+    {
+      id: "ct_chest_001",
+      text: "Unexplained haemoptysis, chest infection and upper respiratory causes excluded, initial investigations including CXR fail to identify a cause",
+      priority: "P2",
+      timeframe: "Urgent (within two weeks)",
+      logic: null
+    },
+    {
+      id: "ct_chest_002",
+      text: "Secondary care clinician or Radiologist advises referral for urgent CT chest",
+      priority: "P2",
+      timeframe: "Urgent (within two weeks)",
+      logic: null
+    },
+    {
+      id: "ct_chest_003",
+      text: "Current smoker with persistent lung cancer symptoms",
+      priority: "P2",
+      timeframe: "Urgent (within two weeks)",
+      logic: {
+        type: "all",
+        conditions: [
+          { id: "ct_chest_003_a", text: "Patient aged over 55 years and is a current smoker" },
+          { id: "ct_chest_003_b", text: "One or more concerning, new onset symptoms/signs for lung cancer, persistent for six weeks despite appropriate treatment" },
+          { id: "ct_chest_003_c", text: "Clinical picture unexplained despite initial investigations including chest x-ray and blood tests" }
+        ]
+      }
+    },
+    {
+      id: "ct_chest_004",
+      text: "Indeterminate CXR abnormality with recommendation for CT",
+      priority: "P2",
+      timeframe: "Urgent (within two weeks)",
+      logic: {
+        type: "mandatory_plus_any",
+        minOptional: 1,
+        conditions: [
+          { id: "ct_chest_004_a", text: "Indeterminate abnormality on chest x-ray raising the possibility of lung cancer", required: true },
+          { id: "ct_chest_004_b", text: "CT chest is recommended in the Radiology report", required: false },
+          { id: "ct_chest_004_c", text: "Secondary care clinician or PCRL advises CT chest", required: false }
+        ]
+      }
+    },
+    {
+      id: "ct_chest_005",
+      text: "Abnormal CXR with radiology recommendation",
+      priority: "P3",
+      timeframe: "Non-deferrable (within six weeks)",
+      logic: {
+        type: "any",
+        conditions: [
+          { id: "ct_chest_005_a", text: "Isolated pulmonary nodule on CXR, cannot be confirmed as benign, and CT chest is recommended in the Radiology report" },
+          { id: "ct_chest_005_b", text: "Secondary care clinician or PCRL advises referral for non-urgent CT chest" }
+        ]
+      }
+    }
+  ]
+};
+
+// Hardcoded triage demo states (some met, some not)
+const TRIAGE_DEMO = {
+  ct_chest_001: true,
+  ct_chest_002: false,
+  ct_chest_003_a: true,
+  ct_chest_003_b: true,
+  ct_chest_003_c: false,  // overall compound not met (all required)
+  ct_chest_004_a: true,
+  ct_chest_004_b: true,
+  ct_chest_004_c: false,  // overall compound met (mandatory + 1 optional)
+  ct_chest_005_a: true,
+  ct_chest_005_b: false,  // overall compound met (any)
+};
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+const checkedIds = new Set();
+let currentMode = 'interactive';
+
+// ═══════════════════════════════════════════════════════════════
+// EVALUATION ENGINE
+// ═══════════════════════════════════════════════════════════════
+function evaluateCompound(logic, idSet) {
+  const has = (id) => idSet.has(id);
+  switch (logic.type) {
+    case 'all':
+      return logic.conditions.every(c => has(c.id));
+    case 'any':
+      return logic.conditions.some(c => has(c.id));
+    case 'mandatory_plus_any': {
+      const mandatoryMet = logic.conditions.filter(c => c.required).every(c => has(c.id));
+      const optionalCount = logic.conditions.filter(c => !c.required && has(c.id)).length;
+      return mandatoryMet && optionalCount >= (logic.minOptional || 1);
+    }
+  }
+  return false;
+}
+
+function isItemMet(item) {
+  if (!item.logic) return checkedIds.has(item.id);
+  return evaluateCompound(item.logic, checkedIds);
+}
+
+function isItemMetTriage(item) {
+  if (!item.logic) return TRIAGE_DEMO[item.id] === true;
+  const triageSet = new Set(Object.keys(TRIAGE_DEMO).filter(k => TRIAGE_DEMO[k]));
+  return evaluateCompound(item.logic, triageSet);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function priClass(p) {
+  return p === 'P2' ? 'pri-p2' : p === 'P3' ? 'pri-p3' : 'pri-p4';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODE MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+function setMode(mode) {
+  currentMode = mode;
+  ['interactive', 'passive', 'triage'].forEach(m => {
+    document.getElementById('modeBtn-' + m).classList.toggle('active', m === mode);
+  });
+  document.body.className = 'mode-' + mode;
+  document.getElementById('summaryFooter').style.display = mode === 'interactive' ? '' : 'none';
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDERING
+// ═══════════════════════════════════════════════════════════════
+function renderAll() {
+  let html = `<div class="theme-group-hd">${esc(MOCKUP_DATA.indicationGroup)}</div>`;
+  for (const item of MOCKUP_DATA.items) {
+    if (currentMode === 'interactive') html += renderInteractive(item);
+    else if (currentMode === 'passive')     html += renderPassive(item);
+    else                                    html += renderTriage(item);
+  }
+  document.getElementById('criteriaList').innerHTML = html;
+  if (currentMode === 'interactive') updateSummary();
+}
+
+// ── Interactive ──────────────────────────────────────────────
+function renderInteractive(item) {
+  const met = isItemMet(item);
+  const pc = priClass(item.priority);
+  if (!item.logic) {
+    return `
+<div class="crit-card${met ? ' ticked' : ''}" id="card_${item.id}">
+  <div class="crit-card-header">
+    <input type="checkbox" class="crit-card-check" id="cb_${item.id}"
+      ${met ? 'checked' : ''}
+      onchange="onAtomicChange('${item.id}', this.checked)">
+    <label class="crit-card-label" for="cb_${item.id}">${esc(item.text)}</label>
+    <div class="crit-card-badges">
+      <span class="priority-badge ${pc}">${esc(item.timeframe)}</span>
+    </div>
+  </div>
+</div>`;
+  }
+  return renderCompoundInteractive(item, met, pc);
+}
+
+function renderCompoundInteractive(item, met, pc) {
+  const logic = item.logic;
+  let headerLeft = '';
+  let blockHtml = '';
+
+  if (logic.type === 'all') {
+    const allMet = logic.conditions.every(c => checkedIds.has(c.id));
+    headerLeft = `<input type="checkbox" class="crit-card-check compound-parent-check" id="parent_${item.id}"
+      ${allMet ? 'checked' : ''} onchange="onParentChange('${item.id}', this.checked)"
+      title="Verify all — tick or untick all sub-conditions">`;
+
+    blockHtml = `
+    <div class="compound-logic-hd">All of the following</div>
+    <div class="compound-subs">
+      ${logic.conditions.map(c => `
+      <div class="compound-sub-row">
+        <input type="checkbox" class="compound-sub-check" id="sub_${c.id}"
+          ${checkedIds.has(c.id) ? 'checked' : ''}
+          onchange="onSubChange('${c.id}', '${item.id}', this.checked)">
+        <label class="compound-sub-label" for="sub_${c.id}">${esc(c.text)}</label>
+      </div>`).join('')}
+    </div>`;
+
+  } else if (logic.type === 'mandatory_plus_any') {
+    const mandatories = logic.conditions.filter(c => c.required);
+    const optionals   = logic.conditions.filter(c => !c.required);
+    headerLeft = `<span class="compound-met-dot${met ? ' met' : ''}" id="dot_${item.id}"></span>`;
+
+    blockHtml = `
+    <div class="compound-subs">
+      ${mandatories.map(c => `
+      <div class="compound-sub-row">
+        <input type="checkbox" class="compound-sub-check" id="sub_${c.id}"
+          ${checkedIds.has(c.id) ? 'checked' : ''}
+          onchange="onSubChange('${c.id}', '${item.id}', this.checked)">
+        <label class="compound-sub-label" for="sub_${c.id}">${esc(c.text)}</label>
+        <span class="mandatory-tag">Required</span>
+      </div>`).join('')}
+      <div class="compound-divider">
+        <span class="compound-divider-label">Plus at least one of the following</span>
+      </div>
+      ${optionals.map(c => `
+      <div class="compound-sub-row">
+        <input type="checkbox" class="compound-sub-check" id="sub_${c.id}"
+          ${checkedIds.has(c.id) ? 'checked' : ''}
+          onchange="onSubChange('${c.id}', '${item.id}', this.checked)">
+        <label class="compound-sub-label" for="sub_${c.id}">${esc(c.text)}</label>
+      </div>`).join('')}
+    </div>`;
+
+  } else if (logic.type === 'any') {
+    headerLeft = `<span class="compound-met-dot${met ? ' met' : ''}" id="dot_${item.id}"></span>`;
+
+    blockHtml = `
+    <div class="compound-logic-hd">Any of the following</div>
+    <div class="compound-subs">
+      ${logic.conditions.map(c => `
+      <div class="compound-sub-row">
+        <input type="radio" class="compound-sub-radio" name="radio_${item.id}"
+          id="sub_${c.id}" ${checkedIds.has(c.id) ? 'checked' : ''}
+          onchange="onRadioChange('${c.id}', '${item.id}')">
+        <label class="compound-sub-label" for="sub_${c.id}">${esc(c.text)}</label>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  return `
+<div class="crit-card compound-card${met ? ' ticked' : ''}" id="card_${item.id}">
+  <div class="crit-card-header">
+    ${headerLeft}
+    <label class="crit-card-label" for="parent_${item.id}" style="font-weight:600">${esc(item.text)}</label>
+    <div class="crit-card-badges">
+      <span class="priority-badge ${pc}">${esc(item.timeframe)}</span>
+    </div>
+  </div>
+  <div class="compound-block">${blockHtml}</div>
+</div>`;
+}
+
+// ── Passive ──────────────────────────────────────────────────
+function renderPassive(item) {
+  const pc = priClass(item.priority);
+  if (!item.logic) {
+    return `
+<div class="crit-card" id="card_${item.id}">
+  <div class="crit-card-header" style="cursor:default">
+    <span class="crit-card-label">${esc(item.text)}</span>
+    <div class="crit-card-badges">
+      <span class="priority-badge ${pc}">${esc(item.timeframe)}</span>
+    </div>
+  </div>
+</div>`;
+  }
+  return renderCompoundPassive(item, pc);
+}
+
+function renderCompoundPassive(item, pc) {
+  const logic = item.logic;
+  let blockHtml = '';
+
+  if (logic.type === 'all') {
+    const rows = logic.conditions.map((c, i) => {
+      const conn = i < logic.conditions.length - 1
+        ? `<div class="passive-connector-row"><span class="passive-connector">AND</span></div>` : '';
+      return `<div class="compound-sub-row" style="padding-left:0;border:none;padding-bottom:2px">
+        <span class="compound-sub-label">${esc(c.text)}</span>
+      </div>${conn}`;
+    }).join('');
+    blockHtml = `<div class="compound-logic-hd">All of the following</div><div class="compound-subs">${rows}</div>`;
+
+  } else if (logic.type === 'mandatory_plus_any') {
+    const mandatories = logic.conditions.filter(c => c.required);
+    const optionals   = logic.conditions.filter(c => !c.required);
+    blockHtml = `<div class="compound-subs">
+      ${mandatories.map(c => `<div class="compound-sub-row" style="padding-left:0;border:none;padding-bottom:2px">
+        <span class="compound-sub-label">${esc(c.text)}</span>
+        <span class="mandatory-tag">Required</span>
+      </div>`).join('')}
+      <div class="compound-divider"><span class="compound-divider-label">Plus at least one of the following</span></div>
+      ${optionals.map((c, i) => {
+        const conn = i < optionals.length - 1
+          ? `<div class="passive-connector-row"><span class="passive-connector">OR</span></div>` : '';
+        return `<div class="compound-sub-row" style="padding-left:0;border:none;padding-bottom:2px">
+          <span class="compound-sub-label">${esc(c.text)}</span>
+        </div>${conn}`;
+      }).join('')}
+    </div>`;
+
+  } else if (logic.type === 'any') {
+    const rows = logic.conditions.map((c, i) => {
+      const conn = i < logic.conditions.length - 1
+        ? `<div class="passive-connector-row"><span class="passive-connector">OR</span></div>` : '';
+      return `<div class="compound-sub-row" style="padding-left:0;border:none;padding-bottom:2px">
+        <span class="compound-sub-label">${esc(c.text)}</span>
+      </div>${conn}`;
+    }).join('');
+    blockHtml = `<div class="compound-logic-hd">Any of the following</div><div class="compound-subs">${rows}</div>`;
+  }
+
+  return `
+<div class="crit-card compound-card" id="card_${item.id}">
+  <div class="crit-card-header" style="cursor:default">
+    <span class="crit-card-label" style="font-weight:600">${esc(item.text)}</span>
+    <div class="crit-card-badges">
+      <span class="priority-badge ${pc}">${esc(item.timeframe)}</span>
+    </div>
+  </div>
+  <div class="compound-block">${blockHtml}</div>
+</div>`;
+}
+
+// ── Triage reference ─────────────────────────────────────────
+function renderTriage(item) {
+  const met = isItemMetTriage(item);
+  const pc = priClass(item.priority);
+  const ind = `<span class="triage-indicator ${met ? 'met' : 'not-met'}">${met ? '✓' : '✗'}</span>`;
+  if (!item.logic) {
+    return `
+<div class="crit-card${met ? ' ticked' : ''}" id="card_${item.id}">
+  <div class="crit-card-header">
+    ${ind}
+    <span class="crit-card-label">${esc(item.text)}</span>
+    <div class="crit-card-badges">
+      <span class="priority-badge ${pc}">${esc(item.timeframe)}</span>
+    </div>
+  </div>
+</div>`;
+  }
+  return renderCompoundTriage(item, met, pc);
+}
+
+function renderCompoundTriage(item, met, pc) {
+  const logic = item.logic;
+  const ind = `<span class="triage-indicator ${met ? 'met' : 'not-met'}">${met ? '✓' : '✗'}</span>`;
+  let blockHtml = '';
+
+  const subRow = (c) => {
+    const sm = TRIAGE_DEMO[c.id] === true;
+    return `<div class="compound-sub-row">
+      <span class="triage-sub-indicator ${sm ? 'met' : 'not-met'}">${sm ? '✓' : '✗'}</span>
+      <span class="compound-sub-label">${esc(c.text)}</span>
+    </div>`;
+  };
+
+  if (logic.type === 'all') {
+    blockHtml = `<div class="compound-logic-hd">All of the following</div>
+      <div class="compound-subs">${logic.conditions.map(subRow).join('')}</div>`;
+
+  } else if (logic.type === 'mandatory_plus_any') {
+    const mandatories = logic.conditions.filter(c => c.required);
+    const optionals   = logic.conditions.filter(c => !c.required);
+    blockHtml = `<div class="compound-subs">
+      ${mandatories.map(c => {
+        const sm = TRIAGE_DEMO[c.id] === true;
+        return `<div class="compound-sub-row">
+          <span class="triage-sub-indicator ${sm ? 'met' : 'not-met'}">${sm ? '✓' : '✗'}</span>
+          <span class="compound-sub-label">${esc(c.text)}</span>
+          <span class="mandatory-tag">Required</span>
+        </div>`;
+      }).join('')}
+      <div class="compound-divider"><span class="compound-divider-label">Plus at least one of the following</span></div>
+      ${optionals.map(subRow).join('')}
+    </div>`;
+
+  } else if (logic.type === 'any') {
+    blockHtml = `<div class="compound-logic-hd">Any of the following</div>
+      <div class="compound-subs">${logic.conditions.map(subRow).join('')}</div>`;
+  }
+
+  return `
+<div class="crit-card compound-card${met ? ' ticked' : ''}" id="card_${item.id}">
+  <div class="crit-card-header">
+    ${ind}
+    <span class="crit-card-label" style="font-weight:600">${esc(item.text)}</span>
+    <div class="crit-card-badges">
+      <span class="priority-badge ${pc}">${esc(item.timeframe)}</span>
+    </div>
+  </div>
+  <div class="compound-block">${blockHtml}</div>
+</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EVENT HANDLERS
+// ═══════════════════════════════════════════════════════════════
+function onAtomicChange(itemId, checked) {
+  if (checked) checkedIds.add(itemId); else checkedIds.delete(itemId);
+  const card = document.getElementById('card_' + itemId);
+  if (card) card.classList.toggle('ticked', checked);
+  updateSummary();
+}
+
+function onSubChange(subId, parentId, checked) {
+  if (checked) checkedIds.add(subId); else checkedIds.delete(subId);
+  const item = MOCKUP_DATA.items.find(i => i.id === parentId);
+  const met = evaluateCompound(item.logic, checkedIds);
+
+  // For AND type: sync parent checkbox state
+  if (item.logic.type === 'all') {
+    const parentEl = document.getElementById('parent_' + parentId);
+    if (parentEl) parentEl.checked = item.logic.conditions.every(c => checkedIds.has(c.id));
+  }
+
+  // Update met dot (mandatory_plus_any / any)
+  const dot = document.getElementById('dot_' + parentId);
+  if (dot) dot.classList.toggle('met', met);
+
+  const card = document.getElementById('card_' + parentId);
+  if (card) card.classList.toggle('ticked', met);
+  updateSummary();
+}
+
+function onParentChange(parentId, checked) {
+  const item = MOCKUP_DATA.items.find(i => i.id === parentId);
+  item.logic.conditions.forEach(c => {
+    if (checked) checkedIds.add(c.id); else checkedIds.delete(c.id);
+    const el = document.getElementById('sub_' + c.id);
+    if (el) el.checked = checked;
+  });
+  const card = document.getElementById('card_' + parentId);
+  if (card) card.classList.toggle('ticked', checked);
+  updateSummary();
+}
+
+function onRadioChange(subId, parentId) {
+  const item = MOCKUP_DATA.items.find(i => i.id === parentId);
+  // Clear all in group, add selected
+  item.logic.conditions.forEach(c => checkedIds.delete(c.id));
+  checkedIds.add(subId);
+
+  const dot = document.getElementById('dot_' + parentId);
+  if (dot) dot.classList.add('met');
+  const card = document.getElementById('card_' + parentId);
+  if (card) card.classList.add('ticked');
+  updateSummary();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SUMMARY & COPY
+// ═══════════════════════════════════════════════════════════════
+function updateSummary() {
+  const met = MOCKUP_DATA.items.filter(i => isItemMet(i)).length;
+  const el = document.getElementById('summaryCount');
+  if (el) el.innerHTML = `<strong>${met}</strong> of ${MOCKUP_DATA.items.length} criteria met`;
+}
+
+function clearAll() {
+  checkedIds.clear();
+  renderAll();
+}
+
+function openCopyModal() {
+  const text = buildCopyText();
+  document.getElementById('copyModalText').textContent =
+    text || '(No criteria met — select some items first)';
+  document.getElementById('copySuccess').classList.remove('show');
+  document.getElementById('copyModal').classList.add('open');
+}
+
+function closeCopyModal() {
+  document.getElementById('copyModal').classList.remove('open');
+}
+
+function doCopy() {
+  const text = document.getElementById('copyModalText').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    document.getElementById('copySuccess').classList.add('show');
+    setTimeout(() => document.getElementById('copySuccess').classList.remove('show'), 2000);
+  }).catch(() => {
+    const el = document.getElementById('copyModalText');
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  });
+}
+
+function buildCopyText() {
+  const lines = [];
+  for (const item of MOCKUP_DATA.items) {
+    if (!isItemMet(item)) continue;
+    if (!item.logic) {
+      lines.push(item.text);
+      continue;
+    }
+    const logic = item.logic;
+    if (logic.type === 'all') {
+      lines.push(logic.conditions.map(c => c.text).join('; '));
+    } else if (logic.type === 'mandatory_plus_any') {
+      const selected = logic.conditions.filter(c => checkedIds.has(c.id)).map(c => c.text);
+      lines.push(selected.join('; '));
+    } else if (logic.type === 'any') {
+      const sel = logic.conditions.find(c => checkedIds.has(c.id));
+      if (sel) lines.push(sel.text);
+    }
+  }
+  if (!lines.length) return '';
+  return `CT Chest — Adult\nLung cancer investigation\n\n` +
+    lines.map((t, i) => `${i + 1}. ${t}`).join('\n');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+setMode('interactive');
+
+document.getElementById('copyModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCopyModal();
+});
+
+</script>
+</body>
+</html>

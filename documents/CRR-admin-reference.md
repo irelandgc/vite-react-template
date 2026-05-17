@@ -76,9 +76,9 @@ The admin tool never sends an admin key from the browser. The proxy injects it s
 |----------|------|
 | `vite-react-template.fk4dsrmq5r.workers.dev` | `/crr-criteria/admin` |
 | `iteratio.nz` | `/crr-criteria/admin` |
-| `iteratio.nz` | `/crr-api/api/*` |
+| `iteratio.nz` | `/crr-api/*` |
 
-The third row (`/crr-api/api/*`) is critical — it ensures CF Access injects the email header on the proxy requests that the admin tool makes. Without it, every API call gets redirected to the Access login page with a CORS error.
+The third row (`/crr-api/*`) is critical — it ensures CF Access injects the email header on the proxy requests that the admin tool makes. Without it, every API call gets redirected to the Access login page with a CORS error. Use the broader `/crr-api/*` wildcard, not `/crr-api/api/*` — CF Access wildcard matching does not reliably cover nested paths with the narrower pattern.
 
 ### Proxy routing (src/worker/index.ts)
 
@@ -126,6 +126,8 @@ npx wrangler secret list --config public/crr-criteria/wrangler.json
 ### Session management
 
 CF Access sets a `CF_AppSession` cookie scoped to `iteratio.nz` (Path=`/`, Domain=`iteratio.nz`). This cookie is automatically sent with all same-origin fetch calls from the admin tool.
+
+**CF Access session duration** must not be set to "No duration, expires immediately". That setting authenticates the first request then immediately invalidates the session, causing all subsequent API calls to return 401. Set to a real duration (e.g. 24 hours) in the Access app settings — check both the app-level and global session duration overrides.
 
 **After editing the Access app configuration** (adding hostnames, changing policies), existing browser sessions may not pick up the changes. Force a fresh session:
 

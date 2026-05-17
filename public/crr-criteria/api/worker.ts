@@ -811,6 +811,79 @@ app.post('/api/seed', requireAccess, async (c) => {
 });
 
 
+// POST /api/viewer-event — Fire-and-forget viewer telemetry (public, rate-limited)
+app.post('/api/viewer-event', async (c) => {
+  const kv = c.env.KV;
+  const ip = c.req.header('CF-Connecting-IP') || c.req.header('x-forwarded-for') || 'unknown';
+
+  // Reject oversized bodies
+  const contentLength = parseInt(c.req.header('content-length') || '0');
+  if (contentLength > 2048) return c.json({ error: 'Payload too large' }, 413);
+
+  // IP-based rate limit: 500 per hour
+  const hour = new Date().toISOString().slice(0, 13);
+  const rlKey = `ratelimit:viewer-event:${ip}:${hour}`;
+  try {
+    const countRaw = await kv.get(rlKey);
+    const count = countRaw ? parseInt(countRaw) : 0;
+    if (count >= 500) return c.json({ error: 'Rate limit exceeded' }, 429);
+    await kv.put(rlKey, String(count + 1), { expirationTtl: 3600 });
+  } catch (_) {}
+
+  let body: any;
+  try { body = await c.req.json(); } catch (_) { return c.json({ error: 'Invalid JSON' }, 400); }
+
+  const { session_id, event_type } = body;
+  if (!session_id || !event_type) return c.json({ error: 'Missing required fields' }, 400);
+
+  const ALLOWED_EVENTS = ['exam_selected', 'copy_action', 'hp_link_click', 'guidance_expanded'];
+  if (!ALLOWED_EVENTS.includes(event_type)) return c.json({ error: 'Invalid event_type' }, 400);
+
+  const ua = c.req.header('user-agent') || null;
+  const eventDataStr = body.event_data ? JSON.stringify(body.event_data) : null;
+
+  try {
+    await c.env.DB.prepare(`
+      INSERT INTO viewer_events (session_id, event_type, exam_id, site_code, event_data, region, user_name, user_role, user_agent, ip_address)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      session_id, event_type,
+      body.exam_id || null, body.site_code || null,
+      eventDataStr,
+      body.region || null, body.user_name || null, body.user_role || null,
+      ua, ip
+    ).run();
+    return c.json({ ok: true }, 201);
+  } catch (e: any) {
+    console.error('viewer-event error:', e);
+    return c.json({ error: 'Internal error' }, 500);
+  }
+});
+
+// GET /api/admin/viewer-events — Admin: viewer usage events with optional filters
+app.get('/api/admin/viewer-events', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const from = c.req.query('from');
+  const to = c.req.query('to');
+  const eventType = c.req.query('event_type');
+  const exam = c.req.query('exam');
+
+  let sql = 'SELECT * FROM viewer_events WHERE 1=1';
+  const params: any[] = [];
+  if (from) { sql += ' AND created_at >= ?'; params.push(from); }
+  if (to) { sql += ' AND created_at <= ?'; params.push(to + 'T23:59:59'); }
+  if (eventType) { sql += ' AND event_type = ?'; params.push(eventType); }
+  if (exam) { sql += ' AND exam_id = ?'; params.push(exam); }
+  sql += ' ORDER BY created_at DESC LIMIT 500';
+
+  try {
+    const result = await db.prepare(sql).bind(...params).all();
+    return c.json(result.results || []);
+  } catch (e: any) {
+    return c.json({ error: 'Failed to fetch viewer events: ' + e.message }, 500);
+  }
+});
+
 // POST /api/triage/usage-log — Log every triage assessment (no auth, rate-limited)
 app.post('/api/triage/usage-log', async (c) => {
   const db = c.env.DB;
