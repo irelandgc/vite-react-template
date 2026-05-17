@@ -339,11 +339,7 @@ function logViewerEvent(eventType, data) {
   });
   var url = 'https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/viewer-event';
   try {
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon(url, new Blob([payload], { type: 'application/json' }));
-    } else {
-      fetch(url, { method: 'POST', body: payload, headers: { 'Content-Type': 'application/json' }, keepalive: true }).catch(function(){});
-    }
+    fetch(url, { method: 'POST', body: payload, headers: { 'Content-Type': 'application/json' }, keepalive: true }).catch(function(){});
   } catch(e) {}
 }
 
