@@ -74,6 +74,11 @@
         .hl-guidelines-box { background: rgba(255,255,255,0.4); padding: 10px; border: 1px solid #a4b7c8; border-radius: 3px; margin: 10px 0; }
         .hl-guide-link { color: #005aab; text-decoration: underline; cursor: pointer; font-weight: bold; display: block; margin: 6px 0; font-size: 12px; }
         .hl-guide-link:hover { color: #003d7a; }
+        .hl-guide-item { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
+        .hl-guide-link-name { color: #005aab; text-decoration: underline; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .hl-guide-link-name:hover { color: #003d7a; }
+        .hl-hp-btn { display: inline-flex; align-items: center; gap: 2px; background: #009688; color: white; border-radius: 3px; padding: 1px 7px; font-size: 10px; font-weight: 700; text-decoration: none; letter-spacing: 0.2px; flex-shrink: 0; }
+        .hl-hp-btn:hover { background: #00796b; }
         .hl-body textarea { width: 100%; border: 1px solid #888; border-radius: 2px; padding: 5px; box-sizing: border-box; font-family: Arial; font-size: 12px; }
         .hl-endorsing { background: #e8d8c8; border: 1px solid #c4a882; border-radius: 3px; padding: 10px; margin-top: 10px; display: none; }
         .hl-endorsing-label { font-weight: bold; font-size: 11px; margin-bottom: 4px; color: #5a3e1e; }
@@ -207,7 +212,7 @@
                             <div class="hl-grid-options" id="hlExamGrid"></div>
                         </div>
                         <div class="hl-guidelines-box" id="hlGuidanceBox" style="display:none;">
-                            <strong>Guidelines</strong><br>
+                            <strong>Guidelines — <span id="hlGuidelinesRegion"></span></strong><br>
                             <span style="font-size:11px;color:#555;">Please use the following guidelines to support your referral</span>
                             <div id="hlGuidanceLinks"></div>
                             <div class="hl-row" style="margin-top:12px;" id="hlCriteriaQuestion">
@@ -283,6 +288,20 @@ var HL_MRI = [
 function getSites(e) { return {us:HL_US,ct:HL_CT,xr:HL_XR,mri:HL_MRI}[e]||HL_US; }
 var EL = {us:'Ultrasound',ct:'CT Scan',xr:'X-ray',mri:'MRI'};
 var RN = {aucklandregion:'Auckland Region',northland:'Northland',midland:'Midland',hawkesbay:"Hawke's Bay",'3d':'3D Health Pathways',canterbury:'Waitaha Canterbury',southern:'Southern',ccp:'Whanganui & MidCentral CHP'};
+var RN_SHORT = {aucklandregion:'Auckland',northland:'Northland',midland:'Midland',hawkesbay:"Hawke's Bay",'3d':'3D',canterbury:'Canterbury',southern:'Southern',ccp:'Whanganui & MidCentral'};
+var API_BASE = 'https://crr-criteria-api.fk4dsrmq5r.workers.dev';
+var REGIONS = {
+    aucklandregion: {domain:'aucklandregion.communityhealthpathways.org'},
+    northland:      {domain:'northland.communityhealthpathways.org'},
+    midland:        {domain:'midland.communityhealthpathways.org'},
+    hawkesbay:      {domain:'hawkesbay.communityhealthpathways.org'},
+    '3d':           {domain:'3d.communityhealthpathways.org'},
+    canterbury:     {domain:'canterbury.communityhealthpathways.org'},
+    southern:       {domain:'southern.communityhealthpathways.org'},
+    ccp:            {domain:'ccp.communityhealthpathways.org'}
+};
+var siteHpUrls = {};
+var regionOverrides = {};
 
 // URL building
 function buildViewerUrl(exam, sites) {
@@ -347,6 +366,7 @@ function updateHLLinks() {
     var exam = config.hlExam||'us';
     var box = document.getElementById('hlGuidanceBox');
     var container = document.getElementById('hlGuidanceLinks');
+    var regionLabel = document.getElementById('hlGuidelinesRegion');
     var checked = [];
     document.querySelectorAll('#hlExamGrid input:checked').forEach(function(cb){
         checked.push({c:cb.dataset.code, l:cb.dataset.label});
@@ -356,9 +376,16 @@ function updateHLLinks() {
         return;
     }
     box.style.display='block';
-    var rShort = config.region==='aucklandregion'?'Auckland':(RN[config.region]||config.region);
+    var rShort = RN_SHORT[config.region] || RN[config.region] || config.region;
+    if (regionLabel) regionLabel.textContent = rShort;
     var links = checked.map(function(s){
-        return '<span class="hl-guide-link" onclick="launchViewer(\''+exam+'\',\''+s.c+'\')">— '+rShort+' Guidelines: '+EL[exam]+' '+s.l+'</span>';
+        var label = EL[exam]+' '+s.l;
+        var hpUrl = getHPUrl(s.c, exam);
+        var hpBtn = hpUrl ? '<a class="hl-hp-btn" href="'+hpUrl+'" target="_blank" rel="noopener noreferrer">HP &#8599;</a>' : '';
+        return '<div class="hl-guide-item">'
+            + '<span class="hl-guide-link-name" onclick="launchViewer(\''+exam+'\',\''+s.c+'\')">'+label+'</span>'
+            + hpBtn
+            + '</div>';
     }).join('');
     if (checked.length>1) {
         var all = checked.map(function(s){return s.c;}).join(',');
@@ -389,6 +416,38 @@ function restoreConfig() {
 function applyConfig() {
     var rn=RN[config.region]||config.region;
     document.getElementById('hlRegionBadge').textContent='Region: '+rn;
+    updateHLLinks();
+}
+
+function getHPUrl(siteCode, examCode) {
+    var url = siteHpUrls[siteCode] || siteHpUrls[examCode] || '';
+    if (!url) return '';
+    var region = config.region;
+    var ov = (regionOverrides[region] || {})[siteCode];
+    if (ov && ov.healthPathwaysUrl) return ov.healthPathwaysUrl;
+    if (!REGIONS[region]) return url;
+    return url.replace('aucklandregion.communityhealthpathways.org', REGIONS[region].domain);
+}
+
+async function loadHPData() {
+    try {
+        var resp = await fetch(API_BASE + '/api/criteria', {cache:'no-store'});
+        if (resp.ok) {
+            var body = await resp.json();
+            var payload = body.data || body;
+            var exams = Array.isArray(payload) ? payload : (payload.exams || []);
+            exams.forEach(function(exam) {
+                if (exam.healthPathwaysUrl) siteHpUrls[exam.id] = exam.healthPathwaysUrl;
+                (exam.sites || []).forEach(function(site) {
+                    if (site.healthPathwaysUrl) siteHpUrls[site.id] = site.healthPathwaysUrl;
+                });
+            });
+        }
+    } catch(e) {}
+    try {
+        var rResp = await fetch(API_BASE + '/api/regions', {cache:'no-store'});
+        if (rResp.ok) regionOverrides = await rResp.json();
+    } catch(e) {}
     updateHLLinks();
 }
 
@@ -433,7 +492,7 @@ function receiveCRROutput(data) {
     showToast('Data received from ' + source);
 }
 
-(function init(){buildHLForm();restoreConfig();applyConfig();})();
+(function init(){buildHLForm();restoreConfig();applyConfig();loadHPData();})();
 </script>
 </body>
 </html>
