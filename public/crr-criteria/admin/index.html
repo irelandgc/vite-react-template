@@ -873,17 +873,56 @@ function QAReviewsTab(){
   const overallColor={accurate:C.pass,minor_issues:C.warn,significant_issues:'#b45309',wrong:C.fail};
   const overallBg={accurate:C.passBg,minor_issues:C.warnBg,significant_issues:'#fef3c7',wrong:C.failBg};
 
-  function exportCSV(){
+  async function exportJSON(){
     if(!filtered.length){alert('No reviews to export.');return;}
-    const cols=['id','timestamp','session_id','reviewer_name','reviewer_role','scenario_type',
-      'score_criteria_id','score_suggestion_quality','score_compound_handling','score_safety_redirect',
-      'overall_assessment','comments','exam_identified','model_used','documentation_standard','ip_address'];
-    const esc=v=>v==null?'':'"'+String(v).replace(/"/g,'""')+'"';
-    const rows=[cols.join(','),...filtered.map(r=>cols.map(c=>esc(r[c])).join(','))];
-    const blob=new Blob([rows.join('\n')],{type:'text/csv'});
+    let sessionMap={};
+    try{
+      const logs=await api('/api/triage/usage-logs');
+      if(Array.isArray(logs)) logs.forEach(l=>{ sessionMap[l.session_id]=l; });
+    }catch(_){}
+    const parseJson=s=>{ try{ return s?JSON.parse(s):null; }catch(_){ return null; } };
+    const out=filtered.map(r=>{
+      const sess=sessionMap[r.session_id]||{};
+      const aiObj=parseJson(r.ai_response_json)||parseJson(sess.ai_response_json);
+      return {
+        id: r.id,
+        timestamp: r.timestamp,
+        session_id: r.session_id,
+        reviewer: { name: r.reviewer_name, role: r.reviewer_role },
+        scores: {
+          criteria_id: r.score_criteria_id,
+          suggestion_quality: r.score_suggestion_quality,
+          compound_handling: r.score_compound_handling,
+          safety_redirect: r.score_safety_redirect,
+          overall: r.overall_assessment
+        },
+        scenario_type: r.scenario_type,
+        comments: r.comments||null,
+        exam_identified: r.exam_identified||null,
+        model_used: r.model_used||null,
+        documentation_standard: r.documentation_standard||null,
+        region: r.region||null,
+        ip_address: r.ip_address||null,
+        session: {
+          user_name: sess.user_name||null,
+          user_role: sess.user_role||null,
+          input_tokens: sess.input_tokens||null,
+          cache_read_tokens: sess.cache_read_tokens||null,
+          cache_write_tokens: sess.cache_write_tokens||null,
+          output_tokens: sess.output_tokens||null,
+          cost_nzd: sess.cost_nzd||null
+        },
+        clinical_note: r.presentation_text||sess.presentation_text||null,
+        ai_response: aiObj || {
+          verdict: r.verdict||null,
+          summary: r.ai_response_summary||null
+        }
+      };
+    });
+    const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url;a.download='qa_reviews_'+new Date().toISOString().slice(0,10)+'.csv';
+    a.href=url;a.download='qa_reviews_'+new Date().toISOString().slice(0,10)+'.json';
     document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
   }
 
@@ -902,7 +941,7 @@ function QAReviewsTab(){
           <h2 style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:2}}>QA Reviews</h2>
           <p style={{fontSize:12,color:C.mid}}>{filtered.length} review{filtered.length!==1?'s':''} shown{reviews.length!==filtered.length?` of ${reviews.length} total`:''}</p>
         </div>
-        <button onClick={exportCSV} style={{fontSize:12,padding:'5px 14px',background:C.teal,color:'#fff',border:'none',borderRadius:3,cursor:'pointer',fontFamily:font,fontWeight:600}}>Export CSV</button>
+        <button onClick={exportJSON} style={{fontSize:12,padding:'5px 14px',background:C.teal,color:'#fff',border:'none',borderRadius:3,cursor:'pointer',fontFamily:font,fontWeight:600}}>Export JSON</button>
       </div>
 
       <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12,background:'#fff',border:`1px solid ${C.rule}`,borderRadius:3,padding:'10px 12px'}}>
@@ -1052,15 +1091,35 @@ function ViewerQATab(){
     return<span style={{fontWeight:700,color:m.col}}>{m.lbl}</span>;
   };
 
-  function exportCSV(){
+  function exportJSON(){
     if(!reviews.length){alert('No reviews to export.');return;}
-    const cols=['id','timestamp','session_id','reviewer_name','reviewer_role','exam_type','site_code','site_label','region','view_mode','score_usability','score_value','comments','ip_address'];
-    const esc=v=>v==null?'':'"'+String(v).replace(/"/g,'""')+'"';
-    const rows=[cols.join(','),...reviews.map(r=>cols.map(c=>esc(r[c])).join(','))];
-    const blob=new Blob([rows.join('\n')],{type:'text/csv'});
+    const out=reviews.map(r=>({
+      id: r.id,
+      timestamp: r.timestamp,
+      session_id: r.session_id,
+      reviewer: { name: r.reviewer_name, role: r.reviewer_role },
+      exam: { type: r.exam_type, site_code: r.site_code, site_label: r.site_label },
+      region: r.region||null,
+      view_mode: r.view_mode||null,
+      scores: { accuracy: r.score_accuracy, usability: r.score_usability, value: r.score_value },
+      checklist: {
+        criteria_correct: r.checklist_criteria_correct,
+        priority_correct: r.checklist_priority_correct,
+        gateway_correct: r.checklist_gateway_correct,
+        labvalue_correct: r.checklist_labvalue_correct,
+        altmgmt_correct: r.checklist_altmgmt_correct,
+        notfunded_correct: r.checklist_notfunded_correct,
+        guidance_correct: r.checklist_guidance_correct,
+        healthpathways_works: r.checklist_healthpathways_works,
+        groupings_correct: r.checklist_groupings_correct
+      },
+      comments: r.comments||null,
+      ip_address: r.ip_address||null
+    }));
+    const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url;a.download='qa_viewer_reviews_'+new Date().toISOString().slice(0,10)+'.csv';
+    a.href=url;a.download='qa_viewer_reviews_'+new Date().toISOString().slice(0,10)+'.json';
     document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
   }
 
@@ -1071,7 +1130,7 @@ function ViewerQATab(){
           <h2 style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:2}}>Viewer QA Reviews</h2>
           <p style={{fontSize:12,color:C.mid}}>{reviews.length} review{reviews.length!==1?'s':''} total</p>
         </div>
-        <button onClick={exportCSV} style={{fontSize:12,padding:'5px 14px',background:C.teal,color:'#fff',border:'none',borderRadius:3,cursor:'pointer',fontFamily:font,fontWeight:600}}>Export CSV</button>
+        <button onClick={exportJSON} style={{fontSize:12,padding:'5px 14px',background:C.teal,color:'#fff',border:'none',borderRadius:3,cursor:'pointer',fontFamily:font,fontWeight:600}}>Export JSON</button>
       </div>
 
       <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12,background:'#fff',border:`1px solid ${C.rule}`,borderRadius:3,padding:'10px 12px'}}>

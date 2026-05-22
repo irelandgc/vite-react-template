@@ -2433,7 +2433,8 @@ function logTriageUsage(result, usage) {
       output_tokens: usage.output_tokens || 0,
       cost_nzd: calcCostNzd(usage),
       presentation_text: result._originalNote || lastNote || '',
-      ai_response_summary: aiSummary
+      ai_response_summary: aiSummary,
+      ai_response_json: JSON.stringify(result)
     };
     fetch('https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/triage/usage-log', {
       method: 'POST',
@@ -2639,6 +2640,7 @@ function submitQaEntry() {
     comments: (document.getElementById('qaComments').value || '').trim() || null,
     presentation_text: lastNote || '',
     ai_response_summary: aiSummary,
+    ai_response_json: JSON.stringify(r),
     exam_identified: r.exam || r.modality || null,
     model_used: 'claude-sonnet-4-20250514',
     documentation_standard: docMode,

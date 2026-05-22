@@ -478,9 +478,9 @@ app.post('/api/qa-review', async (c) => {
         scenario_type, score_criteria_id, score_suggestion_quality,
         score_compound_handling, score_safety_redirect,
         overall_assessment, comments,
-        presentation_text, ai_response_summary,
+        presentation_text, ai_response_summary, ai_response_json,
         exam_identified, model_used, documentation_standard, region, ip_address
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       body.timestamp || now,
       body.session_id || '',
@@ -495,6 +495,7 @@ app.post('/api/qa-review', async (c) => {
       body.comments || null,
       body.presentation_text || '',
       body.ai_response_summary || '',
+      body.ai_response_json || null,
       body.exam_identified || null,
       body.model_used || null,
       body.documentation_standard || null,
@@ -907,8 +908,8 @@ app.post('/api/triage/usage-log', async (c) => {
         timestamp, session_id, user_name, user_role,
         exam_identified, verdict, model_used, documentation_standard,
         input_tokens, cache_read_tokens, cache_write_tokens, output_tokens, cost_nzd,
-        presentation_text, ai_response_summary, ip_address
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        presentation_text, ai_response_summary, ai_response_json, ip_address
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       body.timestamp || now,
       body.session_id || '',
@@ -925,6 +926,7 @@ app.post('/api/triage/usage-log', async (c) => {
       body.cost_nzd || 0,
       body.presentation_text || null,
       body.ai_response_summary || null,
+      body.ai_response_json || null,
       ip
     ).run();
     return c.json({ success: true, id: result.meta.last_row_id });

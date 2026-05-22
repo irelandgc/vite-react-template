@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS triage_usage_log (
   cost_nzd REAL DEFAULT 0,
   presentation_text TEXT,
   ai_response_summary TEXT,
+  ai_response_json TEXT,
   ip_address TEXT
 );
 
@@ -83,6 +84,7 @@ CREATE TABLE IF NOT EXISTS qa_reviews (
   comments TEXT,
   presentation_text TEXT NOT NULL,
   ai_response_summary TEXT NOT NULL,
+  ai_response_json TEXT,
   exam_identified TEXT,
   model_used TEXT,
   documentation_standard TEXT,
