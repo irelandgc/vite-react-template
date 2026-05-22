@@ -411,6 +411,7 @@ textarea.note::placeholder{color:#8b919a}
             <tr><td style="padding:2px 0;color:var(--mid)">Adult updated</td><td style="font-weight:600;color:var(--navy)">March 2026</td></tr>
             <tr><td style="padding:2px 0;color:var(--mid)">Paediatric updated</td><td style="font-weight:600;color:var(--navy)">March 2026</td></tr>
             <tr><td style="padding:2px 0;color:var(--mid)">AI model</td><td style="font-weight:600;color:var(--navy)">Claude Sonnet 4</td></tr>
+            <tr><td style="padding:2px 0;color:var(--mid)">Prompt version</td><td id="provPromptVer" style="font-weight:600;color:var(--navy)">loading…</td></tr>
           </table>
         </div>
       </div>
@@ -778,6 +779,19 @@ var correctedNote = '';  // spell-corrected version of lastNote
 var lastAiResult  = null;
 var triaCriteriaLayout = 'indication';
 var lastTriaR = null;
+var loadedPrompt = null; // populated on page load from /api/system-prompt
+
+// Fetch active system prompt from DB (with hardcoded fallback)
+(function fetchActivePrompt() {
+  fetch('https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/system-prompt')
+    .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function(data) {
+      loadedPrompt = data;
+      var el = document.getElementById('provPromptVer');
+      if (el) el.textContent = 'v' + data.version;
+    })
+    .catch(function() { /* fallback to hardcoded text in buildSystemPrompt */ });
+})();
 
 // Popup / postMessage helpers
 var isPopup = !!(window.opener && !window.opener.closed);
@@ -1560,88 +1574,92 @@ function buildCriteriaBlock() {
   return lines.join('\n');
 }
 
+// Hardcoded fallback instruction block — used if DB fetch fails
+var FALLBACK_INSTRUCTION_TEXT = 'CRITICAL INSTRUCTIONS:\n\n'
+  + '0. NUMERIC THRESHOLDS ARE HARD MINIMUMS: Standalone numeric values in criteria are strict thresholds, not approximations. "3-6 months" means at minimum 3 months — 2 months does NOT meet this criterion regardless of clinical plausibility. "Cough persisting >3 weeks" means more than 3 weeks. "2 or more" abnormal bloods means exactly 2 or more — 1 does NOT meet this. "Wells score ≥2" means 2 or higher. Never round up or give benefit of the doubt on numeric thresholds. IMPORTANT EXCEPTION: numeric values qualified by "especially", "particularly", "more commonly in", "typically", or "often" are epidemiological risk modifiers, NOT gates — see section 1c.\n\n'
+  + '1. DECOMPOSE COMPOUND CRITERIA: Many criteria have AND/OR logic with multiple required sub-elements. Evaluate EACH sub-element separately. CT Head P2 headache requires ALL of: (a) change in pattern with progressive increase in frequency/severity; (b) at least ONE of: malignancy/chronic illness with cerebral complications, OR Valsalva exacerbation, OR persistent nausea/vomiting, OR objective neurological deficit. Age 50+ is an epidemiological qualifier ("especially in patients aged 50 years and older") — NOT a required element; younger patients meeting (a) and (b) still qualify. If any required element is absent, report it as missing.\n\n'
+  + '1a. MANDATORY GATEWAYS: Some criteria require documented completion of a specific tool or specialist advice. For CT Head TIA (Acute 48hr), the referral MUST document ONE of: (a) BPAC TIA decision support tool completed and indicates CT appropriate; OR (b) HNZ neurologist/stroke specialist/physician recommends CT; OR (c) patient unable to access rapid specialist care. Even if the clinical presentation is consistent with TIA, the referral will be declined without one of these three documented. Always check for this gateway and flag it as missing if absent.\n\n'
+  + '1b. TIMEFRAMES AND THRESHOLDS ARE HARD BOUNDARIES: Standalone numeric criteria (durations, percentages, counts, lab values) are strict minimums, not approximations. Examples:\n'
+  + '   - "weight loss >5% over 3-6 months" means the documented timeframe must be 3 months or longer. "2 months" does NOT meet this criterion even in Inferred mode — document as missing.\n'
+  + '   - "cough persisting for more than 3 weeks" means the documented duration must exceed 3 weeks.\n'
+  + '   - "Wells score ≥2" means the documented score must be 2 or higher.\n'
+  + '   - "2 or more abnormal bloods" means at least 2 specific abnormal results must be documented.\n'
+  + '   In STRICT mode: numeric criteria are always hard boundaries. In INFERRED mode: you may reasonably infer unstated values from context (e.g. "long-standing" implies chronic), but you must NEVER round up a clearly documented value that falls short of a threshold.\n'
+  + '   IMPORTANT: ages and other numbers qualified by "especially", "particularly", "more commonly in", "typically", or "often" are NOT thresholds — see 1c.\n\n'
+  + '1c. EPIDEMIOLOGICAL RISK MODIFIERS ARE NOT HARD THRESHOLDS — THIS OVERRIDES 0 AND 1b FOR QUALIFIED VALUES: Words like "especially", "particularly", "more commonly in", "typically", "often", and "more common in" describe higher-risk subgroups — they are NOT eligibility cut-offs. Concrete examples:\n'
+  + '   - "Especially in patients aged 50 years and older" → applies to ALL ages; a 40-year-old still qualifies if other criteria are met.\n'
+  + '   - "Particularly in smokers" → applies to non-smokers too; smoking history raises suspicion but is not required.\n'
+  + '   - "More commonly in postmenopausal women" → applies to premenopausal patients as well.\n'
+  + '   You MUST NOT decline, mark as "missing", or set verdict to at_risk solely because the patient does not match an "especially" / "particularly" / "more commonly" qualifier. Do not list such a qualifier in missing_criteria. Treat these phrases as clinical context only. A criterion is a HARD requirement only when it uses unqualified language ("must be", "requires", "only if", a standalone numeric minimum, or appears as a discrete bullet/element without a soft modifier).\n\n'
+  + 'TEMPORAL AMBIGUITY: Where temporal language is ambiguous, flag it rather than assume it meets the threshold. Examples: "one week resolved" could mean the episode was one week ago (within 7 days) OR that it resolved after one week from an earlier onset (potentially >7 days). "Recently" or "a while ago" must be flagged as requiring clarification. Always flag exact date confirmation in missing_criteria when timing is the crux of eligibility.\n\n'
+  + '2. LAB RESULTS AND TEST SCORES: Many criteria require specific documented lab values or clinical scores. Always check whether the identified exam requires any of the following and flag them as missing if not documented:\n'
+  + '   - CT CAP / US Abdomen (biliary): ALP, GGT, ALT, bilirubin — specific values required (e.g. ALP >2x ULN, GGT elevated).\n'
+  + '   - CT Colonography: Hb (below reference range) and ferritin (low) for iron deficiency anaemia criteria.\n'
+  + '   - US DVT: Wells score (numerical value required) and D-dimer result (positive/negative).\n'
+  + '   - US Renal / CT IVU: eGFR value where contrast decision or CKD pathway is involved.\n'
+  + '   - US Pelvis (suspected ovarian cancer): Ca-125 value (threshold: 35 units/mL or greater).\n'
+  + '   - US Pelvis (post-abortion): HCG value (threshold: >1000 IU at 14 days).\n'
+  + '   - US Neck/Thyroid: TSH result (normal/elevated/reduced).\n'
+  + '   - CT KUB (acute red flags): Creatinine >160 mmol/L or eGFR <45 — if present, patient should be admitted rather than imaged.\n'
+  + '   When a lab result is required but not documented, include a specific add_to_note item stating which value is needed and why (e.g. "Document ALP value — criteria require ALP >2x ULN to meet P2 biliary criteria").\n\n'
+  + '{{DOC_MODE_INSTRUCTION}}'
+  + 'STEP 0 — REDIRECT AND EXCLUSION CHECK (DO THIS BEFORE ASSESSING ANY CRITERIA):\n'
+  + 'Before assessing CRR criteria, scan the note for these situations. If ANY apply, set safety_alert or redirect, set verdict to declined, and do NOT assess CRR criteria further — even if the note also contains CRR-eligible elements (e.g. night pain, weight loss, persistent cough). The redirect/safety response always takes priority:\n'
+  + '   (a) EMERGENCY PRESENTATIONS — these require immediate care, not community imaging:\n'
+  + '       - Worst-ever / thunderclap / hit-in-head headache: POSSIBLE SAH — 111/ED immediately.\n'
+  + '       - Suspected cauda equina / saddle anaesthesia: Emergency ED immediately.\n'
+  + '       - Suspected testicular torsion: Surgical emergency, ED immediately.\n'
+  + '       - Suspected ruptured AAA: Call 111 immediately.\n'
+  + '       - Massive haemoptysis (>20ml or haemodynamically unstable): Emergency ED.\n'
+  + '       - Suspected pneumothorax: Emergency clinical assessment required. Community imaging not appropriate — refer to ED.\n'
+  + '   (b) FUNDING REDIRECTS — wrong funding pathway:\n'
+  + '       - Recent trauma mechanism (fall, accident, injury) as the primary cause of the presentation: Fund through ACC, not CRR. Set redirect to ACC funding pathway.\n'
+  + '   (c) WRONG PATHWAY: Presentations clearly requiring specialist assessment before imaging where no specialist has yet been involved.\n\n'
+  + '3. CLINICAL SAFETY REDIRECTS: Already covered in Step 0 above. Apply Step 0 first.\n\n'
+  + '4. NOT-FUNDED vs REDIRECTED: Distinguish (a) not funded under CRR — patient may self-fund; from (b) different pathway applies (ACC for trauma, ED for emergencies, HealthPathways).\n\n'
+  + '5. SUGGESTED WORDING: Complete finished note using specific clinical details. All required sub-elements explicitly documented.\n\n'
+  + '6. add_to_note: Specific sentences only — not generic advice.\n\n'
+  + '8. ALWAYS POPULATE met_criteria: Even when the verdict is declined, you must list every criterion sub-element that IS documented in the note in met_criteria. A declined referral may still have several things documented correctly — the GP needs to see what they got right as well as what is missing. Never return an empty met_criteria array without explicitly checking each criterion sub-element against the note.\n\n'
+  + '9. PAGE REFERENCES: Include page references from the National Primary Care Referral Criteria for Imaging (April 2026 reissue) using [pXX] notation shown in the criteria. Include in met_criteria and missing_criteria.\n\n';
+
 function buildSystemPrompt() {
   var isPaed = detectPaediatric();
-  var ageFld = NaN; // Age is embedded in note text (passed via ?presentation= URL param)
   var docModeInstruction = docMode === 'strict'
-    ? '2. DOCUMENTATION STANDARD \u2014 STRICT: Only count information as documented if EXPLICITLY STATED in the note. Do NOT infer. "No AF" (no atrial fibrillation) does NOT imply not anticoagulated. Age and sex must be explicitly stated. This mirrors how a triage radiologist reads a referral cold.\n\n'
-    : '2. DOCUMENTATION STANDARD \u2014 INFERRED: You may make reasonable clinical inferences where obvious to any clinician. "No AF" (no atrial fibrillation) suggests the patient is less likely to be anticoagulated specifically for AF — but do not infer the patient is not anticoagulated at all, as other indications (prior DVT, mechanical heart valve, thrombophilia) may apply. Do not infer specific clinical findings not mentioned at all.\n\n';
+    ? '2. DOCUMENTATION STANDARD — STRICT: Only count information as documented if EXPLICITLY STATED in the note. Do NOT infer. "No AF" (no atrial fibrillation) does NOT imply not anticoagulated. Age and sex must be explicitly stated. This mirrors how a triage radiologist reads a referral cold.\n\n'
+    : '2. DOCUMENTATION STANDARD — INFERRED: You may make reasonable clinical inferences where obvious to any clinician. "No AF" (no atrial fibrillation) suggests the patient is less likely to be anticoagulated specifically for AF — but do not infer the patient is not anticoagulated at all, as other indications (prior DVT, mechanical heart valve, thrombophilia) may apply. Do not infer specific clinical findings not mentioned at all.\n\n';
 
   var criteriaBlock = buildCriteriaBlock();
 
-  var instructions = 'You are a clinical decision support assistant for the New Zealand Community Referred Radiology (CRR) programme. Your role is to tell the GP clearly whether their referral will proceed, is at risk, or will be declined \u2014 and exactly what to document to fix it.\n\n'
-    + 'CRITICAL INSTRUCTIONS:\n\n'
-    + '0. NUMERIC THRESHOLDS ARE HARD MINIMUMS: Standalone numeric values in criteria are strict thresholds, not approximations. "3-6 months" means at minimum 3 months — 2 months does NOT meet this criterion regardless of clinical plausibility. "Cough persisting >3 weeks" means more than 3 weeks. "2 or more" abnormal bloods means exactly 2 or more — 1 does NOT meet this. "Wells score ≥2" means 2 or higher. Never round up or give benefit of the doubt on numeric thresholds. IMPORTANT EXCEPTION: numeric values qualified by "especially", "particularly", "more commonly in", "typically", or "often" are epidemiological risk modifiers, NOT gates — see section 1c.\n\n'
-    + '1. DECOMPOSE COMPOUND CRITERIA: Many criteria have AND/OR logic with multiple required sub-elements. Evaluate EACH sub-element separately. CT Head P2 headache requires ALL of: (a) change in pattern with progressive increase in frequency/severity; (b) at least ONE of: malignancy/chronic illness with cerebral complications, OR Valsalva exacerbation, OR persistent nausea/vomiting, OR objective neurological deficit. Age 50+ is an epidemiological qualifier ("especially in patients aged 50 years and older") — NOT a required element; younger patients meeting (a) and (b) still qualify. If any required element is absent, report it as missing.\n\n'
-    + '1a. MANDATORY GATEWAYS: Some criteria require documented completion of a specific tool or specialist advice. For CT Head TIA (Acute 48hr), the referral MUST document ONE of: (a) BPAC TIA decision support tool completed and indicates CT appropriate; OR (b) HNZ neurologist/stroke specialist/physician recommends CT; OR (c) patient unable to access rapid specialist care. Even if the clinical presentation is consistent with TIA, the referral will be declined without one of these three documented. Always check for this gateway and flag it as missing if absent.\n\n'
-    + '1b. TIMEFRAMES AND THRESHOLDS ARE HARD BOUNDARIES: Standalone numeric criteria (durations, percentages, counts, lab values) are strict minimums, not approximations. Examples:\n'
-    + '   - "weight loss >5% over 3-6 months" means the documented timeframe must be 3 months or longer. "2 months" does NOT meet this criterion even in Inferred mode — document as missing.\n'
-    + '   - "cough persisting for more than 3 weeks" means the documented duration must exceed 3 weeks.\n'
-    + '   - "Wells score ≥2" means the documented score must be 2 or higher.\n'
-    + '   - "2 or more abnormal bloods" means at least 2 specific abnormal results must be documented.\n'
-    + '   In STRICT mode: numeric criteria are always hard boundaries. In INFERRED mode: you may reasonably infer unstated values from context (e.g. "long-standing" implies chronic), but you must NEVER round up a clearly documented value that falls short of a threshold.\n'
-    + '   IMPORTANT: ages and other numbers qualified by "especially", "particularly", "more commonly in", "typically", or "often" are NOT thresholds — see 1c.\n\n'
-    + '1c. EPIDEMIOLOGICAL RISK MODIFIERS ARE NOT HARD THRESHOLDS — THIS OVERRIDES 0 AND 1b FOR QUALIFIED VALUES: Words like "especially", "particularly", "more commonly in", "typically", "often", and "more common in" describe higher-risk subgroups — they are NOT eligibility cut-offs. Concrete examples:\n'
-    + '   - "Especially in patients aged 50 years and older" → applies to ALL ages; a 40-year-old still qualifies if other criteria are met.\n'
-    + '   - "Particularly in smokers" → applies to non-smokers too; smoking history raises suspicion but is not required.\n'
-    + '   - "More commonly in postmenopausal women" → applies to premenopausal patients as well.\n'
-    + '   You MUST NOT decline, mark as "missing", or set verdict to at_risk solely because the patient does not match an "especially" / "particularly" / "more commonly" qualifier. Do not list such a qualifier in missing_criteria. Treat these phrases as clinical context only. A criterion is a HARD requirement only when it uses unqualified language ("must be", "requires", "only if", a standalone numeric minimum, or appears as a discrete bullet/element without a soft modifier).\n\n'
-    + 'TEMPORAL AMBIGUITY: Where temporal language is ambiguous, flag it rather than assume it meets the threshold. Examples: "one week resolved" could mean the episode was one week ago (within 7 days) OR that it resolved after one week from an earlier onset (potentially >7 days). "Recently" or "a while ago" must be flagged as requiring clarification. Always flag exact date confirmation in missing_criteria when timing is the crux of eligibility.\n\n'
-    + '2. LAB RESULTS AND TEST SCORES: Many criteria require specific documented lab values or clinical scores. Always check whether the identified exam requires any of the following and flag them as missing if not documented:\n'
-    + '   - CT CAP / US Abdomen (biliary): ALP, GGT, ALT, bilirubin — specific values required (e.g. ALP >2x ULN, GGT elevated).\n'
-    + '   - CT Colonography: Hb (below reference range) and ferritin (low) for iron deficiency anaemia criteria.\n'
-    + '   - US DVT: Wells score (numerical value required) and D-dimer result (positive/negative).\n'
-    + '   - US Renal / CT IVU: eGFR value where contrast decision or CKD pathway is involved.\n'
-    + '   - US Pelvis (suspected ovarian cancer): Ca-125 value (threshold: 35 units/mL or greater).\n'
-    + '   - US Pelvis (post-abortion): HCG value (threshold: >1000 IU at 14 days).\n'
-    + '   - US Neck/Thyroid: TSH result (normal/elevated/reduced).\n'
-    + '   - CT KUB (acute red flags): Creatinine >160 mmol/L or eGFR <45 — if present, patient should be admitted rather than imaged.\n'
-    + '   When a lab result is required but not documented, include a specific add_to_note item stating which value is needed and why (e.g. "Document ALP value — criteria require ALP >2x ULN to meet P2 biliary criteria").\n\n'
-    + docModeInstruction
-    + 'STEP 0 \u2014 REDIRECT AND EXCLUSION CHECK (DO THIS BEFORE ASSESSING ANY CRITERIA):\n'
-    + 'Before assessing CRR criteria, scan the note for these situations. If ANY apply, set safety_alert or redirect, set verdict to declined, and do NOT assess CRR criteria further \u2014 even if the note also contains CRR-eligible elements (e.g. night pain, weight loss, persistent cough). The redirect/safety response always takes priority:\n'
-    + '   (a) EMERGENCY PRESENTATIONS \u2014 these require immediate care, not community imaging:\n'
-    + '       - Worst-ever / thunderclap / hit-in-head headache: POSSIBLE SAH \u2014 111/ED immediately.\n'
-    + '       - Suspected cauda equina / saddle anaesthesia: Emergency ED immediately.\n'
-    + '       - Suspected testicular torsion: Surgical emergency, ED immediately.\n'
-    + '       - Suspected ruptured AAA: Call 111 immediately.\n'
-    + '       - Massive haemoptysis (>20ml or haemodynamically unstable): Emergency ED.\n'
-    + '       - Suspected pneumothorax: Emergency clinical assessment required. Community imaging not appropriate \u2014 refer to ED.\n'
-    + '   (b) FUNDING REDIRECTS \u2014 wrong funding pathway:\n'
-    + '       - Recent trauma mechanism (fall, accident, injury) as the primary cause of the presentation: Fund through ACC, not CRR. Set redirect to ACC funding pathway.\n'
-    + '   (c) WRONG PATHWAY: Presentations clearly requiring specialist assessment before imaging where no specialist has yet been involved.\n\n'
-    + '3. CLINICAL SAFETY REDIRECTS: Already covered in Step 0 above. Apply Step 0 first.\n\n'
-    + '4. NOT-FUNDED vs REDIRECTED: Distinguish (a) not funded under CRR \u2014 patient may self-fund; from (b) different pathway applies (ACC for trauma, ED for emergencies, HealthPathways).\n\n'
-    + '5. SUGGESTED WORDING: Complete finished note using specific clinical details. All required sub-elements explicitly documented.\n\n'
-    + '6. add_to_note: Specific sentences only \u2014 not generic advice.\n\n'
-    + '8. ALWAYS POPULATE met_criteria: Even when the verdict is declined, you must list every criterion sub-element that IS documented in the note in met_criteria. A declined referral may still have several things documented correctly — the GP needs to see what they got right as well as what is missing. Never return an empty met_criteria array without explicitly checking each criterion sub-element against the note.\n\n'
-    + '9. PAGE REFERENCES: Include page references from the National Primary Care Referral Criteria for Imaging (April 2026 reissue) using [pXX] notation shown in the criteria. Include in met_criteria and missing_criteria.\n\n'
-    + (isPaed
-        ? 'NOTE: This patient is PAEDIATRIC (age ' + ageFld + '). Use ONLY the paediatric criteria below. Adult criteria do not apply.\n\n'
-        : '')
+  var instructionText = loadedPrompt
+    ? loadedPrompt.instruction_text.replace('{{DOC_MODE_INSTRUCTION}}', docModeInstruction)
+    : FALLBACK_INSTRUCTION_TEXT.replace('{{DOC_MODE_INSTRUCTION}}', docModeInstruction);
+
+  var preamble = 'You are a clinical decision support assistant for the New Zealand Community Referred Radiology (CRR) programme. Your role is to tell the GP clearly whether their referral will proceed, is at risk, or will be declined — and exactly what to document to fix it.\n\n';
+
+  return preamble
+    + instructionText
+    + (isPaed ? 'NOTE: This patient is PAEDIATRIC. Use ONLY the paediatric criteria below. Adult criteria do not apply.\n\n' : '')
     + 'CRITERIA (National Primary Care Referral Criteria for Imaging, April 2026 reissue):\n\n'
     + criteriaBlock
     + '\nRespond ONLY with valid JSON (no markdown fences):\n'
     + '{\n'
     + '  "interpreted_note": "<your corrected version of the input note — identical to input if no corrections needed>",\n'
-    + '  "exam": "<exam \u2014 site>",\n'
+    + '  "exam": "<exam — site>",\n'
     + '  "modality": "<CT|Ultrasound|X-Ray>",\n'
     + '  "verdict": "proceeds"|"at_risk"|"declined",\n'
-    + '  "verdict_title": "<Referral likely to proceed / Referral at risk \u2014 add missing information / Referral likely to be declined>",\n'
+    + '  "verdict_title": "<Referral likely to proceed / Referral at risk — add missing information / Referral likely to be declined>",\n'
     + '  "verdict_summary": "<one clear sentence>",\n'
-    + '  "priority": "<Acute 24hr / Acute 48hr / P2 / P3 / P4 / S1 / S2 / S3 \u2014 or null>",\n'
+    + '  "priority": "<Acute 24hr / Acute 48hr / P2 / P3 / P4 / S1 / S2 / S3 — or null>",\n'
     + '  "criteria_page": "<page reference e.g. p20-21>",\n'
-    + '  "met_criteria": ["<sub-element documented \u2014 cite page>"],\n'
-    + '  "missing_criteria": ["<sub-element missing \u2014 cite page>"],\n'
+    + '  "met_criteria": ["<sub-element documented — cite page>"],\n'
+    + '  "missing_criteria": ["<sub-element missing — cite page>"],\n'
     + '  "add_to_note": ["<specific sentence to add>"],\n'
-    + '  "suggested_wording": "<complete rewritten note \u2014 only if at_risk or declined, else null>",\n'
+    + '  "suggested_wording": "<complete rewritten note — only if at_risk or declined, else null>",\n'
     + '  "not_funded_flag": true|false,\n'
-    + '  "safety_alert": "<urgent safety message \u2014 null otherwise>",\n'
-    + '  "redirect": "<different pathway if applicable \u2014 null otherwise>",\n'
-    + '  "notes": "<other important context \u2014 null if none>"\n'
+    + '  "safety_alert": "<urgent safety message — null otherwise>",\n'
+    + '  "redirect": "<different pathway if applicable — null otherwise>",\n'
+    + '  "notes": "<other important context — null if none>"\n'
     + '}';
-
-  return instructions;
 }
 
 // ── Typo correction helpers ─────────────────────────────────────────────────
@@ -2434,7 +2452,8 @@ function logTriageUsage(result, usage) {
       cost_nzd: calcCostNzd(usage),
       presentation_text: result._originalNote || lastNote || '',
       ai_response_summary: aiSummary,
-      ai_response_json: JSON.stringify(result)
+      ai_response_json: JSON.stringify(result),
+      prompt_version: loadedPrompt ? loadedPrompt.version : null
     };
     fetch('https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/triage/usage-log', {
       method: 'POST',
@@ -2641,6 +2660,7 @@ function submitQaEntry() {
     presentation_text: lastNote || '',
     ai_response_summary: aiSummary,
     ai_response_json: JSON.stringify(r),
+    prompt_version: loadedPrompt ? loadedPrompt.version : null,
     exam_identified: r.exam || r.modality || null,
     model_used: 'claude-sonnet-4-20250514',
     documentation_standard: docMode,

@@ -232,6 +232,7 @@ function CRRAdmin() {
     {id:"viewerusage",label:"Viewer Usage",icon:"📊"},
     {id:"usagelog",label:"Usage Log",icon:"📋"},
     {id:"audit",label:"Audit Log",icon:"📋"},
+    {id:"systemprompts",label:"System Prompts",icon:"🤖"},
   ];
 
   if (loading) return (
@@ -284,6 +285,7 @@ function CRRAdmin() {
         {tab==="viewerusage" && <ViewerUsageTab />}
         {tab==="usagelog" && <UsageLogTab />}
         {tab==="audit" && <AuditTab />}
+        {tab==="systemprompts" && <SystemPromptsTab />}
       </div>
       {/* Toast */}
       {toast && (
@@ -901,6 +903,7 @@ function QAReviewsTab(){
         exam_identified: r.exam_identified||null,
         model_used: r.model_used||null,
         documentation_standard: r.documentation_standard||null,
+        prompt_version: r.prompt_version||sess.prompt_version||null,
         region: r.region||null,
         ip_address: r.ip_address||null,
         session: {
@@ -1773,6 +1776,202 @@ function AuditTab(){
     </div>
   );
 }
+
+function SystemPromptsTab(){
+  const [versions,setVersions]=React.useState([]);
+  const [audit,setAudit]=React.useState([]);
+  const [loading,setLoading]=React.useState(true);
+  const [detail,setDetail]=React.useState(null);
+  const [creating,setCreating]=React.useState(false);
+  const [newVer,setNewVer]=React.useState({version:"",label:"",instruction_text:"",changelog:""});
+  const [saving,setSaving]=React.useState(false);
+  const [activating,setActivating]=React.useState(null);
+  const [msg,setMsg]=React.useState(null);
+  const [view,setView]=React.useState("list"); // "list" | "detail" | "create"
+
+  const load = async()=>{
+    setLoading(true);
+    try{
+      const [vr,ar]=await Promise.all([
+        api("/api/admin/system-prompt/versions"),
+        api("/api/admin/system-prompt/audit"),
+      ]);
+      if(vr?.versions) setVersions(vr.versions);
+      if(ar?.audit) setAudit(ar.audit);
+    }catch(e){console.error(e);}
+    finally{setLoading(false);}
+  };
+  React.useEffect(()=>{load();},[]);
+
+  const showDetail = async(ver)=>{
+    try{
+      const r=await api("/api/admin/system-prompt/versions/"+ver);
+      setDetail(r);
+      setView("detail");
+    }catch(e){setMsg({type:"error",text:"Failed to load version: "+e.message});}
+  };
+
+  const startCreate = ()=>{
+    const active=versions.find(v=>v.is_active);
+    if(active){
+      showDetail(active.version).then(()=>{
+        setCreating(true);
+        setView("create");
+      });
+      return;
+    }
+    setNewVer({version:"",label:"",instruction_text:"",changelog:""});
+    setCreating(true);
+    setView("create");
+  };
+
+  const openCreate = (baseText)=>{
+    setNewVer(prev=>({...prev,instruction_text:baseText||""}));
+    setCreating(true);
+    setView("create");
+  };
+
+  const saveNew = async()=>{
+    if(!newVer.version||!newVer.label||!newVer.instruction_text){
+      setMsg({type:"error",text:"Version, label, and instruction text are required"});return;
+    }
+    setSaving(true);
+    try{
+      await api("/api/admin/system-prompt/versions","POST",{...newVer,created_by:"admin"});
+      setMsg({type:"ok",text:"Version "+newVer.version+" created."});
+      setNewVer({version:"",label:"",instruction_text:"",changelog:""});
+      setView("list");
+      await load();
+    }catch(e){setMsg({type:"error",text:"Save failed: "+e.message});}
+    finally{setSaving(false);}
+  };
+
+  const activate = async(ver,action)=>{
+    if(!confirm((action==="rollback"?"Roll back to":"Activate")+" version "+ver+"?")) return;
+    setActivating(ver);
+    try{
+      const endpoint=action==="rollback"
+        ? "/api/admin/system-prompt/rollback/"+ver
+        : "/api/admin/system-prompt/activate/"+ver;
+      await api(endpoint,"POST",{activated_by:"admin",reason:action==="rollback"?"Manual rollback via admin tool":"Activated via admin tool"});
+      setMsg({type:"ok",text:"Version "+ver+(action==="rollback"?" rolled back":" activated")+" successfully."});
+      await load();
+    }catch(e){setMsg({type:"error",text:"Failed: "+e.message});}
+    finally{setActivating(null);}
+  };
+
+  const activeVer = versions.find(v=>v.is_active);
+
+  if(loading) return <div style={{padding:20,color:C.mid}}>Loading…</div>;
+
+  return (
+    <div style={{padding:20,maxWidth:900,margin:"0 auto"}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+        <div>
+          <h2 style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:2}}>System Prompts</h2>
+          <p style={{fontSize:12,color:C.mid,margin:0}}>Version-controlled instruction block for the Triage Advisor AI.</p>
+        </div>
+        {view==="list" && <button onClick={startCreate} style={{padding:"7px 14px",background:C.teal,color:"#fff",border:"none",borderRadius:3,cursor:"pointer",fontWeight:600,fontSize:12}}>+ New Version</button>}
+        {view!=="list" && <button onClick={()=>setView("list")} style={{padding:"7px 14px",background:"#e8eef2",color:C.navy,border:"none",borderRadius:3,cursor:"pointer",fontSize:12}}>← Back to list</button>}
+      </div>
+
+      {msg && <div style={{padding:"8px 12px",borderRadius:3,marginBottom:12,background:msg.type==="ok"?C.addBg:C.delBg,color:msg.type==="ok"?C.add:C.del,fontSize:12,fontWeight:600,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        {msg.text}<span style={{cursor:"pointer",opacity:0.6}} onClick={()=>setMsg(null)}>✕</span>
+      </div>}
+
+      {view==="list" && (<>
+        <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3,marginBottom:20}}>
+          <div style={{background:C.navy,color:"#fff",padding:"10px 14px",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"}}>Versions</div>
+          {versions.length===0 ? <div style={{padding:20,color:C.mid,textAlign:"center"}}>No versions yet</div> :
+          versions.map(v=>(
+            <div key={v.id} style={{padding:"10px 14px",borderBottom:`1px solid ${C.mist}`,display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:2,background:v.is_active?C.addBg:"#f0f4f8",color:v.is_active?C.add:C.mid,minWidth:60,textAlign:"center"}}>{v.is_active?"ACTIVE":"draft"}</span>
+              <span style={{fontFamily:mono,fontSize:13,color:C.navy,fontWeight:600,minWidth:60}}>{v.version}</span>
+              <span style={{fontSize:12,color:C.ink,flex:1}}>{v.label}</span>
+              <span style={{fontSize:11,color:C.mid}}>{v.created_by}</span>
+              <span style={{fontSize:10,color:C.mid,minWidth:130,textAlign:"right"}}>{new Date(v.created_at).toLocaleString()}</span>
+              <button onClick={()=>showDetail(v.version)} style={{padding:"3px 10px",background:"#e8eef2",color:C.navy,border:"none",borderRadius:2,cursor:"pointer",fontSize:11}}>View</button>
+              {!v.is_active && <button disabled={!!activating} onClick={()=>activate(v.version,"activate")} style={{padding:"3px 10px",background:C.teal,color:"#fff",border:"none",borderRadius:2,cursor:"pointer",fontSize:11,opacity:activating===v.version?0.6:1}}>Activate</button>}
+              {!v.is_active && activeVer && <button disabled={!!activating} onClick={()=>activate(v.version,"rollback")} style={{padding:"3px 10px",background:"#e8eef2",color:C.warn,border:`1px solid ${C.warn}`,borderRadius:2,cursor:"pointer",fontSize:11,opacity:activating===v.version?0.6:1}}>Rollback</button>}
+            </div>
+          ))}
+        </div>
+
+        <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3}}>
+          <div style={{background:C.navy,color:"#fff",padding:"10px 14px",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"}}>Activation History</div>
+          {audit.length===0 ? <div style={{padding:20,color:C.mid,textAlign:"center"}}>No audit entries</div> :
+          audit.map(a=>(
+            <div key={a.id} style={{padding:"8px 14px",borderBottom:`1px solid ${C.mist}`,display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:2,background:a.action==="activate"?C.addBg:a.action==="rollback"?C.warnBg:C.chgBg,color:a.action==="activate"?C.add:a.action==="rollback"?C.warn:C.chg,textTransform:"uppercase",minWidth:60}}>{a.action}</span>
+              <span style={{fontFamily:mono,fontSize:12,color:C.navy,fontWeight:600}}>{a.prompt_version}</span>
+              {a.previous_version && <span style={{fontSize:11,color:C.mid}}>← {a.previous_version}</span>}
+              <span style={{fontSize:11,color:C.ink,flex:1}}>{a.reason||""}</span>
+              <span style={{fontSize:11,color:C.mid}}>{a.performed_by}</span>
+              <span style={{fontSize:10,color:C.mid}}>{new Date(a.performed_at).toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
+      </>)}
+
+      {view==="detail" && detail && (
+        <div>
+          <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3,marginBottom:16}}>
+            <div style={{background:C.navy,color:"#fff",padding:"10px 14px",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span>Version {detail.version}{detail.is_active ? " — ACTIVE" : ""}</span>
+              <button onClick={()=>openCreate(detail.instruction_text)} style={{padding:"3px 10px",background:C.teal,color:"#fff",border:"none",borderRadius:2,cursor:"pointer",fontSize:11}}>Fork as new version</button>
+            </div>
+            <div style={{padding:"12px 14px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,fontSize:12}}>
+              <div><span style={{color:C.mid}}>Version: </span><strong>{detail.version}</strong></div>
+              <div><span style={{color:C.mid}}>Status: </span><strong>{detail.is_active?"Active":"Draft"}</strong></div>
+              <div><span style={{color:C.mid}}>Label: </span><span>{detail.label}</span></div>
+              <div><span style={{color:C.mid}}>Created by: </span><span>{detail.created_by}</span></div>
+              <div style={{gridColumn:"1/-1"}}><span style={{color:C.mid}}>Changelog: </span><span>{detail.changelog||"—"}</span></div>
+            </div>
+          </div>
+          <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3}}>
+            <div style={{background:C.navy,color:"#fff",padding:"10px 14px",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"}}>Instruction Text</div>
+            <div style={{padding:14}}>
+              <textarea readOnly value={detail.instruction_text} style={{width:"100%",minHeight:400,fontFamily:mono,fontSize:12,border:`1px solid ${C.rule}`,borderRadius:2,padding:10,boxSizing:"border-box",resize:"vertical",color:C.ink,background:C.mist}} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {view==="create" && (
+        <div style={{background:"#fff",border:`1px solid ${C.rule}`,borderRadius:3}}>
+          <div style={{background:C.navy,color:"#fff",padding:"10px 14px",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"}}>Create New Version</div>
+          <div style={{padding:16,display:"flex",flexDirection:"column",gap:12}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 2fr",gap:12}}>
+              <div>
+                <label style={{fontSize:11,fontWeight:600,color:C.mid,display:"block",marginBottom:4}}>VERSION *</label>
+                <input value={newVer.version} onChange={e=>setNewVer(p=>({...p,version:e.target.value}))} placeholder="e.g. 1.1.0" style={{width:"100%",border:`1px solid ${C.rule}`,borderRadius:2,padding:"6px 8px",fontFamily:mono,fontSize:12,boxSizing:"border-box"}} />
+              </div>
+              <div>
+                <label style={{fontSize:11,fontWeight:600,color:C.mid,display:"block",marginBottom:4}}>LABEL *</label>
+                <input value={newVer.label} onChange={e=>setNewVer(p=>({...p,label:e.target.value}))} placeholder="Short description" style={{width:"100%",border:`1px solid ${C.rule}`,borderRadius:2,padding:"6px 8px",fontFamily:"inherit",fontSize:12,boxSizing:"border-box"}} />
+              </div>
+            </div>
+            <div>
+              <label style={{fontSize:11,fontWeight:600,color:C.mid,display:"block",marginBottom:4}}>CHANGELOG</label>
+              <input value={newVer.changelog} onChange={e=>setNewVer(p=>({...p,changelog:e.target.value}))} placeholder="What changed and why" style={{width:"100%",border:`1px solid ${C.rule}`,borderRadius:2,padding:"6px 8px",fontFamily:"inherit",fontSize:12,boxSizing:"border-box"}} />
+            </div>
+            <div>
+              <label style={{fontSize:11,fontWeight:600,color:C.mid,display:"block",marginBottom:4}}>INSTRUCTION TEXT * <span style={{color:C.mid,fontWeight:400}}>(use {"{{DOC_MODE_INSTRUCTION}}"} as placeholder for the documentation standard text)</span></label>
+              <textarea value={newVer.instruction_text} onChange={e=>setNewVer(p=>({...p,instruction_text:e.target.value}))} rows={42} style={{width:"100%",fontFamily:mono,fontSize:12,border:`1px solid ${C.rule}`,borderRadius:2,padding:10,boxSizing:"border-box",resize:"vertical"}} />
+            </div>
+            <div style={{display:"flex",gap:10,justifyContent:"flex-end"}}>
+              <button onClick={()=>setView("list")} style={{padding:"7px 16px",background:"#e8eef2",color:C.navy,border:"none",borderRadius:3,cursor:"pointer",fontSize:12}}>Cancel</button>
+              <button onClick={saveNew} disabled={saving} style={{padding:"7px 16px",background:C.teal,color:"#fff",border:"none",borderRadius:3,cursor:"pointer",fontWeight:600,fontSize:12,opacity:saving?0.6:1}}>
+                {saving?"Saving…":"Save Version"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 ReactDOM.render(React.createElement(CRRAdmin), document.getElementById("root"));
 </script>

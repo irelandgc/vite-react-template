@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS triage_usage_log (
   presentation_text TEXT,
   ai_response_summary TEXT,
   ai_response_json TEXT,
+  prompt_version TEXT,
   ip_address TEXT
 );
 
@@ -85,6 +86,7 @@ CREATE TABLE IF NOT EXISTS qa_reviews (
   presentation_text TEXT NOT NULL,
   ai_response_summary TEXT NOT NULL,
   ai_response_json TEXT,
+  prompt_version TEXT,
   exam_identified TEXT,
   model_used TEXT,
   documentation_standard TEXT,
@@ -122,6 +124,31 @@ CREATE TABLE IF NOT EXISTS qa_viewer_reviews (
 
 CREATE INDEX IF NOT EXISTS idx_usage_log_timestamp ON triage_usage_log(timestamp);
 CREATE INDEX IF NOT EXISTS idx_usage_log_user ON triage_usage_log(user_name);
+
+-- System prompt versions (TA-009)
+CREATE TABLE IF NOT EXISTS system_prompts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  version TEXT NOT NULL UNIQUE,
+  label TEXT NOT NULL,
+  instruction_text TEXT NOT NULL,
+  changelog TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_by TEXT NOT NULL,
+  is_active INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_sp_active ON system_prompts(is_active);
+CREATE INDEX IF NOT EXISTS idx_sp_version ON system_prompts(version);
+
+CREATE TABLE IF NOT EXISTS system_prompt_audit (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  action TEXT NOT NULL,
+  prompt_version TEXT NOT NULL,
+  previous_version TEXT,
+  performed_at TEXT NOT NULL DEFAULT (datetime('now')),
+  performed_by TEXT NOT NULL,
+  reason TEXT
+);
 
 -- Release log / announcements — visible across all apps via the shared releases page
 CREATE TABLE IF NOT EXISTS releases (

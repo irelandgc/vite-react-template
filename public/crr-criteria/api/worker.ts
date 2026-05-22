@@ -479,8 +479,8 @@ app.post('/api/qa-review', async (c) => {
         score_compound_handling, score_safety_redirect,
         overall_assessment, comments,
         presentation_text, ai_response_summary, ai_response_json,
-        exam_identified, model_used, documentation_standard, region, ip_address
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        prompt_version, exam_identified, model_used, documentation_standard, region, ip_address
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       body.timestamp || now,
       body.session_id || '',
@@ -496,6 +496,7 @@ app.post('/api/qa-review', async (c) => {
       body.presentation_text || '',
       body.ai_response_summary || '',
       body.ai_response_json || null,
+      body.prompt_version || null,
       body.exam_identified || null,
       body.model_used || null,
       body.documentation_standard || null,
@@ -738,6 +739,147 @@ app.put('/api/admin/regions/:regionId', requireAccess, async (c) => {
   }
 });
 
+// ── System Prompt Version Control (TA-009) ───────────────
+
+// GET /api/system-prompt — public, returns active prompt (KV first, D1 fallback)
+app.get('/api/system-prompt', async (c) => {
+  const kv = c.env.KV;
+  const db = c.env.DB;
+  try {
+    const cached = await kv.get('system_prompt:active');
+    if (cached) return c.json(JSON.parse(cached));
+  } catch (_) {}
+  try {
+    const row = await db.prepare(
+      'SELECT version, label, instruction_text, created_at FROM system_prompts WHERE is_active = 1'
+    ).first() as any;
+    if (!row) return c.json({ error: 'No active prompt' }, 404);
+    const result = { version: row.version, label: row.label, instruction_text: row.instruction_text, created_at: row.created_at };
+    try { await kv.put('system_prompt:active', JSON.stringify(result)); } catch (_) {}
+    return c.json(result);
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// GET /api/admin/system-prompt/versions — list all versions (metadata only)
+app.get('/api/admin/system-prompt/versions', requireAccess, async (c) => {
+  const db = c.env.DB;
+  try {
+    const rows = await db.prepare(
+      'SELECT id, version, label, changelog, created_at, created_by, is_active FROM system_prompts ORDER BY id DESC'
+    ).all();
+    return c.json({ versions: rows.results });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// GET /api/admin/system-prompt/versions/:version — full detail including instruction_text
+app.get('/api/admin/system-prompt/versions/:version', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const version = c.req.param('version');
+  try {
+    const row = await db.prepare(
+      'SELECT * FROM system_prompts WHERE version = ?'
+    ).bind(version).first();
+    if (!row) return c.json({ error: 'Version not found' }, 404);
+    return c.json(row);
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// POST /api/admin/system-prompt/versions — create new version (does NOT activate)
+app.post('/api/admin/system-prompt/versions', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const body = await c.req.json();
+  const now = new Date().toISOString();
+  if (!body.version || !body.label || !body.instruction_text || !body.created_by) {
+    return c.json({ error: 'version, label, instruction_text, and created_by are required' }, 400);
+  }
+  try {
+    const result = await db.prepare(
+      'INSERT INTO system_prompts (version, label, instruction_text, changelog, created_at, created_by, is_active) VALUES (?, ?, ?, ?, ?, ?, 0)'
+    ).bind(body.version, body.label, body.instruction_text, body.changelog || null, now, body.created_by).run();
+    await db.prepare(
+      'INSERT INTO system_prompt_audit (action, prompt_version, performed_at, performed_by, reason) VALUES (?, ?, ?, ?, ?)'
+    ).bind('create', body.version, now, body.created_by, body.changelog || null).run();
+    return c.json({ success: true, id: result.meta.last_row_id });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// POST /api/admin/system-prompt/activate/:version — activate a version, update KV, write audit
+app.post('/api/admin/system-prompt/activate/:version', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const kv = c.env.KV;
+  const version = c.req.param('version');
+  const body = await c.req.json();
+  const now = new Date().toISOString();
+  try {
+    const target = await db.prepare(
+      'SELECT version, label, instruction_text, created_at FROM system_prompts WHERE version = ?'
+    ).bind(version).first() as any;
+    if (!target) return c.json({ error: 'Version not found' }, 404);
+    const current = await db.prepare(
+      'SELECT version FROM system_prompts WHERE is_active = 1'
+    ).first() as any;
+    await db.prepare('UPDATE system_prompts SET is_active = 0 WHERE is_active = 1').run();
+    await db.prepare('UPDATE system_prompts SET is_active = 1 WHERE version = ?').bind(version).run();
+    const result = { version: target.version, label: target.label, instruction_text: target.instruction_text, created_at: target.created_at };
+    try { await kv.put('system_prompt:active', JSON.stringify(result)); } catch (_) {}
+    await db.prepare(
+      'INSERT INTO system_prompt_audit (action, prompt_version, previous_version, performed_at, performed_by, reason) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind('activate', version, current?.version || null, now, body.activated_by || 'unknown', body.reason || null).run();
+    return c.json({ success: true, version });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// POST /api/admin/system-prompt/rollback/:version — same as activate, logged as 'rollback'
+app.post('/api/admin/system-prompt/rollback/:version', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const kv = c.env.KV;
+  const version = c.req.param('version');
+  const body = await c.req.json();
+  const now = new Date().toISOString();
+  try {
+    const target = await db.prepare(
+      'SELECT version, label, instruction_text, created_at FROM system_prompts WHERE version = ?'
+    ).bind(version).first() as any;
+    if (!target) return c.json({ error: 'Version not found' }, 404);
+    const current = await db.prepare(
+      'SELECT version FROM system_prompts WHERE is_active = 1'
+    ).first() as any;
+    await db.prepare('UPDATE system_prompts SET is_active = 0 WHERE is_active = 1').run();
+    await db.prepare('UPDATE system_prompts SET is_active = 1 WHERE version = ?').bind(version).run();
+    const result = { version: target.version, label: target.label, instruction_text: target.instruction_text, created_at: target.created_at };
+    try { await kv.put('system_prompt:active', JSON.stringify(result)); } catch (_) {}
+    await db.prepare(
+      'INSERT INTO system_prompt_audit (action, prompt_version, previous_version, performed_at, performed_by, reason) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind('rollback', version, current?.version || null, now, body.activated_by || 'unknown', body.reason || null).run();
+    return c.json({ success: true, version });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// GET /api/admin/system-prompt/audit — audit log, most recent first
+app.get('/api/admin/system-prompt/audit', requireAccess, async (c) => {
+  const db = c.env.DB;
+  try {
+    const rows = await db.prepare(
+      'SELECT * FROM system_prompt_audit ORDER BY id DESC LIMIT 200'
+    ).all();
+    return c.json({ audit: rows.results });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
 // ── Health check ─────────────────────────────────────────
 
 app.get('/api/health', (c) => {
@@ -908,8 +1050,8 @@ app.post('/api/triage/usage-log', async (c) => {
         timestamp, session_id, user_name, user_role,
         exam_identified, verdict, model_used, documentation_standard,
         input_tokens, cache_read_tokens, cache_write_tokens, output_tokens, cost_nzd,
-        presentation_text, ai_response_summary, ai_response_json, ip_address
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        presentation_text, ai_response_summary, ai_response_json, prompt_version, ip_address
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       body.timestamp || now,
       body.session_id || '',
@@ -927,6 +1069,7 @@ app.post('/api/triage/usage-log', async (c) => {
       body.presentation_text || null,
       body.ai_response_summary || null,
       body.ai_response_json || null,
+      body.prompt_version || null,
       ip
     ).run();
     return c.json({ success: true, id: result.meta.last_row_id });
