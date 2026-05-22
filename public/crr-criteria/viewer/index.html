@@ -2512,7 +2512,7 @@ function submitVqaEntry() {
   try { if (reviewerRole) sessionStorage.setItem('crr_viewer_user_role', reviewerRole); } catch(e) {}
 
   var exam = getExamById(TS.examId);
-  var siteKeys = Object.keys(TS.sites || {});
+  var siteKeys = Object.keys(TS.sites || {}).filter(function(k){ return TS.sites[k]; });
   var siteCode = siteKeys.length ? siteKeys[0] : (TS.examId || '');
   var siteLabel = '';
   if (exam && exam.type === 'multisite' && siteKeys.length) {
