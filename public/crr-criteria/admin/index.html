@@ -1837,7 +1837,7 @@ function SystemPromptsTab(){
     }
     setSaving(true);
     try{
-      await api("/api/admin/system-prompt/versions","POST",{...newVer,created_by:"admin"});
+      await api("/api/admin/system-prompt/versions",{method:"POST",body:JSON.stringify({...newVer,created_by:"admin"})});
       setMsg({type:"ok",text:"Version "+newVer.version+" created."});
       setNewVer({version:"",label:"",instruction_text:"",changelog:""});
       setView("list");
@@ -1853,7 +1853,7 @@ function SystemPromptsTab(){
       const endpoint=action==="rollback"
         ? "/api/admin/system-prompt/rollback/"+ver
         : "/api/admin/system-prompt/activate/"+ver;
-      await api(endpoint,"POST",{activated_by:"admin",reason:action==="rollback"?"Manual rollback via admin tool":"Activated via admin tool"});
+      await api(endpoint,{method:"POST",body:JSON.stringify({activated_by:"admin",reason:action==="rollback"?"Manual rollback via admin tool":"Activated via admin tool"})});
       setMsg({type:"ok",text:"Version "+ver+(action==="rollback"?" rolled back":" activated")+" successfully."});
       await load();
     }catch(e){setMsg({type:"error",text:"Failed: "+e.message});}
