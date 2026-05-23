@@ -1674,13 +1674,9 @@ function runAI() {
   if (!lastNote) { lastNote = getEffectiveNote(); }
   if (!lastNote) { return; }
 
-  correctedNote = lastNote; // no separate spell-correction step
+  correctedNote = lastNote;
 
-  var modeLabel = docMode === 'strict' ? 'Strict' : 'Inferred';
-
-  // Animated loading with elapsed time
   var startTime = Date.now();
-  var loadingEl = null;
   document.getElementById('aiPanel').innerHTML =
     '<div class="panel"><div id="aiLoadingBox" style="padding:20px 14px;">' +
     '<div style="display:flex;align-items:center;gap:10px;color:var(--mid);font-size:13px;">' +
@@ -1689,7 +1685,6 @@ function runAI() {
     '<div style="font-size:11px;color:#b0bec8;margin-top:6px;margin-left:34px" id="aiLoadingHint">First assessment loads criteria (~10s). Subsequent assessments use cache (~3s).</div>' +
     '</div></div>';
 
-  // Tick elapsed time
   var ticker = setInterval(function() {
     var el = document.getElementById('aiLoadingMsg');
     if (el) {
@@ -1703,62 +1698,29 @@ function runAI() {
   document.getElementById('methodBadge').textContent = 'Assessing\u2026';
   document.getElementById('methodBadge').className = 'method-badge method-ai';
 
-  fetch('https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/triage/assess', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2400,
-      temperature: 0.1,
-      system: [{ type: 'text', text: buildSystemPrompt(), cache_control: { type: 'ephemeral' } }],
-      messages: [{
-        role: 'user',
-        content: 'Documentation standard: '
-          + (docMode === 'strict'
-            ? 'STRICT \u2014 only explicitly stated facts count.'
-            : 'INFERRED \u2014 reasonable clinical context allowed.')
-          + '\n\nNote: silently correct any obvious typos or voice-to-text errors in the note (e.g. "vison"→"vision", "irsk"→"risk") before assessing, and include the corrected version in your response as "interpreted_note".'
-          + '\n\nAssess this referral note:\n\n' + lastNote
-      }]
-    })
-  })
-  .then(function(resp) {
-    if (!resp.ok) return resp.json().then(function(e){ throw new Error(e.error ? e.error.message : 'API error ' + resp.status); });
-    return resp.json();
-  })
-  .then(function(data) {
+  callTriageAPI(SONNET_MODEL, lastNote)
+  .then(function(r) {
     clearInterval(ticker);
-    var text = data.content && data.content[0] && data.content[0].text;
-    if (!text) throw new Error('Empty response from API');
-    // Strip markdown code fences — handles ```json, ```, or any language tag
-    var clean = text.replace(/^```[a-z]*\s*/i, '').replace(/\s*```\s*$/, '').trim();
-    var usage = data.usage || {};
-    var result;
-    try {
-      result = JSON.parse(clean);
-    } catch(parseErr) {
-      // Log the failed parse before returning so it's visible in the usage log
-      logTriageUsage({ _originalNote: lastNote }, usage, false, clean);
+    if (!r.parseSuccess) {
       document.getElementById('aiPanel').innerHTML =
         '<div class="panel"><div style="padding:12px 14px">' +
         '<div style="background:var(--fail-bg);border-left:3px solid #c62828;border-radius:2px;padding:10px 12px;font-size:12px;color:var(--fail);margin-bottom:8px">' +
-        '<strong>JSON parse error:</strong> ' + esc(parseErr.message) + '</div>' +
+        '<strong>JSON parse error:</strong> ' + esc(r.error ? r.error.message : 'Parse failed') + '</div>' +
         '<div style="font-size:11px;color:var(--mid);margin-bottom:4px">Raw response (first 500 chars):</div>' +
-        '<pre style="font-size:10px;background:var(--lite);padding:8px;border-radius:2px;overflow:auto;max-height:200px;white-space:pre-wrap">' + esc(clean.slice(0,500)) + '</pre>' +
-        '<button class="btn-run-ai" onclick="runCheck()" style="margin-top:10px;margin-bottom:0">Try again ›</button>' +
+        '<pre style="font-size:10px;background:var(--lite);padding:8px;border-radius:2px;overflow:auto;max-height:200px;white-space:pre-wrap">' + esc((r.rawText||'').slice(0,500)) + '</pre>' +
+        '<button class="btn-run-ai" onclick="runCheck()" style="margin-top:10px;margin-bottom:0">Try again \u203a</button>' +
         '</div></div>';
       return;
     }
-    result._usage = usage;
+    var result = r.result;
+    var usage = r.usage;
     result._docMode = docMode;
     recordUsage(usage.input_tokens || 0, usage.cache_read_input_tokens || 0, usage.output_tokens || 0);
     correctedNote = result.interpreted_note || lastNote;
     result._correctedNote = correctedNote;
-    result._originalNote = lastNote;
     lastAiResult = result;
     renderAIResult(result);
     renderCriteriaBrowser(result);
-    logTriageUsage(result, usage, true);
   })
   .catch(function(err) {
     clearInterval(ticker);
@@ -1774,7 +1736,6 @@ function runAI() {
     document.getElementById('methodBadge').className = 'method-badge method-ai';
   });
 }
-
 // ── Criteria Browser ─────────────────────────────────────────────────────────
 // Renders the full criteria for the exam identified by the AI result
 
@@ -2413,15 +2374,17 @@ function sendAssessmentToForm() {
 }
 
 // ── Usage logging ─────────────────────────────────────────
-function calcCostNzd(usage) {
+function calcCostNzd(usage, model) {
+  var isOpus = model && model.indexOf('opus') !== -1;
   var inputTokens = (usage.input_tokens || 0) - (usage.cache_read_input_tokens || 0) - (usage.cache_creation_input_tokens || 0);
   if (inputTokens < 0) inputTokens = 0;
   var cacheRead = usage.cache_read_input_tokens || 0;
   var cacheWrite = usage.cache_creation_input_tokens || 0;
   var output = usage.output_tokens || 0;
-  // Sonnet pricing USD/M tokens: input $3, cache_write $3.75, cache_read $0.30, output $15
-  var costUsd = (inputTokens * 3 + cacheWrite * 3.75 + cacheRead * 0.30 + output * 15) / 1000000;
-  return Math.round(costUsd * 1.67 * 10000) / 10000; // NZD, 4 decimal places
+  // USD/M tokens — Sonnet: in $3, cw $3.75, cr $0.30, out $15; Opus: in $5, cw $6.25, cr $0.50, out $25
+  var ip = isOpus ? 5.0 : 3.0, cw = isOpus ? 6.25 : 3.75, cr = isOpus ? 0.50 : 0.30, op = isOpus ? 25.0 : 15.0;
+  var costUsd = (inputTokens * ip + cacheWrite * cw + cacheRead * cr + output * op) / 1000000;
+  return Math.round(costUsd * 1.67 * 10000) / 10000;
 }
 
 function logTriageUsage(result, usage, parseSuccess, rawText) {
@@ -2443,13 +2406,13 @@ function logTriageUsage(result, usage, parseSuccess, rawText) {
       user_role: userRole,
       exam_identified: result.exam || result.modality || null,
       verdict: result.verdict_title || result.verdict || null,
-      model_used: 'claude-sonnet-4-20250514',
+      model_used: result._model || 'claude-sonnet-4-20250514',
       documentation_standard: docMode,
       input_tokens: usage.input_tokens || 0,
       cache_read_tokens: usage.cache_read_input_tokens || 0,
       cache_write_tokens: usage.cache_creation_input_tokens || 0,
       output_tokens: usage.output_tokens || 0,
-      cost_nzd: calcCostNzd(usage),
+      cost_nzd: calcCostNzd(usage, result._model),
       presentation_text: result._originalNote || lastNote || '',
       ai_response_summary: aiSummary,
       ai_response_json: parseSuccess ? JSON.stringify(result) : (rawText || null),
@@ -2462,6 +2425,73 @@ function logTriageUsage(result, usage, parseSuccess, rawText) {
       body: JSON.stringify(payload)
     }).catch(function(){});
   } catch(e) {}
+}
+
+// ── Shared API call function ───────────────────────────────────────────────
+// Returns Promise<{result, usage, parseSuccess, rawText, error}>
+// Handles prompt assembly, API call, fence stripping, JSON parse, and usage logging.
+function callTriageAPI(model, note) {
+  var sys = buildSystemPrompt();
+  var docModeStr = 'Documentation standard: '
+    + (docMode === 'strict'
+      ? 'STRICT \u2014 only explicitly stated facts count.'
+      : 'INFERRED \u2014 reasonable clinical context allowed.');
+  var userMsg = docModeStr
+    + '\n\nNote: silently correct any obvious typos or voice-to-text errors in the note (e.g. "vison"\u2192"vision", "irsk"\u2192"risk") before assessing, and include the corrected version in your response as "interpreted_note".'
+    + '\n\nAssess this referral note:\n\n' + note;
+  return fetch('https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/triage/assess', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: model,
+      max_tokens: 2400,
+      temperature: 0.1,
+      system: [{ type: 'text', text: sys, cache_control: { type: 'ephemeral' } }],
+      messages: [{ role: 'user', content: userMsg }]
+    })
+  })
+  .then(function(resp) {
+    if (!resp.ok) return resp.json().then(function(e){ throw new Error(e.error ? e.error.message : 'API error ' + resp.status); });
+    return resp.json();
+  })
+  .then(function(data) {
+    var text = data.content && data.content[0] && data.content[0].text;
+    if (!text) throw new Error('Empty response from API');
+    var clean = text
+      .replace(/^```[a-z]*\s*/i, '')
+      .replace(/\s*```[\s\S]*/, '')
+      .trim();
+    // Depth-counting extraction: finds the matching } for the first {,
+    // ignoring any } characters in trailing explanation text.
+    var jStart = clean.indexOf('{');
+    if (jStart !== -1) {
+      var depth = 0, inStr = false, escCh = false, jEnd = -1;
+      for (var ci = jStart; ci < clean.length; ci++) {
+        var ch = clean[ci];
+        if (escCh) { escCh = false; continue; }
+        if (ch === '\\' && inStr) { escCh = true; continue; }
+        if (ch === '"') { inStr = !inStr; continue; }
+        if (!inStr) {
+          if (ch === '{') depth++;
+          else if (ch === '}') { if (--depth === 0) { jEnd = ci; break; } }
+        }
+      }
+      if (jEnd !== -1) clean = clean.slice(jStart, jEnd + 1);
+    }
+    var usage = data.usage || {};
+    var result;
+    try {
+      result = JSON.parse(clean);
+    } catch(parseErr) {
+      logTriageUsage({ _originalNote: note }, usage, false, clean);
+      return { result: null, usage: usage, parseSuccess: false, rawText: clean, error: parseErr };
+    }
+    result._usage = usage;
+    result._model = model;
+    result._originalNote = note;
+    logTriageUsage(result, usage, true);
+    return { result: result, usage: usage, parseSuccess: true, rawText: clean };
+  });
 }
 
 // ── User identity for usage logging ─────────────────────
@@ -2776,40 +2806,19 @@ function runComparison() {
   });
 }
 
-function callModelForComp(model, note, bodyId, costId, isOpus, cb) {
-  var sys = buildSystemPrompt();
-  var docModeStr = docMode === 'strict'
-    ? 'Documentation standard: STRICT \u2014 only explicitly stated facts count.'
-    : 'Documentation standard: INFERRED \u2014 reasonable clinical context allowed.';
-  var userMsg = docModeStr + '\n\nNote: silently correct any obvious typos or voice-to-text errors in the note before assessing, and include the corrected version in your response as "interpreted_note".\n\nAssess this referral note:\n\n' + note;
-
-  fetch('https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/triage/assess', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: model,
-      max_tokens: 2400,
-      temperature: 0.1,
-      system: [{ type: 'text', text: sys, cache_control: { type: 'ephemeral' } }],
-      messages: [{ role: 'user', content: userMsg }]
-    })
-  })
-  .then(function(resp) {
-    if (!resp.ok) return resp.json().then(function(e){ throw new Error(e.error ? e.error.message : 'API error ' + resp.status); });
-    return resp.json();
-  })
-  .then(function(data) {
-    var text = data.content && data.content[0] && data.content[0].text;
-    if (!text) throw new Error('Empty response');
-    var clean = text.replace(/^```(?:json)?\s*/i,'').replace(/\s*```\s*$/,'').trim();
-    var result = JSON.parse(clean);
-    result._usage = data.usage;
-    result._model = model;
-    // Render
+function callModelForComp(model, note, bodyId, costId, _unused, cb) {
+  callTriageAPI(model, note)
+  .then(function(r) {
+    if (!r.parseSuccess) {
+      var el = document.getElementById(bodyId);
+      if (el) el.innerHTML = '<div class="panel"><div style="background:var(--fail-bg);border-left:3px solid #c62828;padding:10px 12px;font-size:12px;color:var(--fail);margin:8px"><strong>Parse error:</strong> ' + esc(r.error ? r.error.message : 'JSON parse failed') + '</div></div>';
+      cb(null, r.error || new Error('Parse failed'));
+      return;
+    }
+    var result = r.result;
     renderCompResult(result, bodyId);
-    var cost = nzdCompCost(data.usage, isOpus);
     var costEl = document.getElementById(costId);
-    if (costEl) costEl.textContent = 'NZ$' + cost;
+    if (costEl) costEl.textContent = 'NZ$' + calcCostNzd(r.usage, model);
     cb(result, null);
   })
   .catch(function(e) {
@@ -2819,13 +2828,7 @@ function callModelForComp(model, note, bodyId, costId, isOpus, cb) {
   });
 }
 
-function nzdCompCost(usage, isOpus) {
-  var ip = isOpus ? 5.0 : 3.0, op = isOpus ? 25.0 : 15.0, cp = isOpus ? 0.5 : 0.3;
-  var inp = ((usage.input_tokens||0) - (usage.cache_read_input_tokens||0)) * ip / 1e6;
-  var cac = (usage.cache_read_input_tokens||0) * cp / 1e6;
-  var out = (usage.output_tokens||0) * op / 1e6;
-  return ((inp + cac + out) * 1.65).toFixed(4);
-}
+
 
 function renderCompResult(r, bodyId) {
   var el = document.getElementById(bodyId);
@@ -2909,14 +2912,14 @@ function buildCompEntry(note, s, o) {
       met: (s.met_criteria||[]).length, missing: (s.missing_criteria||[]).length,
       safety_alert: s.safety_alert||null, redirect: s.redirect||null,
       not_funded: s.not_funded_flag||false,
-      cost_nzd: nzdCompCost(s._usage||{}, false), usage: s._usage
+      cost_nzd: calcCostNzd(s._usage||{}, s._model), usage: s._usage
     },
     opus: {
       verdict: o.verdict, exam: o.exam, priority: o.priority,
       met: (o.met_criteria||[]).length, missing: (o.missing_criteria||[]).length,
       safety_alert: o.safety_alert||null, redirect: o.redirect||null,
       not_funded: o.not_funded_flag||false,
-      cost_nzd: nzdCompCost(o._usage||{}, true), usage: o._usage
+      cost_nzd: calcCostNzd(o._usage||{}, o._model), usage: o._usage
     },
     _sonnet_full: s,
     _opus_full: o
