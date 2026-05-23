@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS triage_usage_log (
   ai_response_summary TEXT,
   ai_response_json TEXT,
   prompt_version TEXT,
+  parse_success INTEGER DEFAULT 1,
   ip_address TEXT
 );
 
