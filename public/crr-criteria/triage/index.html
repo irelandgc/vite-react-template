@@ -2438,7 +2438,8 @@ function callTriageAPI(model, note) {
       : 'INFERRED \u2014 reasonable clinical context allowed.');
   var userMsg = docModeStr
     + '\n\nNote: silently correct any obvious typos or voice-to-text errors in the note (e.g. "vison"\u2192"vision", "irsk"\u2192"risk") before assessing, and include the corrected version in your response as "interpreted_note".'
-    + '\n\nAssess this referral note:\n\n' + note;
+    + '\n\nAssess this referral note:\n\n' + note
+    + '\n\nIMPORTANT: Respond with ONLY the JSON object as specified. No preamble, no explanation, no commentary \u2014 even for safety alerts or redirects. Express urgency through the safety_alert and redirect fields in the JSON.';
   return fetch('https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/triage/assess', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
