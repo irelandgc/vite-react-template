@@ -1,0 +1,475 @@
+{
+  "test_run": {
+    "date": "2026-05-23T23:13:55.118Z",
+    "prompt_version": "2.2.0",
+    "model": "claude-sonnet-4-20250514",
+    "mode": "strict",
+    "paediatric_detection": "enabled"
+  },
+  "summary": {
+    "total": 20,
+    "improved": 2,
+    "unchanged": 6,
+    "regressed": 12
+  },
+  "results": [
+    {
+      "case_id": "RP-000",
+      "qa_id": 13,
+      "exam": "CT Head",
+      "paediatric": false,
+      "clinical_note": "45 maori woman with 2/12 h/o progressively worsening HA present nocturnally and first thing in the morning with associated blurred vision and nausea",
+      "ai_response": {
+        "verdict": "proceeds",
+        "verdict_title": "Referral likely to proceed",
+        "verdict_summary": "Meets P2 criteria for change in pattern of headaches with progressive increase in frequency or severity, associated with persistent nausea/vomiting and objective neurological deficit (blurred vision).",
+        "priority": "P2",
+        "criteria_page": "p20",
+        "met_criteria": [
+          "Change in pattern of headaches with progressive increase in frequency or severity [p20]",
+          "Associated with persistent nausea/vomiting (not typical migraine) [p20]",
+          "Objective neurological deficit (blurred vision) [p20]"
+        ],
+        "missing_criteria": [],
+        "add_to_note": [],
+        "suggested_wording": null,
+        "not_funded_flag": false,
+        "safety_alert": null,
+        "redirect": null,
+        "notes": null
+      },
+      "previous_verdict_v2": "Proceeds — P2 headache pathway met",
+      "evaluator_verdict": "Correct — should proceed",
+      "evaluator_comment": "Correct verdict. Progressive worsening HA with nocturnal/morning pattern, nausea, blurred vision clearly meets criteria.",
+      "regression_status": "unchanged",
+      "notes": "Verdict: proceeds. Priority: P2. Met: 3. Missing: 0."
+    },
+    {
+      "case_id": "RP-001",
+      "qa_id": 16,
+      "exam": "CT Chest/Abdomen/Pelvis",
+      "paediatric": false,
+      "clinical_note": "65yo male w/ unexplained wt loss 5% over past 6/12 with no localising symptoms or signs. Hb mildly low. Ex-smoker.",
+      "ai_response": {
+        "verdict": "at_risk",
+        "verdict_title": "Referral at risk — add missing information",
+        "verdict_summary": "Weight loss criterion met but missing documentation of 2+ abnormal blood results required for P2 pathway.",
+        "priority": "P2",
+        "criteria_page": "p10",
+        "met_criteria": [
+          "Male >50 with strong suspicion of malignancy, no focal pathology [p10]",
+          "Unintentional unexplained weight loss >5% over 3-6 months [p10]",
+          "Low Hb [p10]"
+        ],
+        "missing_criteria": [
+          "2+ of: raised CRP, low Hb, raised Ca, high platelets, high ALP, low albumin — persistent on repeat after 3 weeks [p10]"
+        ],
+        "add_to_note": [
+          "Document results for CRP, Ca, platelets, ALP, albumin to complete the 2+ abnormal bloods requirement",
+          "Confirm blood results are persistent on repeat testing after 3 weeks"
+        ],
+        "suggested_wording": "65yo male with unexplained weight loss 5% over past 6 months with no localising symptoms or signs. Ex-smoker. Blood results show low Hb [value], raised CRP [value], raised Ca [value] — persistent on repeat testing after 3 weeks. Strong suspicion of underlying malignancy with no focal pathology identified on examination or initial investigations.",
+        "not_funded_flag": false,
+        "safety_alert": null,
+        "redirect": null,
+        "notes": "Patient meets the first P2 pathway (male >50 with weight loss) but the second P2 pathway requiring 2+ abnormal bloods would provide stronger justification. Only low Hb is documented — need at least one more abnormal result from CRP, Ca, platelets, ALP, or albumin."
+      },
+      "previous_verdict_v2": "Declined — demanded specific Hb numeric value",
+      "evaluator_verdict": "At risk — should accept Hb mildly low, still needs 2nd abnormal blood",
+      "evaluator_comment": "\"Hb mildly low\" should meet \"low Hb\" criterion without numeric value. Should flag only 1 of 2 required abnormal bloods.",
+      "regression_status": "unchanged",
+      "notes": "Verdict: at_risk. Priority: P2. Met: 3. Missing: 1."
+    },
+    {
+      "case_id": "RP-002",
+      "qa_id": 17,
+      "exam": "Ultrasound Abdomen",
+      "paediatric": false,
+      "clinical_note": "61yo european male newly diagnosed autoimmune hepatitis – liver edge felt just below RCM. Screen for HCC, cirrhosis",
+      "ai_response": {
+        "verdict": "proceeds",
+        "verdict_title": "Referral likely to proceed",
+        "verdict_summary": "HCC surveillance pathway is met with gastroenterologist recommendation implied by autoimmune hepatitis diagnosis.",
+        "priority": "S3",
+        "criteria_page": "p31",
+        "met_criteria": [
+          "HCC surveillance using liver ultrasound as initially recommended by a gastroenterologist or other secondary care specialist, or as recommended by an agreed local pathway [p31]",
+          "Non-pulsatile abdominal mass and suspected enlarged liver on examination [p31]"
+        ],
+        "missing_criteria": [],
+        "add_to_note": [],
+        "suggested_wording": null,
+        "not_funded_flag": false,
+        "safety_alert": null,
+        "redirect": null,
+        "notes": "Autoimmune hepatitis diagnosis implies specialist involvement. The referral matches both HCC surveillance (S3 priority) and hepatomegaly assessment (P3 priority) pathways — S3 takes precedence as the higher-priority accepting pathway."
+      },
+      "previous_verdict_v2": "Declined — HCC surveillance gateway blocked hepatomegaly acceptance",
+      "evaluator_verdict": "Proceeds — hepatomegaly pathway independently met",
+      "evaluator_comment": "Should accept on hepatomegaly pathway. HCC surveillance gateway advisory only, not blocking.",
+      "regression_status": "improved",
+      "notes": "Verdict: proceeds. Priority: S3. Met: 2. Missing: 0."
+    },
+    {
+      "case_id": "RP-003",
+      "qa_id": 18,
+      "exam": "CT Head",
+      "paediatric": false,
+      "clinical_note": "64yo f w/ sudden onset R facial numbness + diplopia, lasting 10min. O/E: reduced sensation R face cf L, FROEM without diplopia. Obs OK, pulse regular. ?TIA",
+      "ai_response": {
+        "verdict": "proceeds",
+        "verdict_title": "Referral likely to proceed",
+        "verdict_summary": "Focal neurological signs are documented, meeting Acute 48hr criteria for CT Head.",
+        "priority": "Acute 48hr",
+        "criteria_page": "p20",
+        "met_criteria": [
+          "Focal neurological signs [p20]"
+        ],
+        "missing_criteria": [],
+        "add_to_note": [],
+        "suggested_wording": null,
+        "not_funded_flag": false,
+        "safety_alert": null,
+        "redirect": null,
+        "notes": "Note: TIA pathway also referenced but would require BPAC TIA decision support tool completion or HNZ neurologist/stroke specialist recommendation for CT appropriateness — consider completing BPAC tool or seeking specialist advice for comprehensive TIA assessment."
+      },
+      "previous_verdict_v2": "Declined — ?TIA triggered mandatory gateway, overrode focal neuro signs",
+      "evaluator_verdict": "Proceeds — focal neurological signs pathway independently met",
+      "evaluator_comment": "?TIA is a differential. Focal neuro signs independently meet criteria. TIA gateway advisory only.",
+      "regression_status": "improved",
+      "notes": "Verdict: proceeds. Priority: Acute 48hr. Met: 1. Missing: 0."
+    },
+    {
+      "case_id": "RP-004",
+      "qa_id": 19,
+      "exam": "CT Head",
+      "paediatric": false,
+      "clinical_note": "48yo m w/ 8/52 h/o progressive HA – bilateral – sometimes associated nausea – dizziness and vertigo over this period (normal hearing + vision testing). ?SOL",
+      "ai_response": {
+        "verdict": "proceeds",
+        "verdict_title": "Referral likely to proceed",
+        "verdict_summary": "Meets P2 criteria for progressive headache with associated persistent nausea/vomiting.",
+        "priority": "P2",
+        "criteria_page": "p20",
+        "met_criteria": [
+          "Change in pattern of headaches with progressive increase in frequency or severity [p20]",
+          "Associated with persistent nausea/vomiting (not typical migraine) [p20]"
+        ],
+        "missing_criteria": [],
+        "add_to_note": [],
+        "suggested_wording": null,
+        "not_funded_flag": false,
+        "safety_alert": null,
+        "redirect": null,
+        "notes": "Note: ?SOL (queried space-occupying lesion) also referenced but this is a differential consideration rather than a separate pathway requirement."
+      },
+      "previous_verdict_v2": "At risk — \"change in pattern\" flagged as not clearly documented despite \"progressive\"",
+      "evaluator_verdict": "At risk — \"progressive\" meets pattern change; still missing one associated feature",
+      "evaluator_comment": "\"Progressive\" should satisfy change in pattern element. Still needs Valsalva/persistent nausea/neuro/malignancy.",
+      "regression_status": "unchanged",
+      "notes": "Verdict: proceeds. Priority: P2. Met: 2. Missing: 0."
+    },
+    {
+      "case_id": "RP-005",
+      "qa_id": 20,
+      "exam": "Knee X-ray",
+      "paediatric": true,
+      "clinical_note": "8yo boy 5/12 h/o progressive pain R lower leg – ?knee ?ankle. Pain during the day and night. Limp at times. Stopping him from doing normal activities (basketball and karate). R/O overt malignancy.",
+      "ai_response": {
+        "verdict": "proceeds",
+        "verdict_title": "Referral likely to proceed",
+        "verdict_summary": "Meets criteria for urgent knee X-ray due to persistent knee pain for 5 months with pain at rest and night-waking.",
+        "priority": "P2",
+        "criteria_page": "p104",
+        "met_criteria": [
+          "Undiagnosed persistent knee pain for one week or more with pain at rest or night-waking with pain [p104]"
+        ],
+        "missing_criteria": [],
+        "add_to_note": [],
+        "suggested_wording": null,
+        "not_funded_flag": false,
+        "safety_alert": null,
+        "redirect": null,
+        "notes": "Note: Given the location uncertainty (?knee ?ankle) and concern for malignancy, consider also requesting ankle X-ray if clinical examination suggests ankle involvement. The 5-month duration of progressive pain with functional impairment and night pain warrants urgent imaging to exclude serious pathology including malignancy."
+      },
+      "previous_verdict_v2": "Proceeds — paediatric pathway met",
+      "evaluator_verdict": "Proceeds — paediatric bone pain criteria met",
+      "evaluator_comment": "Progressive pain, night pain, functional impairment in child. Should proceed on paediatric pathway.",
+      "regression_status": "unchanged",
+      "notes": "Verdict: proceeds. Priority: P2. Met: 1. Missing: 0. [paediatric criteria]"
+    },
+    {
+      "case_id": "RP-006",
+      "qa_id": 21,
+      "exam": "Renal Ultrasound",
+      "paediatric": false,
+      "clinical_note": "75yo m w/ new AKI, eGFR 3 (normally 55). No clear cause.",
+      "ai_response": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation requires urgent secondary care assessment for acute kidney injury management rather than community imaging.",
+        "priority": null,
+        "criteria_page": "p53",
+        "met_criteria": [
+          "Acute renal function deterioration — serum creatinine increase documented [p53]"
+        ],
+        "missing_criteria": [],
+        "add_to_note": [],
+        "suggested_wording": null,
+        "not_funded_flag": false,
+        "safety_alert": "Severe acute kidney injury with eGFR 3 requires immediate secondary care assessment and management, not community imaging",
+        "redirect": "Acute kidney injury — manage according to Acute Kidney Injury pathway or seek advice from relevant secondary care specialist",
+        "notes": "While the note documents acute renal function deterioration, an eGFR of 3 represents severe acute kidney injury requiring urgent nephrology input and hospital-based management rather than community ultrasound imaging."
+      },
+      "previous_verdict_v2": "Proceeds P2 — found P2 only, missed P1 and conflicting dispositions",
+      "evaluator_verdict": "Proceeds — surface P1 AKI and P2, note conflicting dispositions",
+      "evaluator_comment": "Should surface all matching pathways. eGFR 3 is severe AKI — should flag P1 Acute 48hr.",
+      "regression_status": "regressed",
+      "notes": "Verdict: declined. Priority: n/a. Met: 1. Missing: 0. Redirect: Acute kidney injury — manage according to Acute Kidney Injur"
+    },
+    {
+      "case_id": "LP-001",
+      "qa_id": 8,
+      "exam": "Chest X-ray",
+      "paediatric": false,
+      "clinical_note": "55 yo man, 3 days cough, fever and shortness of breath",
+      "ai_response": {
+        "verdict": "proceeds",
+        "verdict_title": "Referral likely to proceed",
+        "verdict_summary": "Meets criteria for acute CXR due to suspected community-acquired pneumonia with fever and respiratory symptoms.",
+        "priority": "Acute 24hr",
+        "criteria_page": "p65",
+        "met_criteria": [
+          "Suspected community-acquired pneumonia (CAP) with unexpectedly severe or atypical presentation, or patient considered at risk of underlying lung pathology [p65]"
+        ],
+        "missing_criteria": [],
+        "add_to_note": [],
+        "suggested_wording": null,
+        "not_funded_flag": false,
+        "safety_alert": null,
+        "redirect": null,
+        "notes": null
+      },
+      "previous_verdict_v2": "Proceeds — community acquired pneumonia criteria met",
+      "evaluator_verdict": "Proceeds — CAP criteria met",
+      "evaluator_comment": "Classic CAP presentation. Should proceed.",
+      "regression_status": "unchanged",
+      "notes": "Verdict: proceeds. Priority: Acute 24hr. Met: 1. Missing: 0."
+    },
+    {
+      "case_id": "LP-002",
+      "qa_id": 9,
+      "exam": "Spine X-ray",
+      "paediatric": false,
+      "clinical_note": "3 months lower back pain after stepping down from a ladder. no radiation, no bowel symptoms. no fevers. not tender to palpation. normal lower limb exam.",
+      "ai_response": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "Back pain with recent trauma mechanism should be funded through ACC, not CRR.",
+        "priority": null,
+        "criteria_page": "p77",
+        "met_criteria": [
+          "Lower back pain documented [p77]"
+        ],
+        "missing_criteria": [],
+        "add_to_note": [],
+        "suggested_wording": null,
+        "not_funded_flag": false,
+        "safety_alert": null,
+        "redirect": "History of recent trauma — request imaging via ACC funding",
+        "notes": "The stepping down from a ladder represents a trauma mechanism. Per criteria: 'History of recent trauma — request imaging via ACC funding.' This referral should be redirected to ACC rather than processed through CRR."
+      },
+      "previous_verdict_v2": "Redirect — trauma mechanism should go through ACC",
+      "evaluator_verdict": "Redirect to ACC — trauma mechanism",
+      "evaluator_comment": "Mechanism of injury (stepping down from ladder) = trauma = ACC funding pathway, not CRR.",
+      "regression_status": "unchanged",
+      "notes": "Verdict: declined. Priority: n/a. Met: 1. Missing: 0. Redirect: History of recent trauma — request imaging via ACC funding"
+    },
+    {
+      "case_id": "LP-003",
+      "qa_id": 10,
+      "exam": "Ultrasound Pelvis",
+      "paediatric": false,
+      "clinical_note": "56 yo post menopausal woman on hormone replacement therapy with 2 days of PV bleeding",
+      "ai_response": {
+        "verdict": "at_risk",
+        "verdict_title": "Referral at risk — add missing information",
+        "verdict_summary": "Post-menopausal bleeding pathway identified but missing duration since starting MHT and type of MHT to determine if P2 criteria are met.",
+        "priority": "P2",
+        "criteria_page": "p46",
+        "met_criteria": [
+          "Post-menopausal bleeding (vaginal bleeding after >12 months amenorrhoea around expected age of menopause approximately 50 years) [p46]",
+          "On hormone replacement therapy [p46]"
+        ],
+        "missing_criteria": [
+          "Duration since starting MHT (>6 months required for continuous combined MHT pathway) [p46]",
+          "Type of MHT (continuous combined vs other) [p46]"
+        ],
+        "add_to_note": [
+          "Duration since starting hormone replacement therapy",
+          "Type of hormone replacement therapy (continuous combined or other)"
+        ],
+        "suggested_wording": "56 yo post menopausal woman on [specify type] hormone replacement therapy for [specify duration] with 2 days of PV bleeding",
+        "not_funded_flag": false,
+        "safety_alert": null,
+        "redirect": null,
+        "notes": "Two potential P2 pathways: (1) General post-menopausal bleeding, or (2) Persistent post-menopausal bleeding on continuous combined MHT >6 months since starting therapy. Need MHT details to determine which applies."
+      },
+      "previous_verdict_v2": "Proceeds — postmenopausal bleeding criteria met",
+      "evaluator_verdict": "Proceeds — postmenopausal bleeding",
+      "evaluator_comment": "PMB on HRT. Should proceed. HRT does not exclude CRR eligibility.",
+      "regression_status": "regressed",
+      "notes": "Verdict: at_risk. Priority: P2. Met: 2. Missing: 2."
+    },
+    {
+      "case_id": "LP-004",
+      "qa_id": 11,
+      "exam": "Ultrasound Pelvis",
+      "paediatric": false,
+      "clinical_note": "35yo with Mirena, recent lower abdominal pain and pv bleeding ? IUD malpositioned",
+      "ai_response": {
+        "error": "API 429: Too Many Requests"
+      },
+      "previous_verdict_v2": "Proceeds — IUD assessment criteria met",
+      "evaluator_verdict": "Proceeds — IUD/Mirena malposition assessment",
+      "evaluator_comment": "Pain and bleeding with possible IUD malposition. Should proceed.",
+      "regression_status": "regressed",
+      "notes": "Error: API 429: Too Many Requests"
+    },
+    {
+      "case_id": "CR-001",
+      "qa_id": 22,
+      "exam": "Chest X-ray",
+      "paediatric": false,
+      "clinical_note": "42 yr old homeless patient with fever productive cough, smoker, unsure re wt loss. Fine lower basal crepitus, mild tachy,",
+      "ai_response": {
+        "error": "API 429: Too Many Requests"
+      },
+      "previous_verdict_v2": "Proceeds — CAP/TB concern criteria met",
+      "evaluator_verdict": "Proceeds — CAP or TB concern",
+      "evaluator_comment": "Homeless, smoker, productive cough, fever, crepitus, tachycardia. Should proceed — CAP or TB screening.",
+      "regression_status": "regressed",
+      "notes": "Error: API 429: Too Many Requests"
+    },
+    {
+      "case_id": "CR-002",
+      "qa_id": 23,
+      "exam": "Hip X-ray",
+      "paediatric": true,
+      "clinical_note": "13 year old boy with R knee pain for past few weeks, staying with grandparents in town holidays and usually lives rurally. Knee examination is normal no fever, mild limp, restricted ROM R hip mild pain. No recent illness",
+      "ai_response": {
+        "error": "API 429: Too Many Requests"
+      },
+      "previous_verdict_v2": "Proceeds — referred knee pain with restricted hip ROM — SUFE concern",
+      "evaluator_verdict": "Proceeds — SUFE/hip pathology concern",
+      "evaluator_comment": "Knee exam normal, restricted hip ROM in adolescent male — classic SUFE presentation. Should proceed with hip X-ray.",
+      "regression_status": "regressed",
+      "notes": "Error: API 429: Too Many Requests"
+    },
+    {
+      "case_id": "CR-003",
+      "qa_id": 25,
+      "exam": "Renal Ultrasound",
+      "paediatric": false,
+      "clinical_note": "Persisting microscopic haematuria in usually well and active 64 year old lady works as a hairdresser all her life, non smoker, No infection on microscopy, no wt loss or other symptoms",
+      "ai_response": {
+        "error": "API 429: Too Many Requests"
+      },
+      "previous_verdict_v2": "Proceeds — microscopic haematuria criteria met",
+      "evaluator_verdict": "Proceeds — persistent microscopic haematuria, no infection",
+      "evaluator_comment": "Persistent microscopic haematuria, infection excluded. Should proceed.",
+      "regression_status": "regressed",
+      "notes": "Error: API 429: Too Many Requests"
+    },
+    {
+      "case_id": "TEST-001",
+      "qa_id": null,
+      "exam": "CT Chest/Abdomen/Pelvis",
+      "paediatric": false,
+      "clinical_note": "62yo male w/ unexplained weight loss 8% over 4 months. No focal pathology. CRP raised, Hb low, albumin low. Ex-smoker.",
+      "ai_response": {
+        "error": "API 429: Too Many Requests"
+      },
+      "previous_verdict_v2": "Declined or at_risk — 4 months may have been flagged as below 6-month threshold",
+      "evaluator_verdict": "Proceeds — all CT CAP criteria met (3 abnormal bloods, weight loss ≥5% over ≥3 months)",
+      "evaluator_comment": "4 months meets 3-6 month window. 3 abnormal bloods documented. Should proceed.",
+      "regression_status": "regressed",
+      "notes": "Error: API 429: Too Many Requests"
+    },
+    {
+      "case_id": "TEST-003",
+      "qa_id": null,
+      "exam": "CT Head",
+      "paediatric": false,
+      "clinical_note": "58yo m w/ sudden onset L arm weakness and facial droop, resolved after 20 minutes. O/E: mild residual L facial weakness. BP 165/95. ?TIA",
+      "ai_response": {
+        "error": "API 429: Too Many Requests"
+      },
+      "previous_verdict_v2": "Declined — TIA gateway required; no residual focal signs",
+      "evaluator_verdict": "Proceeds — focal neuro signs independently met; TIA gateway advisory",
+      "evaluator_comment": "Residual focal weakness documented. Should proceed on focal neuro pathway.",
+      "regression_status": "regressed",
+      "notes": "Error: API 429: Too Many Requests"
+    },
+    {
+      "case_id": "TEST-004",
+      "qa_id": null,
+      "exam": "Ultrasound Abdomen",
+      "paediatric": false,
+      "clinical_note": "55yo male, known Hep C. Liver palpable 3cm below costal margin, firm and non-tender. Referred for HCC surveillance and assessment of hepatomegaly.",
+      "ai_response": {
+        "error": "API 429: Too Many Requests"
+      },
+      "previous_verdict_v2": "Declined — HCC gateway blocked",
+      "evaluator_verdict": "Proceeds — hepatomegaly pathway independently met",
+      "evaluator_comment": "Hepatomegaly documented (3cm below costal margin). Should proceed on hepatomegaly pathway.",
+      "regression_status": "regressed",
+      "notes": "Error: API 429: Too Many Requests"
+    },
+    {
+      "case_id": "TEST-005",
+      "qa_id": null,
+      "exam": "Renal Ultrasound",
+      "paediatric": false,
+      "clinical_note": "68yo f w/ acute kidney injury, eGFR dropped from 60 to 12 over 5 days. No obstruction suspected. No clear cause identified.",
+      "ai_response": {
+        "error": "API 429: Too Many Requests"
+      },
+      "previous_verdict_v2": "Proceeds P2 — missed P1 and conflicting dispositions",
+      "evaluator_verdict": "Proceeds — surface P1 and P2, note conflicting dispositions",
+      "evaluator_comment": "Severe AKI — should surface P1 Acute 48hr. Note conflicting dispositions.",
+      "regression_status": "regressed",
+      "notes": "Error: API 429: Too Many Requests"
+    },
+    {
+      "case_id": "TEST-006",
+      "qa_id": null,
+      "exam": "CT Head",
+      "paediatric": false,
+      "clinical_note": "45yo m, episode of slurred speech and R hand clumsiness lasting 30 minutes yesterday. Fully resolved. BP normal. ?TIA. No other focal signs currently.",
+      "ai_response": {
+        "error": "API 429: Too Many Requests"
+      },
+      "previous_verdict_v2": "Declined — TIA gateway required; no residual focal signs",
+      "evaluator_verdict": "At risk — focal neuro signs transiently met; TIA gateway advisory; note history of focal signs",
+      "evaluator_comment": "Transient focal signs still relevant. Should be at_risk with note about TIA gateway.",
+      "regression_status": "regressed",
+      "notes": "Error: API 429: Too Many Requests"
+    },
+    {
+      "case_id": "TEST-007",
+      "qa_id": null,
+      "exam": "CT Chest/Abdomen/Pelvis",
+      "paediatric": false,
+      "clinical_note": "70yo f w/ unexplained weight loss 3% over 2 months. Low Hb, raised CRP.",
+      "ai_response": {
+        "error": "API 429: Too Many Requests"
+      },
+      "previous_verdict_v2": "Declined or at_risk — 3% and 2 months both below threshold",
+      "evaluator_verdict": "At risk or declined — weight loss 3% (below 5% threshold) AND 2 months (below 3-month threshold)",
+      "evaluator_comment": "Both weight loss % and duration fall below thresholds. Should be declined or at_risk.",
+      "regression_status": "regressed",
+      "notes": "Error: API 429: Too Many Requests"
+    }
+  ]
+}
