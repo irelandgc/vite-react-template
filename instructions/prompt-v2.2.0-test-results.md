@@ -4,7 +4,7 @@
 **Prompt version:** 2.2.0 — Concrete gateway/pathway examples + postmenopausal shorthand
 **Model:** claude-sonnet-4-20250514 | **Mode:** strict | **Paediatric detection:** enabled
 
-## Scorecard: 2 improved / 6 unchanged / 12 regressed (20 total)
+## Scorecard: 4 improved / 13 unchanged / 3 regressed (20 total)
 
 | Case | Exam | v2.2.0 Verdict | Evaluator Expects | Status |
 |------|------|----------------|-------------------|--------|
@@ -18,16 +18,16 @@
 | LP-001 | Chest X-ray | proceeds | CAP | = unchanged |
 | LP-002 | Spine X-ray | declined | Redirect to ACC — trauma mechanism | = unchanged |
 | LP-003 | Ultrasound Pelvis | at_risk | postmenopausal bleeding | ⬇ REGRESSED |
-| LP-004 | Ultrasound Pelvis | ERROR | IUD/Mirena malposition assessment | ⬇ REGRESSED |
-| CR-001 | Chest X-ray | ERROR | CAP or TB concern | ⬇ REGRESSED |
-| CR-002 [P] | Hip X-ray | ERROR | SUFE/hip pathology concern | ⬇ REGRESSED |
-| CR-003 | Renal Ultrasound | ERROR | persistent microscopic haematuria,  | ⬇ REGRESSED |
-| TEST-001 | CT Chest/Abdomen/Pelvis | ERROR | all CT CAP (3 abnormal bloods, weig | ⬇ REGRESSED |
-| TEST-003 | CT Head | ERROR | focal neuro signs independently met | ⬇ REGRESSED |
-| TEST-004 | Ultrasound Abdomen | ERROR | hepatomegaly pathway independently  | ⬇ REGRESSED |
-| TEST-005 | Renal Ultrasound | ERROR | surface P1 and P2, note conflicting | ⬇ REGRESSED |
-| TEST-006 | CT Head | ERROR | At risk — focal neuro signs transie | ⬇ REGRESSED |
-| TEST-007 | CT Chest/Abdomen/Pelvis | ERROR | At risk or declined — weight loss 3 | ⬇ REGRESSED |
+| LP-004 | Ultrasound Pelvis | proceeds | IUD/Mirena malposition assessment | = unchanged |
+| CR-001 | Chest X-ray | proceeds | CAP or TB concern | = unchanged |
+| CR-002 [P] | Hip X-ray | proceeds | SUFE/hip pathology concern | = unchanged |
+| CR-003 | Renal Ultrasound | proceeds | persistent microscopic haematuria,  | = unchanged |
+| TEST-001 | CT Chest/Abdomen/Pelvis | proceeds | all CT CAP (3 abnormal bloods, weig | ⬆ improved |
+| TEST-003 | CT Head | proceeds | focal neuro signs independently met | ⬆ improved |
+| TEST-004 | Ultrasound Abdomen | at_risk | hepatomegaly pathway independently  | ⬇ REGRESSED |
+| TEST-005 | Renal Ultrasound | proceeds | surface P1 and P2, note conflicting | = unchanged |
+| TEST-006 | CT Head | at_risk | At risk — focal neuro signs transie | = unchanged |
+| TEST-007 | CT Chest/Abdomen/Pelvis | declined | At risk or declined — weight loss 3 | = unchanged |
 
 ## Regressions
 
@@ -49,62 +49,11 @@
 **Evaluator expects:** Proceeds — postmenopausal bleeding
 **Assessment:** Verdict: at_risk. Priority: P2. Met: 2. Missing: 2.
 
-### LP-004 — Ultrasound Pelvis
-**Note:** `35yo with Mirena, recent lower abdominal pain and pv bleeding ? IUD malpositioned`
-**v2.2.0 verdict:** API 429: Too Many Requests
-**Evaluator expects:** Proceeds — IUD/Mirena malposition assessment
-**Assessment:** Error: API 429: Too Many Requests
-
-### CR-001 — Chest X-ray
-**Note:** `42 yr old homeless patient with fever productive cough, smoker, unsure re wt loss. Fine lower basal crepitus, mild tachy,`
-**v2.2.0 verdict:** API 429: Too Many Requests
-**Evaluator expects:** Proceeds — CAP or TB concern
-**Assessment:** Error: API 429: Too Many Requests
-
-### CR-002 — Hip X-ray
-**Note:** `13 year old boy with R knee pain for past few weeks, staying with grandparents in town holidays and usually lives rurally. Knee examination is normal no fever, mild limp, restricted ROM R hip mild pain. No recent illness`
-**v2.2.0 verdict:** API 429: Too Many Requests
-**Evaluator expects:** Proceeds — SUFE/hip pathology concern
-**Assessment:** Error: API 429: Too Many Requests
-
-### CR-003 — Renal Ultrasound
-**Note:** `Persisting microscopic haematuria in usually well and active 64 year old lady works as a hairdresser all her life, non smoker, No infection on microscopy, no wt loss or other symptoms`
-**v2.2.0 verdict:** API 429: Too Many Requests
-**Evaluator expects:** Proceeds — persistent microscopic haematuria, no infection
-**Assessment:** Error: API 429: Too Many Requests
-
-### TEST-001 — CT Chest/Abdomen/Pelvis
-**Note:** `62yo male w/ unexplained weight loss 8% over 4 months. No focal pathology. CRP raised, Hb low, albumin low. Ex-smoker.`
-**v2.2.0 verdict:** API 429: Too Many Requests
-**Evaluator expects:** Proceeds — all CT CAP criteria met (3 abnormal bloods, weight loss ≥5% over ≥3 months)
-**Assessment:** Error: API 429: Too Many Requests
-
-### TEST-003 — CT Head
-**Note:** `58yo m w/ sudden onset L arm weakness and facial droop, resolved after 20 minutes. O/E: mild residual L facial weakness. BP 165/95. ?TIA`
-**v2.2.0 verdict:** API 429: Too Many Requests
-**Evaluator expects:** Proceeds — focal neuro signs independently met; TIA gateway advisory
-**Assessment:** Error: API 429: Too Many Requests
-
 ### TEST-004 — Ultrasound Abdomen
 **Note:** `55yo male, known Hep C. Liver palpable 3cm below costal margin, firm and non-tender. Referred for HCC surveillance and assessment of hepatomegaly.`
-**v2.2.0 verdict:** API 429: Too Many Requests
+**v2.2.0 verdict:** At Risk — Missing Gateway Requirement
+**Summary:** Hepatomegaly pathway criteria are met, but HCC surveillance requires gastroenterologist recommendation.
+**Missing:** HCC surveillance using liver ultrasound as initially recommended by a gastroenterologist or other secondary care specialist, or as recommended by an agreed local pathway [p31]
+**Notes:** Two pathways identified: (1) Hepatomegaly assessment - fully meets P3 criteria; (2) HCC surveillance - requires gastroenterologist recommendation as gateway. Verdict based on hepatomegaly pathway which is fully met. For HCC surveillance, consider referral to gastroenterology for surveillance planning.
 **Evaluator expects:** Proceeds — hepatomegaly pathway independently met
-**Assessment:** Error: API 429: Too Many Requests
-
-### TEST-005 — Renal Ultrasound
-**Note:** `68yo f w/ acute kidney injury, eGFR dropped from 60 to 12 over 5 days. No obstruction suspected. No clear cause identified.`
-**v2.2.0 verdict:** API 429: Too Many Requests
-**Evaluator expects:** Proceeds — surface P1 and P2, note conflicting dispositions
-**Assessment:** Error: API 429: Too Many Requests
-
-### TEST-006 — CT Head
-**Note:** `45yo m, episode of slurred speech and R hand clumsiness lasting 30 minutes yesterday. Fully resolved. BP normal. ?TIA. No other focal signs currently.`
-**v2.2.0 verdict:** API 429: Too Many Requests
-**Evaluator expects:** At risk — focal neuro signs transiently met; TIA gateway advisory; note history of focal signs
-**Assessment:** Error: API 429: Too Many Requests
-
-### TEST-007 — CT Chest/Abdomen/Pelvis
-**Note:** `70yo f w/ unexplained weight loss 3% over 2 months. Low Hb, raised CRP.`
-**v2.2.0 verdict:** API 429: Too Many Requests
-**Evaluator expects:** At risk or declined — weight loss 3% (below 5% threshold) AND 2 months (below 3-month threshold)
-**Assessment:** Error: API 429: Too Many Requests
+**Assessment:** Verdict: at_risk. Priority: P3. Met: 1. Missing: 1.
