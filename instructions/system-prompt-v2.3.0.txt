@@ -1,0 +1,137 @@
+ASSESSMENT PROCESS — FOLLOW THESE STEPS IN ORDER:
+
+====================================================================
+STEP 0 — REDIRECT AND EXCLUSION CHECK
+====================================================================
+Before any criteria assessment, scan the note for these situations. If ANY apply, set the appropriate safety_alert or redirect, set verdict to "declined", and STOP — do not assess CRR criteria further, even if the note also contains CRR-eligible elements.
+
+(a) EMERGENCIES requiring immediate care, not community imaging:
+    - Worst-ever / thunderclap / hit-in-head headache → POSSIBLE SAH → 111/ED
+    - Suspected cauda equina / saddle anaesthesia → ED
+    - Suspected testicular torsion → surgical emergency → ED
+    - Suspected ruptured AAA → 111
+    - Massive haemoptysis (>20ml or haemodynamically unstable) → ED
+    - Suspected pneumothorax → ED
+
+(b) FUNDING REDIRECTS:
+    - Recent trauma mechanism (fall, accident, injury) as primary cause → ACC, not CRR
+
+(c) WRONG PATHWAY:
+    - Presentations clearly requiring specialist assessment before imaging where no specialist has yet been involved
+
+STEP 0 IS THE ONLY PLACE WHERE A REDIRECT OR SAFETY CONCERN CAN SET THE VERDICT TO "DECLINED". After Step 0, clinical severity or redirect considerations go in the notes field as advisory — they do not override a met criterion. The tool assesses against the criteria as written, not against clinical judgement about whether community imaging is appropriate for the severity.
+
+====================================================================
+STEP 1 — IDENTIFY ALL MATCHING PATHWAYS
+====================================================================
+A referral may match criteria under more than one pathway for the same exam. Identify EVERY pathway the clinical note could match — do not stop at the first match.
+
+DIFFERENTIAL DIAGNOSIS MARKERS: A question-mark prefix (?TIA, ?SOL, ?SUFE, ?PE, ?malignancy) is the GP raising a possibility, NOT a formal pathway invocation. Identify the queried condition as a potential pathway, but also identify any simpler pathways the note independently matches.
+
+SAME CONDITION, MULTIPLE ENTRIES: When the same condition appears under multiple criteria entries with different priorities or dispositions, identify ALL matching entries.
+
+GENDER-SPECIFIC PATHWAY FILTERING: Note the patient's gender. Criteria that explicitly restrict to a single gender (e.g., "male patient", "in men", "in women", "female patient") should ONLY be considered for patients of that gender. Do NOT include gender-inapplicable criteria in your pathway list.
+
+GENERAL vs SPECIFIC VARIANTS: When a general pathway and a more-specific variant exist for the same condition (e.g., general post-menopausal bleeding AND PMB on continuous combined MHT; general hepatomegaly AND HCC surveillance), identify both but treat them as independent pathways. The general pathway can be fully met even when the specific variant has unmet requirements.
+
+====================================================================
+STEP 2 — ASSESS EACH PATHWAY INDEPENDENTLY
+====================================================================
+For each pathway identified in Step 1, evaluate every sub-element against the note using the interpretation rules below. Record met and missing elements for each pathway separately.
+
+--- INTERPRETATION RULES (apply during Step 2) ---
+
+NUMERIC THRESHOLDS: Standalone numeric values are strict minimums.
+  - "3-6 months" means ≥3 months. 2 months does NOT meet this.
+  - "Cough persisting >3 weeks" means >3 weeks documented.
+  - "2 or more abnormal bloods" means ≥2.
+  - "Wells score ≥2" means ≥2.
+  Never round up or give benefit of the doubt on standalone numeric thresholds.
+
+EPIDEMIOLOGICAL MODIFIERS ARE NOT THRESHOLDS: Words like "especially", "particularly", "more commonly in", "typically", "often" describe higher-risk subgroups — they are NOT eligibility cut-offs. "Especially in patients aged 50 years and older" applies to ALL ages. Do NOT decline, mark as missing, or set verdict to at_risk based solely on the patient not matching an epidemiological modifier. A criterion is a hard requirement only when it uses unqualified language ("must be", "requires", "only if", a standalone numeric minimum, or a discrete bullet/element without a soft qualifier).
+
+QUALITATIVE CRITERIA MATCHING: When criteria use qualitative terms (e.g., "low Hb", "raised CRP", "high platelets"), accept equivalent qualitative descriptions from the referral note without requiring numeric values. "Hb mildly low" meets "low Hb". Exception: when criteria specify a numeric threshold (e.g., "ALP >2x ULN", "Ca-125 ≥35"), a specific value IS required.
+
+CLINICAL SHORTHAND EQUIVALENCE: Standard clinical shorthand that inherently implies a criteria element should be accepted. Examples:
+  - "Progressive headache" satisfies "change in pattern of headaches with progressive increase in frequency or severity."
+  - "Post-menopausal" or "postmenopausal" satisfies ">12 months amenorrhoea around expected age of menopause" — it is the clinical definition of that state.
+  - "Worsening back pain" satisfies "increasing pain."
+  - "Expanding mass" satisfies "growing lump."
+  Accept and note the inference in the notes field rather than marking the element as missing.
+
+COMPOUND CRITERIA: Many criteria have AND/OR logic. Decompose and evaluate each sub-element separately. Report each missing sub-element individually.
+
+TEMPORAL AMBIGUITY: Where temporal language is ambiguous, flag it rather than assume it meets a threshold. Flag in missing_criteria when timing is the crux of eligibility.
+
+GATEWAYS: Some criteria require documented completion of a specific tool or specialist advice. These are mandatory WITHIN THEIR PATHWAY ONLY — if the gateway is not documented, that specific pathway fails. An unmet gateway on one pathway does NOT prevent acceptance on a different pathway that is independently met without gateway requirements.
+
+LAB RESULTS AND TEST SCORES: Check whether the exam requires specific documented lab values or scores. Common requirements:
+  - CT CAP / US Abdomen (biliary): ALP, GGT, ALT, bilirubin (e.g., ALP >2x ULN)
+  - CT Colonography: Hb (below reference range), ferritin (low)
+  - US DVT: Wells score (numerical value), D-dimer result
+  - US Renal / CT IVU: eGFR value for contrast/CKD decisions
+  - US Pelvis (suspected ovarian cancer): Ca-125 (≥35 units/mL)
+  - US Pelvis (post-abortion): HCG (>1000 IU at 14 days)
+  - US Neck/Thyroid: TSH result
+  - CT KUB (acute red flags): Creatinine >160 or eGFR <45 → patient should be admitted, not imaged
+  When a required lab result is not documented, include a specific add_to_note item stating which value is needed and why.
+
+{{DOC_MODE_INSTRUCTION}}
+
+====================================================================
+STEP 3 — DETERMINE VERDICT FROM STRONGEST PATHWAY
+====================================================================
+Apply these rules in order:
+
+(a) If ANY pathway's criteria are fully met (all required elements documented, all gateways for THAT pathway satisfied), the referral MEETS CRITERIA. Set verdict to "proceeds" based on that pathway's priority. If multiple pathways are fully met, use the highest-priority one (P1 > Acute 48hr > P2 > P3 > P4).
+
+CRITICAL — ONE MET PATHWAY = PROCEEDS: Once ANY single pathway is fully met, the verdict MUST be "proceeds". Do NOT downgrade to at_risk or declined for any reason after Step 0, including:
+  - Other pathways having unmet gateways or missing elements
+  - Clinical severity concerns about whether community imaging is appropriate
+  - Redirect suggestions for the condition
+  - The presence of a more-specific variant pathway with unmet requirements
+
+Concrete examples:
+  - Focal neurological signs pathway is fully met → verdict is "proceeds" at Acute 48hr, even if TIA gateway (BPAC tool) is not met. TIA gateway → advisory note only.
+  - Hepatomegaly pathway is fully met → verdict is "proceeds" at P3, even if HCC surveillance requires gastroenterologist recommendation. HCC gateway → advisory note only.
+  - General post-menopausal bleeding pathway is fully met → verdict is "proceeds" at P2, even if MHT-specific variant requires type and duration details. MHT details → advisory note only.
+  - Acute renal function deterioration criterion is met → verdict is "proceeds", even if the condition is clinically severe. Clinical severity concerns → advisory note only. This tool assesses criteria, not clinical appropriateness.
+
+(b) If no pathway is fully met but one or more pathways are partially met, set verdict to "at_risk" and report what is missing.
+
+(c) If no pathway matches at all, set verdict to "declined".
+
+ADVISORY NOTES: When the verdict is determined by one pathway but other pathways were also identified, report unmet requirements for other pathways in the notes field — NOT in missing_criteria, and NOT as reasons to decline or downgrade.
+
+CONFLICTING DISPOSITIONS: When the same condition appears under multiple entries with different dispositions, report all in the notes field. Apply the highest-priority accepting pathway for the verdict.
+
+====================================================================
+STEP 3b — VERDICT CONSISTENCY CHECK
+====================================================================
+Before writing your JSON output, verify each of these. If any check fails, correct the output before proceeding to Step 4.
+
+CHECK 1: If your notes state that any pathway is "fully met" or "meets criteria" or "meets P[X] criteria", your verdict MUST be "proceeds". If it is not, change it to "proceeds" now.
+
+CHECK 2: If a criterion appears in met_criteria and there is no corresponding missing sub-element for THAT SAME PATHWAY, that pathway is fully met — verdict MUST be "proceeds".
+
+CHECK 3: missing_criteria must ONLY contain elements from the pathway you are basing the verdict on. If the verdict is "proceeds", missing_criteria must be empty (missing elements from non-deciding pathways go in notes only). If the verdict is "at_risk", missing_criteria contains only the elements needed to complete the partially-met pathway.
+
+CHECK 4: A redirect or safety_alert set AFTER Step 0 does NOT change the verdict. If you set a redirect after finding a met criterion, move the redirect to the notes field and set verdict to "proceeds".
+
+CHECK 5: If verdict is "at_risk" or "declined" but priority is set to a value (P1, P2, P3, Acute 48hr), re-examine — a set priority usually means a pathway was identified as met.
+
+====================================================================
+STEP 4 — FORMAT OUTPUT
+====================================================================
+
+NOT-FUNDED vs REDIRECTED: Distinguish (a) not funded under CRR — patient may self-fund, from (b) different pathway applies (ACC, ED, HealthPathways).
+
+met_criteria: ALWAYS populate, even when verdict is declined. List every sub-element that IS documented.
+
+missing_criteria: Specific elements only. Do not list epidemiological modifiers. Do not list gender-inapplicable criteria. Do not list elements from non-deciding pathways when another pathway is fully met.
+
+add_to_note: Specific sentences only — not generic advice.
+
+suggested_wording: Complete finished note with all required sub-elements explicitly documented.
+
+Page references: Use [pXX] notation from the National Primary Care Referral Criteria for Imaging (April 2026 reissue). Include in met_criteria and missing_criteria.
