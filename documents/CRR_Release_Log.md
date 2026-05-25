@@ -4,6 +4,41 @@ Changes are listed newest-first. Each entry covers one deployment cycle.
 
 ---
 
+## 2026-05-24 — Triage Advisor System Prompt v2.2.0 (Production)
+
+**Deployed:** D1 system_prompts table (no worker redeployment required)
+
+### System Prompt v2.2.0 — now active production prompt
+
+Replaces v1.1.0 as the active triage assessment prompt. Key changes from v2.1.0:
+
+- **Concrete gateway/pathway examples in Step 3** — three worked examples added for focal neurological signs + ?TIA, hepatomegaly + HCC surveillance, and post-menopausal bleeding (general) + MHT-specific variant. Addresses RP-002, RP-003, TEST-003 regressions where gateway requirements from non-deciding pathways were blocking correct verdicts.
+- **Postmenopausal clinical shorthand** — "post menopausal" / "postmenopausal" now explicitly accepted as satisfying ">12 months amenorrhoea around expected age of menopause" without requiring the phrase to be spelled out.
+- **Clinical shorthand equivalence rule** — standard clinical shorthand inherently implying a criterion element is accepted (e.g., "?IUD malpositioned with symptoms" accepted against IUD perforation criterion). Fixes LP-004 IUCD malposition case.
+
+### Regression test results (v2.2.0, 20 cases)
+
+| Status | Count | Cases |
+|--------|-------|-------|
+| Improved vs v1.x | 4 | RP-002, RP-003, TEST-001, TEST-003 |
+| Unchanged (correct) | 13 | All other passing cases including paediatric RP-005, CR-002, CR-003, LP-004 |
+| Remaining regressions | 3 | LP-003 (PMB/HRT — at_risk), RP-006 (AKI redirect override), TEST-004 (hepatomegaly verdict contradiction) |
+
+All 4 original regression cases from v2.0.0 testing (RP-005, CR-002, CR-003, LP-004) are correct in v2.2.0.
+
+### Prompt version history in D1
+
+| Version | Status | Summary |
+|---------|--------|---------|
+| 1.0.0 | inactive | Original prompt |
+| 1.1.0 | inactive | Prior production prompt |
+| 2.0.0 | inactive | Step-based assessment structure (introduced regressions) |
+| 2.1.0 | inactive | Gender-exclusive criteria fix + one-pathway-met rule |
+| **2.2.0** | **active** | Concrete gateway examples + postmenopausal shorthand |
+| 2.3.0 | inactive | Experimental — 3 new regressions, not promoted |
+
+---
+
 ## 2026-05-18 — Viewer Telemetry + Passive/Integration Mode Fixes
 
 **Deployed:** Both workers (`vite-react-template` + `crr-criteria-api`)

@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NZ Radiology Provider Landscape — May 2026</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Fraunces:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b1117;
+  --bg2: #111a24;
+  --bg3: #182430;
+  --border: #1e3040;
+  --text: #cdd8e4;
+  --text2: #7a94a8;
+  --text3: #4a6478;
+  --white: #f0f4f8;
+  --accent: #3d8bd4;
+  --accent2: #2a6aaa;
+  --card: #141e28;
+  --rhcnz: #2980b9;
+  --allevia: #27ae60;
+  --imed: #c0392b;
+  --canopy: #e67e22;
+  --idx: #d4ac0d;
+  --everlight: #8e44ad;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+[data-theme="light"] {
+  --bg: #f2f4f7;
+  --bg2: #ffffff;
+  --bg3: #e8ecf1;
+  --border: #d0d8e0;
+  --text: #2a3a4a;
+  --text2: #5a6a7a;
+  --text3: #8a9aaa;
+  --white: #1a2a3a;
+  --card: #ffffff;
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Instrument Sans', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; transition: background 0.3s, color 0.3s; }
+
+/* Top Bar */
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--bg2); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 500; transition: background 0.3s; }
+.topbar-left { display: flex; align-items: center; gap: 16px; }
+.topbar-title { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; color: var(--white); }
+.topbar-sub { font-size: 11px; color: var(--text3); }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+
+/* Navigation */
+.nav-tabs { display: flex; gap: 2px; background: var(--bg); border-radius: 8px; padding: 3px; }
+.nav-tab { padding: 8px 16px; border: none; background: transparent; color: var(--text2); font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; border-radius: 6px; transition: all 0.2s; white-space: nowrap; }
+.nav-tab:hover { color: var(--text); background: var(--bg3); }
+.nav-tab.active { background: var(--accent); color: #fff; }
+
+/* Theme Toggle */
+.theme-toggle { width: 44px; height: 24px; border-radius: 12px; background: var(--bg3); border: 1px solid var(--border); cursor: pointer; position: relative; transition: background 0.3s; flex-shrink: 0; }
+.theme-toggle::after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); top: 2px; left: 2px; transition: transform 0.3s; }
+[data-theme="light"] .theme-toggle::after { transform: translateX(20px); }
+.theme-label { font-size: 11px; color: var(--text3); }
+
+/* Pages */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ===== MAP PAGE ===== */
+.map-layout { display: flex; height: calc(100vh - 52px); }
+.map-sidebar { width: 300px; background: var(--bg2); border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; flex-shrink: 0; transition: background 0.3s; }
+.map-main { flex: 1; position: relative; }
+#map { width: 100%; height: 100%; }
+
+.filter-section { margin-bottom: 16px; }
+.filter-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text3); margin-bottom: 8px; }
+.filter-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 10px; border: none; background: transparent; color: var(--text2); font-size: 12px; font-family: inherit; cursor: pointer; border-radius: 6px; transition: all 0.15s; text-align: left; }
+.filter-btn:hover { background: var(--bg3); color: var(--text); }
+.filter-btn.active { background: var(--bg3); color: var(--white); font-weight: 600; }
+.filter-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.filter-count { margin-left: auto; font-size: 10px; color: var(--text3); font-weight: 600; }
+
+.stats-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 12px; transition: background 0.3s; }
+.stat-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 11px; }
+.stat-label { color: var(--text2); }
+.stat-val { color: var(--text); font-weight: 600; }
+
+/* Leaflet popup override */
+.leaflet-popup-content-wrapper { background: var(--bg2) !important; color: var(--text) !important; border-radius: 10px !important; box-shadow: var(--shadow) !important; border: 1px solid var(--border) !important; }
+.leaflet-popup-tip { background: var(--bg2) !important; border: 1px solid var(--border) !important; border-top: none !important; border-left: none !important; }
+.leaflet-popup-content { margin: 12px 14px !important; font-family: 'Instrument Sans', system-ui, sans-serif !important; }
+.popup-brand { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 700; color: var(--white); margin-bottom: 2px; }
+.popup-loc { font-size: 11px; color: var(--text3); margin-bottom: 8px; }
+.popup-divider { border-top: 1px solid var(--border); margin: 6px 0; }
+.popup-row { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; }
+.popup-key { font-size: 11px; color: var(--text3); white-space: nowrap; }
+.popup-val { font-size: 11px; color: var(--text); font-weight: 500; text-align: right; }
+.popup-badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; margin-top: 6px; }
+.badge-nzl { background: rgba(41,128,185,0.15); color: #5ba3d9; }
+.badge-nzp { background: rgba(39,174,96,0.15); color: #5bd98a; }
+.badge-ukpe { background: rgba(192,57,43,0.15); color: #e06a7a; }
+.badge-aul { background: rgba(212,172,13,0.15); color: #d9c05b; }
+[data-theme="light"] .badge-nzl { background: rgba(41,128,185,0.1); color: #1a6aaa; }
+[data-theme="light"] .badge-nzp { background: rgba(39,174,96,0.1); color: #1a8a4a; }
+[data-theme="light"] .badge-ukpe { background: rgba(192,57,43,0.1); color: #a02020; }
+[data-theme="light"] .badge-aul { background: rgba(212,172,13,0.1); color: #8a7a0a; }
+
+/* ===== OWNERSHIP PAGE ===== */
+.ownership-page { padding: 24px; max-width: 1200px; margin: 0 auto; }
+.page-header { margin-bottom: 24px; }
+.page-title { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+.page-sub { font-size: 13px; color: var(--text3); }
+
+.legend-bar { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; padding: 10px 14px; background: var(--bg2); border-radius: 8px; border: 1px solid var(--border); }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2); }
+
+.own-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; }
+.own-card { background: var(--card); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow); transition: background 0.3s, border-color 0.3s; }
+.own-header { padding: 14px 18px 10px; border-bottom: 1px solid var(--border); }
+.own-title { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 700; }
+.own-subtitle { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+.own-row { display: flex; align-items: center; gap: 10px; padding: 10px 18px; border-bottom: 1px solid var(--border); }
+.own-row:last-child { border-bottom: none; }
+.own-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.own-info { flex: 1; min-width: 0; }
+.own-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.own-detail { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.own-stake { font-size: 12px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+
+.brands-section { padding: 10px 18px 14px; }
+.brands-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 6px; }
+.brand-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.brand-tag { font-size: 11px; padding: 3px 8px; border-radius: 4px; background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+.brand-tag.jv { background: rgba(142,68,173,0.12); color: #b07ad9; border-color: rgba(142,68,173,0.25); }
+.brand-tag.tele { background: rgba(39,174,96,0.12); color: #5bd98a; border-color: rgba(39,174,96,0.25); }
+
+.sys-section { padding: 6px 18px 12px; }
+.sys-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.sys-tag { font-size: 10px; padding: 2px 7px; border-radius: 3px; background: rgba(39,174,96,0.08); color: #6dbfa0; border: 1px solid rgba(39,174,96,0.2); }
+
+.region-pills { display: flex; flex-wrap: wrap; gap: 3px; padding: 0 18px 12px; }
+.region-pill { font-size: 9px; padding: 2px 6px; border-radius: 3px; background: var(--bg); color: var(--text3); border: 1px solid var(--border); }
+
+.own-separator { border-top: 1px dashed var(--border); margin: 0 18px; }
+
+/* ===== REGIONAL PAGE ===== */
+.regional-page { padding: 24px; max-width: 1000px; margin: 0 auto; }
+
+.region-card { background: var(--card); border-radius: 10px; border: 1px solid var(--border); margin-bottom: 12px; overflow: hidden; box-shadow: var(--shadow); transition: background 0.3s; }
+.region-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; cursor: pointer; transition: background 0.15s; }
+.region-header:hover { background: var(--bg3); }
+.region-name { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 700; color: var(--white); }
+.region-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.region-ris { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+.ris-badge { font-size: 11px; padding: 3px 10px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
+.ris-agfa { background: rgba(41,128,185,0.15); color: #6ab0e6; border: 1px solid rgba(41,128,185,0.3); }
+.ris-vue { background: rgba(39,174,96,0.15); color: #6ae0a6; border: 1px solid rgba(39,174,96,0.3); }
+.ris-comrad { background: rgba(212,172,13,0.15); color: #e0c06a; border: 1px solid rgba(212,172,13,0.3); }
+.ris-karisma { background: rgba(192,57,43,0.15); color: #e06a8a; border: 1px solid rgba(192,57,43,0.3); }
+.ris-mixed { background: rgba(142,68,173,0.15); color: #b08ae0; border: 1px solid rgba(142,68,173,0.3); }
+[data-theme="light"] .ris-agfa { background: rgba(41,128,185,0.08); color: #1a6aaa; }
+[data-theme="light"] .ris-vue { background: rgba(39,174,96,0.08); color: #1a6a4a; }
+[data-theme="light"] .ris-comrad { background: rgba(180,140,10,0.08); color: #7a6a0a; }
+[data-theme="light"] .ris-karisma { background: rgba(192,57,43,0.08); color: #9a2020; }
+[data-theme="light"] .ris-mixed { background: rgba(142,68,173,0.08); color: #6a2a8a; }
+
+.expand-icon { font-size: 12px; color: var(--text3); transition: transform 0.2s; margin-left: 8px; }
+.expand-icon.open { transform: rotate(180deg); }
+
+.region-body { display: none; border-top: 1px solid var(--border); }
+.region-body.open { display: block; }
+
+.columns { display: grid; grid-template-columns: 1fr 1fr; }
+.col { padding: 14px 18px; }
+.col:first-child { border-right: 1px solid var(--border); }
+.col-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 10px; }
+.col-public { color: var(--accent); }
+.col-private { color: var(--canopy); }
+
+.sys-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; padding: 6px 8px; background: var(--bg); border-radius: 6px; }
+.sys-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.sys-info { flex: 1; }
+.sys-name { font-size: 12px; font-weight: 600; color: var(--text); }
+.sys-detail { font-size: 10px; color: var(--text3); margin-top: 1px; line-height: 1.4; }
+
+.erp-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; padding: 6px 8px; background: var(--bg); border-radius: 6px; }
+
+.footer-note { margin-top: 24px; font-size: 11px; color: var(--text3); line-height: 1.5; padding: 12px 16px; background: var(--bg2); border-radius: 6px; border: 1px solid var(--border); }
+
+@media (max-width: 900px) {
+  .map-layout { flex-direction: column; }
+  .map-sidebar { width: 100%; max-height: 200px; border-right: none; border-bottom: 1px solid var(--border); }
+  .map-main { min-height: 400px; }
+  .columns { grid-template-columns: 1fr; }
+  .col:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+  .own-grid { grid-template-columns: 1fr; }
+  .topbar { flex-wrap: wrap; gap: 8px; }
+  .nav-tabs { overflow-x: auto; }
+}
+</style>
+</head>
+<body data-theme="dark">
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div>
+      <div class="topbar-title">NZ Radiology Provider Landscape</div>
+      <div class="topbar-sub">External Radiology Providers · Public Research · May 2026</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('map')">Map</button>
+      <button class="nav-tab" onclick="showPage('ownership')">Ownership</button>
+      <button class="nav-tab" onclick="showPage('regional')">Regional</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span class="theme-label">☾</span>
+      <div class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode"></div>
+      <span class="theme-label">☀</span>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MAP PAGE ==================== -->
+<div class="page active" id="page-map">
+  <div class="map-layout">
+    <div class="map-sidebar">
+      <div class="filter-section">
+        <div class="filter-label">Filter by Provider</div>
+        <button class="filter-btn active" data-group="all" onclick="filterPins('all')">
+          <div class="filter-dot" style="background:var(--text3);"></div> All Providers <span class="filter-count" id="count-all"></span>
+        </button>
+        <button class="filter-btn" data-group="rhcnz" onclick="filterPins('rhcnz')">
+          <div class="filter-dot" style="background:var(--rhcnz);"></div> RHCNZ (Infratil) <span class="filter-count" id="count-rhcnz"></span>
+        </button>
+        <button class="filter-btn" data-group="allevia" onclick="filterPins('allevia')">
+          <div class="filter-dot" style="background:var(--allevia);"></div> Allevia Health (Waterman) <span class="filter-count" id="count-allevia"></span>
+        </button>
+        <button class="filter-btn" data-group="imed" onclick="filterPins('imed')">
+          <div class="filter-dot" style="background:var(--imed);"></div> I-MED (Permira) <span class="filter-count" id="count-imed"></span>
+        </button>
+        <button class="filter-btn" data-group="canopy" onclick="filterPins('canopy')">
+          <div class="filter-dot" style="background:var(--canopy);"></div> Canopy Healthcare (ICG) <span class="filter-count" id="count-canopy"></span>
+        </button>
+        <button class="filter-btn" data-group="idx" onclick="filterPins('idx')">
+          <div class="filter-dot" style="background:var(--idx);"></div> IDX (ASX) <span class="filter-count" id="count-idx"></span>
+        </button>
+        <button class="filter-btn" data-group="everlight" onclick="filterPins('everlight')">
+          <div class="filter-dot" style="background:var(--everlight);"></div> Everlight (Livingbridge) <span class="filter-count" id="count-everlight"></span>
+        </button>
+      </div>
+      <div class="stats-box">
+        <div class="filter-label" style="margin-bottom:6px;">Market Summary</div>
+        <div class="stat-row"><span class="stat-label">NZ Listed (Infratil)</span><span class="stat-val">~70 clinics</span></div>
+        <div class="stat-row"><span class="stat-label">NZ Private PE</span><span class="stat-val">~22 clinics</span></div>
+        <div class="stat-row"><span class="stat-label">UK PE (Permira+ICG)</span><span class="stat-val">~41 clinics</span></div>
+        <div class="stat-row"><span class="stat-label">AU Listed (IDX)</span><span class="stat-val">~14 clinics</span></div>
+        <div class="stat-row"><span class="stat-label">Teleradiology</span><span class="stat-val">National</span></div>
+        <div style="border-top:1px solid var(--border);margin:6px 0;"></div>
+        <div class="stat-row"><span class="stat-label" style="color:var(--text);">Total tracked</span><span class="stat-val" style="color:var(--white);">~150+ sites</span></div>
+      </div>
+    </div>
+    <div class="map-main">
+      <div id="map"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== OWNERSHIP PAGE ==================== -->
+<div class="page" id="page-ownership">
+<div class="ownership-page">
+  <div class="page-header">
+    <div class="page-title">Ownership Structure</div>
+    <div class="page-sub">Corporate ownership, trading brands, and known systems by provider group</div>
+  </div>
+  <div class="legend-bar">
+    <div class="legend-item"><div class="filter-dot" style="background:var(--rhcnz);"></div>NZ Listed</div>
+    <div class="legend-item"><div class="filter-dot" style="background:var(--allevia);"></div>NZ Private PE</div>
+    <div class="legend-item"><div class="filter-dot" style="background:var(--imed);"></div>UK Private Equity</div>
+    <div class="legend-item"><div class="filter-dot" style="background:var(--idx);"></div>AU Listed</div>
+    <div class="legend-item"><div class="filter-dot" style="background:var(--everlight);"></div>Teleradiology</div>
+  </div>
+  <div class="own-grid">
+
+    <!-- RHCNZ -->
+    <div class="own-card">
+      <div class="own-header"><div class="own-title" style="color:var(--rhcnz);">RHCNZ Medical Imaging Group</div><div class="own-subtitle">~70 clinics · 170+ radiologists · 1,400+ staff · National</div></div>
+      <div class="own-row"><div class="own-icon" style="background:var(--rhcnz);">IFT</div><div class="own-info"><div class="own-name">Infratil Limited</div><div class="own-detail">NZX Listed · Infrastructure investor · Also owns Qscan (AU)</div></div><div class="own-stake">50.3%</div></div>
+      <div class="own-row"><div class="own-icon" style="background:var(--bg3);">Dr</div><div class="own-info"><div class="own-name">Doctors, Staff & Management</div><div class="own-detail">Radiologist shareholders + management equity</div></div><div class="own-stake">49.7%</div></div>
+      <div class="brands-section"><div class="brands-label">Trading Brands</div><div class="brand-tags"><span class="brand-tag">Pacific Radiology</span><span class="brand-tag">Auckland Radiology Group</span><span class="brand-tag">Bay Radiology</span></div></div>
+      <div class="sys-section"><div class="brands-label">Known Systems</div><div class="sys-tags"><span class="sys-tag">COMRAD (RIS — PRG)</span><span class="sys-tag">IntelePACS</span><span class="sys-tag">KailoHub</span><span class="sys-tag">InteleConnect</span><span class="sys-tag">Enlitic Ensight</span></div></div>
+      <div class="region-pills"><span class="region-pill">Auckland</span><span class="region-pill">Waikato</span><span class="region-pill">BOP</span><span class="region-pill">Wellington</span><span class="region-pill">Manawatū</span><span class="region-pill">Canterbury</span><span class="region-pill">Otago</span><span class="region-pill">Southland</span></div>
+    </div>
+
+    <!-- Allevia -->
+    <div class="own-card">
+      <div class="own-header"><div class="own-title" style="color:var(--allevia);">Allevia Health</div><div class="own-subtitle">Formerly Healthcare Holdings / MercyAscot · 16+ radiology clinics · Auckland HQ</div></div>
+      <div class="own-row"><div class="own-icon" style="background:var(--allevia);">AH</div><div class="own-info"><div class="own-name">Allevia Health (NZ Private)</div><div class="own-detail">Waterman Private Equity backed · NZ-owned · Integrated hospitals + radiology</div></div><div class="own-stake">—</div></div>
+      <div class="brands-section"><div class="brands-label">Trading Brands</div><div class="brand-tags"><span class="brand-tag">Allevia Radiology</span><span class="brand-tag">Allevia Hospitals</span><span class="brand-tag">Mobile Imaging</span></div></div>
+      <div class="own-separator"></div>
+      <div class="brands-section"><div class="brands-label">Joint Ventures</div><div class="brand-tags"><span class="brand-tag jv">Reform Radiology (Chch) — with Forté Health + local radiologists</span><span class="brand-tag jv">Affinity Medical Imaging (Wgtn) — with local radiologists</span></div></div>
+      <div class="sys-section"><div class="brands-label">Known Systems</div><div class="sys-tags"><span class="sys-tag">Not publicly confirmed</span></div></div>
+      <div class="region-pills"><span class="region-pill">Auckland</span><span class="region-pill">Wellington (JV)</span><span class="region-pill">Christchurch (JV)</span></div>
+    </div>
+
+    <!-- I-MED -->
+    <div class="own-card">
+      <div class="own-header"><div class="own-title" style="color:var(--imed);">I-MED Radiology Network — NZ</div><div class="own-subtitle">19 clinics · 31 radiologists · Te Manawa Taki region</div></div>
+      <div class="own-row"><div class="own-icon" style="background:var(--imed);">P</div><div class="own-info"><div class="own-name">Permira</div><div class="own-detail">London-based global PE · Acquired I-MED 2018 for A$1.3B</div></div><div class="own-stake">100%</div></div>
+      <div class="own-row"><div class="own-icon" style="background:#6a2030;">IM</div><div class="own-info"><div class="own-name">I-MED Radiology Network</div><div class="own-detail">Australasia's largest imaging network · 250+ AU clinics</div></div><div class="own-stake">Parent</div></div>
+      <div class="brands-section"><div class="brands-label">Trading Brands (NZ)</div><div class="brand-tags"><span class="brand-tag">Hamilton Radiology</span><span class="brand-tag">Midland MRI</span><span class="brand-tag">Taranaki Radiology</span><span class="brand-tag">Mokoia Radiology</span><span class="brand-tag">Focus Radiology</span><span class="brand-tag tele">I-TeleRAD</span></div></div>
+      <div class="sys-section"><div class="brands-label">Known Systems</div><div class="sys-tags"><span class="sys-tag">Visage RIS (likely — AU standard)</span><span class="sys-tag">I-TeleRAD platform</span></div></div>
+      <div class="region-pills"><span class="region-pill">Waikato</span><span class="region-pill">BOP</span><span class="region-pill">Lakes</span><span class="region-pill">Taranaki</span></div>
+    </div>
+
+    <!-- Canopy -->
+    <div class="own-card">
+      <div class="own-header"><div class="own-title" style="color:var(--canopy);">Canopy Healthcare Group</div><div class="own-subtitle">Formerly TRG Imaging · 22+ imaging clinics + oncology · North Island</div></div>
+      <div class="own-row"><div class="own-icon" style="background:var(--canopy);">ICG</div><div class="own-info"><div class="own-name">ICG (Intermediate Capital Group)</div><div class="own-detail">London-based global PE · Acquired from Waterman PE ~2022</div></div><div class="own-stake">Majority</div></div>
+      <div class="own-row"><div class="own-icon" style="background:var(--bg3);">Dr</div><div class="own-info"><div class="own-name">Clinician Shareholders</div><div class="own-detail">Significant clinician ownership retained</div></div><div class="own-stake">Minority</div></div>
+      <div class="brands-section"><div class="brands-label">Trading Brands</div><div class="brand-tags"><span class="brand-tag">Canopy Imaging (fmr TRG)</span><span class="brand-tag">Auckland Breast Centre</span><span class="brand-tag">Canopy Cancer Care</span><span class="brand-tag">Absolute Radiology</span></div></div>
+      <div class="sys-section"><div class="brands-label">Known Systems</div><div class="sys-tags"><span class="sys-tag">Karisma (historical — to verify)</span></div></div>
+      <div class="region-pills"><span class="region-pill">Auckland</span><span class="region-pill">Northland</span><span class="region-pill">Rotorua</span><span class="region-pill">Gisborne</span><span class="region-pill">Hawke's Bay</span></div>
+    </div>
+
+    <!-- IDX -->
+    <div class="own-card">
+      <div class="own-header"><div class="own-title" style="color:var(--idx);">Integral Diagnostics (IDX) — NZ</div><div class="own-subtitle">14+ clinics · Auckland metro · Community radiology</div></div>
+      <div class="own-row"><div class="own-icon" style="background:var(--idx);">IDX</div><div class="own-info"><div class="own-name">Integral Diagnostics Limited</div><div class="own-detail">ASX Listed · Merged with Capitol Health · AU/NZ operations</div></div><div class="own-stake">100%</div></div>
+      <div class="brands-section"><div class="brands-label">Trading Brands (NZ)</div><div class="brand-tags"><span class="brand-tag">Horizon Radiology</span><span class="brand-tag">Astra Radiology</span><span class="brand-tag">SRG Radiology</span><span class="brand-tag">Trinity MRI</span><span class="brand-tag">Cone Radiology</span></div></div>
+      <div class="sys-section"><div class="brands-label">Known Systems</div><div class="sys-tags"><span class="sys-tag">Not publicly confirmed</span></div></div>
+      <div class="region-pills"><span class="region-pill">Auckland (primary)</span></div>
+    </div>
+
+    <!-- Everlight -->
+    <div class="own-card">
+      <div class="own-header"><div class="own-title" style="color:var(--everlight);">Everlight Radiology — Teleradiology</div><div class="own-subtitle">800+ radiologists globally · Pure remote reporting</div></div>
+      <div class="own-row"><div class="own-icon" style="background:var(--everlight);">LB</div><div class="own-info"><div class="own-name">Livingbridge</div><div class="own-detail">UK PE · Acquired 2021 · Previously ICG/Teleradiology International</div></div><div class="own-stake">100%</div></div>
+      <div class="brands-section"><div class="brands-label">Service Model</div><div class="brand-tags"><span class="brand-tag tele">After-hours urgent</span><span class="brand-tag tele">Routine overflow</span><span class="brand-tag tele">Subspecialist elective</span><span class="brand-tag tele">Backlog clearance</span></div></div>
+      <div class="sys-section"><div class="brands-label">Integration</div><div class="sys-tags"><span class="sys-tag">Integrates into client RIS/PACS</span><span class="sys-tag">250+ FRANZCR (ANZ)</span></div></div>
+      <div class="region-pills"><span class="region-pill">National (remote)</span></div>
+    </div>
+
+  </div>
+  <div class="footer-note"><strong>Ownership pattern:</strong> Three of six major groups are controlled by UK-based private equity. Only RHCNZ (Infratil) and Allevia Health retain meaningful NZ ownership. The traditional radiologist-shareholder model has largely been replaced by corporate/PE ownership with minority clinician stakes.<br><br><em>Publicly sourced research · May 2026</em></div>
+</div>
+</div>
+
+<!-- ==================== REGIONAL PAGE ==================== -->
+<div class="page" id="page-regional">
+<div class="regional-page">
+  <div class="page-header">
+    <div class="page-title">Regional Integration Landscape</div>
+    <div class="page-sub">Public hospital RIS/PACS alongside private ERP providers by region</div>
+  </div>
+  <div class="legend-bar">
+    <div class="legend-item"><div class="filter-dot ris-agfa" style="width:10px;height:10px;border-radius:3px;"></div>Agfa</div>
+    <div class="legend-item"><div class="filter-dot ris-vue" style="width:10px;height:10px;border-radius:3px;"></div>Vue RIS/PACS</div>
+    <div class="legend-item"><div class="filter-dot ris-comrad" style="width:10px;height:10px;border-radius:3px;"></div>COMRAD / Intelerad</div>
+    <div class="legend-item"><div class="filter-dot ris-karisma" style="width:10px;height:10px;border-radius:3px;"></div>Karisma / Sectra</div>
+    <div class="legend-item"><div class="filter-dot ris-mixed" style="width:10px;height:10px;border-radius:3px;"></div>Mixed</div>
+  </div>
+
+  <!-- 1. Northland -->
+  <div class="region-card"><div class="region-header" onclick="toggleRegion(this)"><div><div class="region-name">Northland</div><div class="region-meta">Split RIS/PACS · Everlight DRS-R reporting for many years</div></div><div class="region-ris"><span class="ris-badge ris-mixed">Karisma RIS / Philips Vue PACS</span><span class="expand-icon">▼</span></div></div>
+  <div class="region-body open"><div class="columns"><div class="col"><div class="col-title col-public">Public — HNZ</div><div class="sys-row"><div class="sys-icon" style="background:var(--everlight);font-size:9px;">K/V</div><div class="sys-info"><div class="sys-name">Karisma (RIS) + Philips Vue PACS</div><div class="sys-detail">Split configuration — Karisma handling orders/workflow, Philips Vue handling image storage/viewing</div></div></div></div>
+  <div class="col"><div class="col-title col-private">External Radiology Service Providers</div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--everlight);font-size:10px;">EL</div><div class="sys-info"><div class="sys-name">Everlight Radiology</div><div class="sys-detail">Livingbridge (UK PE) · DRS-R reporting — established relationship over many years</div></div></div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--canopy);font-size:10px;">CI</div><div class="sys-info"><div class="sys-name">Canopy Imaging</div><div class="sys-detail">Canopy Healthcare → ICG (UK) · Whangārei, Kerikeri</div></div></div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--rhcnz);font-size:9px;">PRG</div><div class="sys-info"><div class="sys-name">Pacific Radiology / ARG</div><div class="sys-detail">RHCNZ → Infratil (NZX) · COMRAD · IntelePACS</div></div></div>
+  </div></div></div></div>
+
+  <!-- 2. Auckland -->
+  <div class="region-card"><div class="region-header" onclick="toggleRegion(this)"><div><div class="region-name">Auckland</div><div class="region-meta">Highest ERP density · Most competitive market · Everlight DRS-R since late 2025</div></div><div class="region-ris"><span class="ris-badge ris-agfa">Agfa RIS/PACS</span><span class="expand-icon">▼</span></div></div>
+  <div class="region-body"><div class="columns"><div class="col"><div class="col-title col-public">Public — HNZ</div><div class="sys-row"><div class="sys-icon" style="background:var(--accent);">Ag</div><div class="sys-info"><div class="sys-name">Agfa RIS / PACS</div><div class="sys-detail">IMPAX / Enterprise Imaging across Auckland public hospitals</div></div></div></div>
+  <div class="col"><div class="col-title col-private">External Radiology Service Providers</div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--rhcnz);font-size:9px;">ARG</div><div class="sys-info"><div class="sys-name">Auckland Radiology Group</div><div class="sys-detail">RHCNZ → Infratil (NZX) · 15 clinics · IntelePACS</div></div></div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--allevia);font-size:10px;">AL</div><div class="sys-info"><div class="sys-name">Allevia Radiology</div><div class="sys-detail">Allevia Health → Waterman PE (NZ) · 16 clinics</div></div></div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--canopy);font-size:10px;">CI</div><div class="sys-info"><div class="sys-name">Canopy Imaging</div><div class="sys-detail">Canopy Healthcare → ICG (UK) · Multiple Auckland sites</div></div></div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--idx);font-size:9px;">IDX</div><div class="sys-info"><div class="sys-name">Horizon / Astra / SRG / Trinity MRI</div><div class="sys-detail">Integral Diagnostics → IDX (ASX) · 14+ clinics · Community focus</div></div></div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--everlight);font-size:10px;">EL</div><div class="sys-info"><div class="sys-name">Everlight Radiology</div><div class="sys-detail">Livingbridge (UK PE) · DRS-R reporting since end of 2025</div></div></div>
+  </div></div></div></div>
+
+  <!-- 3. Te Manawa Taki -->
+  <div class="region-card"><div class="region-header" onclick="toggleRegion(this)"><div><div class="region-name">Te Manawa Taki (Waikato / BOP / Taranaki / Lakes / Tairāwhiti)</div><div class="region-meta">Unified Vue RIS/PACS · DRS-F in development · DRS-R with RHCNZ & Everlight</div></div><div class="region-ris"><span class="ris-badge ris-vue">Vue RIS/PACS</span><span class="expand-icon">▼</span></div></div>
+  <div class="region-body"><div class="columns"><div class="col"><div class="col-title col-public">Public — HNZ Te Manawa Taki</div><div class="sys-row"><div class="sys-icon" style="background:#1a6a4a;font-size:9px;">Vue</div><div class="sys-info"><div class="sys-name">Philips Vue RIS/PACS</div><div class="sys-detail">Standardised across region including former Taranaki DHB (migrated from Karisma early 2025). DRS-F (full delegation) in development with RHCNZ, I-MED and Beyond Radiology.</div></div></div></div>
+  <div class="col"><div class="col-title col-private">External Radiology Service Providers</div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--imed);font-size:10px;">IM</div><div class="sys-info"><div class="sys-name">Hamilton Radiology / Midland MRI / Taranaki Radiology / Mokoia / Focus</div><div class="sys-detail">I-MED → Permira (UK) · 19 clinics · Dominant private provider in region · Visage RIS (likely) · DRS-F in DEV</div></div></div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--rhcnz);font-size:10px;">PRG</div><div class="sys-info"><div class="sys-name">Pacific Radiology / Bay Radiology</div><div class="sys-detail">RHCNZ → Infratil (NZX) · COMRAD · IntelePACS · DRS-R & DRS-F in DEV</div></div></div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--everlight);font-size:10px;">EL</div><div class="sys-info"><div class="sys-name">Everlight Radiology</div><div class="sys-detail">Livingbridge (UK PE) · DRS-R reporting</div></div></div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--canopy);font-size:10px;">CI</div><div class="sys-info"><div class="sys-name">Canopy Imaging</div><div class="sys-detail">Canopy Healthcare → ICG (UK) · Rotorua, Gisborne</div></div></div>
+  </div></div></div></div>
+
+  <!-- 4. Central -->
+  <div class="region-card"><div class="region-header" onclick="toggleRegion(this)"><div><div class="region-name">Central Region (Hawke's Bay / Wairarapa / Hutt Valley / Capital and Coast / Manawatū / Whanganui)</div><div class="region-meta">Vue RIS/PACS · Longest-running outsource relationships</div></div><div class="region-ris"><span class="ris-badge ris-vue">Vue RIS/PACS</span><span class="expand-icon">▼</span></div></div>
+  <div class="region-body"><div class="columns"><div class="col"><div class="col-title col-public">Public — HNZ Central</div><div class="sys-row"><div class="sys-icon" style="background:#1a6a4a;font-size:9px;">Vue</div><div class="sys-info"><div class="sys-name">Philips Vue RIS/PACS</div><div class="sys-detail">Standardised across Central Region. Report-only outsourcing operational since 2018/2019.</div></div></div></div>
+  <div class="col"><div class="col-title col-private">External Radiology Service Providers</div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--rhcnz);font-size:9px;">PRG</div><div class="sys-info"><div class="sys-name">Pacific Radiology</div><div class="sys-detail">RHCNZ → Infratil (NZX) · COMRAD · IntelePACS · Capital and Coast / Hutt Valley / Manawatū</div></div></div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--allevia);font-size:9px;">AMI</div><div class="sys-info"><div class="sys-name">Affinity Medical Imaging</div><div class="sys-detail">Allevia Health JV → Waterman PE (NZ) · 3 Wellington locations</div></div></div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--canopy);font-size:10px;">CI</div><div class="sys-info"><div class="sys-name">Canopy Imaging</div><div class="sys-detail">Canopy Healthcare → ICG (UK) · Hawke's Bay</div></div></div>
+  </div></div></div></div>
+
+  <!-- 5. Te Waipounamu (excl. Southern) -->
+  <div class="region-card"><div class="region-header" onclick="toggleRegion(this)"><div><div class="region-name">Te Waipounamu — Nelson-Marlborough / West Coast / Waitaha / South Canterbury</div><div class="region-meta">COMRAD + Intelerad · Similar stack to Pacific Radiology but different integration layer</div></div><div class="region-ris"><span class="ris-badge ris-comrad">COMRAD / Intelerad</span><span class="expand-icon">▼</span></div></div>
+  <div class="region-body"><div class="columns"><div class="col"><div class="col-title col-public">Public — HNZ Te Waipounamu</div><div class="sys-row"><div class="sys-icon" style="background:#6a5a1a;font-size:9px;">C/I</div><div class="sys-info"><div class="sys-name">COMRAD (RIS) / Intelerad (PACS)</div><div class="sys-detail">Similar COMRAD/Intelerad stack to Pacific Radiology private, but with a different integration layer. Public uses Rhapsody integration engine and DICOM direct to PACS. Pacific Radiology uses KailoHub for its integration layer.</div></div></div></div>
+  <div class="col"><div class="col-title col-private">External Radiology Service Providers</div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--rhcnz);font-size:9px;">PRG</div><div class="sys-info"><div class="sys-name">Pacific Radiology</div><div class="sys-detail">RHCNZ → Infratil (NZX) · COMRAD · IntelePACS + KailoHub integration layer</div></div></div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--allevia);font-size:10px;">RR</div><div class="sys-info"><div class="sys-name">Reform Radiology</div><div class="sys-detail">Allevia Health JV + Forté Health · 2 Christchurch clinics · PET-CT/SPECT-CT</div></div></div>
+  </div></div></div></div>
+
+  <!-- 6. Te Waipounamu — Southern -->
+  <div class="region-card"><div class="region-header" onclick="toggleRegion(this)"><div><div class="region-name">Te Waipounamu — Southern (Otago / Southland)</div><div class="region-meta">Karisma / Sectra · Different stack to rest of South Island</div></div><div class="region-ris"><span class="ris-badge ris-karisma">Karisma / Sectra</span><span class="expand-icon">▼</span></div></div>
+  <div class="region-body"><div class="columns"><div class="col"><div class="col-title col-public">Public — HNZ Southern</div><div class="sys-row"><div class="sys-icon" style="background:var(--imed);font-size:9px;">K/S</div><div class="sys-info"><div class="sys-name">Karisma (RIS) / Sectra (PACS)</div><div class="sys-detail">Different RIS/PACS stack to the rest of Te Waipounamu. The COMRAD/IntelePACS environment used in Waitaha and Nelson-Marlborough is not deployed here.</div></div></div></div>
+  <div class="col"><div class="col-title col-private">External Radiology Service Providers</div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--rhcnz);font-size:9px;">PRG</div><div class="sys-info"><div class="sys-name">Pacific Radiology — Otago/Southland</div><div class="sys-detail">RHCNZ → Infratil (NZX) · COMRAD · IntelePACS + KailoHub — different stack to public</div></div></div>
+  </div></div></div></div>
+
+  <!-- Teleradiology -->
+  <div class="region-card"><div class="region-header" onclick="toggleRegion(this)"><div><div class="region-name">National — Teleradiology</div><div class="region-meta">Remote reporting providers · Report-only delegation</div></div><div class="region-ris"><span class="ris-badge" style="background:rgba(142,68,173,0.15);color:#b08ae0;border:1px solid rgba(142,68,173,0.3);">All Regions</span><span class="expand-icon">▼</span></div></div>
+  <div class="region-body"><div class="columns"><div class="col"><div class="col-title" style="color:var(--everlight);">Teleradiology Providers</div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--everlight);font-size:10px;">EL</div><div class="sys-info"><div class="sys-name">Everlight Radiology</div><div class="sys-detail">Livingbridge (UK PE) · 800+ radiologists · 250+ FRANZCR (ANZ)</div></div></div>
+    <div class="erp-row"><div class="sys-icon" style="background:var(--imed);font-size:10px;">IT</div><div class="sys-info"><div class="sys-name">I-TeleRAD</div><div class="sys-detail">I-MED → Permira (UK) · 135+ remote radiologists</div></div></div>
+  </div><div class="col"><div class="col-title" style="color:var(--everlight);">Integration Model</div>
+    <div class="sys-row"><div class="sys-icon" style="background:var(--everlight);">→</div><div class="sys-info"><div class="sys-name">Report-Only Pattern</div><div class="sys-detail">Teleradiology providers integrate into the originating hospital's RIS/PACS. Images flow out, reports flow back. Integration complexity sits at the hospital end.</div></div></div>
+  </div></div></div></div>
+
+  <div class="footer-note"><strong>Four distinct public RIS/PACS environments</strong> across the country: Agfa (Auckland), Philips Vue RIS/PACS (Northland PACS-only + Te Manawa Taki + Central), COMRAD/Intelerad (Te Waipounamu excl. Southern), Karisma/Sectra (Southern). A national integration standard must accommodate all four, plus the differing integration layers between public (Rhapsody / DICOM direct) and private (KailoHub).<br><br><em>Publicly sourced research · May 2026</em></div>
+</div>
+</div>
+
+<script>
+// ===== CLINIC DATA =====
+const clinics = [
+  // RHCNZ — Auckland Radiology Group
+  {brand:"Auckland Radiology Group",loc:"Epsom, Auckland",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"Unconfirmed",pacs:"IntelePACS",lat:-36.88,lng:174.78},
+  {brand:"Auckland Radiology Group",loc:"Greenlane, Auckland",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"Unconfirmed",pacs:"IntelePACS",lat:-36.89,lng:174.79},
+  {brand:"Auckland Radiology Group",loc:"Newmarket, Auckland",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"Unconfirmed",pacs:"IntelePACS",lat:-36.87,lng:174.775},
+  {brand:"Auckland Radiology Group",loc:"North Shore, Auckland",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"Unconfirmed",pacs:"IntelePACS",lat:-36.80,lng:174.76},
+  {brand:"Auckland Radiology Group",loc:"East Auckland",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"Unconfirmed",pacs:"IntelePACS",lat:-36.89,lng:174.88},
+  {brand:"Auckland Radiology Group",loc:"Henderson, Auckland",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"Unconfirmed",pacs:"IntelePACS",lat:-36.88,lng:174.63},
+  {brand:"Auckland Radiology Group",loc:"Manukau, Auckland",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"Unconfirmed",pacs:"IntelePACS",lat:-36.99,lng:174.88},
+  {brand:"Auckland Radiology Group",loc:"Pukekohe",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"Unconfirmed",pacs:"IntelePACS",lat:-37.20,lng:174.90},
+  // RHCNZ — Bay Radiology
+  {brand:"Bay Radiology",loc:"Tauranga",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"Unconfirmed",pacs:"IntelePACS",lat:-37.69,lng:176.17},
+  {brand:"Bay Radiology",loc:"Mt Maunganui",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"Unconfirmed",pacs:"IntelePACS",lat:-37.64,lng:176.19},
+  {brand:"Bay Radiology",loc:"Te Puke",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"Unconfirmed",pacs:"IntelePACS",lat:-37.78,lng:176.32},
+  // RHCNZ — Pacific Radiology
+  {brand:"Pacific Radiology",loc:"Wellington Central",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-41.29,lng:174.78},
+  {brand:"Pacific Radiology",loc:"Lower Hutt",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-41.21,lng:174.91},
+  {brand:"Pacific Radiology",loc:"Palmerston North",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-40.35,lng:175.61},
+  {brand:"Pacific Radiology",loc:"Christchurch Central",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-43.53,lng:172.64},
+  {brand:"Pacific Radiology",loc:"Riccarton, Christchurch",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-43.53,lng:172.57},
+  {brand:"Pacific Radiology",loc:"Papanui, Christchurch",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-43.50,lng:172.60},
+  {brand:"Pacific Radiology",loc:"Nelson",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-41.27,lng:173.28},
+  {brand:"Pacific Radiology",loc:"Blenheim",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-41.51,lng:173.96},
+  {brand:"Pacific Radiology",loc:"Dunedin",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-45.87,lng:170.50},
+  {brand:"Pacific Radiology",loc:"Invercargill",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-46.41,lng:168.35},
+  {brand:"Pacific Radiology",loc:"Queenstown",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-45.03,lng:168.66},
+  {brand:"Pacific Radiology",loc:"Timaru",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-44.40,lng:171.25},
+  {brand:"Pacific Radiology",loc:"Greymouth",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-42.45,lng:171.21},
+  {brand:"Pacific Radiology",loc:"Kapiti Coast",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-40.91,lng:174.98},
+  {brand:"Pacific Radiology",loc:"Whanganui",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-39.93,lng:175.05},
+  {brand:"Pacific Radiology",loc:"New Plymouth",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-39.06,lng:174.08},
+  {brand:"Pacific Radiology",loc:"Hastings",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-39.64,lng:176.84},
+  {brand:"Pacific Radiology",loc:"Napier",group:"rhcnz",parent:"RHCNZ → Infratil (NZX:IFT)",type:"NZ Listed",ris:"COMRAD",pacs:"IntelePACS",lat:-39.49,lng:176.92},
+  // Allevia
+  {brand:"Allevia Radiology",loc:"Epsom, Auckland",group:"allevia",parent:"Allevia Health → Waterman PE (NZ)",type:"NZ Private",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-36.878,lng:174.772},
+  {brand:"Allevia Radiology",loc:"Grafton, Auckland",group:"allevia",parent:"Allevia Health → Waterman PE (NZ)",type:"NZ Private",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-36.86,lng:174.77},
+  {brand:"Allevia Radiology",loc:"Remuera, Auckland",group:"allevia",parent:"Allevia Health → Waterman PE (NZ)",type:"NZ Private",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-36.87,lng:174.80},
+  {brand:"Allevia Radiology",loc:"Albany, Auckland",group:"allevia",parent:"Allevia Health → Waterman PE (NZ)",type:"NZ Private",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-36.73,lng:174.71},
+  {brand:"Allevia Radiology",loc:"Botany, Auckland",group:"allevia",parent:"Allevia Health → Waterman PE (NZ)",type:"NZ Private",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-36.93,lng:174.92},
+  {brand:"Allevia Radiology",loc:"New Lynn, Auckland",group:"allevia",parent:"Allevia Health → Waterman PE (NZ)",type:"NZ Private",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-36.91,lng:174.68},
+  {brand:"Allevia Radiology",loc:"Takapuna, Auckland",group:"allevia",parent:"Allevia Health → Waterman PE (NZ)",type:"NZ Private",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-36.79,lng:174.77},
+  {brand:"Affinity Medical Imaging (Allevia JV)",loc:"Lower Hutt, Wellington",group:"allevia",parent:"Allevia Health JV → Waterman PE",type:"NZ Private (JV)",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-41.208,lng:174.92},
+  {brand:"Affinity Medical Imaging (Allevia JV)",loc:"Johnsonville, Wellington",group:"allevia",parent:"Allevia Health JV → Waterman PE",type:"NZ Private (JV)",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-41.23,lng:174.81},
+  {brand:"Affinity Medical Imaging (Allevia JV)",loc:"Newtown, Wellington",group:"allevia",parent:"Allevia Health JV → Waterman PE",type:"NZ Private (JV)",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-41.31,lng:174.78},
+  {brand:"Reform Radiology (Allevia JV)",loc:"Christchurch Central",group:"allevia",parent:"Allevia Health JV + Forté Health",type:"NZ Private (JV)",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-43.528,lng:172.635},
+  {brand:"Reform Radiology (Allevia JV)",loc:"St Albans, Christchurch",group:"allevia",parent:"Allevia Health JV + Forté Health",type:"NZ Private (JV)",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-43.51,lng:172.63},
+  // I-MED
+  {brand:"Hamilton Radiology (I-MED)",loc:"Hamilton Central",group:"imed",parent:"I-MED → Permira (UK PE)",type:"UK PE",ris:"Visage (likely)",pacs:"Unconfirmed",lat:-37.787,lng:175.283},
+  {brand:"Hamilton Radiology (I-MED)",loc:"Hamilton East",group:"imed",parent:"I-MED → Permira (UK PE)",type:"UK PE",ris:"Visage (likely)",pacs:"Unconfirmed",lat:-37.79,lng:175.30},
+  {brand:"Midland MRI (I-MED)",loc:"Hamilton",group:"imed",parent:"I-MED → Permira (UK PE)",type:"UK PE",ris:"Visage (likely)",pacs:"Unconfirmed",lat:-37.795,lng:175.29},
+  {brand:"Hamilton Radiology (I-MED)",loc:"Te Awamutu",group:"imed",parent:"I-MED → Permira (UK PE)",type:"UK PE",ris:"Visage (likely)",pacs:"Unconfirmed",lat:-38.01,lng:175.30},
+  {brand:"Hamilton Radiology (I-MED)",loc:"Cambridge",group:"imed",parent:"I-MED → Permira (UK PE)",type:"UK PE",ris:"Visage (likely)",pacs:"Unconfirmed",lat:-37.88,lng:175.47},
+  {brand:"Hamilton Radiology (I-MED)",loc:"Matamata",group:"imed",parent:"I-MED → Permira (UK PE)",type:"UK PE",ris:"Visage (likely)",pacs:"Unconfirmed",lat:-37.81,lng:175.77},
+  {brand:"Hamilton Radiology (I-MED)",loc:"Morrinsville",group:"imed",parent:"I-MED → Permira (UK PE)",type:"UK PE",ris:"Visage (likely)",pacs:"Unconfirmed",lat:-37.65,lng:175.53},
+  {brand:"Hamilton Radiology (I-MED)",loc:"Thames",group:"imed",parent:"I-MED → Permira (UK PE)",type:"UK PE",ris:"Visage (likely)",pacs:"Unconfirmed",lat:-37.14,lng:175.54},
+  {brand:"Hamilton Radiology (I-MED)",loc:"Tokoroa",group:"imed",parent:"I-MED → Permira (UK PE)",type:"UK PE",ris:"Visage (likely)",pacs:"Unconfirmed",lat:-38.23,lng:175.87},
+  {brand:"Taranaki Radiology (I-MED)",loc:"New Plymouth",group:"imed",parent:"I-MED → Permira (UK PE)",type:"UK PE",ris:"Legacy/Visage (not Vue)",pacs:"Unconfirmed",lat:-39.055,lng:174.075},
+  {brand:"Mokoia Radiology (I-MED)",loc:"Rotorua",group:"imed",parent:"I-MED → Permira (UK PE)",type:"UK PE",ris:"Visage (likely)",pacs:"Unconfirmed",lat:-38.14,lng:176.25},
+  {brand:"Focus Radiology (I-MED)",loc:"Tauranga",group:"imed",parent:"I-MED → Permira (UK PE)",type:"UK PE",ris:"Visage (likely)",pacs:"Unconfirmed",lat:-37.688,lng:176.162},
+  {brand:"I-MED",loc:"Taupo",group:"imed",parent:"I-MED → Permira (UK PE)",type:"UK PE",ris:"Visage (likely)",pacs:"Unconfirmed",lat:-38.69,lng:176.08},
+  // Canopy
+  {brand:"Canopy Imaging",loc:"Auckland — Ascot",group:"canopy",parent:"Canopy Healthcare → ICG (UK PE)",type:"UK PE",ris:"Karisma (historical)",pacs:"Unconfirmed",lat:-36.872,lng:174.81},
+  {brand:"Canopy Imaging",loc:"Auckland — Greenlane",group:"canopy",parent:"Canopy Healthcare → ICG (UK PE)",type:"UK PE",ris:"Karisma (historical)",pacs:"Unconfirmed",lat:-36.892,lng:174.80},
+  {brand:"Canopy Imaging",loc:"Auckland — Ormiston",group:"canopy",parent:"Canopy Healthcare → ICG (UK PE)",type:"UK PE",ris:"Karisma (historical)",pacs:"Unconfirmed",lat:-36.97,lng:174.92},
+  {brand:"Canopy Imaging",loc:"Auckland — Mt Wellington",group:"canopy",parent:"Canopy Healthcare → ICG (UK PE)",type:"UK PE",ris:"Karisma (historical)",pacs:"Unconfirmed",lat:-36.90,lng:174.84},
+  {brand:"Canopy Imaging",loc:"Whangārei",group:"canopy",parent:"Canopy Healthcare → ICG (UK PE)",type:"UK PE",ris:"Karisma (historical)",pacs:"Unconfirmed",lat:-35.72,lng:174.32},
+  {brand:"Canopy Imaging",loc:"Kerikeri",group:"canopy",parent:"Canopy Healthcare → ICG (UK PE)",type:"UK PE",ris:"Karisma (historical)",pacs:"Unconfirmed",lat:-35.23,lng:174.00},
+  {brand:"Canopy Imaging",loc:"Rotorua",group:"canopy",parent:"Canopy Healthcare → ICG (UK PE)",type:"UK PE",ris:"Karisma (historical)",pacs:"Unconfirmed",lat:-38.138,lng:176.242},
+  {brand:"Canopy Imaging",loc:"Gisborne",group:"canopy",parent:"Canopy Healthcare → ICG (UK PE)",type:"UK PE",ris:"Karisma (historical)",pacs:"Unconfirmed",lat:-38.66,lng:178.02},
+  {brand:"Canopy Imaging",loc:"Hastings (Canning Road)",group:"canopy",parent:"Canopy Healthcare → ICG (UK PE)",type:"UK PE",ris:"Karisma (historical)",pacs:"Unconfirmed",lat:-39.638,lng:176.852},
+  {brand:"Absolute Radiology (Canopy)",loc:"Auckland — Epsom",group:"canopy",parent:"Canopy Healthcare → ICG (UK PE)",type:"UK PE",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-36.882,lng:174.782},
+  // IDX
+  {brand:"Horizon Radiology (IDX)",loc:"Pt Chevalier, Auckland",group:"idx",parent:"Integral Diagnostics → IDX (ASX)",type:"AU Listed",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-36.87,lng:174.72},
+  {brand:"Horizon Radiology (IDX)",loc:"Mt Eden, Auckland",group:"idx",parent:"Integral Diagnostics → IDX (ASX)",type:"AU Listed",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-36.878,lng:174.76},
+  {brand:"Horizon Radiology (IDX)",loc:"Glen Innes, Auckland",group:"idx",parent:"Integral Diagnostics → IDX (ASX)",type:"AU Listed",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-36.88,lng:174.86},
+  {brand:"Horizon Radiology (IDX)",loc:"Onehunga, Auckland",group:"idx",parent:"Integral Diagnostics → IDX (ASX)",type:"AU Listed",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-36.92,lng:174.79},
+  {brand:"Horizon Radiology (IDX)",loc:"Avondale, Auckland",group:"idx",parent:"Integral Diagnostics → IDX (ASX)",type:"AU Listed",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-36.89,lng:174.70},
+  {brand:"Horizon Radiology (IDX)",loc:"Papatoetoe, Auckland",group:"idx",parent:"Integral Diagnostics → IDX (ASX)",type:"AU Listed",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-36.97,lng:174.85},
+  {brand:"Astra Radiology (IDX)",loc:"Penrose, Auckland",group:"idx",parent:"Integral Diagnostics → IDX (ASX)",type:"AU Listed",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-36.91,lng:174.82},
+  {brand:"Trinity MRI (IDX)",loc:"Epsom, Auckland",group:"idx",parent:"Integral Diagnostics → IDX (ASX)",type:"AU Listed",ris:"Unconfirmed",pacs:"Unconfirmed",lat:-36.884,lng:174.778},
+  // Everlight
+  {brand:"Everlight Radiology (NZ Office)",loc:"Grafton, Auckland",group:"everlight",parent:"Livingbridge (UK PE)",type:"UK PE (Teleradiology)",ris:"Client RIS integration",pacs:"Client PACS integration",lat:-36.858,lng:174.772},
+];
+
+// ===== THEME =====
+function getPreferredTheme() {
+  try { const stored = localStorage.getItem('nzrad-theme'); if (stored) return stored; } catch(e) {}
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+function applyTheme(theme) {
+  document.body.dataset.theme = theme;
+  try { localStorage.setItem('nzrad-theme', theme); } catch(e) {}
+  if (typeof map !== 'undefined' && map) updateTileLayer();
+}
+function toggleTheme() {
+  applyTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark');
+}
+applyTheme(getPreferredTheme());
+
+// ===== PAGE NAV =====
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`[onclick="showPage('${id}')"]`).classList.add('active');
+  if (id === 'map' && typeof map !== 'undefined' && map) setTimeout(() => map.invalidateSize(), 100);
+}
+
+// ===== REGIONAL TOGGLE =====
+function toggleRegion(header) {
+  const body = header.nextElementSibling;
+  const icon = header.querySelector('.expand-icon');
+  body.classList.toggle('open');
+  icon.classList.toggle('open');
+}
+
+// ===== MAP =====
+const colors = { rhcnz:'#2980b9', allevia:'#27ae60', imed:'#c0392b', canopy:'#e67e22', idx:'#d4ac0d', everlight:'#8e44ad' };
+const badgeMap = { 'NZ Listed':'badge-nzl', 'NZ Private':'badge-nzp', 'NZ Private (JV)':'badge-nzp', 'UK PE':'badge-ukpe', 'UK PE (Teleradiology)':'badge-ukpe', 'AU Listed':'badge-aul' };
+
+let map, tileLayer, markers = [];
+
+function initMap() {
+  map = L.map('map', { zoomControl: true, attributionControl: true }).setView([-41.0, 174.0], 6);
+  updateTileLayer();
+  addMarkers('all');
+}
+
+function updateTileLayer() {
+  if (tileLayer) map.removeLayer(tileLayer);
+  const isDark = document.body.dataset.theme === 'dark';
+  tileLayer = L.tileLayer(
+    isDark
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>', subdomains: 'abcd', maxZoom: 19 }
+  ).addTo(map);
+}
+
+function makeIcon(group, opacity) {
+  const c = colors[group];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="${c}" stroke="#fff" stroke-width="1.5" opacity="${opacity}"/></svg>`;
+  return L.icon({ iconUrl: 'data:image/svg+xml;base64,' + btoa(svg), iconSize: [14, 14], iconAnchor: [7, 7], popupAnchor: [0, -10] });
+}
+
+function addMarkers(filter) {
+  if (!map) return;
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  clinics.forEach(c => {
+    const show = filter === 'all' || c.group === filter;
+    const opacity = show ? 1 : 0.15;
+    const marker = L.marker([c.lat, c.lng], { icon: makeIcon(c.group, opacity), interactive: show });
+    if (show) {
+      marker.bindPopup(`
+        <div class="popup-brand">${c.brand}</div>
+        <div class="popup-loc">${c.loc}</div>
+        <div class="popup-divider"></div>
+        <div class="popup-row"><span class="popup-key">Parent</span><span class="popup-val">${c.parent}</span></div>
+        <div class="popup-row"><span class="popup-key">RIS</span><span class="popup-val">${c.ris}</span></div>
+        <div class="popup-row"><span class="popup-key">PACS</span><span class="popup-val">${c.pacs}</span></div>
+        <div><span class="popup-badge ${badgeMap[c.type]||'badge-ukpe'}">${c.type}</span></div>
+      `, { maxWidth: 300 });
+    }
+    marker.addTo(map);
+    markers.push(marker);
+  });
+}
+
+function filterPins(group) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-group="${group}"]`).classList.add('active');
+  if (map) addMarkers(group);
+}
+
+// Counts
+const groups = ['rhcnz','allevia','imed','canopy','idx','everlight'];
+groups.forEach(g => { document.getElementById('count-'+g).textContent = clinics.filter(c=>c.group===g).length; });
+document.getElementById('count-all').textContent = clinics.length;
+
+// Init
+window.addEventListener('load', initMap);
+</script>
+
+</body>
+</html>
