@@ -2446,7 +2446,7 @@ function callTriageAPI(model, note) {
     body: JSON.stringify({
       model: model,
       max_tokens: 2400,
-      temperature: 0.1,
+      temperature: 0,
       system: [{ type: 'text', text: sys, cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: userMsg }]
     })
