@@ -285,6 +285,7 @@ textarea.note::placeholder{color:#8b919a}
       <div class="pb">
         <div class="note-hint">Clinical presentation</div>
         <textarea class="note" id="noteInput" oninput="onNoteChange()" placeholder="e.g. 70-year-old male, 4 days ago sudden onset left arm weakness lasting 40 minutes, fully resolved. No AF, not on anticoagulants. Requesting CT Head."></textarea>
+        <div id="noteCharCount" style="font-size:10px;color:var(--mid);text-align:right;margin-top:2px;height:14px;"></div>
 
         <!-- Hidden inputs retained for JS compatibility — age/sex now passed via URL params -->
         <input type="hidden" id="demogAge" value="">
@@ -817,6 +818,13 @@ function onDemogChange() {
 }
 
 function onNoteChange() {
+  var noteEl2 = document.getElementById('noteInput');
+  var charCountEl = document.getElementById('noteCharCount');
+  if (charCountEl && noteEl2) {
+    var len = noteEl2.value.length;
+    charCountEl.textContent = len + ' characters' + (len >= 2000 ? ' — long notes may increase assessment time' : '');
+    charCountEl.style.color = len >= 2000 ? 'var(--warn)' : 'var(--mid)';
+  }
   // Show paediatric warning if note text implies paediatric patient
   var w = document.getElementById('paedWarning');
   if (detectPaediatric()) {
