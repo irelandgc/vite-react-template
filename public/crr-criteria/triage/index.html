@@ -1240,7 +1240,7 @@ function _showAssessLoading() {
   document.getElementById('aiPanel').innerHTML =
     '<div class="panel"><div style="padding:20px 14px;display:flex;align-items:center;gap:10px;color:var(--mid);font-size:13px;">' +
     '<div class="ai-spinner"><span></span><span></span><span></span></div>' +
-    'Assessing\u2026</div></div>';
+    'Loading criteria\u2026</div></div>';
   document.getElementById('criteriaPanel').innerHTML =
     '<div class="panel"><div class="result-empty" style="padding:28px 14px">' +
     '<div class="result-empty-icon" style="font-size:22px">&#128196;</div>' +
@@ -1681,7 +1681,7 @@ function runAI() {
     '<div class="panel"><div id="aiLoadingBox" style="padding:20px 14px;">' +
     '<div style="display:flex;align-items:center;gap:10px;color:var(--mid);font-size:13px;">' +
     '<div class="ai-spinner"><span></span><span></span><span></span></div>' +
-    '<span id="aiLoadingMsg">Assessing referral\u2026</span></div>' +
+    '<span id="aiLoadingMsg">Loading criteria\u2026</span></div>' +
     '<div style="font-size:11px;color:#b0bec8;margin-top:6px;margin-left:34px" id="aiLoadingHint">First assessment loads criteria (~10s). Subsequent assessments use cache (~3s).</div>' +
     '</div></div>';
 
@@ -1689,7 +1689,8 @@ function runAI() {
     var el = document.getElementById('aiLoadingMsg');
     if (el) {
       var secs = Math.round((Date.now() - startTime) / 1000);
-      el.textContent = 'Assessing referral\u2026 ' + secs + 's';
+      var stage = secs < 3 ? 'Loading criteria\u2026' : secs < 7 ? 'Assessing referral\u2026' : 'Preparing result\u2026';
+      el.textContent = stage + ' ' + secs + 's';
     } else {
       clearInterval(ticker);
     }
