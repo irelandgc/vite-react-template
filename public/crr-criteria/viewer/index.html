@@ -159,6 +159,14 @@ body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
 /* hidden clipboard helper */
 #clipHelper { position:absolute; left:-9999px; top:-9999px; width:1px; height:1px; }
 
+/* ═══ GATEWAY TOOLTIP (UX-09) ═══════════════════════════ */
+.gateway-tag { position: relative; display: inline-flex; align-items: center; gap: 3px; }
+.gateway-info-icon { display: inline-flex; align-items: center; justify-content: center; width: 13px; height: 13px; border-radius: 50%; background: rgba(255,255,255,0.25); font-size: 9px; font-weight: 700; cursor: help; flex-shrink: 0; }
+.gateway-info-icon:hover .gateway-tooltip-text,
+.gateway-info-icon:focus .gateway-tooltip-text { display: block; }
+.gateway-tooltip-text { display: none; position: absolute; bottom: 120%; left: 0; width: 220px; background: #1a1d21; color: #fff; font-size: 11px; font-weight: 400; padding: 8px 10px; border-radius: 4px; line-height: 1.5; z-index: 200; letter-spacing: 0; text-transform: none; pointer-events: none; white-space: normal; }
+.gateway-tooltip-text::after { content: ''; position: absolute; top: 100%; left: 12px; border: 5px solid transparent; border-top-color: #1a1d21; }
+
 /* ═══ PRINT STYLES ══════════════════════════════════════ */
 @media print {
   #toolIdentityFooter, .region-bar, .left-col, .loader-overlay { display:none !important; }
@@ -1630,7 +1638,7 @@ function toolRenderIndicCb(item, tier, groupTitle) {
   h += on ? " checked" : "";
   h += ">";
   h += "<span class='crit-card-label'>";
-  if (gateway) h += "<span class='gateway-tag'>&#128274; GATEWAY</span> ";
+  if (gateway) h += "<span class='gateway-tag'>&#128274; GATEWAY <span class='gateway-info-icon' tabindex='0'>i<span class='gateway-tooltip-text'>A gateway is a required procedural step — such as completing a decision support tool or obtaining a specialist recommendation — that must be documented before the referral can be accepted. It is separate from clinical criteria.</span></span></span> ";
   if (labval)  h += "<span class='lab-tag'>&#128203; LAB</span> ";
   h += esc(item.label);
   if (item.mandatory) h += " <span class='mandatory-tag'>Mandatory</span>";
@@ -1876,7 +1884,7 @@ function toolRenderIndicPassive(item, tier) {
   var h = "<div class='crit-card'>";
   h += "<div class='crit-card-header' style='cursor:default'>";
   h += "<span class='crit-card-label'>";
-  if (gateway) h += "<span class='gateway-tag'>&#128274; GATEWAY</span> ";
+  if (gateway) h += "<span class='gateway-tag'>&#128274; GATEWAY <span class='gateway-info-icon' tabindex='0'>i<span class='gateway-tooltip-text'>A gateway is a required procedural step — such as completing a decision support tool or obtaining a specialist recommendation — that must be documented before the referral can be accepted. It is separate from clinical criteria.</span></span></span> ";
   if (labval)  h += "<span class='lab-tag'>&#128203; LAB</span> ";
   h += esc(item.label);
   if (item.mandatory) h += " <span class='mandatory-tag'>Mandatory</span>";
@@ -1957,7 +1965,7 @@ function renderPrereqBlock(prereqs) {
     var _gw = isGateway(prereqs[i]);
     var _lv = isLabValue(prereqs[i]);
     h += "<div class='prereq-item'><span class='prereq-bullet'>&#9744;</span><span>" + esc(prereqs[i]) + "</span>";
-    if (_gw) h += " <span class='gateway-tag'>&#128274; GATEWAY</span>";
+    if (_gw) h += " <span class='gateway-tag'>&#128274; GATEWAY <span class='gateway-info-icon' tabindex='0'>i<span class='gateway-tooltip-text'>A gateway is a required procedural step — such as completing a decision support tool or obtaining a specialist recommendation — that must be documented before the referral can be accepted. It is separate from clinical criteria.</span></span></span>";
     if (_lv) h += " <span class='lab-tag'>&#128203; LAB</span>";
     h += "</div>";
   }
@@ -2033,7 +2041,7 @@ function toolRenderCb(item, groupTitle) {
   h += on ? " checked" : "";
   h += ">";
   h += "<span class='crit-card-label'>";
-  if (gateway) h += "<span class='gateway-tag'>&#128274; GATEWAY</span> ";
+  if (gateway) h += "<span class='gateway-tag'>&#128274; GATEWAY <span class='gateway-info-icon' tabindex='0'>i<span class='gateway-tooltip-text'>A gateway is a required procedural step — such as completing a decision support tool or obtaining a specialist recommendation — that must be documented before the referral can be accepted. It is separate from clinical criteria.</span></span></span> ";
   if (labval)  h += "<span class='lab-tag'>&#128203; LAB</span> ";
   h += esc(item.label);
   if (item.mandatory) h += " <span class='mandatory-tag'>Mandatory</span>";
