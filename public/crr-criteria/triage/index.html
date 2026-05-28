@@ -592,8 +592,9 @@ var VER = "v1.0.0 DEV";
 var BUILD = "2026-05-14"; // bump on each deployment
 
 // ── UX Feature flags ──────────────────────────────────────────────────────────
-var UX02_REORDER_OUTPUT = true;
-var UX03_MERGE_MISSING  = true;
+var UX02_REORDER_OUTPUT  = true;
+var UX03_MERGE_MISSING   = true;
+var UX04_PANEL_FILTERING = true;
 
 // Changelog:
 // v1.0.0 DEV — version reset for review cycle (2026-05-14); previously v2.1.1
@@ -1989,6 +1990,50 @@ function setTriaCriteriaLayout(mode) {
   triaCriteriaLayout = mode;
   if (lastTriaR) renderCriteriaBrowser(lastTriaR);
 }
+// UX-04 helpers ───────────────────────────────────────────────────────────────
+window._triaMatchedGroups = null;
+
+function toggleTriaGroup(id) {
+  var el = document.getElementById(id);
+  var btn = document.getElementById(id + '_btn');
+  if (!el) return;
+  var isHidden = el.style.display === 'none';
+  el.style.display = isHidden ? 'block' : 'none';
+  if (btn) btn.textContent = isHidden ? '▾' : '▸';
+}
+
+function getMatchedGroupNames(site, aiResult) {
+  if (!aiResult || !site) return null;
+  var allCritText = [];
+  (aiResult.met_criteria || []).forEach(function(s){ allCritText.push(s.toLowerCase()); });
+  (aiResult.missing_criteria || []).forEach(function(s){ allCritText.push(s.toLowerCase()); });
+  if (!allCritText.length) return null;
+
+  var matched = {};
+  for (var g = 0; g < site.groups.length; g++) {
+    var group = site.groups[g];
+    for (var i = 0; i < group.items.length; i++) {
+      var item = group.items[i];
+      if (item.type !== 'cb') continue;
+      var lbl = (item.label || '').toLowerCase();
+      var words = lbl.split(/\W+/).filter(function(w){ return w.length >= 5; });
+      if (!words.length) continue;
+      for (var c = 0; c < allCritText.length; c++) {
+        var matchCount = 0;
+        for (var w = 0; w < words.length; w++) {
+          if (allCritText[c].indexOf(words[w]) !== -1) matchCount++;
+        }
+        if (matchCount >= 2 || (matchCount >= 1 && words.length <= 2)) {
+          matched[group.title] = true;
+          break;
+        }
+      }
+      if (matched[group.title]) break;
+    }
+  }
+  return Object.keys(matched).length > 0 ? matched : null;
+}
+
 function renderTriaCriteriaItem(item, tier) {
   var labelL = (item.label||'').toLowerCase();
   var isGw = labelL.indexOf('bpac') !== -1 || labelL.indexOf('neurologist') !== -1 || labelL.indexOf('stroke specialist') !== -1;
@@ -2024,15 +2069,42 @@ function renderTriaCriteriaByIndication(site) {
   var orderedThemes = [];
   definedOrder.forEach(function(t) { if (themeMap[t]) orderedThemes.push(t); });
   allThemeKeys.forEach(function(t) { if (orderedThemes.indexOf(t) === -1) orderedThemes.push(t); });
+  var matchedGroups = (UX04_PANEL_FILTERING && window._triaMatchedGroups) ? window._triaMatchedGroups : null;
   var h = '';
+  var thIdx = 0;
   orderedThemes.forEach(function(th) {
-    h += '<div class="crit-theme-hd">' + esc(th) + '</div>';
-    themeMap[th].forEach(function(e) { h += renderTriaCriteriaItem(e.item, e.tier); });
+    // For indication layout, collapse themes whose originating groups are all unmatched
+    var themeItems = themeMap[th];
+    var anyGroupMatched = !matchedGroups;
+    if (matchedGroups) {
+      themeItems.forEach(function(e) {
+        // Find which group this item belongs to
+        (site.groups||[]).forEach(function(g) {
+          (g.items||[]).forEach(function(gi) {
+            if (gi === e.item && matchedGroups[g.title]) anyGroupMatched = true;
+          });
+        });
+      });
+    }
+    var tId = 'triaGrpI_' + thIdx++;
+    if (matchedGroups && !anyGroupMatched) {
+      h += '<div style="cursor:pointer;display:flex;align-items:center;gap:4px;margin-bottom:4px" onclick="toggleTriaGroup(\'' + tId + '\')">';
+      h += '<div class="crit-theme-hd" style="margin-bottom:0;cursor:pointer">' + esc(th) + '</div>';
+      h += '<span id="' + tId + '_btn" style="font-size:10px;color:var(--mid)">▸</span></div>';
+      h += '<div id="' + tId + '" style="display:none">';
+      themeItems.forEach(function(e) { h += renderTriaCriteriaItem(e.item, e.tier); });
+      h += '</div>';
+    } else {
+      h += '<div class="crit-theme-hd">' + esc(th) + '</div>';
+      themeItems.forEach(function(e) { h += renderTriaCriteriaItem(e.item, e.tier); });
+    }
   });
   return h || '<div style="font-size:12px;color:var(--mid);font-style:italic;padding:6px 0">No criteria available.</div>';
 }
 function renderTriaCriteriaByUrgency(site) {
   var h = '';
+  var matchedGroups = (UX04_PANEL_FILTERING && window._triaMatchedGroups) ? window._triaMatchedGroups : null;
+  var groupIdx = 0;
   (site.groups||[]).forEach(function(g) {
     if (triIsNonClinicalGroup(g.title)) return;
     var isEmg = triIsEmergencyGroup(g.title);
@@ -2040,11 +2112,20 @@ function renderTriaCriteriaByUrgency(site) {
     var lblStyle = isEmg
       ? 'color:#c62828;background:#fdecea;border:1px solid #f0b0b0'
       : 'color:var(--mid);background:var(--lite);border:1px solid var(--rule)';
+    var isMatched = !matchedGroups || isEmg || matchedGroups[g.title];
+    var collapsed = matchedGroups && !isEmg && !matchedGroups[g.title];
+    var gId = 'triaGrpU_' + groupIdx++;
     h += '<div style="margin-bottom:10px">';
-    h += '<div style="font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:5px;padding:3px 8px;border-radius:4px;display:inline-block;' + lblStyle + '">' + esc(shortLabel) + '</div>';
-    (g.items||[]).forEach(function(item) {
-      h += renderTriaCriteriaItem(item, null);
-    });
+    if (collapsed) {
+      h += '<div style="cursor:pointer;font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:5px;padding:3px 8px;border-radius:4px;display:inline-flex;align-items:center;gap:4px;' + lblStyle + '" onclick="toggleTriaGroup(\'' + gId + '\')">';
+      h += esc(shortLabel) + ' <span id="' + gId + '_btn" style="font-size:9px">▸</span></div>';
+      h += '<div id="' + gId + '" style="display:none">';
+      (g.items||[]).forEach(function(item) { h += renderTriaCriteriaItem(item, null); });
+      h += '</div>';
+    } else {
+      h += '<div style="font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:5px;padding:3px 8px;border-radius:4px;display:inline-block;' + lblStyle + '">' + esc(shortLabel) + '</div>';
+      (g.items||[]).forEach(function(item) { h += renderTriaCriteriaItem(item, null); });
+    }
     h += '</div>';
   });
   return h || '<div style="font-size:12px;color:var(--mid);font-style:italic;padding:6px 0">No criteria available.</div>';
@@ -2124,6 +2205,7 @@ function renderCriteriaBrowser(r) {
   h += '<button class="crit-view-toggle-btn' + (triaCriteriaLayout === 'indication' ? ' active' : '') + '" onclick="setTriaCriteriaLayout(\'indication\')">By indication</button>';
   h += '<button class="crit-view-toggle-btn' + (triaCriteriaLayout === 'urgency' ? ' active' : '') + '" onclick="setTriaCriteriaLayout(\'urgency\')">By urgency</button>';
   h += '</div>';
+  window._triaMatchedGroups = UX04_PANEL_FILTERING ? getMatchedGroupNames(site, r) : null;
   h += triaCriteriaLayout === 'indication' ? renderTriaCriteriaByIndication(site) : renderTriaCriteriaByUrgency(site);
 
   // Footnotes
