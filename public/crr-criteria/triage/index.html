@@ -2414,6 +2414,12 @@ function renderAIResult(r) {
     hNotes += '<div style="font-size:12px;color:var(--mid);line-height:1.6;padding:8px 10px;background:var(--mist);border-radius:2px;margin-top:8px;">' + esc(r.notes) + '</div>';
   }
 
+  // Session info footer
+  var hSessionInfo = '';
+  var sessionParts = ['Model: claude-sonnet-4-20250514', 'Mode: ' + (r._docMode || 'strict')];
+  if (loadedPrompt && loadedPrompt.version) sessionParts.push('Prompt: v' + loadedPrompt.version);
+  hSessionInfo += '<div style="font-size:10px;color:#8ab4c8;margin-top:10px;padding-top:8px;border-top:1px solid var(--rule)">' + sessionParts.join(' · ') + '</div>';
+
   // Buttons
   var hButtons = '';
   hButtons += '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">';
@@ -2434,7 +2440,7 @@ function renderAIResult(r) {
   h += hNotFunded;
 
   if (UX02_REORDER_OUTPUT) {
-    // New order: verdict → exam → missing (UX03 merged) → met → advisory (redirect+notes) → wording → buttons
+    // New order: verdict → exam → missing (UX03 merged) → met → advisory (redirect+notes) → wording → session → buttons
     h += hVerdict;
     h += hExam;
     h += hMissing;
@@ -2452,6 +2458,7 @@ function renderAIResult(r) {
     h += hWording;
     h += hNotes;
   }
+  h += hSessionInfo;
   h += hButtons;
 
   h += '</div></div>';
