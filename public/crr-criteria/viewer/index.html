@@ -1640,7 +1640,7 @@ function toolRenderIndicCb(item, tier, groupTitle) {
   h += "<span class='crit-card-label'>";
   if (gateway) h += "<span class='gateway-tag'>&#128274; GATEWAY <span class='gateway-info-icon' tabindex='0'>i<span class='gateway-tooltip-text'>A gateway is a required procedural step — such as completing a decision support tool or obtaining a specialist recommendation — that must be documented before the referral can be accepted. It is separate from clinical criteria.</span></span></span> ";
   if (labval)  h += "<span class='lab-tag'>&#128203; LAB</span> ";
-  h += esc(item.label);
+  h += labelWithFootnoteLink(item.label);
   if (item.mandatory) h += " <span class='mandatory-tag'>Mandatory</span>";
   if (tier) h += " <span class='indic-priority-badge' style='" + getIndicPriorityStyle(tier) + "'>" + esc(tier) + "</span>";
   h += "</span>";
@@ -1973,6 +1973,14 @@ function renderPrereqBlock(prereqs) {
   return h;
 }
 
+// UX-10: Convert trailing * or *N in labels to clickable footnote-scroll superscripts
+function labelWithFootnoteLink(label) {
+  if (!label || label.indexOf('*') === -1) return esc(label);
+  return esc(label).replace(/\*(\d?)/g, function(m, n) {
+    return '<sup style="color:var(--accent,#1a6fa0);cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();(function(){var blocks=document.querySelectorAll(\'.footnote-block\');if(blocks.length)blocks[blocks.length-1].scrollIntoView({behavior:\'smooth\'});})()">&lowast;' + (n || '') + '</sup>';
+  });
+}
+
 function renderFooterBlocks(obj) {
   var h = "";
   if (obj.alternativeManagement) {
@@ -1985,7 +1993,11 @@ function renderFooterBlocks(obj) {
     h += "<div class='oof-block'>" + esc(obj.outOfCriteriaNote) + "</div>";
   }
   if (obj.footnotes) {
-    h += "<div class='footnote-block'><div class='footnote-hd'>Definitions &amp; sub-criteria</div>" + esc(obj.footnotes).replace(/\n/g,"<br>") + "</div>";
+    var fnBlockId = 'footnote-block-' + esc((obj.id||'x').replace(/[^a-z0-9]/gi,'_'));
+    h += "<div class='footnote-block' id='" + fnBlockId + "'>";
+    h += "<div class='footnote-hd' style='display:flex;align-items:center;justify-content:space-between;'>Definitions &amp; sub-criteria";
+    h += "<a href='#' onclick='event.preventDefault();document.querySelector(\".crit-card\")&&document.querySelector(\".crit-card\").scrollIntoView({behavior:\"smooth\"})' style='font-size:10px;color:var(--accent,#1a6fa0);text-decoration:none;font-weight:400'>&#8593; Back to criteria</a></div>";
+    h += esc(obj.footnotes).replace(/\n/g,"<br>") + "</div>";
   }
   return h;
 }
@@ -2043,7 +2055,7 @@ function toolRenderCb(item, groupTitle) {
   h += "<span class='crit-card-label'>";
   if (gateway) h += "<span class='gateway-tag'>&#128274; GATEWAY <span class='gateway-info-icon' tabindex='0'>i<span class='gateway-tooltip-text'>A gateway is a required procedural step — such as completing a decision support tool or obtaining a specialist recommendation — that must be documented before the referral can be accepted. It is separate from clinical criteria.</span></span></span> ";
   if (labval)  h += "<span class='lab-tag'>&#128203; LAB</span> ";
-  h += esc(item.label);
+  h += labelWithFootnoteLink(item.label);
   if (item.mandatory) h += " <span class='mandatory-tag'>Mandatory</span>";
   h += "</span>";
   h += "</div>"; // end header
