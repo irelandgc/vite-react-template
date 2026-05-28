@@ -319,6 +319,10 @@ body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
 var VER = "v1.0.0 DEV";
 var API_BASE = "https://crr-criteria-api.fk4dsrmq5r.workers.dev";
 
+// ── UX Feature flags ──────────────────────────────────────────────────────────
+var UX11_EXPANDABLE_SECTIONS = true;
+var UX12_DEFINITIONS_INLINE  = true;
+
 var DATA = null;
 var PAED_EXAMS = [];
 var dataSource = "loading";
@@ -1973,6 +1977,16 @@ function renderPrereqBlock(prereqs) {
   return h;
 }
 
+// UX-11: Toggle expandable footer block sections
+function toggleFooterBlock(id) {
+  var el = document.getElementById(id);
+  var btn = document.getElementById(id + '_btn');
+  if (!el) return;
+  var isHidden = el.style.display === 'none' || el.style.display === '';
+  el.style.display = isHidden ? 'block' : 'none';
+  if (btn) btn.textContent = isHidden ? '▾ collapse' : '▸ expand';
+}
+
 // UX-10: Convert trailing * or *N in labels to clickable footnote-scroll superscripts
 function labelWithFootnoteLink(label) {
   if (!label || label.indexOf('*') === -1) return esc(label);
@@ -1983,22 +1997,59 @@ function labelWithFootnoteLink(label) {
 
 function renderFooterBlocks(obj) {
   var h = "";
+
   if (obj.alternativeManagement) {
-    h += "<div class='alt-mgmt-box'><div class='alt-mgmt-hd'>&#8618; Alternative management / redirect</div>" + esc(obj.alternativeManagement) + "</div>";
+    if (UX11_EXPANDABLE_SECTIONS) {
+      var altId = 'alt_' + Math.random().toString(36).slice(2,8);
+      var altText = obj.alternativeManagement;
+      var altSummary = altText.length > 80 ? altText.slice(0, 80) + '…' : altText;
+      h += "<div class='alt-mgmt-box'>";
+      h += "<div class='alt-mgmt-hd' style='cursor:pointer;display:flex;align-items:center;justify-content:space-between' onclick='toggleFooterBlock(\"" + altId + "\")'>";
+      h += "&#8618; Alternative management / redirect <span id='" + altId + "_btn' style='font-size:11px;font-weight:400'>&#9656; expand</span></div>";
+      h += "<div style='font-size:12px;color:#8a6a00;font-style:italic'>" + esc(altSummary) + "</div>";
+      h += "<div id='" + altId + "' style='display:none;margin-top:6px'>" + esc(altText) + "</div>";
+      h += "</div>";
+    } else {
+      h += "<div class='alt-mgmt-box'><div class='alt-mgmt-hd'>&#8618; Alternative management / redirect</div>" + esc(obj.alternativeManagement) + "</div>";
+    }
   }
+
   if (obj.notFundedDetail) {
-    h += "<div class='not-funded-box'><div class='not-funded-hd'>&#8856; Not routinely funded under CRR</div>" + esc(obj.notFundedDetail) + "</div>";
+    if (UX11_EXPANDABLE_SECTIONS && obj.notFundedDetail.length > 60) {
+      var nfId = 'nf_' + Math.random().toString(36).slice(2,8);
+      h += "<div class='not-funded-box'>";
+      h += "<div class='not-funded-hd'>&#8856; Not routinely funded under CRR</div>";
+      h += "<div style='cursor:pointer;font-size:11px;color:#c62828;display:flex;align-items:center;justify-content:space-between' onclick='toggleFooterBlock(\"" + nfId + "\")'>";
+      h += "<span style='font-style:italic'>" + esc(obj.notFundedDetail.slice(0,60)) + "…</span>";
+      h += "<span id='" + nfId + "_btn' style='white-space:nowrap;margin-left:8px'>&#9656; expand</span></div>";
+      h += "<div id='" + nfId + "' style='display:none;margin-top:6px'>" + esc(obj.notFundedDetail) + "</div>";
+      h += "</div>";
+    } else {
+      h += "<div class='not-funded-box'><div class='not-funded-hd'>&#8856; Not routinely funded under CRR</div>" + esc(obj.notFundedDetail) + "</div>";
+    }
   }
+
   if (obj.outOfCriteriaNote && (!obj.notFundedDetail || obj.outOfCriteriaStyle === 'alert')) {
     h += "<div class='oof-block'>" + esc(obj.outOfCriteriaNote) + "</div>";
   }
+
   if (obj.footnotes) {
     var fnBlockId = 'footnote-block-' + esc((obj.id||'x').replace(/[^a-z0-9]/gi,'_'));
-    h += "<div class='footnote-block' id='" + fnBlockId + "'>";
-    h += "<div class='footnote-hd' style='display:flex;align-items:center;justify-content:space-between;'>Definitions &amp; sub-criteria";
-    h += "<a href='#' onclick='event.preventDefault();document.querySelector(\".crit-card\")&&document.querySelector(\".crit-card\").scrollIntoView({behavior:\"smooth\"})' style='font-size:10px;color:var(--accent,#1a6fa0);text-decoration:none;font-weight:400'>&#8593; Back to criteria</a></div>";
-    h += esc(obj.footnotes).replace(/\n/g,"<br>") + "</div>";
+    if (UX11_EXPANDABLE_SECTIONS) {
+      var fnBodyId = 'fnbody_' + Math.random().toString(36).slice(2,8);
+      h += "<div class='footnote-block' id='" + fnBlockId + "'>";
+      h += "<div class='footnote-hd' style='cursor:pointer;display:flex;align-items:center;justify-content:space-between' onclick='toggleFooterBlock(\"" + fnBodyId + "\")'>";
+      h += "Definitions &amp; sub-criteria <span id='" + fnBodyId + "_btn' style='font-size:11px;font-weight:400'>&#9656; expand</span></div>";
+      h += "<div id='" + fnBodyId + "' style='display:none'>" + esc(obj.footnotes).replace(/\n/g,"<br>") + "</div>";
+      h += "</div>";
+    } else {
+      h += "<div class='footnote-block' id='" + fnBlockId + "'>";
+      h += "<div class='footnote-hd' style='display:flex;align-items:center;justify-content:space-between;'>Definitions &amp; sub-criteria";
+      h += "<a href='#' onclick='event.preventDefault();document.querySelector(\".crit-card\")&&document.querySelector(\".crit-card\").scrollIntoView({behavior:\"smooth\"})' style='font-size:10px;color:var(--accent,#1a6fa0);text-decoration:none;font-weight:400'>&#8593; Back to criteria</a></div>";
+      h += esc(obj.footnotes).replace(/\n/g,"<br>") + "</div>";
+    }
   }
+
   return h;
 }
 
