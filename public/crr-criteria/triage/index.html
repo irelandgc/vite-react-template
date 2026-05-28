@@ -591,6 +591,10 @@ textarea.note::placeholder{color:#8b919a}
 var VER = "v1.0.0 DEV";
 var BUILD = "2026-05-14"; // bump on each deployment
 
+// ── UX Feature flags ──────────────────────────────────────────────────────────
+var UX02_REORDER_OUTPUT = true;
+var UX03_MERGE_MISSING  = true;
+
 // Changelog:
 // v1.0.0 DEV — version reset for review cycle (2026-05-14); previously v2.1.1
 // v2.1.1 — API key proxy (key removed from browser), wide provenance modal, single-source VER
@@ -2178,110 +2182,188 @@ function renderAIResult(r) {
   h += '</div>';
   h += '<div style="padding:12px 14px">';
 
-  // Typo correction display — clean version: interpreted text + deemphasised original
+  // ── Build reusable HTML fragments ────────────────────────────────────────────
+
+  // Typo correction (always at top)
+  var hCorrection = '';
   if (r._originalNote && r._correctedNote && hasCorrectionChanges(r._originalNote, r._correctedNote)) {
-    h += '<div class="correction-box">';
-    h += '<div class="correction-lbl">&#9999;&#65039; Note interpreted as';
-    h += '<span class="correction-toggle" id="corrToggle" onclick="toggleCorrectionDetail()">show original</span>';
-    h += '</div>';
-    h += '<div class="correction-interpreted">' + esc(r._correctedNote) + '</div>';
-    h += '<div class="correction-original" id="corrOrig" style="display:none">';
-    h += 'Original: ' + esc(r._originalNote);
-    h += '</div>';
-    h += '</div>';
+    hCorrection += '<div class="correction-box">';
+    hCorrection += '<div class="correction-lbl">&#9999;&#65039; Note interpreted as';
+    hCorrection += '<span class="correction-toggle" id="corrToggle" onclick="toggleCorrectionDetail()">show original</span>';
+    hCorrection += '</div>';
+    hCorrection += '<div class="correction-interpreted">' + esc(r._correctedNote) + '</div>';
+    hCorrection += '<div class="correction-original" id="corrOrig" style="display:none">';
+    hCorrection += 'Original: ' + esc(r._originalNote);
+    hCorrection += '</div>';
+    hCorrection += '</div>';
   } else if (r._correctedNote !== undefined) {
-    h += '<div style="font-size:10px;color:#8ab4c8;margin-bottom:8px;display:flex;align-items:center;gap:4px;">';
-    h += '<span>&#10003;</span> Note assessed as entered — no spelling corrections needed';
-    h += '</div>';
+    hCorrection += '<div style="font-size:10px;color:#8ab4c8;margin-bottom:8px;display:flex;align-items:center;gap:4px;">';
+    hCorrection += '<span>&#10003;</span> Note assessed as entered — no spelling corrections needed';
+    hCorrection += '</div>';
   }
 
-  // SAFETY ALERT — overrides everything, shown first in red
+  // Safety alert (always near top)
+  var hSafety = '';
   if (r.safety_alert) {
-    h += '<div style="background:#fff0f0;border:2px solid #c62828;border-radius:3px;padding:12px 14px;margin-bottom:10px;">';
-    h += '<div style="font-size:12px;font-weight:700;color:#c62828;letter-spacing:0.3px;margin-bottom:4px;">&#9888;&#65039; SAFETY ALERT</div>';
-    h += '<div style="font-size:13px;color:#7a0000;font-weight:600;line-height:1.5;">' + esc(r.safety_alert) + '</div>';
-    h += '</div>';
+    hSafety += '<div style="background:#fff0f0;border:2px solid #c62828;border-radius:3px;padding:12px 14px;margin-bottom:10px;">';
+    hSafety += '<div style="font-size:12px;font-weight:700;color:#c62828;letter-spacing:0.3px;margin-bottom:4px;">&#9888;&#65039; SAFETY ALERT</div>';
+    hSafety += '<div style="font-size:13px;color:#7a0000;font-weight:600;line-height:1.5;">' + esc(r.safety_alert) + '</div>';
+    hSafety += '</div>';
   }
 
   // Not funded flag
+  var hNotFunded = '';
   if (r.not_funded_flag) {
-    h += '<div style="background:var(--fail-bg);border-left:3px solid #c62828;padding:8px 10px;font-size:11px;color:var(--fail);margin-bottom:8px;border-radius:2px;">&#9888; <strong>Not routinely funded:</strong> This presentation appears to fall in the not-routinely-funded category for CRR.</div>';
+    hNotFunded += '<div style="background:var(--fail-bg);border-left:3px solid #c62828;padding:8px 10px;font-size:11px;color:var(--fail);margin-bottom:8px;border-radius:2px;">&#9888; <strong>Not routinely funded:</strong> This presentation appears to fall in the not-routinely-funded category for CRR.</div>';
   }
 
-  // Redirect — show prominently if present
+  // Redirect (amber box)
+  var hRedirect = '';
   if (r.redirect) {
-    h += '<div style="background:#fff8e6;border:1px solid #f0d070;border-left:3px solid #e09000;padding:9px 12px;font-size:12px;color:var(--warn);margin-bottom:8px;border-radius:2px;">';
-    h += '<strong style="display:block;font-size:10px;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:3px;">&#8594; Pathway redirect</strong>' + esc(r.redirect) + '</div>';
+    hRedirect += '<div style="background:#fff8e6;border:1px solid #f0d070;border-left:3px solid #e09000;padding:9px 12px;font-size:12px;color:var(--warn);margin-bottom:8px;border-radius:2px;">';
+    hRedirect += '<strong style="display:block;font-size:10px;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:3px;">&#8594; Pathway redirect</strong>' + esc(r.redirect) + '</div>';
   }
 
-  // Action verdict — leads everything
-  h += '<div class="action-verdict ' + vc + '">';
-  h += '<span class="av-icon">' + vi + '</span>';
-  h += '<div><div class="av-title">' + esc(r.verdict_title || (r.verdict === 'proceeds' ? 'Referral likely to proceed' : r.verdict === 'at_risk' ? 'Referral at risk' : 'Referral likely to be declined')) + '</div>';
-  h += '<div class="av-body">' + esc(r.verdict_summary) + '</div>';
-  if (r.priority) h += '<div style="margin-top:5px"><span class="badge badge-pass">' + esc(r.priority) + '</span></div>';
-  h += '</div></div>';
+  // Verdict block
+  var hVerdict = '';
+  hVerdict += '<div class="action-verdict ' + vc + '">';
+  hVerdict += '<span class="av-icon">' + vi + '</span>';
+  hVerdict += '<div><div class="av-title">' + esc(r.verdict_title || (r.verdict === 'proceeds' ? 'Referral likely to proceed' : r.verdict === 'at_risk' ? 'Referral at risk' : 'Referral likely to be declined')) + '</div>';
+  hVerdict += '<div class="av-body">' + esc(r.verdict_summary) + '</div>';
+  if (r.priority) hVerdict += '<div style="margin-top:5px"><span class="badge badge-pass">' + esc(r.priority) + '</span></div>';
+  hVerdict += '</div></div>';
 
   // Exam identified + page reference
+  var hExam = '';
   if (r.exam) {
-    h += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 3px">Exam identified</div>';
-    h += '<div style="font-size:12px;font-weight:600;color:var(--navy);display:flex;align-items:center;gap:8px;">' + esc(r.exam);
+    hExam += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 3px">Exam identified</div>';
+    hExam += '<div style="font-size:12px;font-weight:600;color:var(--navy);display:flex;align-items:center;gap:8px;">' + esc(r.exam);
     if (r.criteria_page) {
-      h += '<span style="font-size:10px;font-weight:700;color:var(--teal);background:var(--lite);padding:2px 7px;border-radius:2px;border:1px solid var(--rule);" title="National Primary Care Referral Criteria for Imaging, April 2026 reissue">&#128196; ' + esc(r.criteria_page) + '</span>';
+      hExam += '<span style="font-size:10px;font-weight:700;color:var(--teal);background:var(--lite);padding:2px 7px;border-radius:2px;border:1px solid var(--rule);" title="National Primary Care Referral Criteria for Imaging, April 2026 reissue">&#128196; ' + esc(r.criteria_page) + '</span>';
     }
-    h += '</div>';
+    hExam += '</div>';
   }
 
-  // Documented — always show, even on declined verdicts
+  // Documented in note (met_criteria)
+  var hMet = '';
   if (r.met_criteria && r.met_criteria.length) {
-    h += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 4px">Documented in note (' + r.met_criteria.length + ')</div>';
+    hMet += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 4px">Documented in note (' + r.met_criteria.length + ')</div>';
     r.met_criteria.forEach(function(c){
-      h += '<div class="criteria-item met"><span class="ci-tag met">&#10003;</span>' + esc(c) + '</div>';
+      hMet += '<div class="criteria-item met"><span class="ci-tag met">&#10003;</span>' + esc(c) + '</div>';
     });
   } else {
-    h += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 4px">Documented in note</div>';
-    h += '<div style="font-size:12px;color:var(--mid);font-style:italic;padding:4px 0;">No criteria sub-elements confirmed as explicitly documented.</div>';
+    hMet += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 4px">Documented in note</div>';
+    hMet += '<div style="font-size:12px;color:var(--mid);font-style:italic;padding:4px 0;">No criteria sub-elements confirmed as explicitly documented.</div>';
   }
 
-  // Missing
-  if (r.missing_criteria && r.missing_criteria.length) {
-    h += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 4px">Missing from note (' + r.missing_criteria.length + ')</div>';
-    r.missing_criteria.forEach(function(c){
-      h += '<div class="criteria-item missing"><span class="ci-tag missing">?</span>' + esc(c) + '</div>';
-    });
-  }
-
-  // What to add — specific sentences, after criteria breakdown
-  if (r.add_to_note && r.add_to_note.length) {
-    h += '<div class="add-info-box" style="margin-top:10px">';
-    h += '<div class="add-info-hd">&#9656; Add to your referral note</div>';
-    r.add_to_note.forEach(function(line){
-      h += '<div class="add-info-item">' + esc(line) + '</div>';
-    });
-    h += '</div>';
-  }
-
-  // Suggested wording — after criteria breakdown and add-to-note
-  if (r.suggested_wording) {
-    h += '<div class="reword" style="margin-top:10px"><div class="reword-lbl">Suggested referral wording</div>' + esc(r.suggested_wording) + '</div>';
-  }
-
-  // Notes / safety flags
-  if (r.notes) {
-    h += '<div style="font-size:12px;color:var(--mid);line-height:1.6;padding:8px 10px;background:var(--mist);border-radius:2px;margin-top:8px;">' + esc(r.notes) + '</div>';
-  }
-
-  // Re-check button
-  h += '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">';
-  h += '<button class="btn-run-ai" onclick="runCheck()" style="margin-bottom:0;flex:1;min-width:100px">Re-assess ›</button>';
-  if (r.suggested_wording) {
-    h += '<button class="btn-copy" onclick="copyResult()" style="flex:0 0 auto;padding:10px 14px">&#128203; Copy wording</button>';
-    if (showSendButton) {
-      h += '<button class="btn-send-assessment" onclick="sendAssessmentToForm()" style="flex:0 0 auto;padding:10px 14px;background:var(--teal);color:#fff;border:none;font-family:var(--sans);font-size:12px;font-weight:600;border-radius:2px;cursor:pointer">&#8593; Send to Form</button>';
+  // Missing + add_to_note sections (UX-03 merge or separate)
+  var hMissing = '';
+  if (UX03_MERGE_MISSING) {
+    // Merged "What's missing" section
+    var missingList = r.missing_criteria || [];
+    var addList = r.add_to_note || [];
+    if (missingList.length) {
+      hMissing += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 4px">What\'s missing (' + missingList.length + ')</div>';
+      missingList.forEach(function(c, i){
+        hMissing += '<div class="criteria-item missing"><span class="ci-tag missing">?</span>' + esc(c);
+        if (addList[i]) {
+          var addLower = addList[i].toLowerCase();
+          var critLower = c.toLowerCase();
+          // Only show add_to_note item if it adds context beyond restating the criterion
+          var isRestatement = (addLower.indexOf(critLower.slice(0, Math.min(critLower.length, 30))) !== -1 && addLower.length < critLower.length * 1.5);
+          if (!isRestatement) {
+            hMissing += '<div style="margin-top:3px;margin-left:20px;font-size:11px;color:var(--mid);font-style:italic">&#8594; ' + esc(addList[i]) + '</div>';
+          }
+        }
+        hMissing += '</div>';
+      });
+      // Extra add_to_note items beyond missing_criteria count
+      var extras = addList.slice(missingList.length);
+      if (extras.length) {
+        hMissing += '<div style="font-size:10px;font-weight:700;color:var(--mid);letter-spacing:.3px;text-transform:uppercase;margin:8px 0 3px">General notes</div>';
+        extras.forEach(function(line){
+          hMissing += '<div class="add-info-item">' + esc(line) + '</div>';
+        });
+      }
+    } else if (addList.length) {
+      // Only add_to_note, no missing criteria
+      hMissing += '<div class="add-info-box" style="margin-top:10px">';
+      hMissing += '<div class="add-info-hd">&#9656; Add to your referral note</div>';
+      addList.forEach(function(line){
+        hMissing += '<div class="add-info-item">' + esc(line) + '</div>';
+      });
+      hMissing += '</div>';
+    }
+  } else {
+    // Original separate sections
+    if (r.missing_criteria && r.missing_criteria.length) {
+      hMissing += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 4px">Missing from note (' + r.missing_criteria.length + ')</div>';
+      r.missing_criteria.forEach(function(c){
+        hMissing += '<div class="criteria-item missing"><span class="ci-tag missing">?</span>' + esc(c) + '</div>';
+      });
+    }
+    if (r.add_to_note && r.add_to_note.length) {
+      hMissing += '<div class="add-info-box" style="margin-top:10px">';
+      hMissing += '<div class="add-info-hd">&#9656; Add to your referral note</div>';
+      r.add_to_note.forEach(function(line){
+        hMissing += '<div class="add-info-item">' + esc(line) + '</div>';
+      });
+      hMissing += '</div>';
     }
   }
-  h += '<button class="btn-qa" onclick="openQaModal()" title="Rate the accuracy of this assessment for clinical QA">Submit Feedback</button>';
-  h += '</div>';
+
+  // Suggested wording
+  var hWording = '';
+  if (r.suggested_wording) {
+    hWording += '<div class="reword" style="margin-top:10px"><div class="reword-lbl">Suggested referral wording</div>' + esc(r.suggested_wording) + '</div>';
+  }
+
+  // Notes (grey advisory box)
+  var hNotes = '';
+  if (r.notes) {
+    hNotes += '<div style="font-size:12px;color:var(--mid);line-height:1.6;padding:8px 10px;background:var(--mist);border-radius:2px;margin-top:8px;">' + esc(r.notes) + '</div>';
+  }
+
+  // Buttons
+  var hButtons = '';
+  hButtons += '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">';
+  hButtons += '<button class="btn-run-ai" onclick="runCheck()" style="margin-bottom:0;flex:1;min-width:100px">Re-assess ›</button>';
+  if (r.suggested_wording) {
+    hButtons += '<button class="btn-copy" onclick="copyResult()" style="flex:0 0 auto;padding:10px 14px">&#128203; Copy wording</button>';
+    if (showSendButton) {
+      hButtons += '<button class="btn-send-assessment" onclick="sendAssessmentToForm()" style="flex:0 0 auto;padding:10px 14px;background:var(--teal);color:#fff;border:none;font-family:var(--sans);font-size:12px;font-weight:600;border-radius:2px;cursor:pointer">&#8593; Send to Form</button>';
+    }
+  }
+  hButtons += '<button class="btn-qa" onclick="openQaModal()" title="Rate the accuracy of this assessment for clinical QA">Submit Feedback</button>';
+  hButtons += '</div>';
+
+  // ── Assemble in order ─────────────────────────────────────────────────────
+  // Sections 1-3 are always at top regardless of UX02 flag
+  h += hCorrection;
+  h += hSafety;
+  h += hNotFunded;
+
+  if (UX02_REORDER_OUTPUT) {
+    // New order: verdict → exam → missing (UX03 merged) → met → advisory (redirect+notes) → wording → buttons
+    h += hVerdict;
+    h += hExam;
+    h += hMissing;
+    h += hMet;
+    h += hRedirect;
+    h += hNotes;
+    h += hWording;
+  } else {
+    // Original order: redirect → verdict → exam → met → missing+add → wording → notes → buttons
+    h += hRedirect;
+    h += hVerdict;
+    h += hExam;
+    h += hMet;
+    h += hMissing;
+    h += hWording;
+    h += hNotes;
+  }
+  h += hButtons;
+
   h += '</div></div>';
 
   document.getElementById('aiPanel').innerHTML = h;
