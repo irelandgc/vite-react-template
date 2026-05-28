@@ -734,6 +734,37 @@ function setViewMode(mode) {
 var STOP_WORDS = {patient:1,presented:1,with:1,has:1,had:1,history:1,of:1,the:1,a:1,an:1,and:1,or:1,was:1,were:1,been:1,being:1,have:1,showing:1,shows:1,showed:1,last:1,recent:1};
 var CLINICAL_KEYWORDS = {chest:1,pain:1,headache:1,cancer:1,bleeding:1,acute:1,suspected:1,fracture:1,haemoptysis:1,seizure:1,tia:1,stroke:1,knee:1,lesion:1,lung:1,mass:1,torsion:1,cauda:1,equina:1,pneumothorax:1,testicular:1,appendicitis:1};
 
+// UX-07: Abbreviation/keyword aliases for global search
+var SEARCH_ALIASES = {
+  'pmb': ['post-menopausal bleeding', 'postmenopausal bleeding'],
+  'aub': ['abnormal uterine bleeding'],
+  'tia': ['transient ischaemic attack'],
+  'sol': ['space-occupying lesion', 'space occupying lesion'],
+  'oa': ['osteoarthritis'],
+  'sufe': ['slipped upper femoral epiphysis'],
+  'lft': ['liver function'],
+  'crp': ['c-reactive protein'],
+  'hb': ['haemoglobin', 'hemoglobin'],
+  'alp': ['alkaline phosphatase'],
+  'ca125': ['ca-125'],
+  'dvt': ['deep vein thrombosis'],
+  'pe': ['pulmonary embolism'],
+  'cap': ['community-acquired pneumonia'],
+  'ckd': ['chronic kidney disease'],
+  'aki': ['acute kidney injury'],
+  'iud': ['intrauterine device', 'iucd', 'mirena'],
+  'iucd': ['intrauterine device', 'iud', 'mirena'],
+  'coc': ['combined oral contraceptive'],
+  'mht': ['menopausal hormone therapy', 'hrt'],
+  'hrt': ['hormone replacement therapy', 'mht'],
+  'esr': ['erythrocyte sedimentation rate'],
+  'egfr': ['estimated glomerular filtration rate'],
+  'ct kub': ['ct kidneys ureters bladder'],
+  'ct ivu': ['ct intravenous urogram'],
+  'ct cap': ['ct chest abdomen pelvis'],
+  'cxr': ['chest x-ray', 'chest xray']
+};
+
 function stripStopWords(text) {
   var words = text.toLowerCase().replace(/[,\.;:!?()\/]/g, " ").split(/\s+/);
   var out = [];
@@ -821,12 +852,24 @@ function onGlobalSearch(val) {
   if (val.length < 3) { dd.style.display = "none"; return; }
   var terms = stripStopWords(val);
   var fullQuery = val.toLowerCase();
+  // UX-07: Expand aliases
+  var aliasExpansions = [];
+  var queryTrimmed = fullQuery.trim();
+  if (SEARCH_ALIASES[queryTrimmed]) {
+    aliasExpansions = SEARCH_ALIASES[queryTrimmed];
+  }
   var index = getSearchIndex();
   var results = [];
   for (var i = 0; i < index.length; i++) {
     var item = index[i];
     var searchText = (item.label + " " + (item.shortLabel||"") + " " + (item.groupTitle||"")).toLowerCase();
     var score = scoreMatch(searchText, terms, fullQuery);
+    if (score === 0 && aliasExpansions.length) {
+      for (var ae = 0; ae < aliasExpansions.length; ae++) {
+        var aeScore = scoreMatch(searchText, stripStopWords(aliasExpansions[ae]), aliasExpansions[ae]);
+        if (aeScore > score) score = aeScore;
+      }
+    }
     if (score > 0) results.push({item: item, score: score});
   }
   results.sort(function(a,b){ return b.score - a.score; });
