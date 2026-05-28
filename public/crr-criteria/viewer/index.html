@@ -1652,6 +1652,27 @@ function toolRenderIndicCb(item, tier, groupTitle) {
   if (item.conditionalNote) {
     h += "<div class='ib-red' style='margin:4px 8px 4px;font-size:12px'>" + esc(item.conditionalNote) + "</div>";
   }
+  // UX-12: Inline footnote definition
+  if (UX12_DEFINITIONS_INLINE && window._currentSiteFootnotes) {
+    var fnMatch12 = item.label.match(/\*(\d*)/);
+    if (fnMatch12) {
+      var fnKey12 = fnMatch12[1] || '_default';
+      var fnText12 = window._currentSiteFootnotes[fnKey12];
+      if (fnText12) {
+        if (!window._shownFootnotes[fnKey12]) {
+          window._shownFootnotes[fnKey12] = item.id;
+          h += "<div style='margin:4px 8px 6px 26px'>";
+          h += "<details style='font-size:11px;color:var(--mid)'>";
+          h += "<summary style='cursor:pointer;color:var(--accent,#1a6fa0);font-size:10px;font-weight:600'>&#9656; Definition</summary>";
+          h += "<div style='padding:4px 0 0 12px;line-height:1.5'>" + esc(fnText12).replace(/\n/g,'<br>') + "</div>";
+          h += "</details></div>";
+        } else {
+          h += "<div style='margin:2px 8px 4px 26px;font-size:10px;color:var(--accent,#1a6fa0)'>";
+          h += "<a href='javascript:void(0)' style='color:var(--accent,#1a6fa0);text-decoration:none' onclick='event.stopPropagation();var el=document.getElementById(\"row_" + esc(window._shownFootnotes[fnKey12]) + "\");if(el)el.scrollIntoView({behavior:\"smooth\"})'>See definition &#8593;</a></div>";
+        }
+      }
+    }
+  }
   h += "</div>";
   return h;
 }
@@ -1682,6 +1703,10 @@ function toolRenderSitePanel(site, exam) {
   }
   var siteLi = getLocalisedInfo(site.id);
   if (siteLi) h += "<div class='local-info-box'><div class='local-hd'>" + esc(getRegionLabel()) + "</div>" + esc(siteLi) + "</div>";
+
+  // UX-12: Set footnote context for inline definitions
+  window._currentSiteFootnotes = UX12_DEFINITIONS_INLINE ? parseFootnotes(site.footnotes || '') : {};
+  window._shownFootnotes = {};
 
   // Extract emergency items first
   var emergencyItems = [];
@@ -1739,6 +1764,10 @@ function toolRenderSinglesite(exam) {
       nonEmergencyGroups.push(exam.groups[g]);
     }
   }
+  // UX-12: Set footnote context for inline definitions
+  window._currentSiteFootnotes = UX12_DEFINITIONS_INLINE ? parseFootnotes(exam.footnotes || '') : {};
+  window._shownFootnotes = {};
+
   if (emergencyItems.length) h += renderEmergencyBlock(emergencyItems);
 
   if (viewLayout === 'indication') {
@@ -1977,6 +2006,30 @@ function renderPrereqBlock(prereqs) {
   return h;
 }
 
+// UX-12: Parse footnote text into a keyed map
+function parseFootnotes(text) {
+  if (!text) return {};
+  var result = {};
+  var lines = text.split('\n');
+  var currentKey = null;
+  var currentLines = [];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    var m = line.match(/^\*(\d*)\s*(.*)/);
+    if (m) {
+      if (currentKey !== null) result[currentKey] = currentLines.join('\n').trim();
+      currentKey = m[1] ? m[1] : '_default';
+      currentLines = [m[2]];
+    } else if (currentKey !== null) {
+      currentLines.push(line);
+    }
+  }
+  if (currentKey !== null) result[currentKey] = currentLines.join('\n').trim();
+  return result;
+}
+window._currentSiteFootnotes = {};
+window._shownFootnotes = {};
+
 // UX-11: Toggle expandable footer block sections
 function toggleFooterBlock(id) {
   var el = document.getElementById(id);
@@ -2112,6 +2165,27 @@ function toolRenderCb(item, groupTitle) {
   h += "</div>"; // end header
   if (item.conditionalNote) {
     h += "<div class='ib-red' style='margin:4px 8px 4px;font-size:12px'>" + esc(item.conditionalNote) + "</div>";
+  }
+  // UX-12: Inline footnote definition
+  if (UX12_DEFINITIONS_INLINE && window._currentSiteFootnotes) {
+    var fnMatchCb = item.label.match(/\*(\d*)/);
+    if (fnMatchCb) {
+      var fnKeyCb = fnMatchCb[1] || '_default';
+      var fnTextCb = window._currentSiteFootnotes[fnKeyCb];
+      if (fnTextCb) {
+        if (!window._shownFootnotes[fnKeyCb]) {
+          window._shownFootnotes[fnKeyCb] = item.id;
+          h += "<div style='margin:4px 8px 6px 26px'>";
+          h += "<details style='font-size:11px;color:var(--mid)'>";
+          h += "<summary style='cursor:pointer;color:var(--accent,#1a6fa0);font-size:10px;font-weight:600'>&#9656; Definition</summary>";
+          h += "<div style='padding:4px 0 0 12px;line-height:1.5'>" + esc(fnTextCb).replace(/\n/g,'<br>') + "</div>";
+          h += "</details></div>";
+        } else {
+          h += "<div style='margin:2px 8px 4px 26px;font-size:10px;color:var(--accent,#1a6fa0)'>";
+          h += "<a href='javascript:void(0)' style='color:var(--accent,#1a6fa0);text-decoration:none' onclick='event.stopPropagation();var el=document.getElementById(\"row_" + esc(window._shownFootnotes[fnKeyCb]) + "\");if(el)el.scrollIntoView({behavior:\"smooth\"})'>See definition &#8593;</a></div>";
+        }
+      }
+    }
   }
   h += "</div>"; // end crit-card
   return h;
