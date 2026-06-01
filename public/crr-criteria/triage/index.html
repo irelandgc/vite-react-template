@@ -427,7 +427,7 @@ textarea.note::placeholder{color:#8b919a}
           </tr>
           <tr style="border-bottom:1px solid var(--rule)">
             <td style="padding:5px 8px 5px 0;color:var(--mid);vertical-align:top">Temperature</td>
-            <td style="padding:5px 0;color:var(--ink)"><strong style="color:var(--navy)">0.3</strong> &mdash; Reduces verdict variability while retaining clinical reasoning flexibility. 0 = always identical; 1 = most variable.</td>
+            <td style="padding:5px 0;color:var(--ink)"><strong id="provTemperature" style="color:var(--navy)">0.1</strong> &mdash; Reduces verdict variability while retaining clinical reasoning flexibility. 0 = always identical; 1 = most variable.</td>
           </tr>
           <tr style="border-bottom:1px solid var(--rule)">
             <td style="padding:5px 8px 5px 0;color:var(--mid);vertical-align:top">Doc standard</td>
@@ -777,6 +777,7 @@ function getHpUrl(site) {
 //  STATE
 // ═══════════════════════════════════════════════
 var activeMod   = 'all';
+var TRIAGE_TEMPERATURE = 0.1; // API temperature — 0 = deterministic, higher = more varied
 var docMode     = 'strict';  // 'strict' | 'inferred'
 var demogSex    = '';         // 'M', 'F', or ''
 var lastResults = null;
@@ -1547,6 +1548,7 @@ function closeStatsModal() {
 }
 
 function openProvenanceModal() {
+  document.getElementById('provTemperature').textContent = TRIAGE_TEMPERATURE;
   document.getElementById('provModal').classList.add('open');
 }
 function closeProvenanceModal() {
@@ -2597,7 +2599,8 @@ function logTriageUsage(result, usage, parseSuccess, rawText) {
       ai_response_summary: aiSummary,
       ai_response_json: parseSuccess ? JSON.stringify(result) : (rawText || null),
       parse_success: parseSuccess !== false,
-      prompt_version: loadedPrompt ? loadedPrompt.version : null
+      prompt_version: loadedPrompt ? loadedPrompt.version : null,
+      temperature: result._temperature != null ? result._temperature : TRIAGE_TEMPERATURE
     };
     fetch('https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/triage/usage-log', {
       method: 'POST',
@@ -2626,7 +2629,7 @@ function callTriageAPI(model, note) {
     body: JSON.stringify({
       model: model,
       max_tokens: 2400,
-      temperature: 0,
+      temperature: TRIAGE_TEMPERATURE,
       system: [{ type: 'text', text: sys, cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: userMsg }]
     })
@@ -2669,6 +2672,7 @@ function callTriageAPI(model, note) {
     }
     result._usage = usage;
     result._model = model;
+    result._temperature = TRIAGE_TEMPERATURE;
     result._originalNote = note;
     logTriageUsage(result, usage, true);
     return { result: result, usage: usage, parseSuccess: true, rawText: clean };

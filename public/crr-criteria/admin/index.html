@@ -1423,7 +1423,7 @@ function UsageLogTab(){
 
   function exportCSV(){
     if(!logs.length){alert('No logs to export.');return;}
-    const cols=['id','timestamp','session_id','user_name','user_role','exam_identified','verdict','prompt_version','model_used','documentation_standard','input_tokens','cache_read_tokens','cache_write_tokens','output_tokens','cost_nzd','ip_address'];
+    const cols=['id','timestamp','session_id','user_name','user_role','exam_identified','verdict','prompt_version','model_used','documentation_standard','temperature','input_tokens','cache_read_tokens','cache_write_tokens','output_tokens','cost_nzd','ip_address'];
     const esc=v=>v==null?'':'"'+String(v).replace(/"/g,'""')+'"';
     const rows=[cols.join(','),...logs.map(r=>cols.map(c=>esc(r[c])).join(','))];
     const blob=new Blob([rows.join('\n')],{type:'text/csv'});
@@ -1500,7 +1500,7 @@ function UsageLogTab(){
                             <pre style={{whiteSpace:'pre-wrap',fontFamily:'inherit',fontSize:11,color:C.ink,background:'#fff',border:`1px solid ${C.rule}`,borderRadius:2,padding:'8px 10px',maxHeight:140,overflow:'auto',margin:0}}>{r.ai_response_summary||'—'}</pre>
                           </div>
                         </div>
-                        <div style={{marginTop:8,fontSize:10,color:C.mid}}>Session: {r.session_id} · Model: {r.model_used||'—'} · Mode: {r.documentation_standard||'—'}</div>
+                        <div style={{marginTop:8,fontSize:10,color:C.mid}}>Session: {r.session_id} · Model: {r.model_used||'—'} · Mode: {r.documentation_standard||'—'} · Temp: {r.temperature!=null?r.temperature:'—'} · Prompt: {r.prompt_version||'—'}</div>
                       </td>
                     </tr>
                   )}
