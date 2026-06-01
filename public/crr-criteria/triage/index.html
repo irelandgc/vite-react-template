@@ -2610,6 +2610,137 @@ function logTriageUsage(result, usage, parseSuccess, rawText) {
   } catch(e) {}
 }
 
+// ── Post-processing verdict validation ────────────────────────────────────
+// Deterministic checks run after AI JSON parse, before display.
+// Corrects cases where the AI reasons correctly but sets the wrong verdict.
+// Mutates result in-place; appends to result._overrides when an override fires.
+function postProcessResult(result, note) {
+  if (!result || result.verdict === 'proceeds') return;
+  var metItems = result.met_criteria;
+  var hasMet = Array.isArray(metItems) && metItems.length > 0;
+  if (!hasMet) return; // never override without at least one met criterion
+  var overrides = result._overrides || [];
+  var noteText = (result.notes || '').toLowerCase();
+  var inputText = (note || result.interpreted_note || '').toLowerCase();
+  var now = new Date().toISOString();
+
+  var MET_PHRASES = ['fully met','meets criteria','meets p1','meets p2','meets p3','meets p4',
+    'meets acute','meets urgent','pathway is met','pathway is fully met',
+    'sufficient for acceptance','criteria are met'];
+
+  function isStep0(text) {
+    var t = (text || '').toLowerCase();
+    return /\b111\b/.test(t) || /\bed\b/.test(t) || /\bemergency\b/.test(t) ||
+           (/\bacc\b/.test(t) && /\btrauma\b|\binjury\b|\baccident\b/.test(t)) ||
+           /cauda equina/i.test(t) || /testicular torsion/i.test(t) ||
+           /ruptured aaa/i.test(t) || /pneumothorax/i.test(t);
+  }
+
+  // Updates verdict_title and verdict_summary to reflect the met pathway.
+  // Call after setting result.verdict = 'proceeds' and after moving missing_criteria.
+  function applyProceedsDisplay(r) {
+    r.verdict_title = 'Referral likely to proceed';
+    // Find first sentence from notes that references a met phrase — use as the summary.
+    var sentences = (r.notes || '').replace(/([.!?])\s+/g, '$1\n').split('\n')
+      .map(function(s){ return s.trim(); }).filter(Boolean);
+    for (var i = 0; i < sentences.length; i++) {
+      var sl = sentences[i].toLowerCase();
+      for (var j = 0; j < MET_PHRASES.length; j++) {
+        if (sl.indexOf(MET_PHRASES[j]) !== -1) {
+          var s = sentences[i];
+          r.verdict_summary = s.length > 160 ? s.slice(0, 157) + '…' : s;
+          return;
+        }
+      }
+    }
+    // Fallback: first met criterion
+    r.verdict_summary = Array.isArray(r.met_criteria) && r.met_criteria.length > 0
+      ? 'Criteria met: ' + r.met_criteria[0]
+      : 'Referral criteria met.';
+  }
+
+  // Never override if Step 0 is active
+  if (isStep0(result.safety_alert) || isStep0(result.redirect) || isStep0(noteText)) return;
+
+  // Check 1: Notes state a pathway is met but verdict disagrees
+  var matchedPhrase = null;
+  for (var pi = 0; pi < MET_PHRASES.length; pi++) {
+    if (noteText.indexOf(MET_PHRASES[pi]) !== -1) { matchedPhrase = MET_PHRASES[pi]; break; }
+  }
+  if (matchedPhrase) {
+    var ov1 = result.verdict;
+    result.verdict = 'proceeds';
+    // Move missing_criteria to notes as advisory — they belong to the non-deciding pathway
+    if (Array.isArray(result.missing_criteria) && result.missing_criteria.length > 0) {
+      result.notes = (result.notes || '') + '\n\nOther requirements not met (advisory — not blocking this referral): ' + result.missing_criteria.join('; ');
+      result.missing_criteria = [];
+    }
+    applyProceedsDisplay(result);
+    if (!result.priority) {
+      var prioMatch = noteText.match(/\b(p[1-4]|acute 48hr|urgent|non.deferrable|routine)\b/i);
+      if (prioMatch) result.priority = prioMatch[1].replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+    }
+    overrides.push({ check:'notes_say_met', original_verdict:ov1, new_verdict:'proceeds',
+      trigger:'notes contain \'' + matchedPhrase + '\'', timestamp:now });
+  }
+
+  // Check 2: Gender-inapplicable criteria in missing_criteria
+  var isFemale = /\bfemale\b|\bwoman\b|\bwomen\b|\bgirl\b/.test(inputText) || /\b\d+\s*f\b/.test(inputText);
+  var isMale   = /\bmale\b|\bman\b|\bmen\b|\bboy\b/.test(inputText) || /\b\d+\s*m\b/.test(inputText);
+  if ((isFemale || isMale) && Array.isArray(result.missing_criteria) && result.missing_criteria.length > 0) {
+    var before = result.missing_criteria.length;
+    result.missing_criteria = result.missing_criteria.filter(function(item) {
+      var t = (item || '').toString().toLowerCase();
+      if (isFemale && (/\bmale patient\b/.test(t) || /\bin men\b/.test(t) || /\bmale,/.test(t) || /\bmale older than\b/.test(t))) return false;
+      if (isMale  && (/\bfemale patient\b/.test(t) || /\bin women\b/.test(t) || /\bfemale,/.test(t) || /\bfemale of any age\b/.test(t))) return false;
+      return true;
+    });
+    var removed = before - result.missing_criteria.length;
+    if (removed > 0) {
+      var gender = isFemale ? 'female' : 'male';
+      if (result.missing_criteria.length === 0 && result.verdict !== 'proceeds') {
+        var ov2 = result.verdict;
+        result.verdict = 'proceeds';
+        applyProceedsDisplay(result);
+        overrides.push({ check:'gender_inapplicable_criteria', original_verdict:ov2, new_verdict:'proceeds',
+          trigger:'removed ' + removed + ' gender-inapplicable missing criteria for ' + gender + ' patient; missing_criteria now empty', timestamp:now });
+      } else {
+        overrides.push({ check:'gender_inapplicable_criteria', original_verdict:result.verdict, new_verdict:result.verdict,
+          trigger:'removed ' + removed + ' gender-inapplicable missing criteria for ' + gender + ' patient', timestamp:now });
+      }
+    }
+  }
+
+  // Check 3: Notes say pathway independently/fully met despite missing_criteria from other pathway
+  if ((result.verdict === 'at_risk' || result.verdict === 'declined') &&
+      Array.isArray(result.missing_criteria) && result.missing_criteria.length > 0 &&
+      (noteText.indexOf('independently met') !== -1 || noteText.indexOf('fully met') !== -1)) {
+    var movedCount = result.missing_criteria.length;
+    result.notes = (result.notes || '') + '\n\nOther pathway criteria (not required for this referral): ' + result.missing_criteria.join('; ');
+    result.missing_criteria = [];
+    var ov3 = result.verdict;
+    result.verdict = 'proceeds';
+    applyProceedsDisplay(result);
+    overrides.push({ check:'non_deciding_pathway_missing', original_verdict:ov3, new_verdict:'proceeds',
+      trigger:'notes indicate pathway independently/fully met; ' + movedCount + ' missing items moved to notes as advisory', timestamp:now });
+  }
+
+  // Check 4: Non-Step-0 redirect overriding met criteria
+  if (result.redirect && !isStep0(result.redirect)) {
+    result.notes = (result.notes || '') + '\n\nAdvisory: ' + result.redirect;
+    var ov4 = result.verdict;
+    result.redirect = null;
+    if (result.verdict !== 'proceeds') {
+      result.verdict = 'proceeds';
+      applyProceedsDisplay(result);
+      overrides.push({ check:'non_step0_redirect_override', original_verdict:ov4, new_verdict:'proceeds',
+        trigger:'non-emergency redirect moved to advisory notes; met_criteria present', timestamp:now });
+    }
+  }
+
+  if (overrides.length > 0) result._overrides = overrides;
+}
+
 // ── Shared API call function ───────────────────────────────────────────────
 // Returns Promise<{result, usage, parseSuccess, rawText, error}>
 // Handles prompt assembly, API call, fence stripping, JSON parse, and usage logging.
@@ -2674,6 +2805,7 @@ function callTriageAPI(model, note) {
     result._model = model;
     result._temperature = TRIAGE_TEMPERATURE;
     result._originalNote = note;
+    postProcessResult(result, note);
     logTriageUsage(result, usage, true);
     return { result: result, usage: usage, parseSuccess: true, rawText: clean };
   });

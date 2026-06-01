@@ -1500,7 +1500,10 @@ function UsageLogTab(){
                             <pre style={{whiteSpace:'pre-wrap',fontFamily:'inherit',fontSize:11,color:C.ink,background:'#fff',border:`1px solid ${C.rule}`,borderRadius:2,padding:'8px 10px',maxHeight:140,overflow:'auto',margin:0}}>{r.ai_response_summary||'—'}</pre>
                           </div>
                         </div>
-                        <div style={{marginTop:8,fontSize:10,color:C.mid}}>Session: {r.session_id} · Model: {r.model_used||'—'} · Mode: {r.documentation_standard||'—'} · Temp: {r.temperature!=null?r.temperature:'—'} · Prompt: {r.prompt_version||'—'}</div>
+                        <div style={{marginTop:8,fontSize:10,color:C.mid}}>
+                          Session: {r.session_id} · Model: {r.model_used||'—'} · Mode: {r.documentation_standard||'—'} · Temp: {r.temperature!=null?r.temperature:'—'} · Prompt: {r.prompt_version||'—'}
+                          {(()=>{try{const j=JSON.parse(r.ai_response_json||'{}');if(j._overrides&&j._overrides.length){return <span style={{color:'#b45309',fontWeight:600,marginLeft:6}}>⚡ {j._overrides.length} override{j._overrides.length>1?'s':''}: {j._overrides.map(o=>o.check).join(', ')}</span>;}}catch(e){}return null;})()}
+                        </div>
                       </td>
                     </tr>
                   )}
