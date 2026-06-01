@@ -168,6 +168,15 @@ body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
 .gateway-tooltip-text { display: none; position: absolute; bottom: 120%; left: 0; width: 220px; background: #1a1d21; color: #fff; font-size: 11px; font-weight: 400; padding: 8px 10px; border-radius: 4px; line-height: 1.5; z-index: 200; letter-spacing: 0; text-transform: none; pointer-events: none; white-space: normal; }
 .gateway-tooltip-text::after { content: ''; position: absolute; top: 100%; left: 12px; border: 5px solid transparent; border-top-color: #1a1d21; }
 
+/* ═══ FOOTNOTE SUPERSCRIPT + POPUP/PANEL (UX-12) ═══════ */
+.fn-sup { color: var(--accent,#1a6fa0); cursor: pointer; font-style: normal; }
+.fn-sup:hover { text-decoration: underline; }
+#fn-tooltip-popup { display: none; position: fixed; background: #1a1d21; color: #fff; font-size: 12px; line-height: 1.6; padding: 10px 13px; border-radius: 5px; max-width: 300px; z-index: 600; pointer-events: auto; box-shadow: 0 4px 16px rgba(0,0,0,.35); }
+#fn-tooltip-popup::after { content: ''; position: absolute; top: 100%; left: 14px; border: 6px solid transparent; border-top-color: #1a1d21; }
+#fn-def-panel { position: fixed; top: 0; right: 0; width: min(360px,90vw); height: 100vh; background: #fff; box-shadow: -4px 0 24px rgba(0,0,0,.18); z-index: 600; overflow-y: auto; padding: 20px 18px; transform: translateX(100%); transition: transform .22s ease; box-sizing: border-box; }
+#fn-def-panel.open { transform: translateX(0); }
+#fn-def-panel-body { font-size: 13px; color: #1a1d21; line-height: 1.75; }
+
 /* ═══ PRINT STYLES ══════════════════════════════════════ */
 @media print {
   #toolIdentityFooter, .region-bar, .left-col, .loader-overlay { display:none !important; }
@@ -1653,27 +1662,6 @@ function toolRenderIndicCb(item, tier, groupTitle) {
   if (item.conditionalNote) {
     h += "<div class='ib-red' style='margin:4px 8px 4px;font-size:12px'>" + esc(item.conditionalNote) + "</div>";
   }
-  // UX-12: Inline footnote definition
-  if (UX12_DEFINITIONS_INLINE && window._currentSiteFootnotes) {
-    var fnMatch12 = item.label.match(/\*(\d*)/);
-    if (fnMatch12) {
-      var fnKey12 = fnMatch12[1] || '_default';
-      var fnText12 = window._currentSiteFootnotes[fnKey12];
-      if (fnText12) {
-        if (!window._shownFootnotes[fnKey12]) {
-          window._shownFootnotes[fnKey12] = item.id;
-          h += "<div style='margin:4px 8px 6px 26px'>";
-          h += "<details style='font-size:11px;color:var(--mid)'>";
-          h += "<summary style='cursor:pointer;color:var(--accent,#1a6fa0);font-size:10px;font-weight:600'>&#9656; Definition</summary>";
-          h += "<div style='padding:4px 0 0 12px;line-height:1.5'>" + esc(fnText12).replace(/\n/g,'<br>') + "</div>";
-          h += "</details></div>";
-        } else {
-          h += "<div style='margin:2px 8px 4px 26px;font-size:10px;color:var(--accent,#1a6fa0)'>";
-          h += "<a href='javascript:void(0)' style='color:var(--accent,#1a6fa0);text-decoration:none' onclick='event.stopPropagation();var el=document.getElementById(\"row_" + esc(window._shownFootnotes[fnKey12]) + "\");if(el)el.scrollIntoView({behavior:\"smooth\"})'>See definition &#8593;</a></div>";
-        }
-      }
-    }
-  }
   h += "</div>";
   return h;
 }
@@ -2041,12 +2029,62 @@ function toggleFooterBlock(id) {
   if (btn) btn.textContent = isHidden ? '▾ collapse' : '▸ expand';
 }
 
-// UX-10: Convert trailing * or *N in labels to clickable footnote-scroll superscripts
+// UX-10/12: Convert *N markers in labels to superscripts that trigger tooltip or panel
 function labelWithFootnoteLink(label) {
   if (!label || label.indexOf('*') === -1) return esc(label);
   return esc(label).replace(/\*(\d?)/g, function(m, n) {
-    return '<sup style="color:var(--accent,#1a6fa0);cursor:pointer;text-decoration:underline" onclick="event.stopPropagation();(function(){var blocks=document.querySelectorAll(\'.footnote-block\');if(blocks.length)blocks[blocks.length-1].scrollIntoView({behavior:\'smooth\'});})()">&lowast;' + (n || '') + '</sup>';
+    var key = n ? n : '_default';
+    return '<sup class="fn-sup" onclick="event.stopPropagation();showFnDef(event,\'' + key + '\')">' + m + '</sup>';
   });
+}
+
+// UX-12: Show tooltip (short def) or slide-out panel (long def)
+var _activeFnTooltipKey = null;
+function showFnDef(event, key) {
+  event.stopPropagation();
+  var fn = window._currentSiteFootnotes || {};
+  var text = fn[key] || fn['_default'] || '';
+  if (!text) return;
+  if (text.length < 300) {
+    showFnTooltip(event, key, text);
+  } else {
+    closeFnTooltip();
+    showFnPanel(text);
+  }
+}
+function showFnTooltip(event, key, text) {
+  var popup = document.getElementById('fn-tooltip-popup');
+  if (!popup) return;
+  if (_activeFnTooltipKey === key && popup.style.display === 'block') {
+    popup.style.display = 'none'; _activeFnTooltipKey = null; return;
+  }
+  _activeFnTooltipKey = key;
+  popup.innerHTML = esc(text).replace(/\n/g, '<br>');
+  popup.style.display = 'block';
+  var rect = event.target ? event.target.getBoundingClientRect() : null;
+  if (rect) {
+    var top = rect.top - 10;
+    popup.style.top = '-9999px'; popup.style.left = '-9999px'; popup.style.display = 'block';
+    var ph = popup.offsetHeight;
+    top = rect.top - ph - 10;
+    if (top < 8) top = rect.bottom + 10;
+    popup.style.top = top + 'px';
+    popup.style.left = Math.min(rect.left, window.innerWidth - 320) + 'px';
+  }
+}
+function showFnPanel(text) {
+  var panel = document.getElementById('fn-def-panel');
+  var body = document.getElementById('fn-def-panel-body');
+  if (!panel || !body) return;
+  body.innerHTML = esc(text).replace(/\n/g, '<br>');
+  panel.classList.add('open');
+}
+function closeFnPanel() {
+  var p = document.getElementById('fn-def-panel'); if (p) p.classList.remove('open');
+}
+function closeFnTooltip() {
+  var p = document.getElementById('fn-tooltip-popup'); if (p) p.style.display = 'none';
+  _activeFnTooltipKey = null;
 }
 
 function renderFooterBlocks(obj) {
@@ -2087,22 +2125,8 @@ function renderFooterBlocks(obj) {
     h += "<div class='oof-block'>" + esc(obj.outOfCriteriaNote) + "</div>";
   }
 
-  if (obj.footnotes) {
-    var fnBlockId = 'footnote-block-' + esc((obj.id||'x').replace(/[^a-z0-9]/gi,'_'));
-    if (UX11_EXPANDABLE_SECTIONS) {
-      var fnBodyId = 'fnbody_' + Math.random().toString(36).slice(2,8);
-      h += "<div class='footnote-block' id='" + fnBlockId + "'>";
-      h += "<div class='footnote-hd' style='cursor:pointer;display:flex;align-items:center;justify-content:space-between' onclick='toggleFooterBlock(\"" + fnBodyId + "\")'>";
-      h += "Definitions &amp; sub-criteria <span id='" + fnBodyId + "_btn' style='font-size:11px;font-weight:400'>&#9656; expand</span></div>";
-      h += "<div id='" + fnBodyId + "' style='display:none'>" + esc(obj.footnotes).replace(/\n/g,"<br>") + "</div>";
-      h += "</div>";
-    } else {
-      h += "<div class='footnote-block' id='" + fnBlockId + "'>";
-      h += "<div class='footnote-hd' style='display:flex;align-items:center;justify-content:space-between;'>Definitions &amp; sub-criteria";
-      h += "<a href='#' onclick='event.preventDefault();document.querySelector(\".crit-card\")&&document.querySelector(\".crit-card\").scrollIntoView({behavior:\"smooth\"})' style='font-size:10px;color:var(--accent,#1a6fa0);text-decoration:none;font-weight:400'>&#8593; Back to criteria</a></div>";
-      h += esc(obj.footnotes).replace(/\n/g,"<br>") + "</div>";
-    }
-  }
+  // Definitions & sub-criteria section removed — definitions now accessed on-demand
+  // via superscript clicks (UX-12: tooltip for short defs, slide-out panel for long defs)
 
   return h;
 }
@@ -2166,27 +2190,6 @@ function toolRenderCb(item, groupTitle) {
   h += "</div>"; // end header
   if (item.conditionalNote) {
     h += "<div class='ib-red' style='margin:4px 8px 4px;font-size:12px'>" + esc(item.conditionalNote) + "</div>";
-  }
-  // UX-12: Inline footnote definition
-  if (UX12_DEFINITIONS_INLINE && window._currentSiteFootnotes) {
-    var fnMatchCb = item.label.match(/\*(\d*)/);
-    if (fnMatchCb) {
-      var fnKeyCb = fnMatchCb[1] || '_default';
-      var fnTextCb = window._currentSiteFootnotes[fnKeyCb];
-      if (fnTextCb) {
-        if (!window._shownFootnotes[fnKeyCb]) {
-          window._shownFootnotes[fnKeyCb] = item.id;
-          h += "<div style='margin:4px 8px 6px 26px'>";
-          h += "<details style='font-size:11px;color:var(--mid)'>";
-          h += "<summary style='cursor:pointer;color:var(--accent,#1a6fa0);font-size:10px;font-weight:600'>&#9656; Definition</summary>";
-          h += "<div style='padding:4px 0 0 12px;line-height:1.5'>" + esc(fnTextCb).replace(/\n/g,'<br>') + "</div>";
-          h += "</details></div>";
-        } else {
-          h += "<div style='margin:2px 8px 4px 26px;font-size:10px;color:var(--accent,#1a6fa0)'>";
-          h += "<a href='javascript:void(0)' style='color:var(--accent,#1a6fa0);text-decoration:none' onclick='event.stopPropagation();var el=document.getElementById(\"row_" + esc(window._shownFootnotes[fnKeyCb]) + "\");if(el)el.scrollIntoView({behavior:\"smooth\"})'>See definition &#8593;</a></div>";
-        }
-      }
-    }
   }
   h += "</div>"; // end crit-card
   return h;
@@ -2756,9 +2759,31 @@ function handleClear() {
   var sm = document.getElementById("toolStatus"); if (sm) { sm.innerHTML=""; sm.className="status-msg"; }
 }
 
+// UX-12: Dismiss tooltip on outside click or Escape
+document.addEventListener('click', function(e) {
+  var popup = document.getElementById('fn-tooltip-popup');
+  if (popup && popup.style.display === 'block' && !popup.contains(e.target) && !e.target.classList.contains('fn-sup')) {
+    closeFnTooltip();
+  }
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { closeFnPanel(); closeFnTooltip(); }
+});
+
 </script>
 <script src="/crr-criteria/shared/release-bell.js"></script>
 <script>crrReleaseBell.init({ app: 'viewer', selector: '#releaseBell' });</script>
 
+<!-- UX-12: Footnote tooltip popup -->
+<div id="fn-tooltip-popup"></div>
+
+<!-- UX-12: Footnote definition slide-out panel -->
+<div id="fn-def-panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #dde1e6;">
+    <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#5f6b7c;">Definition</span>
+    <button onclick="closeFnPanel()" style="background:none;border:none;cursor:pointer;font-size:22px;color:#5f6b7c;padding:0 2px;line-height:1;font-family:inherit;" title="Close">&times;</button>
+  </div>
+  <div id="fn-def-panel-body"></div>
+</div>
 </body>
 </html>
