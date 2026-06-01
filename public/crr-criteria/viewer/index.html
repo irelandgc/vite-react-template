@@ -2029,9 +2029,11 @@ function toggleFooterBlock(id) {
   if (btn) btn.textContent = isHidden ? '▾ collapse' : '▸ expand';
 }
 
-// UX-10/12: Convert *N markers in labels to superscripts that trigger tooltip or panel
+// UX-10/12: Convert *N markers in labels to superscripts that trigger tooltip or panel.
+// When UX12_DEFINITIONS_INLINE is false, returns plain escaped label with no superscript logic.
 function labelWithFootnoteLink(label) {
   if (!label || label.indexOf('*') === -1) return esc(label);
+  if (!UX12_DEFINITIONS_INLINE) return esc(label);
   return esc(label).replace(/\*(\d?)/g, function(m, n) {
     var key = n ? n : '_default';
     return '<sup class="fn-sup" onclick="event.stopPropagation();showFnDef(event,\'' + key + '\')">' + m + '</sup>';
@@ -2125,8 +2127,20 @@ function renderFooterBlocks(obj) {
     h += "<div class='oof-block'>" + esc(obj.outOfCriteriaNote) + "</div>";
   }
 
-  // Definitions & sub-criteria section removed — definitions now accessed on-demand
-  // via superscript clicks (UX-12: tooltip for short defs, slide-out panel for long defs)
+  if (obj.footnotes) {
+    if (UX12_DEFINITIONS_INLINE) {
+      // Definitions accessed on-demand via superscript clicks — no bottom section
+    } else if (UX11_EXPANDABLE_SECTIONS) {
+      var fnBodyId = 'fnbody_' + Math.random().toString(36).slice(2,8);
+      h += "<div class='footnote-block'>";
+      h += "<div class='footnote-hd' style='cursor:pointer;display:flex;align-items:center;justify-content:space-between' onclick='toggleFooterBlock(\"" + fnBodyId + "\")'>";
+      h += "Definitions &amp; sub-criteria <span id='" + fnBodyId + "_btn' style='font-size:11px;font-weight:400'>&#9656; expand</span></div>";
+      h += "<div id='" + fnBodyId + "' style='display:none'>" + esc(obj.footnotes).replace(/\n/g,"<br>") + "</div>";
+      h += "</div>";
+    } else {
+      h += "<div class='footnote-block'><div class='footnote-hd'>Definitions &amp; sub-criteria</div>" + esc(obj.footnotes).replace(/\n/g,"<br>") + "</div>";
+    }
+  }
 
   return h;
 }
