@@ -46,6 +46,12 @@ const TEST_CASES = [
     expected_verdict: 'safety_redirect',
     check: null,
     must_not_override: true },
+
+  { case_id: 'NECK-SCREW', runs: 1, exam: 'Cervical Spine X-ray',
+    clinical_note: '68yo male, had C5/C6 ACDF 4 months ago with screw fixation. Now has new onset neck pain. GP requesting cervical spine XR to check screw position and hardware integrity.',
+    expected_verdict: 'declined',
+    check: null,
+    must_not_override: true },
 ];
 
 // ── Replica of browser postProcessResult ─────────────────────────────────
@@ -87,7 +93,8 @@ function postProcessResult(result, note) {
       : 'Referral criteria met.';
   }
 
-  if (isStep0(result.safety_alert) || isStep0(result.redirect) || isStep0(noteText)) return [];
+  // Never override if a safety alert or the AI notes describe an emergency
+  if (isStep0(result.safety_alert) || isStep0(noteText)) return [];
 
   // Check 1
   let matchedPhrase = null;
@@ -131,31 +138,12 @@ function postProcessResult(result, note) {
     }
   }
 
-  // Check 3
-  if ((result.verdict === 'at_risk' || result.verdict === 'declined') &&
-      Array.isArray(result.missing_criteria) && result.missing_criteria.length > 0 &&
-      (noteText.includes('independently met') || noteText.includes('fully met'))) {
-    const movedCount = result.missing_criteria.length;
-    result.notes = (result.notes || '') + '\n\nOther pathway criteria (not required for this referral): ' + result.missing_criteria.join('; ');
+  // Final cleanup: if Check 1 or 2 set verdict to proceeds, move any remaining
+  // missing_criteria to advisory notes — they cannot be requirements for a proceeding referral.
+  if (overrides.length > 0 && result.verdict === 'proceeds' &&
+      Array.isArray(result.missing_criteria) && result.missing_criteria.length > 0) {
+    result.notes = (result.notes || '') + '\n\nOther requirements not met (advisory — not blocking this referral): ' + result.missing_criteria.join('; ');
     result.missing_criteria = [];
-    const ov = result.verdict;
-    result.verdict = 'proceeds';
-    applyProceedsDisplay(result);
-    overrides.push({ check:'non_deciding_pathway_missing', original_verdict:ov, new_verdict:'proceeds',
-      trigger:`notes indicate pathway independently/fully met; ${movedCount} missing items moved to notes as advisory`, timestamp:now });
-  }
-
-  // Check 4
-  if (result.redirect && !isStep0(result.redirect)) {
-    result.notes = (result.notes || '') + '\n\nAdvisory: ' + result.redirect;
-    const ov = result.verdict;
-    result.redirect = null;
-    if (result.verdict !== 'proceeds') {
-      result.verdict = 'proceeds';
-      applyProceedsDisplay(result);
-      overrides.push({ check:'non_step0_redirect_override', original_verdict:ov, new_verdict:'proceeds',
-        trigger:'non-emergency redirect moved to advisory notes; met_criteria present', timestamp:now });
-    }
   }
 
   return overrides;

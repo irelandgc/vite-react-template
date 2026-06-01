@@ -478,7 +478,7 @@ textarea.note::placeholder{color:#8b919a}
 
       <!-- Reviewer -->
       <div style="margin-bottom:12px">
-        <input id="qaReviewerName" type="text" placeholder="Your name" style="width:100%;border:1px solid var(--rule);border-radius:4px;padding:7px 10px;font-family:var(--sans);font-size:13px;color:var(--ink);box-sizing:border-box;margin-bottom:6px">
+        <input id="qaReviewerName" type="text" placeholder="Your name" oninput="checkQaSubmitEnabled()" style="width:100%;border:1px solid var(--rule);border-radius:4px;padding:7px 10px;font-family:var(--sans);font-size:13px;color:var(--ink);box-sizing:border-box;margin-bottom:6px">
         <div id="qaRoleGroup" style="display:flex;flex-wrap:wrap;gap:5px">
           <button class="qa-role-btn" data-val="GP" onclick="setQaRole('GP')">GP</button>
           <button class="qa-role-btn" data-val="Nurse Practitioner" onclick="setQaRole('Nurse Practitioner')">Nurse Practitioner</button>
@@ -2659,8 +2659,8 @@ function postProcessResult(result, note) {
       : 'Referral criteria met.';
   }
 
-  // Never override if Step 0 is active
-  if (isStep0(result.safety_alert) || isStep0(result.redirect) || isStep0(noteText)) return;
+  // Never override if a safety alert or the AI notes describe an emergency
+  if (isStep0(result.safety_alert) || isStep0(noteText)) return;
 
   // Check 1: Notes state a pathway is met but verdict disagrees
   var matchedPhrase = null;
@@ -2711,31 +2711,12 @@ function postProcessResult(result, note) {
     }
   }
 
-  // Check 3: Notes say pathway independently/fully met despite missing_criteria from other pathway
-  if ((result.verdict === 'at_risk' || result.verdict === 'declined') &&
-      Array.isArray(result.missing_criteria) && result.missing_criteria.length > 0 &&
-      (noteText.indexOf('independently met') !== -1 || noteText.indexOf('fully met') !== -1)) {
-    var movedCount = result.missing_criteria.length;
-    result.notes = (result.notes || '') + '\n\nOther pathway criteria (not required for this referral): ' + result.missing_criteria.join('; ');
+  // Final cleanup: if any override set verdict to proceeds, move any remaining
+  // missing_criteria to advisory notes — they cannot be requirements for a proceeding referral.
+  if (overrides.length > 0 && result.verdict === 'proceeds' &&
+      Array.isArray(result.missing_criteria) && result.missing_criteria.length > 0) {
+    result.notes = (result.notes || '') + '\n\nOther requirements not met (advisory — not blocking this referral): ' + result.missing_criteria.join('; ');
     result.missing_criteria = [];
-    var ov3 = result.verdict;
-    result.verdict = 'proceeds';
-    applyProceedsDisplay(result);
-    overrides.push({ check:'non_deciding_pathway_missing', original_verdict:ov3, new_verdict:'proceeds',
-      trigger:'notes indicate pathway independently/fully met; ' + movedCount + ' missing items moved to notes as advisory', timestamp:now });
-  }
-
-  // Check 4: Non-Step-0 redirect overriding met criteria
-  if (result.redirect && !isStep0(result.redirect)) {
-    result.notes = (result.notes || '') + '\n\nAdvisory: ' + result.redirect;
-    var ov4 = result.verdict;
-    result.redirect = null;
-    if (result.verdict !== 'proceeds') {
-      result.verdict = 'proceeds';
-      applyProceedsDisplay(result);
-      overrides.push({ check:'non_step0_redirect_override', original_verdict:ov4, new_verdict:'proceeds',
-        trigger:'non-emergency redirect moved to advisory notes; met_criteria present', timestamp:now });
-    }
   }
 
   if (overrides.length > 0) result._overrides = overrides;
@@ -2900,6 +2881,11 @@ function openQaModal() {
   qaOverall = null;
   qaRole = '';
 
+  // Reset all selection buttons (including role — prevents ghost visual state if localStorage is unavailable)
+  document.querySelectorAll('#qaRoleGroup .qa-role-btn').forEach(function(b){ b.classList.remove('selected'); });
+  document.querySelectorAll('.qa-opt-btn').forEach(function(b){ b.classList.remove('selected'); });
+  document.querySelectorAll('.qa-3pt-btn').forEach(function(b){ b.classList.remove('selected'); });
+
   // Pre-populate reviewer from localStorage
   try {
     var savedName = localStorage.getItem('crr-qa-reviewer-name') || localStorage.getItem('crr-triage-user-name') || '';
@@ -2908,10 +2894,6 @@ function openQaModal() {
     if (nameEl && savedName) nameEl.value = savedName;
     if (savedRole) setQaRole(savedRole);
   } catch(e) {}
-
-  // Reset all selection buttons
-  document.querySelectorAll('.qa-opt-btn').forEach(function(b){ b.classList.remove('selected'); });
-  document.querySelectorAll('.qa-3pt-btn').forEach(function(b){ b.classList.remove('selected'); });
   var commentsEl = document.getElementById('qaComments');
   if (commentsEl) commentsEl.value = '';
 
@@ -2962,7 +2944,9 @@ function setQaOverall(val) {
 }
 
 function checkQaSubmitEnabled() {
-  var ok = !!(qaScenario && qaOverall && qaRole
+  var nameEl = document.getElementById('qaReviewerName');
+  var name = nameEl ? nameEl.value.trim() : '';
+  var ok = !!(name && qaScenario && qaOverall && qaRole
     && qaScores.criteria_id && qaScores.suggestion_quality
     && qaScores.compound_handling && qaScores.safety_redirect);
   var btn = document.getElementById('qaSubmitBtn');
