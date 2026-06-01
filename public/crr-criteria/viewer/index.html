@@ -6,6 +6,7 @@
 <title>CRR Criteria Viewer v1.0.0 DEV</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/crr-criteria/shared/crr-design-system.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <style>
 
 /* ═══ HEADER ════════════════════════════════════════════ */
@@ -161,7 +162,7 @@ body { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
 
 /* ═══ GATEWAY TOOLTIP (UX-09) ═══════════════════════════ */
 .gateway-tag { position: relative; display: inline-flex; align-items: center; gap: 3px; }
-.gateway-info-icon { display: inline-flex; align-items: center; justify-content: center; width: 13px; height: 13px; border-radius: 50%; background: rgba(255,255,255,0.25); font-size: 9px; font-weight: 700; cursor: help; flex-shrink: 0; }
+.gateway-info-icon { display: inline-flex; align-items: center; justify-content: center; cursor: help; flex-shrink: 0; font-size: 14px; opacity: 0.8; line-height: 1; }
 .gateway-info-icon:hover .gateway-tooltip-text,
 .gateway-info-icon:focus .gateway-tooltip-text { display: block; }
 .gateway-tooltip-text { display: none; position: absolute; bottom: 120%; left: 0; width: 220px; background: #1a1d21; color: #fff; font-size: 11px; font-weight: 400; padding: 8px 10px; border-radius: 4px; line-height: 1.5; z-index: 200; letter-spacing: 0; text-transform: none; pointer-events: none; white-space: normal; }
@@ -1642,7 +1643,7 @@ function toolRenderIndicCb(item, tier, groupTitle) {
   h += on ? " checked" : "";
   h += ">";
   h += "<span class='crit-card-label'>";
-  if (gateway) h += "<span class='gateway-tag'>&#128274; GATEWAY <span class='gateway-info-icon' tabindex='0'>i<span class='gateway-tooltip-text'>A gateway is a required procedural step — such as completing a decision support tool or obtaining a specialist recommendation — that must be documented before the referral can be accepted. It is separate from clinical criteria.</span></span></span> ";
+  if (gateway) h += "<span class='gateway-tag'>&#128274; GATEWAY <span class='gateway-info-icon' tabindex='0'><i class='ti ti-info-circle'></i><span class='gateway-tooltip-text'>A gateway is a required procedural step — such as completing a decision support tool or obtaining a specialist recommendation — that must be documented before the referral can be accepted. It is separate from clinical criteria.</span></span></span> ";
   if (labval)  h += "<span class='lab-tag'>&#128203; LAB</span> ";
   h += labelWithFootnoteLink(item.label);
   if (item.mandatory) h += " <span class='mandatory-tag'>Mandatory</span>";
@@ -1917,7 +1918,7 @@ function toolRenderIndicPassive(item, tier) {
   var h = "<div class='crit-card'>";
   h += "<div class='crit-card-header' style='cursor:default'>";
   h += "<span class='crit-card-label'>";
-  if (gateway) h += "<span class='gateway-tag'>&#128274; GATEWAY <span class='gateway-info-icon' tabindex='0'>i<span class='gateway-tooltip-text'>A gateway is a required procedural step — such as completing a decision support tool or obtaining a specialist recommendation — that must be documented before the referral can be accepted. It is separate from clinical criteria.</span></span></span> ";
+  if (gateway) h += "<span class='gateway-tag'>&#128274; GATEWAY <span class='gateway-info-icon' tabindex='0'><i class='ti ti-info-circle'></i><span class='gateway-tooltip-text'>A gateway is a required procedural step — such as completing a decision support tool or obtaining a specialist recommendation — that must be documented before the referral can be accepted. It is separate from clinical criteria.</span></span></span> ";
   if (labval)  h += "<span class='lab-tag'>&#128203; LAB</span> ";
   h += esc(item.label);
   if (item.mandatory) h += " <span class='mandatory-tag'>Mandatory</span>";
@@ -1998,7 +1999,7 @@ function renderPrereqBlock(prereqs) {
     var _gw = isGateway(prereqs[i]);
     var _lv = isLabValue(prereqs[i]);
     h += "<div class='prereq-item'><span class='prereq-bullet'>&#9744;</span><span>" + esc(prereqs[i]) + "</span>";
-    if (_gw) h += " <span class='gateway-tag'>&#128274; GATEWAY <span class='gateway-info-icon' tabindex='0'>i<span class='gateway-tooltip-text'>A gateway is a required procedural step — such as completing a decision support tool or obtaining a specialist recommendation — that must be documented before the referral can be accepted. It is separate from clinical criteria.</span></span></span>";
+    if (_gw) h += " <span class='gateway-tag'>&#128274; GATEWAY <span class='gateway-info-icon' tabindex='0'><i class='ti ti-info-circle'></i><span class='gateway-tooltip-text'>A gateway is a required procedural step — such as completing a decision support tool or obtaining a specialist recommendation — that must be documented before the referral can be accepted. It is separate from clinical criteria.</span></span></span>";
     if (_lv) h += " <span class='lab-tag'>&#128203; LAB</span>";
     h += "</div>";
   }
@@ -2157,7 +2158,7 @@ function toolRenderCb(item, groupTitle) {
   h += on ? " checked" : "";
   h += ">";
   h += "<span class='crit-card-label'>";
-  if (gateway) h += "<span class='gateway-tag'>&#128274; GATEWAY <span class='gateway-info-icon' tabindex='0'>i<span class='gateway-tooltip-text'>A gateway is a required procedural step — such as completing a decision support tool or obtaining a specialist recommendation — that must be documented before the referral can be accepted. It is separate from clinical criteria.</span></span></span> ";
+  if (gateway) h += "<span class='gateway-tag'>&#128274; GATEWAY <span class='gateway-info-icon' tabindex='0'><i class='ti ti-info-circle'></i><span class='gateway-tooltip-text'>A gateway is a required procedural step — such as completing a decision support tool or obtaining a specialist recommendation — that must be documented before the referral can be accepted. It is separate from clinical criteria.</span></span></span> ";
   if (labval)  h += "<span class='lab-tag'>&#128203; LAB</span> ";
   h += labelWithFootnoteLink(item.label);
   if (item.mandatory) h += " <span class='mandatory-tag'>Mandatory</span>";
