@@ -66,7 +66,8 @@ function postProcessResult(result, note) {
   const now = new Date().toISOString();
 
   const MET_PHRASES = ['fully met','meets criteria','meets p1','meets p2','meets p3','meets p4',
-    'meets acute','meets urgent','pathway is met','pathway is fully met',
+    'meets acute','meets urgent','meet criteria','meet p1','meet p2','meet p3','meet p4',
+    'meet acute','meet urgent','pathway is met','pathway is fully met',
     'sufficient for acceptance','criteria are met','criteria met independently','criteria met'];
 
   function isStep0(text) {
