@@ -1,8 +1,8 @@
 {
   "test_run": {
-    "date": "2026-05-24T18:13:21.111Z",
+    "date": "2026-06-02T02:03:39.245Z",
     "prompt_version": "2.3.0",
-    "model": "claude-sonnet-4-20250514",
+    "model": "claude-sonnet-4-6",
     "mode": "strict",
     "paediatric_detection": "enabled",
     "baseline_comparison": "v2.2.0"
@@ -10,8 +10,8 @@
   "summary": {
     "total": 20,
     "improved": 3,
-    "unchanged": 14,
-    "regressed": 3
+    "unchanged": 15,
+    "regressed": 2
   },
   "results": [
     {
@@ -22,28 +22,33 @@
       "clinical_note": "45 maori woman with 2/12 h/o progressively worsening HA present nocturnally and first thing in the morning with associated blurred vision and nausea",
       "ai_response": {
         "verdict": "proceeds",
-        "verdict_title": "Meets P2 criteria",
-        "verdict_summary": "Progressive headache pattern with neurological symptoms meets urgent CT Head criteria.",
+        "verdict_title": "Referral Proceeds — Urgent (P2)",
+        "verdict_summary": "This referral meets P2 criteria for CT Head: progressive headache with nocturnal/morning predominance (positional/raised ICP pattern), associated blurred vision (objective neurological deficit), and nausea — all features of a change in headache pattern with progressive increase in severity plus associated neurological features.",
         "priority": "P2",
         "criteria_page": "p20",
         "met_criteria": [
           "Change in pattern of headaches with progressive increase in frequency or severity [p20]",
-          "Associated with persistent nausea/vomiting (not typical migraine) [p20]",
-          "Objective neurological deficit (blurred vision) [p20]"
+          "Associated persistent nausea/vomiting (not typical migraine) [p20]",
+          "Objective neurological deficit — blurred vision [p20]",
+          "Nocturnal and early-morning predominance consistent with raised ICP pattern (exacerbated by positional/Valsalva-equivalent mechanism) [p20]"
         ],
         "missing_criteria": [],
-        "add_to_note": [],
-        "suggested_wording": null,
+        "add_to_note": [
+          "Document any history of malignancy (especially lung, melanoma, breast) to support or exclude brain metastases as a differential.",
+          "Document any anticoagulant use, history of falls, gait ataxia, or cognitive changes to complete the SOL/bleed/hydrocephalus feature set.",
+          "Document any focal neurological signs on examination (e.g. papilloedema on fundoscopy, limb weakness, coordination deficits)."
+        ],
+        "suggested_wording": "45-year-old Māori woman with a 2-month history of progressively worsening headache, present nocturnally and on waking in the morning (raised ICP pattern), associated with blurred vision and nausea. No features of typical migraine. Requesting urgent CT Head to exclude space-occupying lesion, bleed, or hydrocephalus.",
         "not_funded_flag": false,
         "safety_alert": null,
         "redirect": null,
-        "notes": "Patient meets P2 criteria for progressive headache with associated neurological symptoms (blurred vision) and persistent nausea. The 2-month progressive worsening pattern with nocturnal presentation and morning symptoms, combined with neurological deficit, warrants urgent CT Head within 2 weeks."
+        "notes": "The nocturnal and early-morning timing of headache is a recognised raised intracranial pressure pattern. Blurred vision constitutes an objective neurological deficit. Together with progressive worsening and nausea, this clearly meets the P2 criterion for CT Head. The 'especially aged 50+' qualifier is an epidemiological modifier only and does not exclude this 45-year-old patient. The criteria for cognitive impairment with SOL features (P2 second bullet) were also considered but are not the basis for this decision — the headache-pattern criterion is independently and fully met. No thunderclap or worst-ever headache is described, so SAH emergency pathway is not triggered; however, if the patient reports any sudden-onset severe headache component at any point, immediate ED referral would be warranted."
       },
       "previous_verdict_v22": "proceeds",
       "evaluator_verdict": "Correct — should proceed",
       "evaluator_comment": "Correct verdict. Progressive worsening HA with nocturnal/morning pattern, nausea, blurred vision clearly meets criteria.",
       "regression_status": "unchanged",
-      "notes": "Verdict: proceeds. Priority: P2. Met: 3. Missing: 0."
+      "notes": "Verdict: proceeds. Priority: P2. Met: 4. Missing: 0."
     },
     {
       "case_id": "RP-001",
@@ -52,28 +57,41 @@
       "paediatric": false,
       "clinical_note": "65yo male w/ unexplained wt loss 5% over past 6/12 with no localising symptoms or signs. Hb mildly low. Ex-smoker.",
       "ai_response": {
-        "verdict": "proceeds",
-        "verdict_title": "Meets P2 criteria",
-        "verdict_summary": "Male >50 with strong suspicion of malignancy, no focal pathology, and unintentional unexplained weight loss >5% over 3-6 months with low Hb.",
-        "priority": "P2",
+        "verdict": "at_risk",
+        "verdict_title": "At Risk — Additional Documentation Required",
+        "verdict_summary": "The referral partially meets P2 criteria for CT CAP but is missing confirmation of strong suspicion of malignancy and at least one additional abnormal blood result to satisfy the male >40 two-pathway criterion, or confirmation that no focal pathology is identified on initial investigations.",
+        "priority": null,
         "criteria_page": "p10",
         "met_criteria": [
-          "Male >50 or female >60 with strong suspicion of malignancy, no focal pathology, AND unintentional unexplained weight loss >5% over 3–6 months (+/- abdominal pain, fatigue, nausea) [p10]",
-          "Low Hb [p10]"
+          "Male patient [p10]",
+          "Age 65 years (>50 for first pathway; >40 for second pathway) [p10]",
+          "Unexplained weight loss 5% over 6 months (meets '>5% over 3–6 months' threshold) [p10]",
+          "Low Hb documented ('Hb mildly low' satisfies 'low Hb' as one abnormal blood result) [p10]",
+          "No localising symptoms or signs documented (consistent with 'no focal pathology') [p10]"
         ],
-        "missing_criteria": [],
-        "add_to_note": [],
-        "suggested_wording": null,
+        "missing_criteria": [
+          "Strong suspicion of malignancy not explicitly stated — GP must document this clinical judgement [p10]",
+          "For the male >50 first pathway: weight loss threshold met and no focal pathology documented, but strong suspicion of malignancy must be explicitly stated [p10]",
+          "For the male >40 second pathway: only 1 abnormal blood result documented (low Hb); criteria require 2 or more of: raised CRP, low Hb, raised Ca, high platelets, high ALP, low albumin — persistent on repeat after 3 weeks. A second abnormal blood result is needed, or confirmation that bloods were repeated and remain abnormal [p10]",
+          "No documentation that initial investigations have been completed and reviewed prior to CT CAP request [p10]"
+        ],
+        "add_to_note": [
+          "Add: 'I have a strong clinical suspicion of underlying malignancy based on the combination of unexplained weight loss and low Hb with no localising features.'",
+          "Add results of at least one further blood test (CRP, calcium, platelets, ALP, or albumin) to document a second abnormal result if pursuing the male >40 two-abnormal-bloods pathway.",
+          "Add: 'Initial investigations including [list tests performed] have been completed and reviewed. No focal pathology or biopsy site identified.'",
+          "If using the male >50 no-focal-pathology pathway, confirm: 'No recent USS abdomen/pelvis within 3 months and no CT CAP within 12 months.'"
+        ],
+        "suggested_wording": "65-year-old male presenting with unexplained weight loss of 5% over the past 6 months, with no localising symptoms or signs on history or examination. Hb mildly low on bloods. [Add second abnormal blood result, e.g.: 'CRP raised / ALP elevated / platelets high / albumin low — confirmed persistent on repeat bloods after 3 weeks.'] Initial investigations have been completed and reviewed; no focal pathology or biopsy site has been identified. I have a strong clinical suspicion of underlying malignancy. No USS abdomen/pelvis in the past 3 months and no CT CAP in the past 12 months. Requesting CT Chest/Abdomen/Pelvis.",
         "not_funded_flag": false,
         "safety_alert": null,
         "redirect": null,
-        "notes": "Patient meets the first P2 criterion for CT CAP. The note documents male >50 (65 years), strong suspicion of malignancy (unexplained weight loss in ex-smoker), no focal pathology (no localising symptoms/signs), and unintentional unexplained weight loss >5% over 6 months. Low Hb is also documented, supporting the clinical suspicion."
+        "notes": "Two P2 pathways are potentially applicable: (1) Male >50 with strong suspicion of malignancy, no focal pathology, and unexplained weight loss >5% over 3–6 months — this pathway does NOT require two abnormal bloods. It requires only that strong suspicion of malignancy is documented and initial investigations have been reviewed. If the GP adds explicit documentation of strong suspicion and confirms initial investigations are complete with no focal pathology, this pathway would be fully met without needing a second abnormal blood result. (2) Male >40 with weight loss >5% over 3–6 months AND 2+ persistently abnormal bloods — currently only one abnormal blood (low Hb) is documented; a second is needed. The simplest path to approval is to document strong suspicion of malignancy and confirm initial investigations are complete, satisfying pathway (1). Ex-smoker status is noted but does not affect CT CAP criteria assessment."
       },
       "previous_verdict_v22": "at_risk",
       "evaluator_verdict": "At risk — should accept Hb mildly low, still needs 2nd abnormal blood",
       "evaluator_comment": "\"Hb mildly low\" should meet \"low Hb\" criterion without numeric value. Should flag only 1 of 2 required abnormal bloods.",
       "regression_status": "unchanged",
-      "notes": "Verdict: proceeds. Priority: P2. Met: 2. Missing: 0."
+      "notes": "Verdict: at_risk. Priority: n/a. Met: 5. Missing: 4."
     },
     {
       "case_id": "RP-002",
@@ -82,31 +100,27 @@
       "paediatric": false,
       "clinical_note": "61yo european male newly diagnosed autoimmune hepatitis – liver edge felt just below RCM. Screen for HCC, cirrhosis",
       "ai_response": {
-        "verdict": "at_risk",
-        "verdict_title": "At Risk — Missing Gateway Requirement",
-        "verdict_summary": "HCC surveillance requires initial recommendation by gastroenterologist or other secondary care specialist.",
-        "priority": null,
-        "criteria_page": "[p31]",
+        "verdict": "proceeds",
+        "verdict_title": "Referral Proceeds — P3",
+        "verdict_summary": "The referral meets P3 criteria for non-pulsatile abdominal mass / suspected enlarged liver on examination in a patient with newly diagnosed autoimmune hepatitis.",
+        "priority": "P3",
+        "criteria_page": "p31",
         "met_criteria": [
-          "Non-pulsatile abdominal mass and suspected enlarged liver on examination [p31]"
+          "Non-pulsatile abdominal mass and suspected enlarged liver on examination — liver edge palpable below right costal margin documented [p31]"
         ],
-        "missing_criteria": [
-          "HCC surveillance using liver ultrasound as initially recommended by a gastroenterologist or other secondary care specialist, or as recommended by an agreed local pathway [p31]"
-        ],
-        "add_to_note": [
-          "Document gastroenterologist or secondary care specialist recommendation for HCC surveillance, or confirm this follows an agreed local pathway for autoimmune hepatitis screening."
-        ],
-        "suggested_wording": "61yo European male newly diagnosed autoimmune hepatitis – liver edge felt just below RCM. Non-pulsatile abdominal mass and suspected enlarged liver on examination. HCC surveillance recommended by [gastroenterologist/secondary care specialist name] or as per agreed local pathway for autoimmune hepatitis.",
+        "missing_criteria": [],
+        "add_to_note": [],
+        "suggested_wording": "61-year-old European male with newly diagnosed autoimmune hepatitis. On examination, liver edge is palpable just below the right costal margin, consistent with hepatomegaly. Requesting abdominal ultrasound to assess liver size, morphology, and screen for cirrhosis and hepatocellular carcinoma.",
         "not_funded_flag": false,
         "safety_alert": null,
         "redirect": null,
-        "notes": "Two pathways identified: (1) P3 pathway for suspected enlarged liver on examination is fully met, (2) S3 HCC surveillance pathway requires gastroenterologist recommendation which is not documented. The P3 pathway alone is sufficient for acceptance."
+        "notes": "The referral meets P3 criteria via the 'non-pulsatile abdominal mass and suspected enlarged liver on examination' pathway [p31]. The HCC surveillance pathway (S3) was also considered but requires initial recommendation from a gastroenterologist or other secondary care specialist, or an agreed local pathway — this gateway is not documented. However, the P3 hepatomegaly pathway is independently and fully met without any gateway requirement, so the verdict is 'proceeds' at P3. Once the ultrasound is complete and the patient is under specialist follow-up, ongoing HCC surveillance should be arranged via the S3 pathway with a gastroenterologist recommendation. Note: screening for AAA and fatty liver is not routinely funded, but the clinical indication here (hepatomegaly with autoimmune hepatitis) is distinct from general screening."
       },
       "previous_verdict_v22": "proceeds",
       "evaluator_verdict": "Proceeds — hepatomegaly pathway independently met",
       "evaluator_comment": "Should accept on hepatomegaly pathway. HCC surveillance gateway advisory only, not blocking.",
-      "regression_status": "regressed",
-      "notes": "Verdict: at_risk. Priority: n/a. Met: 1. Missing: 1."
+      "regression_status": "unchanged",
+      "notes": "Verdict: proceeds. Priority: P3. Met: 1. Missing: 0."
     },
     {
       "case_id": "RP-003",
@@ -116,12 +130,13 @@
       "clinical_note": "64yo f w/ sudden onset R facial numbness + diplopia, lasting 10min. O/E: reduced sensation R face cf L, FROEM without diplopia. Obs OK, pulse regular. ?TIA",
       "ai_response": {
         "verdict": "proceeds",
-        "verdict_title": "Meets Acute 48hr Criteria",
-        "verdict_summary": "Focal neurological signs present - meets criteria for CT Head within 48 hours.",
+        "verdict_title": "Proceeds — Acute 48hr (Focal Neurological Signs)",
+        "verdict_summary": "The referral meets the Acute 48hr criterion for focal neurological signs, independently of the TIA pathway and its gateway requirements.",
         "priority": "Acute 48hr",
         "criteria_page": "p20",
         "met_criteria": [
-          "Focal neurological signs [p20]"
+          "Focal neurological signs — reduced sensation right face on examination [p20]",
+          "Acute onset episode consistent with focal neurological event [p20]"
         ],
         "missing_criteria": [],
         "add_to_note": [],
@@ -129,13 +144,13 @@
         "not_funded_flag": false,
         "safety_alert": null,
         "redirect": null,
-        "notes": "Patient also has suspected TIA presentation, but the TIA pathway would require BPAC TIA decision support tool completion or neurologist/stroke specialist recommendation. However, the focal neurological signs pathway is independently met and sufficient for Acute 48hr priority."
+        "notes": "The referral also raises ?TIA. The TIA Acute 48hr pathway requires either: (a) completion of the BPAC TIA decision support tool indicating CT appropriate, (b) recommendation by HNZ neurologist/stroke specialist, or (c) documented inability to access rapid specialist care. None of these gateways are documented. However, the referral independently meets the 'focal neurological signs' Acute 48hr criterion based on the objective finding of reduced right facial sensation on examination — this pathway has no gateway requirement and is fully met. The verdict is therefore 'proceeds' at Acute 48hr on the focal neurological signs criterion alone. Advisory: given the clinical picture of possible TIA (sudden onset, transient, anterior/posterior circulation features including facial numbness and diplopia), consider completing the BPAC TIA decision support tool and documenting the result. If the BPAC tool recommends carotid imaging and the patient is a candidate for carotid endarterectomy, a carotid ultrasound or CTA may also be indicated. Note that diplopia as a symptom may suggest posterior circulation involvement — acute stroke specialist input should be considered. Pulse is documented as regular, which reduces AF concern, but atypical TIA features (diplopia, facial numbness) may warrant specialist assessment."
       },
       "previous_verdict_v22": "proceeds",
       "evaluator_verdict": "Proceeds — focal neurological signs pathway independently met",
       "evaluator_comment": "?TIA is a differential. Focal neuro signs independently meet criteria. TIA gateway advisory only.",
       "regression_status": "unchanged",
-      "notes": "Verdict: proceeds. Priority: Acute 48hr. Met: 1. Missing: 0."
+      "notes": "Verdict: proceeds. Priority: Acute 48hr. Met: 2. Missing: 0."
     },
     {
       "case_id": "RP-004",
@@ -144,28 +159,37 @@
       "paediatric": false,
       "clinical_note": "48yo m w/ 8/52 h/o progressive HA – bilateral – sometimes associated nausea – dizziness and vertigo over this period (normal hearing + vision testing). ?SOL",
       "ai_response": {
-        "verdict": "proceeds",
-        "verdict_title": "Meets P2 criteria",
-        "verdict_summary": "Progressive headache with associated persistent nausea meets P2 urgent criteria for CT Head.",
+        "verdict": "at_risk",
+        "verdict_title": "At Risk — Missing Documentation",
+        "verdict_summary": "The referral partially meets P2 criteria for CT Head under the progressive headache pathway, but is missing at least one required associated feature from the criteria list.",
         "priority": "P2",
-        "criteria_page": "[p20]",
+        "criteria_page": "p20",
         "met_criteria": [
-          "Change in pattern of headaches with progressive increase in frequency or severity [p20]",
-          "Associated with persistent nausea/vomiting (not typical migraine) [p20]"
+          "Change in pattern of headaches with progressive increase in frequency or severity [p20] — 'progressive HA' over 8 weeks satisfies this by clinical shorthand equivalence",
+          "Associated with persistent nausea/vomiting (not typical migraine) [p20] — nausea documented",
+          "Patient aged 48 — epidemiological modifier 'especially aged 50+' does not exclude this patient; it is a soft qualifier only [p20]"
         ],
-        "missing_criteria": [],
-        "add_to_note": [],
-        "suggested_wording": null,
+        "missing_criteria": [
+          "The P2 progressive headache criterion requires the change in headache pattern to be associated with AT LEAST ONE of: (a) chronic illness with potential cerebral complications especially malignancy, OR (b) exacerbated by coughing/sneezing/Valsalva, OR (c) associated with persistent nausea/vomiting (not typical migraine), OR (d) objective neurological deficit [p20]. Nausea is documented and appears to satisfy (c), BUT the note states nausea is only 'sometimes associated' — it is ambiguous whether this meets 'persistent nausea'. Clarify whether nausea is persistent or intermittent, and confirm it is not typical of migraine pattern."
+        ],
+        "add_to_note": [
+          "Clarify whether the nausea is persistent (present most of the time) rather than intermittent, and confirm this is not a typical migraine pattern — this is required to satisfy the P2 associated feature criterion.",
+          "Document whether any objective neurological deficit is present on examination (e.g. cranial nerve signs, motor/sensory deficit, coordination abnormality) — if present, this independently satisfies the associated feature requirement.",
+          "Document whether the headache is exacerbated by coughing, sneezing, or Valsalva manoeuvre.",
+          "Document whether the patient has any chronic illness with potential cerebral complications (e.g. known malignancy, immunosuppression, HIV).",
+          "Document whether the patient is on anticoagulant therapy (relevant to cognitive/SOL sub-criteria)."
+        ],
+        "suggested_wording": "48-year-old male with an 8-week history of progressive bilateral headache with increasing frequency and severity. Associated with persistent nausea (not a typical migraine pattern). Also reports dizziness and vertigo. Hearing and vision testing normal. No objective neurological deficit identified on examination [or: objective neurological deficit present — specify]. Headache [is / is not] exacerbated by coughing, sneezing, or Valsalva. No known malignancy or chronic illness with cerebral complications. Query space-occupying lesion. Requesting P2 CT Head.",
         "not_funded_flag": false,
         "safety_alert": null,
         "redirect": null,
-        "notes": "Patient also has ?SOL (space-occupying lesion) query raised by GP, but the referral independently meets P2 criteria based on progressive headache pattern with persistent nausea."
+        "notes": "The ?SOL query raises the cognitive impairment with SOL features pathway [p20], but no cognitive impairment is documented — this pathway cannot be assessed. The progressive headache pathway [p20] is the most applicable. The key ambiguity is whether 'sometimes associated nausea' constitutes 'persistent nausea/vomiting' as required by the criterion. If the GP can confirm nausea is persistent and not a typical migraine pattern, or documents any objective neurological deficit, the referral would fully meet P2 criteria and proceed. Dizziness and vertigo are noted but do not independently satisfy any listed associated feature under this criterion. The epidemiological modifier 'especially aged 50+' does not exclude this 48-year-old patient — it is a soft qualifier only and must not be used to decline or downgrade the referral."
       },
       "previous_verdict_v22": "proceeds",
       "evaluator_verdict": "At risk — \"progressive\" meets pattern change; still missing one associated feature",
       "evaluator_comment": "\"Progressive\" should satisfy change in pattern element. Still needs Valsalva/persistent nausea/neuro/malignancy.",
       "regression_status": "unchanged",
-      "notes": "Verdict: proceeds. Priority: P2. Met: 2. Missing: 0."
+      "notes": "Verdict: at_risk. Priority: P2. Met: 3. Missing: 1."
     },
     {
       "case_id": "RP-005",
@@ -175,26 +199,32 @@
       "clinical_note": "8yo boy 5/12 h/o progressive pain R lower leg – ?knee ?ankle. Pain during the day and night. Limp at times. Stopping him from doing normal activities (basketball and karate). R/O overt malignancy.",
       "ai_response": {
         "verdict": "proceeds",
-        "verdict_title": "Meets P2 criteria",
-        "verdict_summary": "Undiagnosed persistent knee pain for one week or more with pain at rest or night-waking with pain meets P2 urgent criteria.",
+        "verdict_title": "Referral Proceeds — Urgent (P2)",
+        "verdict_summary": "An 8-year-old boy with 5 months of progressive right lower leg pain including night pain and limp meets P2 criteria for urgent X-ray under both the Knee and Feet/Ankle pathways.",
         "priority": "P2",
-        "criteria_page": "p104",
+        "criteria_page": "p104, p103",
         "met_criteria": [
-          "Undiagnosed persistent knee pain for one week or more with pain at rest or night-waking with pain [p104]"
+          "Undiagnosed persistent knee/lower leg pain for one week or more (5 months documented) [p104]",
+          "Pain at rest and night-waking with pain explicitly documented [p104]",
+          "Undiagnosed persistent bone or joint pain for one week or more with pain at rest or night-waking with pain (ankle/foot pathway) [p103]",
+          "Functional impairment documented (limp, unable to participate in basketball and karate) [p104, p103]"
         ],
         "missing_criteria": [],
-        "add_to_note": [],
-        "suggested_wording": null,
+        "add_to_note": [
+          "Consider adding whether there is any bony swelling, joint deformity, or localised tenderness on examination to assist radiologist targeting.",
+          "Note: guidance for knee pain in children requires exclusion of hip pathology — if no knee pathology is found on examination, arrange AP pelvis and frog lateral hip X-ray as well [p104]."
+        ],
+        "suggested_wording": "8-year-old boy with a 5-month history of progressive pain in the right lower leg, affecting the knee and ankle regions. Pain is present during the day and at night (night-waking documented). He has a limp at times and is unable to participate in his normal activities (basketball and karate). Query underlying bony pathology — rule out malignancy. Requesting urgent X-ray of right knee and right ankle/lower leg.",
         "not_funded_flag": false,
         "safety_alert": null,
         "redirect": null,
-        "notes": "5 months duration clearly exceeds the 1 week threshold. Pain described as occurring 'during the day and night' satisfies both pain at rest and night-waking criteria. The query about knee vs ankle location does not prevent meeting knee pain criteria as knee is specifically mentioned as a possibility."
+        "notes": "The note queries both knee and ankle involvement. Both the Knee X-Ray [p104] and Feet X-Ray [p103] P2 criteria are independently met on the basis of persistent pain >1 week with documented night pain and functional impairment. The concern for malignancy ('R/O overt malignancy') is clinically appropriate given the duration, night pain, and progressive nature — the radiologist should be made aware. Per knee X-ray guidance [p104], if no knee pathology is identified on examination, hip pathology must be excluded with AP pelvis and frog lateral views. A P2 (within 2 weeks) priority applies. If X-ray is unremarkable but symptoms persist, further imaging (MRI) via secondary care referral may be warranted."
       },
       "previous_verdict_v22": "proceeds",
       "evaluator_verdict": "Proceeds — paediatric bone pain criteria met",
       "evaluator_comment": "Progressive pain, night pain, functional impairment in child. Should proceed on paediatric pathway.",
       "regression_status": "unchanged",
-      "notes": "Verdict: proceeds. Priority: P2. Met: 1. Missing: 0. [paed]"
+      "notes": "Verdict: proceeds. Priority: P2. Met: 4. Missing: 0. [paed]"
     },
     {
       "case_id": "RP-006",
@@ -204,29 +234,31 @@
       "clinical_note": "75yo m w/ new AKI, eGFR 3 (normally 55). No clear cause.",
       "ai_response": {
         "verdict": "proceeds",
-        "verdict_title": "Meets Acute 48hr Criteria",
-        "verdict_summary": "Acute renal function deterioration with eGFR decrease >50 micromol/L meets criteria for urgent renal ultrasound.",
+        "verdict_title": "Referral Proceeds — Acute 48hr",
+        "verdict_summary": "Acute renal function deterioration with a dramatic eGFR drop from 55 to 3 meets the Acute 48hr criterion for urgent renal ultrasound.",
         "priority": "Acute 48hr",
-        "criteria_page": "[p53]",
+        "criteria_page": "p53",
         "met_criteria": [
-          "Acute renal function deterioration — serum creatinine increase >50 micromol/L in 7 days or >25 micromol/L in 2 days [p53]"
+          "Acute renal function deterioration — serum creatinine increase consistent with severe acute-on-chronic kidney injury (eGFR drop from baseline 55 to 3, representing profound acute deterioration) [p53]",
+          "No clear cause identified, supporting need for imaging [p53]"
         ],
         "missing_criteria": [],
         "add_to_note": [
-          "Document the timeframe over which the eGFR declined from 55 to 3",
-          "Consider documenting serum creatinine values to confirm the magnitude of increase"
+          "Document the actual serum creatinine values (current and recent baseline) to formally confirm the acute deterioration threshold (increase >50 micromol/L in 7 days or >25 micromol/L in 2 days).",
+          "Document the timeframe over which the eGFR drop occurred (days) to confirm acute vs subacute onset.",
+          "Note: given eGFR of 3, discussion with secondary care or PCRL is strongly recommended as per criteria guidance — this patient may require acute nephrology assessment rather than community imaging alone."
         ],
-        "suggested_wording": "75-year-old male with acute kidney injury. eGFR declined from baseline of 55 to current level of 3 over [specify timeframe]. Serum creatinine increased by >50 micromol/L. No clear precipitating cause identified. Request urgent renal ultrasound to exclude obstruction or structural abnormality.",
+        "suggested_wording": "75-year-old male presenting with new acute kidney injury. Baseline eGFR approximately 55, now critically reduced to 3 — representing a severe acute-on-chronic deterioration with no clear cause identified. Creatinine [insert current value] vs recent baseline [insert value], change occurring over [insert timeframe in days]. Requesting urgent renal ultrasound within 48 hours. Secondary care discussion recommended given severity.",
         "not_funded_flag": false,
-        "safety_alert": null,
+        "safety_alert": "eGFR of 3 represents critical renal failure. While the Acute 48hr ultrasound criterion is met, this patient should be discussed urgently with secondary care (nephrology) — community imaging alone may be insufficient and acute admission may be required.",
         "redirect": null,
-        "notes": "The criteria mentions discussion with secondary care/PCRL is recommended for acute renal function deterioration. The dramatic eGFR decline from 55 to 3 represents severe acute kidney injury that warrants urgent imaging and likely secondary care involvement."
+        "notes": "The CT KUB red-flag criterion (eGFR <45 → admit, do not image) applies to CT KUB only and does not block renal ultrasound referral. The renal ultrasound Acute 48hr criterion for acute renal function deterioration is independently met. However, the clinical severity (eGFR 3) warrants a parallel urgent secondary care discussion. The creatinine values and exact timeframe are not explicitly stated — the add_to_note items request these to strengthen documentation, but the eGFR drop from 55 to 3 is sufficient on its face to satisfy the qualitative threshold of acute renal function deterioration."
       },
       "previous_verdict_v22": "declined",
       "evaluator_verdict": "Proceeds — surface P1 AKI and P2, note conflicting dispositions",
       "evaluator_comment": "Should surface all matching pathways. eGFR 3 is severe AKI — should flag P1 Acute 48hr.",
       "regression_status": "improved",
-      "notes": "Verdict: proceeds. Priority: Acute 48hr. Met: 1. Missing: 0."
+      "notes": "Verdict: proceeds. Priority: Acute 48hr. Met: 2. Missing: 0."
     },
     {
       "case_id": "LP-001",
@@ -236,26 +268,29 @@
       "clinical_note": "55 yo man, 3 days cough, fever and shortness of breath",
       "ai_response": {
         "verdict": "proceeds",
-        "verdict_title": "Meets Acute 24hr criteria",
-        "verdict_summary": "Suspected community-acquired pneumonia with unexpectedly severe or atypical presentation meets criteria for urgent chest X-ray within 24 hours.",
+        "verdict_title": "Proceeds — Acute 24hr",
+        "verdict_summary": "This referral meets criteria for an acute CXR within 24 hours for suspected community-acquired pneumonia with an atypical or unexpectedly severe presentation.",
         "priority": "Acute 24hr",
-        "criteria_page": "[p65]",
+        "criteria_page": "p65",
         "met_criteria": [
-          "Suspected community-acquired pneumonia (CAP) with unexpectedly severe or atypical presentation, or patient considered at risk of underlying lung pathology [p65]"
+          "Suspected community-acquired pneumonia (CAP) with unexpectedly severe or atypical presentation, or patient considered at risk of underlying lung pathology [p65]",
+          "Acute dyspnoea (shortness of breath) documented [p65]",
+          "Fever documented [p65]",
+          "Cough documented [p65]"
         ],
         "missing_criteria": [],
         "add_to_note": [],
-        "suggested_wording": null,
+        "suggested_wording": "55-year-old male presenting with 3 days of cough, fever, and shortness of breath. Suspected community-acquired pneumonia with acute presentation. Requesting same-day CXR to assess for pneumonia and exclude underlying lung pathology.",
         "not_funded_flag": false,
         "safety_alert": null,
         "redirect": null,
-        "notes": "The combination of cough, fever and shortness of breath over 3 days in a 55-year-old man suggests suspected community-acquired pneumonia. The presence of shortness of breath indicates this may be an unexpectedly severe presentation warranting urgent chest X-ray."
+        "notes": "The combination of fever, acute dyspnoea, and cough of 3 days duration in a 55-year-old male is consistent with suspected CAP meeting the Acute 24hr CXR criterion. Note: if the patient is haemodynamically unstable or in severe respiratory distress, refer for acute assessment without initial imaging. Additionally, if symptoms persist or worsen despite treatment, a 6-week follow-up CXR (S2) may be warranted per local pathway."
       },
       "previous_verdict_v22": "proceeds",
       "evaluator_verdict": "Proceeds — CAP criteria met",
       "evaluator_comment": "Classic CAP presentation. Should proceed.",
       "regression_status": "unchanged",
-      "notes": "Verdict: proceeds. Priority: Acute 24hr. Met: 1. Missing: 0."
+      "notes": "Verdict: proceeds. Priority: Acute 24hr. Met: 4. Missing: 0."
     },
     {
       "case_id": "LP-002",
@@ -265,24 +300,27 @@
       "clinical_note": "3 months lower back pain after stepping down from a ladder. no radiation, no bowel symptoms. no fevers. not tender to palpation. normal lower limb exam.",
       "ai_response": {
         "verdict": "declined",
-        "verdict_title": "Not funded under CRR - ACC pathway applies",
-        "verdict_summary": "This presentation involves trauma mechanism (stepping down from ladder) as the primary cause, which should be funded through ACC rather than CRR.",
+        "verdict_title": "Declined — ACC Funding Applies",
+        "verdict_summary": "This presentation involves a clear trauma mechanism (stepping down from a ladder) as the primary cause of back pain and must be funded through ACC, not CRR.",
         "priority": null,
-        "criteria_page": "[p77]",
-        "met_criteria": [],
+        "criteria_page": "p77",
+        "met_criteria": [
+          "Back pain duration of 3 months documented [p77]",
+          "No red flags documented (no radiation, no bowel/bladder symptoms, no fever, normal lower limb exam) [p77]"
+        ],
         "missing_criteria": [],
         "add_to_note": [],
         "suggested_wording": null,
         "not_funded_flag": false,
         "safety_alert": null,
-        "redirect": "ACC funding - recent trauma mechanism as primary cause",
-        "notes": "The presentation clearly describes trauma mechanism (stepping down from ladder) as the cause of the back pain. Per Step 0 exclusion criteria, recent trauma mechanism as primary cause should be directed to ACC funding, not CRR."
+        "redirect": "ACC funding — trauma mechanism (stepping down from a ladder) is the stated cause of back pain. Request imaging via ACC rather than CRR. See X-Ray Spine HealthPathway [p77]: 'History of recent trauma — request imaging via ACC funding.'",
+        "notes": "Step 0 redirect applies: the primary cause of back pain is a documented trauma mechanism (stepping down from a ladder). CRR criteria assessment is not applicable. The GP should lodge an ACC claim and request spinal imaging through ACC. Note also that even absent the ACC redirect, acute uncomplicated spine pain without red flags is not routinely funded under CRR within the first 6 weeks — however at 3 months duration some CRR criteria could potentially apply if the ACC redirect did not exist. The ACC redirect takes precedence regardless."
       },
       "previous_verdict_v22": "declined",
       "evaluator_verdict": "Redirect to ACC — trauma mechanism",
       "evaluator_comment": "Mechanism of injury (stepping down from ladder) = trauma = ACC funding pathway, not CRR.",
       "regression_status": "unchanged",
-      "notes": "Verdict: declined. Priority: n/a. Met: 0. Missing: 0. Redirect: ACC funding - recent trauma mechanism as primary cause"
+      "notes": "Verdict: declined. Priority: n/a. Met: 2. Missing: 0. Redirect: ACC funding — trauma mechanism (stepping down from a ladder)"
     },
     {
       "case_id": "LP-003",
@@ -292,12 +330,14 @@
       "clinical_note": "56 yo post menopausal woman on hormone replacement therapy with 2 days of PV bleeding",
       "ai_response": {
         "verdict": "proceeds",
-        "verdict_title": "Meets P2 criteria",
-        "verdict_summary": "Post-menopausal bleeding meets urgent criteria for pelvic ultrasound within 2 weeks.",
+        "verdict_title": "Referral Proceeds — P2 Urgent",
+        "verdict_summary": "This referral meets P2 criteria for post-menopausal bleeding; the scan should be completed within 2 weeks.",
         "priority": "P2",
-        "criteria_page": "[p46]",
+        "criteria_page": "p46",
         "met_criteria": [
-          "Post-menopausal bleeding (vaginal bleeding after >12 months amenorrhoea around expected age of menopause approximately 50 years) [p46]"
+          "Post-menopausal status documented ('post-menopausal') — satisfies '>12 months amenorrhoea around expected age of menopause' by clinical definition [p46]",
+          "Age 56 years — consistent with expected age of menopause [p46]",
+          "Vaginal bleeding documented (2 days of PV bleeding) [p46]"
         ],
         "missing_criteria": [],
         "add_to_note": [],
@@ -305,13 +345,13 @@
         "not_funded_flag": false,
         "safety_alert": null,
         "redirect": null,
-        "notes": "The general post-menopausal bleeding pathway is fully met. While there is also a more specific pathway for PMB on continuous combined MHT, the general pathway alone is sufficient for P2 priority. The specific MHT pathway would require documentation of type and duration of therapy (>6 months since starting), but this is not needed when the general pathway is met."
+        "notes": "A more specific P2 variant exists for 'persistent post-menopausal bleeding at any age while on continuous combined MHT and it has been >6 months since starting therapy' [p46]. The note does not specify the type of HRT (continuous combined vs. other) or duration of therapy, so this specific variant cannot be confirmed. However, the general post-menopausal bleeding criterion is independently and fully met — the verdict is 'proceeds' at P2 on that basis. The MHT type and duration details are advisory only. Note also that Māori and Pacific peoples are disproportionately affected by endometrial cancer — if applicable, this supports prompt investigation. The referral proceeds regardless."
       },
       "previous_verdict_v22": "at_risk",
       "evaluator_verdict": "Proceeds — postmenopausal bleeding",
       "evaluator_comment": "PMB on HRT. Should proceed. HRT does not exclude CRR eligibility.",
       "regression_status": "improved",
-      "notes": "Verdict: proceeds. Priority: P2. Met: 1. Missing: 0."
+      "notes": "Verdict: proceeds. Priority: P2. Met: 3. Missing: 0."
     },
     {
       "case_id": "LP-004",
@@ -320,25 +360,42 @@
       "paediatric": false,
       "clinical_note": "35yo with Mirena, recent lower abdominal pain and pv bleeding ? IUD malpositioned",
       "ai_response": {
-        "verdict": "declined",
-        "verdict_title": "Does not meet CRR criteria",
-        "verdict_summary": "IUD malposition assessment is not covered under the CRR pelvis ultrasound criteria.",
+        "verdict": "at_risk",
+        "verdict_title": "At Risk — Key Information Missing",
+        "verdict_summary": "The referral may meet criteria for an acute or urgent pelvic ultrasound but critical details about IUD string status and symptom acuity are not documented.",
         "priority": null,
-        "criteria_page": "[p46]",
-        "met_criteria": [],
-        "missing_criteria": [],
-        "add_to_note": [],
-        "suggested_wording": null,
-        "not_funded_flag": true,
+        "criteria_page": "p46",
+        "met_criteria": [
+          "Female patient with Mirena IUD in situ [p46]",
+          "Lower abdominal pain documented [p46]",
+          "PV bleeding documented [p46]",
+          "Query IUD malposition raised [p46]"
+        ],
+        "missing_criteria": [
+          "IUD string status not documented — criteria for Acute 24hr require 'IUCD strings missing OR IUCD breaks on removal with only fragment removed AND symptoms suggestive of possible perforation (cramping pain, discharge, unexplained bleeding)' [p46]",
+          "Symptom acuity and onset not documented — 'sudden onset severe pelvic pain' would trigger Acute 24hr suspected ovarian cyst accident pathway; gradual onset would direct to a different priority [p46]",
+          "Clinical stability not documented — if patient is clinically unstable, refer for acute assessment without imaging [p46]",
+          "Duration of symptoms not documented — needed to determine appropriate priority level [p46]"
+        ],
+        "add_to_note": [
+          "Document whether the IUD strings are visible/palpable or missing on examination.",
+          "Document whether the IUD was found to be broken or only partially removed on any prior attempt.",
+          "Document the onset and severity of pain — sudden severe onset vs gradual, and whether cramping is present.",
+          "Document clinical stability of the patient.",
+          "Document duration of symptoms.",
+          "If strings are missing AND symptoms of possible perforation are present (cramping pain, discharge, unexplained bleeding), this meets Acute 24hr criteria."
+        ],
+        "suggested_wording": "35-year-old female with Mirena IUD. Presenting with [duration] of lower abdominal cramping pain and PV bleeding. IUD strings are [visible and in normal position / not palpable / missing] on examination. Patient is clinically stable. Query IUD malposition or perforation. Symptoms suggestive of possible IUD perforation — requesting acute pelvic ultrasound.",
+        "not_funded_flag": false,
         "safety_alert": null,
-        "redirect": "Consider gynaecology assessment or discussion with family planning service for IUD position concerns",
-        "notes": "The note describes suspected IUD malposition with associated symptoms. While the patient has pelvic pain and bleeding, these symptoms are attributed to a specific device-related cause (malpositioned IUD) rather than the broader gynaecological conditions covered in the CRR pelvis ultrasound criteria. IUD position assessment and related complications are typically managed through gynaecology or family planning services rather than community radiology pathways."
+        "redirect": null,
+        "notes": "Two potential pathways exist depending on documented findings: (1) Acute 24hr — 'IUCD strings missing or IUCD breaks on removal with only fragment removed AND symptoms suggestive of possible perforation (cramping pain, discharge, unexplained bleeding)' [p46]. If strings are confirmed missing and perforation symptoms are present, this pathway is met. (2) P3 — 'Suspected ovarian cyst (unilateral pelvic pain >4 weeks and/or unilateral tenderness) or other pelvic mass and low/uncertain suspicion of cancer' [p46] — if symptoms are more chronic and strings are present. If the patient is clinically unstable, she should be referred for acute assessment without imaging. The note as written does not explicitly document string status, which is the crux of the IUD malposition/perforation pathway."
       },
       "previous_verdict_v22": "proceeds",
       "evaluator_verdict": "Proceeds — IUD/Mirena malposition assessment",
       "evaluator_comment": "Pain and bleeding with possible IUD malposition. Should proceed.",
       "regression_status": "regressed",
-      "notes": "Verdict: declined. Priority: n/a. Met: 0. Missing: 0. Redirect: Consider gynaecology assessment or discussion with family pl"
+      "notes": "Verdict: at_risk. Priority: n/a. Met: 4. Missing: 4."
     },
     {
       "case_id": "CR-001",
@@ -348,26 +405,32 @@
       "clinical_note": "42 yr old homeless patient with fever productive cough, smoker, unsure re wt loss. Fine lower basal crepitus, mild tachy,",
       "ai_response": {
         "verdict": "proceeds",
-        "verdict_title": "Meets Acute 24hr Criteria",
-        "verdict_summary": "Suspected community-acquired pneumonia with unexpectedly severe or atypical presentation meets acute CXR criteria.",
+        "verdict_title": "Proceeds — Acute 24hr",
+        "verdict_summary": "This referral meets criteria for an acute CXR within 24 hours: suspected community-acquired pneumonia with atypical or unexpectedly severe features and a patient considered at risk of underlying lung pathology.",
         "priority": "Acute 24hr",
-        "criteria_page": "[p65]",
+        "criteria_page": "p65",
         "met_criteria": [
-          "Suspected community-acquired pneumonia (CAP) with unexpectedly severe or atypical presentation, or patient considered at risk of underlying lung pathology (e.g. lung cancer) [p65]"
+          "Suspected community-acquired pneumonia (CAP) — productive cough, fever, basal crepitations, tachycardia [p65]",
+          "Unexpectedly severe or atypical presentation — homeless patient, febrile, tachycardic [p65]",
+          "Patient considered at risk of underlying lung pathology — current smoker, possible weight loss, homeless (TB risk) [p65]"
         ],
         "missing_criteria": [],
-        "add_to_note": [],
-        "suggested_wording": null,
+        "add_to_note": [
+          "Document whether weight loss is confirmed or quantified, as this is relevant to both TB and lung cancer risk stratification.",
+          "Document smoking pack-year history to support lung cancer risk assessment.",
+          "Note whether TB is being considered given homelessness and fever — if suspected active TB and patient is acutely unwell, follow the Tuberculosis pathway."
+        ],
+        "suggested_wording": "42-year-old male (homeless), current smoker, presenting with fever, productive cough, fine lower basal crepitations, and mild tachycardia. Suspected community-acquired pneumonia with atypical/severe features. Patient is at risk of underlying lung pathology given smoking history and homelessness. Possible weight loss noted but not yet confirmed. Requesting acute CXR within 24 hours. TB also considered given risk profile — will follow TB pathway if CXR findings are consistent.",
         "not_funded_flag": false,
         "safety_alert": null,
-        "redirect": null,
-        "notes": "Patient presents with fever, productive cough, and fine lower basal crepitus consistent with pneumonia. The combination of homelessness (social risk factor) and smoking history (risk of underlying lung pathology) supports classification as unexpectedly severe or atypical presentation warranting acute CXR."
+        "redirect": "If active TB is suspected and patient is acutely unwell, follow the Tuberculosis HealthPathway rather than community CXR alone.",
+        "notes": "A secondary pathway — Acute 48hr CXR for 'unexplained cough persisting and worsening for more than 3 weeks' — may also apply if the cough duration exceeds 3 weeks, but the acute CAP presentation is the stronger and higher-priority pathway. The note does not explicitly state cough duration, so the CAP pathway is used. TB should be actively considered given homelessness, fever, and productive cough — if TB is suspected and the patient is acutely unwell, refer for acute assessment per the TB pathway rather than community imaging. Weight loss, if confirmed, would further support investigation for both TB and lung malignancy."
       },
       "previous_verdict_v22": "proceeds",
       "evaluator_verdict": "Proceeds — CAP or TB concern",
       "evaluator_comment": "Homeless, smoker, productive cough, fever, crepitus, tachycardia. Should proceed — CAP or TB screening.",
       "regression_status": "unchanged",
-      "notes": "Verdict: proceeds. Priority: Acute 24hr. Met: 1. Missing: 0."
+      "notes": "Verdict: proceeds. Priority: Acute 24hr. Met: 3. Missing: 0. Redirect: If active TB is suspected and patient is acutely unwell, fol"
     },
     {
       "case_id": "CR-002",
@@ -377,26 +440,33 @@
       "clinical_note": "13 year old boy with R knee pain for past few weeks, staying with grandparents in town holidays and usually lives rurally. Knee examination is normal no fever, mild limp, restricted ROM R hip mild pain. No recent illness",
       "ai_response": {
         "verdict": "proceeds",
-        "verdict_title": "Meets P3 criteria",
-        "verdict_summary": "Hip pain in a child persisting for more than 2 weeks without a clear diagnosis meets P3 criteria.",
-        "priority": "P3",
+        "verdict_title": "Referral Proceeds — Urgent (P2)",
+        "verdict_summary": "This 13-year-old boy with knee pain, normal knee examination, limp, and restricted right hip ROM meets P2 criteria for hip X-ray (AP pelvis and frog lateral) with suspected Perthes disease or SUFE, and the guidance explicitly directs hip imaging when no knee pathology is found on examination.",
+        "priority": "P2",
         "criteria_page": "p106",
         "met_criteria": [
-          "Hip pain in a child persisting for more than 2 weeks without a clear diagnosis [p106]"
+          "Hip or knee pain in child with limp, suspected Perthes disease [p106]",
+          "Knee examination is normal — guidance directs: if no knee pathology on examination, arrange hip X-ray with AP pelvis and frog lateral view [p106]",
+          "Restricted ROM right hip with mild pain — hip pathology on examination [p106]",
+          "Child aged 13 years — SUFE must also be considered in overweight adolescent with hip/knee pain [p106]"
         ],
         "missing_criteria": [],
-        "add_to_note": [],
-        "suggested_wording": null,
+        "add_to_note": [
+          "Document weight/BMI to assess for SUFE risk (overweight adolescent with hip pain and limp is a red flag for acute SUFE requiring ED referral if severe or unable to weight-bear).",
+          "Confirm child is able to weight-bear — if unable to weight-bear or pain is severe, refer to ED for suspected acute SUFE rather than arranging community X-ray.",
+          "Request AP pelvis and frog lateral view (both views required for Perthes and SUFE assessment)."
+        ],
+        "suggested_wording": "13-year-old boy presenting with right knee pain for several weeks. Knee examination is normal with no local pathology identified. On examination: mild limp, restricted range of motion right hip, mild hip pain. No fever, no recent illness. Child is able to weight-bear. In keeping with guidance, hip X-ray requested given normal knee examination — AP pelvis and frog lateral views. Differential includes Perthes disease and SUFE.",
         "not_funded_flag": false,
-        "safety_alert": null,
+        "safety_alert": "SUFE SAFETY CHECK: If this child is overweight and/or unable to weight-bear, suspected acute SUFE is a surgical emergency — refer immediately to ED rather than arranging community X-ray. Confirm weight-bearing status before booking imaging.",
         "redirect": null,
-        "notes": "Clinical presentation shows knee pain but examination reveals restricted ROM and mild pain in the right hip. In paediatric patients, hip pathology commonly presents as knee pain, making hip X-ray the appropriate investigation. The guidance specifically states that all children with knee pain need exclusion of hip pathology, and if no knee pathology on examination, arrange hip X-ray with AP pelvis and frog lateral view."
+        "notes": "The guidance at p106 explicitly states: 'If no knee pathology on examination, arrange hip X-ray with AP pelvis and frog lateral view.' This is directly applicable — knee examination is documented as normal, and hip pathology (restricted ROM, mild pain, limp) is present. The P2 criterion 'hip or knee pain in child with limp, suspected Perthes disease' is met. SUFE is also a differential in a 13-year-old; if the child is overweight or unable to weight-bear, the acute SUFE redirect to ED applies instead. The note does not document weight/BMI, so this must be checked before proceeding with community imaging. Knee X-ray is not indicated given normal knee examination — hip imaging is the correct pathway."
       },
       "previous_verdict_v22": "proceeds",
       "evaluator_verdict": "Proceeds — SUFE/hip pathology concern",
       "evaluator_comment": "Knee exam normal, restricted hip ROM in adolescent male — classic SUFE presentation. Should proceed with hip X-ray.",
       "regression_status": "unchanged",
-      "notes": "Verdict: proceeds. Priority: P3. Met: 1. Missing: 0. [paed]"
+      "notes": "Verdict: proceeds. Priority: P2. Met: 4. Missing: 0. [paed]"
     },
     {
       "case_id": "CR-003",
@@ -405,27 +475,36 @@
       "paediatric": false,
       "clinical_note": "Persisting microscopic haematuria in usually well and active 64 year old lady works as a hairdresser all her life, non smoker, No infection on microscopy, no wt loss or other symptoms",
       "ai_response": {
-        "verdict": "proceeds",
-        "verdict_title": "Meets P4 criteria",
-        "verdict_summary": "Microscopic haematuria in female patient meets P4 criteria for renal ultrasound.",
+        "verdict": "at_risk",
+        "verdict_title": "At Risk — Gender-Specific Pathway Applies, Priority Depends on Smoking Status",
+        "verdict_summary": "Microscopic haematuria in a female patient is funded under the Renal Ultrasound pathway at P4 regardless of age or smoking status, but the note must explicitly state the patient's sex to confirm the gender-specific criterion is met.",
         "priority": "P4",
         "criteria_page": "p53",
         "met_criteria": [
-          "Microscopic haematuria — female, of any age [p53]"
+          "Microscopic haematuria — female, of any age [p53]",
+          "No UTI confirmed (no infection on microscopy) [p53]",
+          "Age 64 years documented [p53]",
+          "Patient is female [p53]"
         ],
-        "missing_criteria": [],
-        "add_to_note": [],
-        "suggested_wording": null,
+        "missing_criteria": [
+          "Age and sex are inferable but must be explicitly stated in the referral note per strict documentation standard — 'lady' implies female but explicit statement of sex is preferred [p53]"
+        ],
+        "add_to_note": [
+          "State explicitly: 'Patient is a 64-year-old female.'",
+          "Confirm microscopic haematuria is persistent (document how many episodes or over what time period).",
+          "Confirm UTI has been excluded on urine microscopy/culture (already implied but state explicitly, e.g., 'MSU microscopy and culture negative')."
+        ],
+        "suggested_wording": "64-year-old female patient with persisting microscopic haematuria. UTI excluded on urine microscopy (no infection identified). Non-smoker. No weight loss or other symptoms. Works as a hairdresser. Requesting renal ultrasound for investigation of microscopic haematuria in a female patient of any age per CRR criteria [p53].",
         "not_funded_flag": false,
         "safety_alert": null,
         "redirect": null,
-        "notes": null
+        "notes": "The applicable criterion is 'Microscopic haematuria — female, of any age' at P4 [p53]. This criterion applies regardless of smoking status or age in female patients. The male-specific P3 criterion ('male patient, older than 50 years, current or ex-smoker') is gender-inapplicable here and has not been assessed. Note that macroscopic haematuria in a female aged 40–85 would qualify at P2 via CT IVU [p24], but this referral documents microscopic haematuria only. The word 'lady' strongly implies female sex; however, under the strict documentation standard, explicit statement is preferred. The referral is very likely to proceed once the note is clarified with explicit sex documentation and confirmation of persistent haematuria."
       },
       "previous_verdict_v22": "proceeds",
       "evaluator_verdict": "Proceeds — persistent microscopic haematuria, no infection",
       "evaluator_comment": "Persistent microscopic haematuria, infection excluded. Should proceed.",
-      "regression_status": "unchanged",
-      "notes": "Verdict: proceeds. Priority: P4. Met: 1. Missing: 0."
+      "regression_status": "regressed",
+      "notes": "Verdict: at_risk. Priority: P4. Met: 4. Missing: 1."
     },
     {
       "case_id": "TEST-001",
@@ -434,34 +513,35 @@
       "paediatric": false,
       "clinical_note": "62yo male w/ unexplained weight loss 8% over 4 months. No focal pathology. CRP raised, Hb low, albumin low. Ex-smoker.",
       "ai_response": {
-        "verdict": "at_risk",
-        "verdict_title": "At Risk — Missing Lab Requirements",
-        "verdict_summary": "Meets most P2 criteria but needs documented persistence of abnormal bloods after 3-week repeat testing.",
-        "priority": null,
-        "criteria_page": "[p10]",
+        "verdict": "proceeds",
+        "verdict_title": "Referral Proceeds — P2 Urgent",
+        "verdict_summary": "This referral meets P2 criteria for CT CAP: male over 40 with strong suspicion of malignancy, no focal pathology, weight loss >5% over 3–6 months, and 3 of the required abnormal blood markers (raised CRP, low Hb, low albumin) persisting.",
+        "priority": "P2",
+        "criteria_page": "p10",
         "met_criteria": [
-          "Male >40 with strong suspicion of malignancy [p10]",
-          "No focal pathology [p10]",
-          "Weight loss >5% over 3-6 months [p10]",
-          "2+ abnormal bloods: raised CRP, low Hb, low albumin [p10]"
+          "Male >40 years (62yo male) [p10]",
+          "Strong suspicion of malignancy with no focal pathology identified [p10]",
+          "Unintentional unexplained weight loss >5% (8% documented) [p10]",
+          "Weight loss occurred over 3–6 months (4 months) [p10]",
+          "2 or more persistently abnormal bloods: raised CRP ✓, low Hb ✓, low albumin ✓ (3 of 6 qualifying markers present) [p10]"
         ],
-        "missing_criteria": [
-          "Abnormal bloods persistent on repeat after 3 weeks [p10]"
-        ],
+        "missing_criteria": [],
         "add_to_note": [
-          "Document that abnormal blood results (CRP, Hb, albumin) were persistent on repeat testing after 3 weeks."
+          "Confirm that blood results are persistent on repeat testing after 3 weeks, as required by criteria — document this explicitly in the referral note.",
+          "Confirm no recent ultrasound abdomen/pelvis within last 3 months and no CT CAP within last 12 months, as these would exclude CRR funding.",
+          "Confirm patient is fit for treatment and willing to undergo further investigation."
         ],
-        "suggested_wording": "62-year-old male with unexplained weight loss 8% over 4 months. No focal pathology on examination or initial investigations. CRP raised, Hb low, albumin low - persistent on repeat testing after 3 weeks. Ex-smoker. Strong suspicion of underlying malignancy.",
+        "suggested_wording": "62-year-old male, ex-smoker, presenting with unexplained unintentional weight loss of 8% over 4 months. No focal pathology identified on examination or initial investigations. Strong clinical suspicion of underlying malignancy. Blood results show raised CRP, low Hb, and low albumin — all confirmed as persistently abnormal on repeat testing after 3 weeks. No recent ultrasound abdomen/pelvis within 3 months and no CT CAP within 12 months. Patient is fit for and willing to undergo further investigation. Requesting CT Chest/Abdomen/Pelvis to investigate for underlying malignancy.",
         "not_funded_flag": false,
         "safety_alert": null,
         "redirect": null,
-        "notes": "Patient meets the age threshold (male >40), has significant weight loss (8% over 4 months exceeds the >5% over 3-6 months requirement), has no focal pathology, and has 3 abnormal blood parameters. Only missing documentation that the abnormal bloods persisted on repeat testing after 3 weeks, which is required for the P2 pathway."
+        "notes": "The criteria for the male >40 pathway require that the abnormal bloods are 'persistent on repeat after 3 weeks' — this is not explicitly stated in the referral note. The add_to_note items flag this for documentation. If repeat testing has not yet been done, the referral may be at risk. The male >50 pathway (no repeat-testing requirement for bloods) is also met on age and weight loss alone, providing an additional basis for acceptance. Three abnormal markers are present (CRP, Hb, albumin), all of which are on the qualifying list (raised CRP, low Hb, low albumin). The out-of-criteria exclusions (current cancer under follow-up, investigated by secondary care within 12 months for same symptoms, recent USS abdomen/pelvis within 3 months, CT CAP within 12 months) should be confirmed as absent."
       },
       "previous_verdict_v22": "proceeds",
       "evaluator_verdict": "Proceeds — all CT CAP criteria met (3 abnormal bloods, weight loss ≥5% over ≥3 months)",
       "evaluator_comment": "4 months meets 3-6 month window. 3 abnormal bloods documented. Should proceed.",
-      "regression_status": "regressed",
-      "notes": "Verdict: at_risk. Priority: n/a. Met: 4. Missing: 1."
+      "regression_status": "unchanged",
+      "notes": "Verdict: proceeds. Priority: P2. Met: 5. Missing: 0."
     },
     {
       "case_id": "TEST-003",
@@ -471,26 +551,32 @@
       "clinical_note": "58yo m w/ sudden onset L arm weakness and facial droop, resolved after 20 minutes. O/E: mild residual L facial weakness. BP 165/95. ?TIA",
       "ai_response": {
         "verdict": "proceeds",
-        "verdict_title": "Meets Acute 48hr Criteria",
-        "verdict_summary": "Focal neurological signs present on examination meet acute 48-hour CT Head criteria.",
+        "verdict_title": "Referral Proceeds — Acute 48hr",
+        "verdict_summary": "This referral meets the Acute 48hr CT Head criterion for focal neurological signs, independently of the TIA pathway gateway requirements.",
         "priority": "Acute 48hr",
         "criteria_page": "p20",
         "met_criteria": [
-          "Focal neurological signs [p20]"
+          "Focal neurological signs — residual left facial weakness on examination documented [p20]",
+          "?TIA pathway also identified: episode within 7 days, patient aged 58 years (under 59, high-risk feature per ABCD2/age criterion), BP 165/95 suggesting vascular risk, anterior circulation symptoms (facial droop, arm weakness) [p20]"
         ],
         "missing_criteria": [],
-        "add_to_note": [],
-        "suggested_wording": null,
+        "add_to_note": [
+          "Document the exact date and time of the episode to confirm it is within 7 days (required for TIA pathway).",
+          "Document whether the BPAC TIA decision support tool has been completed, or whether a HNZ neurologist/stroke specialist has recommended CT — this is required to formally invoke the TIA pathway (though the focal neurological signs pathway is already met independently).",
+          "Document whether the patient is in atrial fibrillation or on anticoagulants — if either applies, redirect to acute on-call stroke specialist assessment rather than community CT.",
+          "If anterior circulation TIA is confirmed and patient is a candidate for carotid endarterectomy, consider adding CTA carotid at the same visit per background guidance [p20, p36]."
+        ],
+        "suggested_wording": "58-year-old male presenting with sudden onset left arm weakness and facial droop, fully resolved within 20 minutes. On examination: mild residual left facial weakness (focal neurological sign). BP 165/95. Not in atrial fibrillation. Not on anticoagulants. Episode occurred within the last 7 days. Query TIA — anterior circulation symptoms. BPAC TIA tool completed [or: patient unable to access rapid specialist care]. Requesting Acute 48hr CT Head +/- CTA carotid given focal neurological signs and suspected anterior circulation TIA.",
         "not_funded_flag": false,
         "safety_alert": null,
         "redirect": null,
-        "notes": "Patient also potentially matches suspected TIA pathway, but TIA pathway requires BPAC TIA decision support tool completion or neurologist/stroke specialist recommendation, which are not documented. However, the focal neurological signs pathway is fully met independently, providing Acute 48hr access without gateway requirements."
+        "notes": "The referral independently meets the Acute 48hr criterion for 'focal neurological signs' (residual left facial weakness on examination) — this pathway has no gateway requirement and is fully met as documented. The TIA-specific pathway (also Acute 48hr) requires either BPAC tool completion, HNZ neurologist/stroke specialist recommendation, or documented inability to access rapid specialist care — this gateway is not documented, so the TIA pathway is not independently met; however, this does not affect the verdict since the focal neurological signs pathway is fully met. Advisory: if the patient is found to be in AF or on anticoagulants, this becomes a high-risk TIA and should be redirected to acute on-call stroke specialist assessment rather than community imaging [p36]. Background guidance notes that for suspected anterior circulation TIA where the patient is a candidate for carotid endarterectomy, CTA carotid (or carotid ultrasound if CTA unavailable) should be added to the CT Head request [p20]."
       },
       "previous_verdict_v22": "proceeds",
       "evaluator_verdict": "Proceeds — focal neuro signs independently met; TIA gateway advisory",
       "evaluator_comment": "Residual focal weakness documented. Should proceed on focal neuro pathway.",
       "regression_status": "unchanged",
-      "notes": "Verdict: proceeds. Priority: Acute 48hr. Met: 1. Missing: 0."
+      "notes": "Verdict: proceeds. Priority: Acute 48hr. Met: 2. Missing: 0."
     },
     {
       "case_id": "TEST-004",
@@ -500,20 +586,20 @@
       "clinical_note": "55yo male, known Hep C. Liver palpable 3cm below costal margin, firm and non-tender. Referred for HCC surveillance and assessment of hepatomegaly.",
       "ai_response": {
         "verdict": "proceeds",
-        "verdict_title": "Meets P3 criteria for hepatomegaly",
-        "verdict_summary": "Referral proceeds based on non-pulsatile abdominal mass and suspected enlarged liver on examination.",
+        "verdict_title": "Referral Proceeds — P3 (Non-palpable abdominal mass / hepatomegaly on examination)",
+        "verdict_summary": "The referral meets P3 criteria for ultrasound abdomen on the basis of a non-pulsatile abdominal mass and suspected enlarged liver on examination, independently of the HCC surveillance pathway.",
         "priority": "P3",
-        "criteria_page": "[p31]",
+        "criteria_page": "p31",
         "met_criteria": [
-          "Non-pulsatile abdominal mass and suspected enlarged liver on examination [p31]"
+          "Non-pulsatile abdominal mass and suspected enlarged liver on examination — liver palpable 3cm below costal margin, firm and non-tender [p31]"
         ],
         "missing_criteria": [],
         "add_to_note": [],
-        "suggested_wording": null,
+        "suggested_wording": "55-year-old male with known Hepatitis C. Liver palpable 3cm below costal margin, firm and non-tender on examination — hepatomegaly confirmed clinically. Requesting ultrasound abdomen for assessment of hepatomegaly (non-pulsatile abdominal mass on examination).",
         "not_funded_flag": false,
         "safety_alert": null,
         "redirect": null,
-        "notes": "HCC surveillance pathway requires gastroenterologist recommendation which is not documented, but the general hepatomegaly pathway is fully met and sufficient for acceptance. HCC surveillance would require initial recommendation by a gastroenterologist or other secondary care specialist."
+        "notes": "Two pathways were identified: (1) P3 — Non-pulsatile abdominal mass / suspected enlarged liver on examination [p31]: FULLY MET — liver palpable 3cm below costal margin is explicit clinical hepatomegaly. This pathway is the basis for the proceeds verdict. (2) S3 — HCC surveillance as initially recommended by a gastroenterologist or other secondary care specialist [p31]: NOT MET — the criteria require that HCC surveillance ultrasound be initiated on the recommendation of a gastroenterologist or other secondary care specialist, or per an agreed local pathway. No such specialist recommendation is documented in this note. The GP should seek gastroenterology input to establish a formal HCC surveillance programme for this patient with Hepatitis C, which would then support ongoing S3 surveillance referrals. The unmet HCC surveillance gateway does not affect the proceeds verdict, which is secured by the independently met hepatomegaly criterion."
       },
       "previous_verdict_v22": "at_risk",
       "evaluator_verdict": "Proceeds — hepatomegaly pathway independently met",
@@ -529,23 +615,23 @@
       "clinical_note": "68yo f w/ acute kidney injury, eGFR dropped from 60 to 12 over 5 days. No obstruction suspected. No clear cause identified.",
       "ai_response": {
         "verdict": "proceeds",
-        "verdict_title": "Meets Acute 48hr Criteria",
-        "verdict_summary": "Acute renal function deterioration with eGFR decrease >25 micromol/L equivalent meets criteria for urgent renal ultrasound within 48 hours.",
+        "verdict_title": "Referral Proceeds — Acute 48hr",
+        "verdict_summary": "Acute renal function deterioration with eGFR drop meeting threshold criteria; referral proceeds at Acute 48hr priority, with strong recommendation to discuss with secondary care or PCRL given severity.",
         "priority": "Acute 48hr",
         "criteria_page": "p53",
         "met_criteria": [
-          "Acute renal function deterioration — serum creatinine increase >50 micromol/L in 7 days or >25 micromol/L in 2 days [p53]"
+          "Acute renal function deterioration — serum creatinine equivalent: eGFR dropped from 60 to 12 over 5 days, consistent with a creatinine rise well exceeding >50 micromol/L in 7 days [p53]"
         ],
         "missing_criteria": [],
         "add_to_note": [
-          "Consider documenting actual creatinine values if available",
-          "Note that discussion with secondary care/PCRL is recommended for acute renal function deterioration"
+          "Document the actual serum creatinine values (baseline and current) to explicitly confirm the >50 micromol/L rise in 7 days threshold, as criteria reference creatinine rather than eGFR.",
+          "Note that discussion with secondary care or PCRL is recommended per criteria guidance for this presentation."
         ],
-        "suggested_wording": "68-year-old female with acute kidney injury. eGFR dropped from 60 to 12 over 5 days (equivalent to significant creatinine increase). No obstruction suspected. No clear cause identified. Request urgent renal ultrasound to exclude structural causes.",
+        "suggested_wording": "68-year-old female presenting with acute kidney injury. eGFR has dropped from 60 to 12 over 5 days (serum creatinine rise consistent with >50 micromol/L increase within 7 days). No obstruction suspected clinically. No clear cause identified. Requesting urgent renal ultrasound. Secondary care/PCRL discussion planned.",
         "not_funded_flag": false,
-        "safety_alert": null,
+        "safety_alert": "This degree of acute kidney injury (eGFR 12) is clinically severe. Ensure secondary care discussion is occurring in parallel with or instead of community imaging — hospital admission may be required. This tool confirms criteria are met but does not assess whether community imaging is clinically safe given the severity.",
         "redirect": null,
-        "notes": "The dramatic eGFR drop from 60 to 12 over 5 days represents severe acute kidney injury that clearly meets the creatinine increase threshold criteria. The criteria note recommends discussion with secondary care/PCRL for such cases, but this does not prevent the imaging referral from proceeding."
+        "notes": "The CT KUB red flag threshold (eGFR <45) is not applicable here as this is a renal ultrasound referral, not CT KUB. The eGFR drop from 60 to 12 over 5 days satisfies the acute renal function deterioration criterion at p53 (creatinine increase >50 micromol/L in 7 days is implied by this magnitude of eGFR change, though explicit creatinine values should be added to the note). The criteria guidance explicitly recommends discussion with secondary care or PCRL for this presentation — this is advisory and does not prevent the referral from proceeding."
       },
       "previous_verdict_v22": "proceeds",
       "evaluator_verdict": "Proceeds — surface P1 and P2, note conflicting dispositions",
@@ -560,31 +646,28 @@
       "paediatric": false,
       "clinical_note": "45yo m, episode of slurred speech and R hand clumsiness lasting 30 minutes yesterday. Fully resolved. BP normal. ?TIA. No other focal signs currently.",
       "ai_response": {
-        "verdict": "at_risk",
-        "verdict_title": "Missing Gateway Requirement",
-        "verdict_summary": "TIA pathway requires BPAC TIA decision support tool completion or specialist recommendation to proceed.",
-        "priority": null,
-        "criteria_page": "[p20]",
+        "verdict": "proceeds",
+        "verdict_title": "Referral Proceeds — Acute 48hr (Focal Neurological Signs)",
+        "verdict_summary": "The referral meets the Acute 48hr criterion for focal neurological signs independently of the TIA pathway, so it proceeds without requiring BPAC tool completion.",
+        "priority": "Acute 48hr",
+        "criteria_page": "p20",
         "met_criteria": [
-          "Suspected TIA — within 7 days of episode [p20]"
+          "Focal neurological signs — slurred speech (dysarthria) and right hand clumsiness documented [p20]",
+          "Episode within last 7 days (yesterday) [p20]"
         ],
-        "missing_criteria": [
-          "CT +/- CTA recommended by HNZ neurologist/stroke specialist OR BPAC TIA decision support tool indicates CT appropriate OR patient unable to access rapid specialist care [p20]"
-        ],
-        "add_to_note": [
-          "Document completion of BPAC TIA decision support tool and its recommendation, OR document neurologist/stroke specialist recommendation for CT, OR document that patient is unable to access rapid specialist care."
-        ],
-        "suggested_wording": "45yo male, episode of slurred speech and right hand clumsiness lasting 30 minutes yesterday. Fully resolved. BP normal. Suspected TIA within 7 days of episode. No other focal signs currently. BPAC TIA decision support tool completed - indicates CT appropriate [OR: Unable to access rapid specialist care OR: Neurologist recommends CT].",
+        "missing_criteria": [],
+        "add_to_note": [],
+        "suggested_wording": "45-year-old male presenting with an episode of slurred speech and right hand clumsiness lasting 30 minutes yesterday, now fully resolved. BP normal. Focal neurological signs documented. Query TIA. Requesting Acute CT Head within 48 hours.",
         "not_funded_flag": false,
         "safety_alert": null,
         "redirect": null,
-        "notes": "The focal neurological signs pathway is not applicable as the note states 'no other focal signs currently' and the previous symptoms have 'fully resolved'. The TIA pathway is identified but requires gateway documentation to proceed."
+        "notes": "The referral independently meets the Acute 48hr 'focal neurological signs' criterion [p20] based on the documented transient dysarthria and right hand clumsiness. This pathway does not require BPAC TIA tool completion. The ?TIA pathway is also potentially applicable (episode within 7 days), but that pathway requires either BPAC tool completion, HNZ neurologist/stroke specialist recommendation, or documented inability to access rapid specialist care — none of which are documented. Because the focal neurological signs pathway is fully met, the verdict is 'proceeds' regardless of the TIA gateway status. Advisory: given the clinical picture of a likely anterior circulation TIA in a 45-year-old, consider also whether CTA carotid should be added per the CT Head background guidance (candidate for carotid endarterectomy assessment). If the patient is a candidate for carotid endarterectomy, carotid angiography (CTA) or carotid ultrasound should be considered alongside the CT Head. Urgent stroke/TIA specialist review is also strongly recommended given the high-risk features (age <59, significant deficit duration, anterior circulation symptoms)."
       },
       "previous_verdict_v22": "at_risk",
       "evaluator_verdict": "At risk — focal neuro signs transiently met; TIA gateway advisory; note history of focal signs",
       "evaluator_comment": "Transient focal signs still relevant. Should be at_risk with note about TIA gateway.",
       "regression_status": "unchanged",
-      "notes": "Verdict: at_risk. Priority: n/a. Met: 1. Missing: 1."
+      "notes": "Verdict: proceeds. Priority: Acute 48hr. Met: 2. Missing: 0."
     },
     {
       "case_id": "TEST-007",
@@ -593,37 +676,42 @@
       "paediatric": false,
       "clinical_note": "70yo f w/ unexplained weight loss 3% over 2 months. Low Hb, raised CRP.",
       "ai_response": {
-        "verdict": "declined",
-        "verdict_title": "Does not meet criteria",
-        "verdict_summary": "Weight loss is only 3% over 2 months, which does not meet the required >5% over 3-6 months threshold.",
+        "verdict": "at_risk",
+        "verdict_title": "At Risk — Key Criteria Not Met",
+        "verdict_summary": "The referral does not yet meet CT CAP criteria: weight loss is only 3% (threshold is >5%) over 2 months (threshold is 3–6 months), and only 2 abnormal bloods are present but the age/gender-specific pathway requiring them also requires weight loss >5% over 3–6 months.",
         "priority": null,
-        "criteria_page": "[p10]",
+        "criteria_page": "p10",
         "met_criteria": [
-          "Female >60 [p10]",
-          "Strong suspicion of malignancy [p10]",
-          "No focal pathology [p10]",
-          "Raised CRP [p10]",
-          "Low Hb [p10]"
+          "Female aged >60 years [p10]",
+          "Low Hb documented [p10]",
+          "Raised CRP documented [p10]",
+          "No focal pathology implied (no localising features mentioned) [p10]"
         ],
         "missing_criteria": [
-          "Unintentional unexplained weight loss >5% over 3-6 months [p10]",
-          "2+ persistently abnormal bloods (need repeat after 3 weeks) [p10]"
+          "Weight loss threshold not met: only 3% documented — criteria require >5% [p10]",
+          "Duration threshold not met: 2 months documented — criteria require over 3–6 months [p10]",
+          "Strong suspicion of malignancy not explicitly stated [p10]",
+          "Only 2 abnormal bloods documented (Hb, CRP) — the female >50 pathway requires weight loss >5% over 3–6 months AND 2+ of the listed bloods; weight loss threshold must also be met [p10]",
+          "The simpler female >60 pathway (unintentional unexplained weight loss >5% over 3–6 months) also requires weight loss >5% over 3–6 months [p10]"
         ],
         "add_to_note": [
-          "Document weight loss as percentage over 3-6 month period if >5%",
-          "Repeat abnormal bloods after 3 weeks to confirm persistence"
+          "Document the total percentage of weight loss — criteria require >5% unintentional unexplained weight loss.",
+          "Document the duration of weight loss — criteria require this to have occurred over a 3–6 month period.",
+          "Explicitly state strong clinical suspicion of underlying malignancy with no focal pathology identified.",
+          "Document whether additional abnormal bloods are present (raised Ca, high platelets, high ALP, low albumin) — 2 or more from the specified list alongside weight loss >5% over 3–6 months would support the P2 pathway.",
+          "Confirm no recent USS abdomen/pelvis within 3 months and no CT CAP within 12 months (out-of-criteria exclusions)."
         ],
-        "suggested_wording": "70-year-old female with strong suspicion of malignancy, no focal pathology identified. Unintentional unexplained weight loss >5% over 3-6 months with abdominal pain, fatigue, and nausea. Two or more persistently abnormal blood results: raised CRP and low Hb, persistent on repeat testing after 3 weeks.",
-        "not_funded_flag": true,
+        "suggested_wording": "70-year-old female presenting with unintentional unexplained weight loss of [X]% over [X] months, associated with [abdominal pain / fatigue / nausea — include if present]. I have a strong clinical suspicion of underlying malignancy with no focal pathology or biopsy site identified on examination or initial investigations. Blood results show persistently low Hb and raised CRP [include any additional abnormal results: raised Ca, high platelets, high ALP, low albumin if applicable], confirmed on repeat testing. No recent USS abdomen/pelvis within 3 months and no CT CAP within 12 months. Requesting CT Chest/Abdomen/Pelvis.",
+        "not_funded_flag": false,
         "safety_alert": null,
         "redirect": null,
-        "notes": "The P2 urgent pathway requires weight loss >5% over 3-6 months AND 2+ persistently abnormal bloods confirmed on repeat after 3 weeks. Current documentation shows only 3% weight loss over 2 months and no evidence of repeat blood testing."
+        "notes": "Both P2 CT CAP pathways for this patient's age and gender require weight loss >5% over 3–6 months as a hard numeric threshold. The documented 3% over 2 months does not meet either threshold. If the GP's clinical assessment supports a stronger suspicion of malignancy and the weight loss figure or duration is greater than documented, the note should be updated accordingly. If criteria genuinely cannot be met, discussion with a PCRL or secondary care specialist is recommended as an alternative route to imaging per the CT CAP guidance."
       },
       "previous_verdict_v22": "declined",
       "evaluator_verdict": "At risk or declined — weight loss 3% (below 5% threshold) AND 2 months (below 3-month threshold)",
       "evaluator_comment": "Both weight loss % and duration fall below thresholds. Should be declined or at_risk.",
       "regression_status": "unchanged",
-      "notes": "Verdict: declined. Priority: n/a. Met: 5. Missing: 2."
+      "notes": "Verdict: at_risk. Priority: n/a. Met: 4. Missing: 5."
     }
   ]
 }

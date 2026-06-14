@@ -8,6 +8,9 @@
 const API_BASE = 'https://crr-criteria-api.fk4dsrmq5r.workers.dev';
 const ADMIN_KEY = process.env.ADMIN_KEY || '';
 
+const _args = process.argv.slice(2);
+const MODEL_OVERRIDE = _args[_args.indexOf('--model') + 1] || 'claude-sonnet-4-20250514';
+
 const TEST_CASES = [
   { case_id: 'RP-000', qa_id: 13, exam: 'CT Head',
     clinical_note: '45 maori woman with 2/12 h/o progressively worsening HA present nocturnally and first thing in the morning with associated blurred vision and nausea',
@@ -242,13 +245,23 @@ async function runCase(tc, systemPrompt) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: MODEL_OVERRIDE,
       max_tokens: 2400,
       temperature: 0,
       system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: userMsg }],
     }),
   });
+
+  if (resp.status === 429) {
+    const now = new Date();
+    const next = new Date(now);
+    next.setUTCHours(next.getUTCHours() + 1, 1, 0, 0);
+    const waitSec = Math.ceil((next - now) / 1000);
+    console.log(`\n  [429] Rate limited — waiting ${waitSec}s for next UTC hour...`);
+    await new Promise(r => setTimeout(r, waitSec * 1000));
+    return runCase(tc, systemPrompt);
+  }
 
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
@@ -411,7 +424,7 @@ async function main() {
     test_run: {
       date: new Date().toISOString(),
       prompt_version: '2.2.0',
-      model: 'claude-sonnet-4-20250514',
+      model: MODEL_OVERRIDE,
       mode: 'strict',
       paediatric_detection: 'enabled',
     },

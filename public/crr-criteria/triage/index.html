@@ -69,6 +69,11 @@ textarea.note{width:100%;min-height:160px;border:1px solid var(--rule);border-ra
 textarea.note:focus{outline:none;border-color:#4a86b5;box-shadow:0 0 0 2px rgba(26,111,160,0.1)}
 textarea.note::placeholder{color:#8b919a}
 .act-row{display:flex;align-items:center;gap:10px;margin-top:12px}
+.model-toggle-row{display:flex;align-items:center;gap:6px;margin-top:8px}
+.model-toggle-lbl{font-size:10px;color:var(--mid);font-weight:600;letter-spacing:0.4px;text-transform:uppercase;flex-shrink:0}
+.model-toggle-btn{padding:3px 8px;font-size:11px;font-family:var(--sans);font-weight:500;border:1px solid var(--rule);border-radius:4px;background:#fff;color:var(--mid);cursor:pointer;transition:all .1s}
+.model-toggle-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.model-toggle-btn:hover:not(.active){border-color:#4a86b5;color:var(--accent)}
 .btn-assess{background:var(--accent);color:#fff;border:none;padding:7px 16px;font-family:var(--sans);font-size:13px;font-weight:500;border-radius:6px;cursor:pointer;transition:background .12s}
 .btn-assess:hover{background:var(--accent-hover)}
 .btn-clr{background:#fff;border:1px solid var(--rule);color:var(--mid);padding:7px 16px;font-family:var(--sans);font-size:13px;font-weight:500;border-radius:6px;cursor:pointer}
@@ -299,6 +304,11 @@ textarea.note::placeholder{color:#8b919a}
         <div class="act-row">
           <button class="btn-assess" onclick="runCheck()">Check Referral</button>
           <button class="btn-clr" onclick="clearAll()">Clear</button>
+        </div>
+        <div class="model-toggle-row">
+          <span class="model-toggle-lbl">Model</span>
+          <button class="model-toggle-btn active" id="modelSonnet4" onclick="setModel(SONNET_MODEL, this)">Sonnet 4</button>
+          <button class="model-toggle-btn" id="modelSonnet46" onclick="setModel(SONNET_46_MODEL, this)">Sonnet 4.6</button>
         </div>
       </div>
     </div>
@@ -861,6 +871,12 @@ function toggleCorrectionDetail() {
 function setDocMode(mode, btn) {
   docMode = mode;
   document.querySelectorAll('#modeStrict, #modeInferred').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+}
+
+function setModel(model, btn) {
+  currentModel = model;
+  document.querySelectorAll('.model-toggle-btn').forEach(function(b){ b.classList.remove('active'); });
   btn.classList.add('active');
 }
 
@@ -1714,7 +1730,7 @@ function runAI() {
   document.getElementById('methodBadge').textContent = 'Assessing\u2026';
   document.getElementById('methodBadge').className = 'method-badge method-ai';
 
-  callTriageAPI(SONNET_MODEL, lastNote)
+  callTriageAPI(currentModel, lastNote)
   .then(function(r) {
     clearInterval(ticker);
     if (!r.parseSuccess) {
@@ -2418,7 +2434,7 @@ function renderAIResult(r) {
 
   // Session info footer
   var hSessionInfo = '';
-  var sessionParts = ['Model: claude-sonnet-4-20250514', 'Mode: ' + (r._docMode || 'strict')];
+  var sessionParts = ['Model: ' + (r._model || 'claude-sonnet-4-20250514'), 'Mode: ' + (r._docMode || 'strict')];
   if (loadedPrompt && loadedPrompt.version) sessionParts.push('Prompt: v' + loadedPrompt.version);
   hSessionInfo += '<div style="font-size:10px;color:#8ab4c8;margin-top:10px;padding-top:8px;border-top:1px solid var(--rule)">' + sessionParts.join(' · ') + '</div>';
 
@@ -2597,7 +2613,22 @@ function logTriageUsage(result, usage, parseSuccess, rawText) {
       cost_nzd: calcCostNzd(usage, result._model),
       presentation_text: result._originalNote || lastNote || '',
       ai_response_summary: aiSummary,
-      ai_response_json: parseSuccess ? JSON.stringify(result) : (rawText || null),
+      ai_response_json: parseSuccess ? JSON.stringify({
+        verdict: result.verdict,
+        verdict_title: result.verdict_title,
+        verdict_summary: result.verdict_summary,
+        priority: result.priority,
+        criteria_page: result.criteria_page,
+        interpreted_note: result.interpreted_note,
+        met_criteria: result.met_criteria,
+        missing_criteria: result.missing_criteria,
+        add_to_note: result.add_to_note,
+        suggested_wording: result.suggested_wording,
+        notes: result.notes,
+        redirect: result.redirect,
+        safety_alert: result.safety_alert,
+        overrides: result._overrides && result._overrides.length ? result._overrides : undefined
+      }) : (rawText || null),
       parse_success: parseSuccess !== false,
       prompt_version: loadedPrompt ? loadedPrompt.version : null,
       temperature: result._temperature != null ? result._temperature : TRIAGE_TEMPERATURE
@@ -2995,7 +3026,7 @@ function submitQaEntry() {
     ai_response_json: JSON.stringify(r),
     prompt_version: loadedPrompt ? loadedPrompt.version : null,
     exam_identified: r.exam || r.modality || null,
-    model_used: 'claude-sonnet-4-20250514',
+    model_used: (lastAiResult && lastAiResult._model) || 'claude-sonnet-4-20250514',
     documentation_standard: docMode,
     region: null
   };
@@ -3040,8 +3071,10 @@ var compareMode = false;
 var compLog = [];
 var LS_COMP_KEY = 'crr_comparison_log';
 
-var OPUS_MODEL   = 'claude-opus-4-20250514';
-var SONNET_MODEL = 'claude-sonnet-4-20250514';
+var OPUS_MODEL      = 'claude-opus-4-20250514';
+var SONNET_MODEL    = 'claude-sonnet-4-20250514';
+var SONNET_46_MODEL = 'claude-sonnet-4-6';
+var currentModel    = SONNET_MODEL;
 
 function loadCompLog() { try { return JSON.parse(localStorage.getItem(LS_COMP_KEY)||'[]'); } catch(e) { return []; } }
 function saveCompLog(log) { try { localStorage.setItem(LS_COMP_KEY, JSON.stringify(log,null,2)); } catch(e) {} }

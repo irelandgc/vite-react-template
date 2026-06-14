@@ -1,0 +1,958 @@
+[
+  {
+    "id": 216,
+    "timestamp": "2026-05-30T05:24:13.064Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Pelvis",
+    "model_used": "claude-sonnet-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 560,
+      "cache_read": 0,
+      "cache_write": 23809,
+      "output": 473
+    },
+    "cost_nzd": 0.161,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "32F\n\nAbdo Soft \nNil guarding \nNil organomegaly \nTender RIF and subrapubic tenderness \nPelvic exam not done \n\nongoing abdo pain and boating ? Endo\n\n\n\n\nMeasurement Details\n\n\n\n\nDate\n\nCode\n\nValue\n\n14/07/2022 Height 172 \n23/05/2023 Weight 65.7 \n\n\n\nDate\n\nCode\n\nValue\n\n23/05/2023 BMI 22.2 \n14/07/2022 BP 118/74 \n\n \n\n\nMedications / Warnings \n\n\nThe medication details are as provided by the sending health provider. For accurate assessments of patient medications, please refer to the sender for any clarifications you may require.\n\n\n\nLong Term Medications\n\n\n\nDate\n\nDetails\n\nDose\n\nUnits\n\nInstructions\n\n30/11/2023 Quetiapine 25mg Tab 0.0 tabs 0.5-1 tab tds prn po for sleep and anxiety \n30/11/2023 Fluoxetine 20mg Cap 0.0 caps 1 caps, Once Daily \n30/11/2023 Melatonin 2mg Prolonged Release Tab 1.0 tabs 1 tabs, Once Daily \n19/08/2024 Ferrograd 325mg Modified Release Tab  tabs OD \n\n\nMedical Warnings\n\n\n\nDate\n\nDescription\n\nComments\n\n28/07/2021 (NKA)  \n\n \n\n\nMedical History \n\n\nLong Term Classifications (Co-Morbidities)\n\n\n\nCode\n\nDescription\n\nComments\n\nE2003.00 Anxiety with depression on fluoxetine, well controlled \n770.00 Appendix operations 2018 \n1371.00 Never smoked tobacco currently vaping \n136M.00 Current non drinker",
+    "interpreted_note": "32F\n\nAbdo Soft\nNil guarding\nNil organomegaly\nTender RIF and suprapubic tenderness\nPelvic exam not done\n\nongoing abdo pain and bloating ? Endo",
+    "ai_verdict": "at_risk",
+    "ai_verdict_title": "Referral at risk \u2014 add missing information",
+    "ai_verdict_summary": "Meets criteria for pelvic pain >6 weeks but duration of symptoms not documented.",
+    "ai_met_criteria": [
+      "Pelvic pain unrelated to menstrual cycle [p46]",
+      "Tender RIF and suprapubic tenderness on examination [p46]"
+    ],
+    "ai_missing_criteria": [
+      "Duration of pelvic pain >6 weeks [p46]",
+      "PID excluded as cause per local PID HealthPathway [p46]"
+    ],
+    "ai_notes": "Patient has history of appendectomy in 2018. The presentation could potentially match endometriosis pathway but requires documentation of symptom duration and exclusion of PID to meet P3 criteria for pelvic pain >6 weeks.",
+    "ai_redirect": null,
+    "ai_safety_alert": null,
+    "ai_suggested_wording": "32F with ongoing abdominal and pelvic pain for [X weeks/months], unrelated to menstrual cycle. Examination shows tender RIF and suprapubic tenderness. Abdomen soft, no guarding, no organomegaly. Pelvic examination not performed. PID excluded as cause [state how excluded]. Query endometriosis. Request pelvic ultrasound.",
+    "overrides": null
+  },
+  {
+    "id": 217,
+    "timestamp": "2026-05-30T05:25:37.657Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Pelvis",
+    "model_used": "claude-sonnet-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 560,
+      "cache_read": 23809,
+      "cache_write": 0,
+      "output": 984
+    },
+    "cost_nzd": 0.0366,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "32F\n\nAbdo Soft \nNil guarding \nNil organomegaly \nTender RIF and subrapubic tenderness \nPelvic exam not done \n\nongoing abdo pain and boating ? Endo\n\n\n\n\nMeasurement Details\n\n\n\n\nDate\n\nCode\n\nValue\n\n14/07/2022 Height 172 \n23/05/2023 Weight 65.7 \n\n\n\nDate\n\nCode\n\nValue\n\n23/05/2023 BMI 22.2 \n14/07/2022 BP 118/74 \n\n \n\n\nMedications / Warnings \n\n\nThe medication details are as provided by the sending health provider. For accurate assessments of patient medications, please refer to the sender for any clarifications you may require.\n\n\n\nLong Term Medications\n\n\n\nDate\n\nDetails\n\nDose\n\nUnits\n\nInstructions\n\n30/11/2023 Quetiapine 25mg Tab 0.0 tabs 0.5-1 tab tds prn po for sleep and anxiety \n30/11/2023 Fluoxetine 20mg Cap 0.0 caps 1 caps, Once Daily \n30/11/2023 Melatonin 2mg Prolonged Release Tab 1.0 tabs 1 tabs, Once Daily \n19/08/2024 Ferrograd 325mg Modified Release Tab  tabs OD \n\n\nMedical Warnings\n\n\n\nDate\n\nDescription\n\nComments\n\n28/07/2021 (NKA)  \n\n \n\n\nMedical History \n\n\nLong Term Classifications (Co-Morbidities)\n\n\n\nCode\n\nDescription\n\nComments\n\nE2003.00 Anxiety with depression on fluoxetine, well controlled \n770.00 Appendix operations 2018 \n1371.00 Never smoked tobacco currently vaping \n136M.00 Current non drinker",
+    "interpreted_note": "32F\n\nAbdo Soft\nNil guarding\nNil organomegaly\nTender RIF and suprapubic tenderness\nPelvic exam not done\n\nongoing abdo pain and bloating ? Endo\n\nMeasurement Details\n\nDate Code Value\n14/07/2022 Height 172\n23/05/2023 Weight 65.7\n\nDate Code Value\n23/05/2023 BMI 22.2\n14/07/2022 BP 118/74\n\nMedications / Warnings\n\nThe medication details are as provided by the sending health provider. For accurate assessments of patient medications, please refer to the sender for any clarifications you may require.\n\nLong Term Medications\n\nDate Details Dose Units Instructions\n30/11/2023 Quetiapine 25mg Tab 0.0 tabs 0.5-1 tab tds prn po for sleep and anxiety\n30/11/2023 Fluoxetine 20mg Cap 0.0 caps 1 caps, Once Daily\n30/11/2023 Melatonin 2mg Prolonged Release Tab 1.0 tabs 1 tabs, Once Daily\n19/08/2024 Ferrograd 325mg Modified Release Tab tabs OD\n\nMedical Warnings\n\nDate Description Comments\n28/07/2021 (NKA)\n\nMedical History\n\nLong Term Classifications (Co-Morbidities)\n\nCode Description Comments\nE2003.00 Anxiety with depression on fluoxetine, well controlled\n770.00 Appendix operations 2018\n1371.00 Never smoked tobacco currently vaping\n136M.00 Current non drinker",
+    "ai_verdict": "declined",
+    "ai_verdict_title": "Referral likely to be declined",
+    "ai_verdict_summary": "Suspected endometriosis without a clinically palpable mass should be referred to secondary care via the Endometriosis HealthPathway rather than requesting ultrasound.",
+    "ai_met_criteria": [
+      "32-year-old female [p46]",
+      "Pelvic pain >6 weeks documented as 'ongoing abdo pain' [p46]"
+    ],
+    "ai_missing_criteria": [
+      "Duration of pelvic pain not specified as >6 weeks [p46]",
+      "PID exclusion not documented [p46]",
+      "Clinically palpable mass not documented [p46]"
+    ],
+    "ai_notes": "The referral mentions suspected endometriosis (?Endo) but ultrasound pelvis criteria specifically redirect suspected endometriosis without palpable mass to the Endometriosis HealthPathway rather than imaging. The pelvic pain pathway requires >6 weeks duration, PID exclusion, and is unrelated to menstrual cycle - none of these are clearly documented.",
+    "ai_redirect": "Suspected endometriosis in the absence of a clinically palpable mass \u2014 see local Endometriosis HealthPathway",
+    "ai_safety_alert": null,
+    "ai_suggested_wording": "32F with ongoing abdominal and pelvic pain for [specify duration >6 weeks]. Examination reveals soft abdomen with RIF and suprapubic tenderness, no guarding, no organomegaly. Pelvic examination not performed. PID excluded as per local PID HealthPathway. No clinically palpable pelvic mass. Suspected endometriosis. Request pelvic ultrasound to exclude other pelvic pathology.",
+    "overrides": null
+  },
+  {
+    "id": 218,
+    "timestamp": "2026-05-30T05:25:41.761Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Pelvis",
+    "model_used": "claude-sonnet-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 560,
+      "cache_read": 23809,
+      "cache_write": 0,
+      "output": 495
+    },
+    "cost_nzd": 0.0243,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "32F\n\nAbdo Soft \nNil guarding \nNil organomegaly \nTender RIF and subrapubic tenderness \nPelvic exam not done \n\nongoing abdo pain and boating ? Endo\n\n\n\n\nMeasurement Details\n\n\n\n\nDate\n\nCode\n\nValue\n\n14/07/2022 Height 172 \n23/05/2023 Weight 65.7 \n\n\n\nDate\n\nCode\n\nValue\n\n23/05/2023 BMI 22.2 \n14/07/2022 BP 118/74 \n\n \n\n\nMedications / Warnings \n\n\nThe medication details are as provided by the sending health provider. For accurate assessments of patient medications, please refer to the sender for any clarifications you may require.\n\n\n\nLong Term Medications\n\n\n\nDate\n\nDetails\n\nDose\n\nUnits\n\nInstructions\n\n30/11/2023 Quetiapine 25mg Tab 0.0 tabs 0.5-1 tab tds prn po for sleep and anxiety \n30/11/2023 Fluoxetine 20mg Cap 0.0 caps 1 caps, Once Daily \n30/11/2023 Melatonin 2mg Prolonged Release Tab 1.0 tabs 1 tabs, Once Daily \n19/08/2024 Ferrograd 325mg Modified Release Tab  tabs OD \n\n\nMedical Warnings\n\n\n\nDate\n\nDescription\n\nComments\n\n28/07/2021 (NKA)  \n\n \n\n\nMedical History \n\n\nLong Term Classifications (Co-Morbidities)\n\n\n\nCode\n\nDescription\n\nComments\n\nE2003.00 Anxiety with depression on fluoxetine, well controlled \n770.00 Appendix operations 2018 \n1371.00 Never smoked tobacco currently vaping \n136M.00 Current non drinker",
+    "interpreted_note": "32F\n\nAbdo Soft\nNil guarding\nNil organomegaly\nTender RIF and suprapubic tenderness\nPelvic exam not done\n\nongoing abdo pain and bloating ? Endo",
+    "ai_verdict": "at_risk",
+    "ai_verdict_title": "Referral at risk \u2014 add missing information",
+    "ai_verdict_summary": "Meets criteria for pelvic pain >6 weeks but requires documentation of duration and exclusion of PID as per local pathway.",
+    "ai_met_criteria": [
+      "Pelvic pain unrelated to menstrual cycle [p46]",
+      "Tender RIF and suprapubic tenderness on examination [p46]"
+    ],
+    "ai_missing_criteria": [
+      "Duration of pelvic pain >6 weeks [p46]",
+      "PID excluded as cause per local PID HealthPathway [p46]"
+    ],
+    "ai_notes": "Patient has history of appendectomy in 2018. If pelvic pain duration is documented as >6 weeks and PID exclusion is confirmed, this would meet P3 criteria for suspected endometriosis investigation.",
+    "ai_redirect": null,
+    "ai_safety_alert": null,
+    "ai_suggested_wording": "32F\n\nAbdo Soft\nNil guarding\nNil organomegaly\nTender RIF and suprapubic tenderness\nPelvic exam not done\n\nOngoing abdominal pain and bloating present for 8 weeks, unrelated to menstrual cycle. PID excluded as cause per clinical assessment and local PID HealthPathway. ? Endometriosis",
+    "overrides": null
+  },
+  {
+    "id": 219,
+    "timestamp": "2026-05-30T05:25:50.521Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Ultrasound \u2014 Pelvis",
+    "model_used": "claude-opus-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 560,
+      "cache_read": 0,
+      "cache_write": 23809,
+      "output": 616
+    },
+    "cost_nzd": 0.2742,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "32F\n\nAbdo Soft \nNil guarding \nNil organomegaly \nTender RIF and subrapubic tenderness \nPelvic exam not done \n\nongoing abdo pain and boating ? Endo\n\n\n\n\nMeasurement Details\n\n\n\n\nDate\n\nCode\n\nValue\n\n14/07/2022 Height 172 \n23/05/2023 Weight 65.7 \n\n\n\nDate\n\nCode\n\nValue\n\n23/05/2023 BMI 22.2 \n14/07/2022 BP 118/74 \n\n \n\n\nMedications / Warnings \n\n\nThe medication details are as provided by the sending health provider. For accurate assessments of patient medications, please refer to the sender for any clarifications you may require.\n\n\n\nLong Term Medications\n\n\n\nDate\n\nDetails\n\nDose\n\nUnits\n\nInstructions\n\n30/11/2023 Quetiapine 25mg Tab 0.0 tabs 0.5-1 tab tds prn po for sleep and anxiety \n30/11/2023 Fluoxetine 20mg Cap 0.0 caps 1 caps, Once Daily \n30/11/2023 Melatonin 2mg Prolonged Release Tab 1.0 tabs 1 tabs, Once Daily \n19/08/2024 Ferrograd 325mg Modified Release Tab  tabs OD \n\n\nMedical Warnings\n\n\n\nDate\n\nDescription\n\nComments\n\n28/07/2021 (NKA)  \n\n \n\n\nMedical History \n\n\nLong Term Classifications (Co-Morbidities)\n\n\n\nCode\n\nDescription\n\nComments\n\nE2003.00 Anxiety with depression on fluoxetine, well controlled \n770.00 Appendix operations 2018 \n1371.00 Never smoked tobacco currently vaping \n136M.00 Current non drinker",
+    "interpreted_note": "32F\n\nAbdo Soft\nNil guarding\nNil organomegaly\nTender RIF and subrapubic tenderness\nPelvic exam not done\n\nongoing abdo pain and bloating ? Endo",
+    "ai_verdict": "at_risk",
+    "ai_verdict_title": "Referral at risk \u2014 add missing information",
+    "ai_verdict_summary": "Pelvic pain referral requires duration >6 weeks and confirmation that PID has been excluded as per local pathway.",
+    "ai_met_criteria": [
+      "Female patient aged 32 years [p46]",
+      "Abdominal/pelvic pain present [p46]",
+      "Tender RIF and suprapubic tenderness on examination [p46]"
+    ],
+    "ai_missing_criteria": [
+      "Duration of pelvic pain not documented (requires >6 weeks) [p46]",
+      "PID not documented as excluded per local PID HealthPathway [p46]",
+      "Pain relationship to menstrual cycle not documented [p46]"
+    ],
+    "ai_notes": "Suspected endometriosis in absence of clinically palpable mass directs to Endometriosis HealthPathway rather than ultrasound, but pelvic pain >6 weeks with PID excluded meets P3 criteria for US pelvis.",
+    "ai_redirect": null,
+    "ai_safety_alert": null,
+    "ai_suggested_wording": "32F with ongoing lower abdominal pain and bloating for [X weeks/months], unrelated to menstrual cycle. Query endometriosis. Examination: Abdomen soft, nil guarding, nil organomegaly. Tender RIF and suprapubic tenderness. Pelvic exam not performed. PID excluded as per local pathway with [specify how excluded - e.g., negative STI screen, no cervical motion tenderness, no fever]. Request pelvic ultrasound to investigate for endometriosis or other pelvic pathology.",
+    "overrides": null
+  },
+  {
+    "id": 220,
+    "timestamp": "2026-05-30T05:31:50.620Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Neck / Thyroid",
+    "model_used": "claude-sonnet-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 341,
+      "cache_read": 0,
+      "cache_write": 23809,
+      "output": 591
+    },
+    "cost_nzd": 0.1639,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "Neck and thyroid ultrasound \n\n80 year old female\n2. pain in neck \nsharp pain - feels like something in poking through - C2/3 - where screws have been placed\nrequests referral back to Ortho\npain wakes her up in the night\noccurs intermittently \ndenies tingling or numbess\nnil incontinence\nnil cough or cold sx recently \nnil loss of sensation to genitals, anal area, groin\n\nO/E\nFROM - however feels it \"catches me\"\ntenderness over palpation left side of C2/3\nnil lump felt - however she has felt this\nHas Xrays - area of interest is where screws have been placed\nalert and comfortable\n\n?imp dislodged screw ?\n\nPlan:\n1. Re-refer toOrtho + USS\n2. Red flags adviced on when to present to ED",
+    "interpreted_note": "Neck and thyroid ultrasound\n\n80 year old female\n2. pain in neck\nsharp pain - feels like something is poking through - C2/3 - where screws have been placed\nrequests referral back to Ortho\npain wakes her up in the night\noccurs intermittently\ndenies tingling or numbness\nnil incontinence\nnil cough or cold sx recently\nnil loss of sensation to genitals, anal area, groin\n\nO/E\nFROM - however feels it \"catches me\"\ntenderness over palpation left side of C2/3\nnil lump felt - however she has felt this\nHas X-rays - area of interest is where screws have been placed\nalert and comfortable\n\n?imp dislodged screw ?\n\nPlan:\n1. Re-refer to Ortho + USS\n2. Red flags advised on when to present to ED",
+    "ai_verdict": "declined",
+    "ai_verdict_title": "Referral likely to be declined",
+    "ai_verdict_summary": "This presentation relates to cervical spine hardware complications, not thyroid or neck mass pathology covered by ultrasound neck/thyroid criteria.",
+    "ai_met_criteria": [
+      "80 year old female documented [p43]"
+    ],
+    "ai_missing_criteria": [
+      "No palpable thyroid nodule documented [p43]",
+      "No neck mass >1.5cm documented [p43]",
+      "No incidental thyroid findings on other imaging documented [p43]"
+    ],
+    "ai_notes": "The clinical presentation describes cervical spine hardware complications (suspected dislodged screw at C2/3 level) rather than thyroid or neck mass pathology. Ultrasound neck/thyroid is not the appropriate investigation for spinal hardware assessment. The GP's plan to re-refer to Orthopaedics is correct.",
+    "ai_redirect": "Cervical spine hardware complications with night pain and suspected dislodged screw \u2014 refer directly to Orthopaedics as planned. Consider cervical spine X-ray if hardware displacement suspected.",
+    "ai_safety_alert": null,
+    "ai_suggested_wording": null,
+    "overrides": null
+  },
+  {
+    "id": 221,
+    "timestamp": "2026-05-30T05:31:53.973Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Neck / Thyroid",
+    "model_used": "claude-opus-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 341,
+      "cache_read": 0,
+      "cache_write": 23809,
+      "output": 547
+    },
+    "cost_nzd": 0.2713,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "Neck and thyroid ultrasound \n\n80 year old female\n2. pain in neck \nsharp pain - feels like something in poking through - C2/3 - where screws have been placed\nrequests referral back to Ortho\npain wakes her up in the night\noccurs intermittently \ndenies tingling or numbess\nnil incontinence\nnil cough or cold sx recently \nnil loss of sensation to genitals, anal area, groin\n\nO/E\nFROM - however feels it \"catches me\"\ntenderness over palpation left side of C2/3\nnil lump felt - however she has felt this\nHas Xrays - area of interest is where screws have been placed\nalert and comfortable\n\n?imp dislodged screw ?\n\nPlan:\n1. Re-refer toOrtho + USS\n2. Red flags adviced on when to present to ED",
+    "interpreted_note": "Neck and thyroid ultrasound\n\n80 year old female\n2. pain in neck\nsharp pain - feels like something is poking through - C2/3 - where screws have been placed\nrequests referral back to Ortho\npain wakes her up in the night\noccurs intermittently\ndenies tingling or numbness\nnil incontinence\nnil cough or cold sx recently\nnil loss of sensation to genitals, anal area, groin\n\nO/E\nFROM - however feels it \"catches me\"\ntenderness over palpation left side of C2/3\nnil lump felt - however she has felt this\nHas Xrays - area of interest is where screws have been placed\nalert and comfortable\n\n?imp dislodged screw ?\n\nPlan:\n1. Re-refer to Ortho + USS\n2. Red flags advised on when to present to ED",
+    "ai_verdict": "declined",
+    "ai_verdict_title": "Referral likely to be declined",
+    "ai_verdict_summary": "Post-surgical neck pain at C2/3 screw site requires orthopaedic assessment, not ultrasound imaging.",
+    "ai_met_criteria": [],
+    "ai_missing_criteria": [
+      "No palpable thyroid nodule documented [p43]",
+      "No undifferentiated neck mass documented [p43]",
+      "No incidental thyroid nodule on other imaging documented [p43]"
+    ],
+    "ai_notes": "Ultrasound neck/thyroid is for thyroid nodules and neck masses, not for assessment of cervical spine hardware or post-surgical complications. The patient has already identified the need for orthopaedic review.",
+    "ai_redirect": "Post-surgical neck pain at hardware site \u2014 refer to orthopaedic surgeon who performed the surgery for assessment",
+    "ai_safety_alert": null,
+    "ai_suggested_wording": null,
+    "overrides": null
+  },
+  {
+    "id": 222,
+    "timestamp": "2026-05-30T05:34:16.620Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Pelvis",
+    "model_used": "claude-sonnet-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 656,
+      "cache_read": 23809,
+      "cache_write": 0,
+      "output": 1182
+    },
+    "cost_nzd": 0.0415,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "Requesting ultrasound pelvis \n\n64 yo female\n3+ months of unilateral leg swelling. Occuring daily. normal d dimer. Nil signs of DVT. lower abdo exam. ? enlarged uterus with uterine pressure as cause of swelling. Please check for ? uterine enlargement, fibroids, other causes of pressure in leg. \n\nDate: 09/02/2026 10:49:59 Subjective:\n- Unilateral left leg swelling present since summer, worsens with prolonged standing\n- Leg becomes tight when swollen, requires elevation for relief\n- Had to increase shoe size on affected side due to swelling\n- Swelling extends from ankle upwards, whole left side of body appears larger than right\n- No associated leg pain, just tightness when swollen\n\nPast Medical History:\n- COPD\n- Hypertension\n- Previous breast cancer in 50s, ceased menstruation at that time\n- Three previous caesarean sections, tubal ligation performed\n- Father died of pancreatic cancer\n- Currently taking candesartan, Breo inhaler, Incruse inhaler, dabigatran, metoprolol\n- Minimal use of blue inhaler currently \\bp 136/81\n\\wt 95.3kg\nObjective:\n- Blood pressure: 137/84 mmHg\n- Weight: 95.3 kg (increased from previous 86 kg)\n- Abdominal examination: mild epigastric tenderness on palpation, firmness noted around abdomen, no masses palpable\n- Left leg examination: mild venous insufficiency signs, slightly more red compared to right leg, few visible veins but not varicose, \n- Left leg non-pitting odema present\n\nAssessment:\n- Unilateral left leg swelling - ?venous insufficiency vs DVT vs pelvic pathology\n\nPlan:\n- General blood tests including D-dimer to exclude DVT\n- Pelvic ultrasound to exclude pelvic pathology causing leg swelling\n-- If D-dimer positive, leg ultrasound to be arranged\n- Continue current exercise programme including pulmonary rehabilitation and walking club\n- Weight loss encouraged as main treatment for venous insufficiency",
+    "interpreted_note": "Requesting ultrasound pelvis\n\n64 yo female\n3+ months of unilateral leg swelling. Occurring daily. normal d dimer. Nil signs of DVT. lower abdo exam. ? enlarged uterus with uterine pressure as cause of swelling. Please check for ? uterine enlargement, fibroids, other causes of pressure in leg.\n\nDate: 09/02/2026 10:49:59 Subjective:\n- Unilateral left leg swelling present since summer, worsens with prolonged standing\n- Leg becomes tight when swollen, requires elevation for relief\n- Had to increase shoe size on affected side due to swelling\n- Swelling extends from ankle upwards, whole left side of body appears larger than right\n- No associated leg pain, just tightness when swollen\n\nPast Medical History:\n- COPD\n- Hypertension\n- Previous breast cancer in 50s, ceased menstruation at that time\n- Three previous caesarean sections, tubal ligation performed\n- Father died of pancreatic cancer\n- Currently taking candesartan, Breo inhaler, Incruse inhaler, dabigatran, metoprolol\n- Minimal use of blue inhaler currently \\bp 136/81\n\\wt 95.3kg\nObjective:\n- Blood pressure: 137/84 mmHg\n- Weight: 95.3 kg (increased from previous 86 kg)\n- Abdominal examination: mild epigastric tenderness on palpation, firmness noted around abdomen, no masses palpable\n- Left leg examination: mild venous insufficiency signs, slightly more red compared to right leg, few visible veins but not varicose,\n- Left leg non-pitting oedema present\n\nAssessment:\n- Unilateral left leg swelling - ?venous insufficiency vs DVT vs pelvic pathology\n\nPlan:\n- General blood tests including D-dimer to exclude DVT\n- Pelvic ultrasound to exclude pelvic pathology causing leg swelling\n-- If D-dimer positive, leg ultrasound to be arranged\n- Continue current exercise programme including pulmonary rehabilitation and walking club\n- Weight loss encouraged as main treatment for venous insufficiency",
+    "ai_verdict": "declined",
+    "ai_verdict_title": "Referral likely to be declined",
+    "ai_verdict_summary": "This presentation does not match any funded criteria for pelvic ultrasound.",
+    "ai_met_criteria": [
+      "64 year old female [p46]",
+      "Post-menopausal (ceased menstruation in 50s) [p46]"
+    ],
+    "ai_missing_criteria": [
+      "No acute pelvic pain [p46]",
+      "No pelvic mass on examination [p46]",
+      "No post-menopausal bleeding [p46]",
+      "No abnormal uterine bleeding [p46]",
+      "No Ca-125 \u226535 units/mL documented [p46]",
+      "No primary amenorrhoea [p46]",
+      "No secondary dysmenorrhoea [p46]",
+      "No PCOS criteria [p46]",
+      "No fibroid symptoms with MHT [p46]"
+    ],
+    "ai_notes": "The clinical presentation is unilateral leg swelling with suspected venous insufficiency. While the GP queries uterine enlargement as a cause, there are no documented pelvic symptoms, abnormal bleeding, pelvic pain, or palpable masses that would meet funded criteria for pelvic ultrasound. The examination specifically notes 'no masses palpable' and there are no gynaecological symptoms documented.",
+    "ai_redirect": "Unilateral leg swelling with normal D-dimer and no DVT signs \u2014 consider venous insufficiency management as per local guidelines. If pelvic pathology genuinely suspected, document specific pelvic symptoms or examination findings that meet ultrasound criteria.",
+    "ai_safety_alert": null,
+    "ai_suggested_wording": "64 year old female with 3+ months unilateral left leg swelling. Post-menopausal since breast cancer treatment in 50s. Examination reveals abdominal firmness but no palpable pelvic masses. Normal D-dimer excludes DVT. Assessment: unilateral leg swelling likely venous insufficiency. Plan: conservative management with weight loss and exercise. Note: Pelvic ultrasound not indicated as no pelvic symptoms, bleeding, or masses identified on examination.",
+    "overrides": null
+  },
+  {
+    "id": 223,
+    "timestamp": "2026-05-30T05:34:18.878Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Ultrasound \u2014 Pelvis",
+    "model_used": "claude-opus-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 656,
+      "cache_read": 23809,
+      "cache_write": 0,
+      "output": 1034
+    },
+    "cost_nzd": 0.0631,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "Requesting ultrasound pelvis \n\n64 yo female\n3+ months of unilateral leg swelling. Occuring daily. normal d dimer. Nil signs of DVT. lower abdo exam. ? enlarged uterus with uterine pressure as cause of swelling. Please check for ? uterine enlargement, fibroids, other causes of pressure in leg. \n\nDate: 09/02/2026 10:49:59 Subjective:\n- Unilateral left leg swelling present since summer, worsens with prolonged standing\n- Leg becomes tight when swollen, requires elevation for relief\n- Had to increase shoe size on affected side due to swelling\n- Swelling extends from ankle upwards, whole left side of body appears larger than right\n- No associated leg pain, just tightness when swollen\n\nPast Medical History:\n- COPD\n- Hypertension\n- Previous breast cancer in 50s, ceased menstruation at that time\n- Three previous caesarean sections, tubal ligation performed\n- Father died of pancreatic cancer\n- Currently taking candesartan, Breo inhaler, Incruse inhaler, dabigatran, metoprolol\n- Minimal use of blue inhaler currently \\bp 136/81\n\\wt 95.3kg\nObjective:\n- Blood pressure: 137/84 mmHg\n- Weight: 95.3 kg (increased from previous 86 kg)\n- Abdominal examination: mild epigastric tenderness on palpation, firmness noted around abdomen, no masses palpable\n- Left leg examination: mild venous insufficiency signs, slightly more red compared to right leg, few visible veins but not varicose, \n- Left leg non-pitting odema present\n\nAssessment:\n- Unilateral left leg swelling - ?venous insufficiency vs DVT vs pelvic pathology\n\nPlan:\n- General blood tests including D-dimer to exclude DVT\n- Pelvic ultrasound to exclude pelvic pathology causing leg swelling\n-- If D-dimer positive, leg ultrasound to be arranged\n- Continue current exercise programme including pulmonary rehabilitation and walking club\n- Weight loss encouraged as main treatment for venous insufficiency",
+    "interpreted_note": "Requesting ultrasound pelvis\n\n64 yo female\n3+ months of unilateral leg swelling. Occurring daily. normal d dimer. Nil signs of DVT. lower abdo exam. ? enlarged uterus with uterine pressure as cause of swelling. Please check for ? uterine enlargement, fibroids, other causes of pressure in leg.\n\nDate: 09/02/2026 10:49:59 Subjective:\n- Unilateral left leg swelling present since summer, worsens with prolonged standing\n- Leg becomes tight when swollen, requires elevation for relief\n- Had to increase shoe size on affected side due to swelling\n- Swelling extends from ankle upwards, whole left side of body appears larger than right\n- No associated leg pain, just tightness when swollen\n\nPast Medical History:\n- COPD\n- Hypertension\n- Previous breast cancer in 50s, ceased menstruation at that time\n- Three previous caesarean sections, tubal ligation performed\n- Father died of pancreatic cancer\n- Currently taking candesartan, Breo inhaler, Incruse inhaler, dabigatran, metoprolol\n- Minimal use of blue inhaler currently \\bp 136/81\n\\wt 95.3kg\nObjective:\n- Blood pressure: 137/84 mmHg\n- Weight: 95.3 kg (increased from previous 86 kg)\n- Abdominal examination: mild epigastric tenderness on palpation, firmness noted around abdomen, no masses palpable\n- Left leg examination: mild venous insufficiency signs, slightly more red compared to right leg, few visible veins but not varicose,\n- Left leg non-pitting oedema present\n\nAssessment:\n- Unilateral left leg swelling - ?venous insufficiency vs DVT vs pelvic pathology\n\nPlan:\n- General blood tests including D-dimer to exclude DVT\n- Pelvic ultrasound to exclude pelvic pathology causing leg swelling\n-- If D-dimer positive, leg ultrasound to be arranged\n- Continue current exercise programme including pulmonary rehabilitation and walking club\n- Weight loss encouraged as main treatment for venous insufficiency",
+    "ai_verdict": "declined",
+    "ai_verdict_title": "Referral likely to be declined",
+    "ai_verdict_summary": "Ultrasound pelvis for unilateral leg swelling does not meet any funded criteria \u2014 this presentation is not an indication for pelvic ultrasound.",
+    "ai_met_criteria": [
+      "Patient is female [p46]",
+      "Age 64 years documented [p46]",
+      "Post-menopausal status documented (ceased menstruation in 50s) [p46]"
+    ],
+    "ai_missing_criteria": [
+      "No pelvic mass palpable on examination [p46]",
+      "No vaginal bleeding documented [p46]",
+      "No pelvic pain documented [p46]",
+      "No Ca-125 result documented [p46]",
+      "No abnormal uterine bleeding documented [p46]",
+      "No symptoms suggestive of ovarian pathology documented [p46]"
+    ],
+    "ai_notes": "Pelvic ultrasound is not indicated for investigating unilateral leg swelling. The funded criteria for pelvic ultrasound relate to gynaecological symptoms such as bleeding, pelvic pain, or suspected masses. Leg swelling from pelvic venous compression would typically be bilateral. For unilateral leg swelling with venous insufficiency signs, vascular assessment is more appropriate.",
+    "ai_redirect": "Unilateral leg swelling with normal D-dimer and venous insufficiency signs \u2014 consider vascular assessment or venous duplex ultrasound of the leg rather than pelvic ultrasound",
+    "ai_safety_alert": null,
+    "ai_suggested_wording": null,
+    "overrides": null
+  },
+  {
+    "id": 224,
+    "timestamp": "2026-05-30T05:37:31.365Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Scrotum",
+    "model_used": "claude-sonnet-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 223,
+      "cache_read": 23809,
+      "cache_write": 0,
+      "output": 547
+    },
+    "cost_nzd": 0.0256,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "Ultrasound Scrotum/Testicle\n64 yo man\nHas lump under left breast- tender. Also lump on testical- non tender but thinks at times can be tender. No hx of ca. No unintentinal weight loss, no night sweats, no change in bowel habits. Feels well in himself. Noticed in maybe 3 months ago.",
+    "interpreted_note": "Ultrasound Scrotum/Testicle\n64 yo man\nHas lump under left breast- tender. Also lump on testicle- non tender but thinks at times can be tender. No hx of ca. No unintentional weight loss, no night sweats, no change in bowel habits. Feels well in himself. Noticed in maybe 3 months ago.",
+    "ai_verdict": "at_risk",
+    "ai_verdict_title": "Referral at risk \u2014 add missing information",
+    "ai_verdict_summary": "Scrotal lump present but unclear whether testicular or extra-testicular, and transillumination status not documented.",
+    "ai_met_criteria": [
+      "Scrotal lump present [p57]",
+      "Duration approximately 3 months [p57]"
+    ],
+    "ai_missing_criteria": [
+      "Whether swelling is testicular or extra-testicular [p57]",
+      "Whether mass is transilluminating or non-transilluminating [p57]"
+    ],
+    "ai_notes": "The referral mentions a breast lump which may warrant separate assessment via breast symptoms pathway. P3 pathway applies for scrotal lumps where it is unclear whether testicular or extra-testicular and is non-transilluminating.",
+    "ai_redirect": null,
+    "ai_safety_alert": null,
+    "ai_suggested_wording": "Ultrasound Scrotum/Testicle\n64 yo man\nHas lump under left breast- tender. Also lump on testicle- non tender but thinks at times can be tender. No hx of ca. No unintentional weight loss, no night sweats, no change in bowel habits. Feels well in himself. Noticed in maybe 3 months ago.\nExamination: Scrotal lump present, unclear whether testicular or extra-testicular origin, non-transilluminating.",
+    "overrides": null
+  },
+  {
+    "id": 225,
+    "timestamp": "2026-05-30T05:37:33.083Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Scrotum",
+    "model_used": "claude-opus-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 223,
+      "cache_read": 23809,
+      "cache_write": 0,
+      "output": 562
+    },
+    "cost_nzd": 0.0433,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "Ultrasound Scrotum/Testicle\n64 yo man\nHas lump under left breast- tender. Also lump on testical- non tender but thinks at times can be tender. No hx of ca. No unintentinal weight loss, no night sweats, no change in bowel habits. Feels well in himself. Noticed in maybe 3 months ago.",
+    "interpreted_note": "Ultrasound Scrotum/Testicle. 64 yo man. Has lump under left breast- tender. Also lump on testicle- non tender but thinks at times can be tender. No hx of ca. No unintentional weight loss, no night sweats, no change in bowel habits. Feels well in himself. Noticed in maybe 3 months ago.",
+    "ai_verdict": "at_risk",
+    "ai_verdict_title": "Referral at risk \u2014 add missing information",
+    "ai_verdict_summary": "Scrotal lump assessment requires clarification of whether the lump is testicular or extra-testicular and whether it transilluminates.",
+    "ai_met_criteria": [
+      "Scrotal lump present [p57]",
+      "Duration documented (3 months) [p57]"
+    ],
+    "ai_missing_criteria": [
+      "Whether swelling is testicular or extra-testicular [p57]",
+      "Whether lump is transilluminating or non-transilluminating [p57]"
+    ],
+    "ai_notes": "Note: The breast lump mentioned requires separate assessment and is not part of the scrotal ultrasound referral criteria. If the scrotal lump is non-transilluminating and unclear whether testicular or extra-testicular, it would meet P3 criteria.",
+    "ai_redirect": null,
+    "ai_safety_alert": null,
+    "ai_suggested_wording": "Ultrasound Scrotum. 64 yo man. Has lump under left breast- tender. Also lump on testicle noticed 3 months ago - non tender but thinks at times can be tender. On examination, the scrotal lump is [testicular/extra-testicular] and [transilluminates/does not transilluminate]. No history of cancer. No unintentional weight loss, no night sweats, no change in bowel habits. Feels well in himself.",
+    "overrides": null
+  },
+  {
+    "id": 226,
+    "timestamp": "2026-05-30T05:39:36.371Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Pelvis",
+    "model_used": "claude-sonnet-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 210,
+      "cache_read": 23809,
+      "cache_write": 0,
+      "output": 355
+    },
+    "cost_nzd": 0.0208,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "Pelvic uss\n26 yo woman\nkeen for TOP, please provide the USS required, keen for medical management - currently 6 weeks gestation \n\nLMP: 17th Jan \nDue Date: 23rd October \n\nnot ready \nnegative blood type - will need anti D \n\nno PVB at present",
+    "interpreted_note": "Pelvic USS\n26 yo woman\nkeen for TOP, please provide the USS required, keen for medical management - currently 6 weeks gestation\n\nLMP: 17th Jan\nDue Date: 23rd October\n\nnot ready\nnegative blood type - will need anti D\n\nno PVB at present",
+    "ai_verdict": "declined",
+    "ai_verdict_title": "Referral likely to be declined",
+    "ai_verdict_summary": "This referral is for pregnancy assessment prior to termination, which is not covered under CRR criteria.",
+    "ai_met_criteria": [
+      "26 year old woman documented [p46]",
+      "No post-vaginal bleeding documented [p46]"
+    ],
+    "ai_missing_criteria": [],
+    "ai_notes": "The referral is specifically requesting ultrasound for termination of pregnancy assessment. This falls outside CRR criteria which cover gynaecological pathology assessment, not pregnancy management or termination services.",
+    "ai_redirect": "Pregnancy assessment for termination of pregnancy should be referred through appropriate reproductive health services or family planning clinics, not CRR",
+    "ai_safety_alert": null,
+    "ai_suggested_wording": null,
+    "overrides": null
+  },
+  {
+    "id": 227,
+    "timestamp": "2026-05-30T05:39:39.652Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Pelvis",
+    "model_used": "claude-opus-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 210,
+      "cache_read": 23809,
+      "cache_write": 0,
+      "output": 354
+    },
+    "cost_nzd": 0.0347,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "Pelvic uss\n26 yo woman\nkeen for TOP, please provide the USS required, keen for medical management - currently 6 weeks gestation \n\nLMP: 17th Jan \nDue Date: 23rd October \n\nnot ready \nnegative blood type - will need anti D \n\nno PVB at present",
+    "interpreted_note": "Pelvic USS\n26 yo woman\nkeen for TOP, please provide the USS required, keen for medical management - currently 6 weeks gestation\n\nLMP: 17th Jan\nDue Date: 23rd October\n\nnot ready\nnegative blood type - will need anti D\n\nno PVB at present",
+    "ai_verdict": "declined",
+    "ai_verdict_title": "Referral likely to be declined",
+    "ai_verdict_summary": "Termination of pregnancy (TOP) ultrasound is not funded under CRR criteria \u2014 refer through appropriate maternity or TOP services pathway.",
+    "ai_met_criteria": [
+      "Age documented: 26 years [p46]",
+      "No PVB (per vaginal bleeding) documented [p46]"
+    ],
+    "ai_missing_criteria": [],
+    "ai_notes": "TOP-related ultrasound is typically funded through maternity or specific TOP service pathways rather than community radiology referral criteria",
+    "ai_redirect": "Termination of pregnancy ultrasound \u2014 refer through local TOP services or maternity services pathway, not CRR",
+    "ai_safety_alert": null,
+    "ai_suggested_wording": null,
+    "overrides": null
+  },
+  {
+    "id": 228,
+    "timestamp": "2026-05-30T05:45:07.724Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Pelvis",
+    "model_used": "claude-sonnet-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 665,
+      "cache_read": 0,
+      "cache_write": 23809,
+      "output": 1116
+    },
+    "cost_nzd": 0.1771,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "pelvic uss request\n29 yo female\n\nunable to come due to living in North shore and looking after 2 children\n\nmissed last period but felt period pain with severe bloating and felt like pregnant again\nLMP 37 days ago\nalthough she had irregular periods in the past, usually 16-30 days cycle and never more than 30 days cycle\nnot on any contraception\nnegative urine preg test\nnil vaginal discharge\n\nnoted previous consult with colleague in Sept 2025- pt did not use TXA and Naproxen as her symptoms resolved at that time\n\nImp\n?endometriosis\n?ovarian pathology\n\n[NAME REDACTED] with PPI cover for pain\ndiscussed about trial of COCP or cerazette- pt declined\nadvised urgent blood test to do CA125\nwill request urgent USS pelvis to rule out ovarian pathology \n\nDate: 02/09/2025 12:08:56 PC \nconfirmed pt details\n\nirregular periods for last few months\ncycles vary between 16-30 days\nbleeding 4-5 days \nPreviously normal, every 26-27 days\n\n2 kids \n\nNow heavier periods, bleeding throug super tampons\nbad back and hip pain during menses\nmood hard to regulate\ncrying, angry\nchange in DC during ovulation, thicker\nno vaginal itch \ncramps left thigh\nbloaitng and neuase after eating in last month\nno changes to bowels\nsome pelvic pain on intercouse, deep \n\nNo palpitation\nno hot flush\nno fevers\n\nHx of PID when teenager\nIn stable long term relationship with husband\nClosed relationship\nSister hx endo\n\nBreifly dsicussed contraception\nWas on tablets before and depot\nnot keen on going back on hromonal contraception\nNot currently trying to get rpegnant\n\nImproession:\nIrregualr periods ? cause\n\n\nPLan:\n1. TXA and naproxen\n2. bloods\n- D1-5 of period ideally\n3. TCI for review after bloods\n- for Cx (due Dec)\n- vaginal swab \n4. Consider repeat peliv USS for ? endo\n5. Further dsicussion about hormonal options, if endo POP better than COCP",
+    "interpreted_note": "pelvic uss request\n29 yo female\n\nunable to come due to living in North shore and looking after 2 children\n\nmissed last period but felt period pain with severe bloating and felt like pregnant again\nLMP 37 days ago\nalthough she had irregular periods in the past, usually 16-30 days cycle and never more than 30 days cycle\nnot on any contraception\nnegative urine preg test\nnil vaginal discharge\n\nnoted previous consult with colleague in Sept 2025- pt did not use TXA and Naproxen as her symptoms resolved at that time\n\nImp\n?endometriosis\n?ovarian pathology\n\n[NAME REDACTED] with PPI cover for pain\ndiscussed about trial of COCP or cerazette- pt declined\nadvised urgent blood test to do CA125\nwill request urgent USS pelvis to rule out ovarian pathology\n\nDate: 02/09/2025 12:08:56 PC\nconfirmed pt details\n\nirregular periods for last few months\ncycles vary between 16-30 days\nbleeding 4-5 days\nPreviously normal, every 26-27 days\n\n2 kids\n\nNow heavier periods, bleeding through super tampons\nbad back and hip pain during menses\nmood hard to regulate\ncrying, angry\nchange in DC during ovulation, thicker\nno vaginal itch\ncramps left thigh\nbloating and nausea after eating in last month\nno changes to bowels\nsome pelvic pain on intercourse, deep\n\nNo palpitation\nno hot flush\nno fevers\n\nHx of PID when teenager\nIn stable long term relationship with husband\nClosed relationship\nSister hx endo\n\nBriefly discussed contraception\nWas on tablets before and depot\nnot keen on going back on hormonal contraception\nNot currently trying to get pregnant\n\nImpression:\nIrregular periods ? cause\n\nPlan:\n1. TXA and naproxen\n2. bloods\n- D1-5 of period ideally\n3. TCI for review after bloods\n- for Cx (due Dec)\n- vaginal swab\n4. Consider repeat pelvic USS for ? endo\n5. Further discussion about hormonal options, if endo POP better than COCP",
+    "ai_verdict": "declined",
+    "ai_verdict_title": "Referral likely to be declined",
+    "ai_verdict_summary": "This referral does not meet CRR criteria as suspected endometriosis without a palpable mass should be referred to secondary care rather than imaging.",
+    "ai_met_criteria": [
+      "29 year old female [p46]",
+      "Irregular periods for last few months, cycles vary between 16-30 days [p46]",
+      "Heavier periods, bleeding through super tampons [p46]",
+      "Pelvic pain on intercourse, deep [p46]",
+      "Sister history of endometriosis [p46]"
+    ],
+    "ai_missing_criteria": [
+      "No palpable pelvic mass documented on examination [p46]"
+    ],
+    "ai_notes": "The note describes symptoms suggestive of endometriosis but does not document pelvic examination findings. CRR criteria require a palpable mass for USS pelvis in suspected endometriosis cases. Without documented examination findings showing a palpable mass, this should be managed via the Endometriosis HealthPathway rather than direct imaging.",
+    "ai_redirect": "Suspected endometriosis in the absence of a clinically palpable mass \u2014 see local Endometriosis HealthPathway",
+    "ai_safety_alert": null,
+    "ai_suggested_wording": "29 year old female with irregular periods for last few months, cycles vary between 16-30 days (previously normal every 26-27 days). Now heavier periods, bleeding through super tampons. Pelvic pain on intercourse, deep. Sister history of endometriosis. On examination: [document pelvic examination findings including presence or absence of palpable masses]. Plan: USS pelvis for suspected endometriosis with palpable mass.",
+    "overrides": null
+  },
+  {
+    "id": 229,
+    "timestamp": "2026-05-30T05:45:27.818Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Pelvis",
+    "model_used": "claude-opus-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 665,
+      "cache_read": 0,
+      "cache_write": 23809,
+      "output": 1354
+    },
+    "cost_nzd": 0.305,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "pelvic uss request\n29 yo female\n\nunable to come due to living in North shore and looking after 2 children\n\nmissed last period but felt period pain with severe bloating and felt like pregnant again\nLMP 37 days ago\nalthough she had irregular periods in the past, usually 16-30 days cycle and never more than 30 days cycle\nnot on any contraception\nnegative urine preg test\nnil vaginal discharge\n\nnoted previous consult with colleague in Sept 2025- pt did not use TXA and Naproxen as her symptoms resolved at that time\n\nImp\n?endometriosis\n?ovarian pathology\n\n[NAME REDACTED] with PPI cover for pain\ndiscussed about trial of COCP or cerazette- pt declined\nadvised urgent blood test to do CA125\nwill request urgent USS pelvis to rule out ovarian pathology \n\nDate: 02/09/2025 12:08:56 PC \nconfirmed pt details\n\nirregular periods for last few months\ncycles vary between 16-30 days\nbleeding 4-5 days \nPreviously normal, every 26-27 days\n\n2 kids \n\nNow heavier periods, bleeding throug super tampons\nbad back and hip pain during menses\nmood hard to regulate\ncrying, angry\nchange in DC during ovulation, thicker\nno vaginal itch \ncramps left thigh\nbloaitng and neuase after eating in last month\nno changes to bowels\nsome pelvic pain on intercouse, deep \n\nNo palpitation\nno hot flush\nno fevers\n\nHx of PID when teenager\nIn stable long term relationship with husband\nClosed relationship\nSister hx endo\n\nBreifly dsicussed contraception\nWas on tablets before and depot\nnot keen on going back on hromonal contraception\nNot currently trying to get rpegnant\n\nImproession:\nIrregualr periods ? cause\n\n\nPLan:\n1. TXA and naproxen\n2. bloods\n- D1-5 of period ideally\n3. TCI for review after bloods\n- for Cx (due Dec)\n- vaginal swab \n4. Consider repeat peliv USS for ? endo\n5. Further dsicussion about hormonal options, if endo POP better than COCP",
+    "interpreted_note": "pelvic USS request\n29 yo female\n\nunable to come due to living in North shore and looking after 2 children\n\nmissed last period but felt period pain with severe bloating and felt like pregnant again\nLMP 37 days ago\nalthough she had irregular periods in the past, usually 16-30 days cycle and never more than 30 days cycle\nnot on any contraception\nnegative urine pregnancy test\nnil vaginal discharge\n\nnoted previous consult with colleague in Sept 2025- pt did not use TXA and Naproxen as her symptoms resolved at that time\n\nImp\n?endometriosis\n?ovarian pathology\n\n[NAME REDACTED] with PPI cover for pain\ndiscussed about trial of COCP or cerazette- pt declined\nadvised urgent blood test to do CA125\nwill request urgent USS pelvis to rule out ovarian pathology\n\nDate: 02/09/2025 12:08:56 PC\nconfirmed pt details\n\nirregular periods for last few months\ncycles vary between 16-30 days\nbleeding 4-5 days\nPreviously normal, every 26-27 days\n\n2 kids\n\nNow heavier periods, bleeding through super tampons\nbad back and hip pain during menses\nmood hard to regulate\ncrying, angry\nchange in DC during ovulation, thicker\nno vaginal itch\ncramps left thigh\nbloating and nausea after eating in last month\nno changes to bowels\nsome pelvic pain on intercourse, deep\n\nNo palpitation\nno hot flush\nno fevers\n\nHx of PID when teenager\nIn stable long term relationship with husband\nClosed relationship\nSister hx endo\n\nBriefly discussed contraception\nWas on tablets before and depot\nnot keen on going back on hormonal contraception\nNot currently trying to get pregnant\n\nImpression:\nIrregular periods ? cause\n\nPlan:\n1. TXA and naproxen\n2. bloods\n- D1-5 of period ideally\n3. TCI for review after bloods\n- for Cx (due Dec)\n- vaginal swab\n4. Consider repeat pelvic USS for ? endo\n5. Further discussion about hormonal options, if endo POP better than COCP",
+    "ai_verdict": "at_risk",
+    "ai_verdict_title": "Referral at risk \u2014 add missing information",
+    "ai_verdict_summary": "Referral meets criteria for P3 ultrasound pelvis but requires documentation of Ca-125 result.",
+    "ai_met_criteria": [
+      "Female aged 29 years [p46]",
+      "Abnormal uterine bleeding (AUB) \u2014 irregular periods for last few months, cycles vary between 16-30 days, heavier periods [p46]",
+      "Non-uterine causes excluded \u2014 nil vaginal discharge documented [p46]",
+      "Age younger than 45 years [p46]",
+      "One risk factor for EH/EC \u2014 nulliparity and older than 35 (patient is 29 with 2 kids, so this is not met) [p46]",
+      "Not responded to first-line treatment trialled for at least 3 months \u2014 TXA and naproxen prescribed in Sept 2025 but patient did not use them as symptoms resolved [p46]"
+    ],
+    "ai_missing_criteria": [
+      "Ca-125 result \u2014 advised urgent blood test to do CA125 but result not documented [p46]"
+    ],
+    "ai_notes": "Note: While the referral mentions suspicion of ovarian pathology and Ca-125 testing was advised, the P3 criteria for 'new abdominal or pelvic symptoms on a persistent or frequent basis AND Ca-125 \u226535 units/mL' requires the actual Ca-125 result to be documented. The referral currently meets P3 criteria under 'Women aged younger than 45 years with AUB who have not responded to first-line treatment trialled for at least 3 months' given that treatment was prescribed but not taken due to symptom resolution.",
+    "ai_redirect": null,
+    "ai_safety_alert": null,
+    "ai_suggested_wording": "29 year old female with abnormal uterine bleeding. Irregular periods for last few months with cycles varying between 16-30 days (previously normal 26-27 day cycles). Now experiencing heavier periods bleeding through super tampons. Associated symptoms include bad back and hip pain during menses, left thigh cramps, bloating and nausea after eating for the last month, and deep pelvic pain on intercourse. Non-uterine causes excluded with nil vaginal discharge. Negative urine pregnancy test. History of PID as teenager. Sister has endometriosis. First-line treatment with TXA and naproxen was prescribed in September 2025 but patient did not use as symptoms resolved at that time. Ca-125 result: [insert value] units/mL. Clinical suspicion of endometriosis or ovarian pathology.",
+    "overrides": null
+  },
+  {
+    "id": 230,
+    "timestamp": "2026-05-30T05:51:25.118Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Pelvis \u2014 Ultrasound",
+    "model_used": "claude-sonnet-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 457,
+      "cache_read": 0,
+      "cache_write": 7731,
+      "output": 621
+    },
+    "cost_nzd": 0.064,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "pelvic uss \n24  year old woman\n\nThank you arranging pelvic ultaround for Grace 24 years AUT student presents with six-month history of progressively worsening right-sided unilateral pelvic pain with long-standing dysmenorrhoea since menarche (age 12.5). On combined OCP \ufffd bleeding improved but ongoing significant pain pre-menstrually and during menses; periods last 7\ufffd8 days. No OCP side effects. Previous trial of progestogen-only pill caused menorrhagia.\n\nSignificant dyspareunia \ufffd unable to tolerate penetrative intercourse. No new sexual partner no STD is required as per patient. \n\nIn our clinic when initialy presented with RLQ pain- the pelvic exam was poorly tolerated, able to insert only one finger cervix not assessable. Grace not keen on repated bimanual examiantion today. Abdomen:soft, generalised tenderness, no masses. BP:110/74 mmHg BMI-31.6\n\nFHx: mother and sisters with painful periods; no known endometriosis.\nThank you you arranging a pelvic ultrasound for diagnsotic clarification of persistent R sided unilateral pevic pain PLEASE NOTE patient is OK for attempting TV pelvic imaging.\n\nPelvic floor physio to be arranged \nGynae ref after pelvic ultrasound",
+    "interpreted_note": "pelvic uss\n24 year old woman\n\nThank you arranging pelvic ultrasound for Grace 24 years AUT student presents with six-month history of progressively worsening right-sided unilateral pelvic pain with long-standing dysmenorrhoea since menarche (age 12.5). On combined OCP \u2013 bleeding improved but ongoing significant pain pre-menstrually and during menses; periods last 7\u20138 days. No OCP side effects. Previous trial of progestogen-only pill caused menorrhagia.\n\nSignificant dyspareunia \u2013 unable to tolerate penetrative intercourse. No new sexual partner no STD is required as per patient.\n\nIn our clinic when initially presented with RLQ pain- the pelvic exam was poorly tolerated, able to insert only one finger cervix not assessable. Grace not keen on repeated bimanual examination today. Abdomen:soft, generalised tenderness, no masses. BP:110/74 mmHg BMI-31.6\n\nFHx: mother and sisters with painful periods; no known endometriosis.\nThank you you arranging a pelvic ultrasound for diagnostic clarification of persistent R sided unilateral pelvic pain PLEASE NOTE patient is OK for attempting TV pelvic imaging.\n\nPelvic floor physio to be arranged\nGynae ref after pelvic ultrasound",
+    "ai_verdict": "declined",
+    "ai_verdict_title": "Referral likely to be declined",
+    "ai_verdict_summary": "This referral does not meet paediatric criteria as the patient is 24 years old and adult criteria would apply.",
+    "ai_met_criteria": [],
+    "ai_missing_criteria": [
+      "Patient is 24 years old - paediatric criteria do not apply"
+    ],
+    "ai_notes": "Patient is 24 years old presenting with chronic pelvic pain and dysmenorrhoea. This case requires assessment under adult pelvic ultrasound criteria, not paediatric criteria.",
+    "ai_redirect": "Adult criteria apply - patient is 24 years old, not paediatric",
+    "ai_safety_alert": null,
+    "ai_suggested_wording": "This patient is 24 years old and requires assessment under adult criteria. Please refer to the adult pelvic ultrasound criteria for appropriate pathway assessment.",
+    "overrides": null
+  },
+  {
+    "id": 231,
+    "timestamp": "2026-05-30T05:51:26.392Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Pelvis",
+    "model_used": "claude-opus-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 457,
+      "cache_read": 0,
+      "cache_write": 7731,
+      "output": 567
+    },
+    "cost_nzd": 0.1044,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "pelvic uss \n24  year old woman\n\nThank you arranging pelvic ultaround for Grace 24 years AUT student presents with six-month history of progressively worsening right-sided unilateral pelvic pain with long-standing dysmenorrhoea since menarche (age 12.5). On combined OCP \ufffd bleeding improved but ongoing significant pain pre-menstrually and during menses; periods last 7\ufffd8 days. No OCP side effects. Previous trial of progestogen-only pill caused menorrhagia.\n\nSignificant dyspareunia \ufffd unable to tolerate penetrative intercourse. No new sexual partner no STD is required as per patient. \n\nIn our clinic when initialy presented with RLQ pain- the pelvic exam was poorly tolerated, able to insert only one finger cervix not assessable. Grace not keen on repated bimanual examiantion today. Abdomen:soft, generalised tenderness, no masses. BP:110/74 mmHg BMI-31.6\n\nFHx: mother and sisters with painful periods; no known endometriosis.\nThank you you arranging a pelvic ultrasound for diagnsotic clarification of persistent R sided unilateral pevic pain PLEASE NOTE patient is OK for attempting TV pelvic imaging.\n\nPelvic floor physio to be arranged \nGynae ref after pelvic ultrasound",
+    "interpreted_note": "pelvic uss\n24 year old woman\n\nThank you arranging pelvic ultrasound for Grace 24 years AUT student presents with six-month history of progressively worsening right-sided unilateral pelvic pain with long-standing dysmenorrhoea since menarche (age 12.5). On combined OCP \u2013 bleeding improved but ongoing significant pain pre-menstrually and during menses; periods last 7\u20138 days. No OCP side effects. Previous trial of progestogen-only pill caused menorrhagia.\n\nSignificant dyspareunia \u2013 unable to tolerate penetrative intercourse. No new sexual partner no STD is required as per patient.\n\nIn our clinic when initially presented with RLQ pain- the pelvic exam was poorly tolerated, able to insert only one finger cervix not assessable. Grace not keen on repeated bimanual examination today. Abdomen:soft, generalised tenderness, no masses. BP:110/74 mmHg BMI-31.6\n\nFHx: mother and sisters with painful periods; no known endometriosis.\nThank you you arranging a pelvic ultrasound for diagnostic clarification of persistent R sided unilateral pelvic pain PLEASE NOTE patient is OK for attempting TV pelvic imaging.\n\nPelvic floor physio to be arranged\nGynae ref after pelvic ultrasound",
+    "ai_verdict": "proceeds",
+    "ai_verdict_title": "Referral likely to proceed",
+    "ai_verdict_summary": "Referral meets criteria for pelvic ultrasound based on chronic pelvic pain with dysmenorrhoea and dyspareunia.",
+    "ai_met_criteria": [
+      "Chronic pelvic pain (>6 months) [p73]",
+      "Dysmenorrhoea [p73]",
+      "Dyspareunia [p73]"
+    ],
+    "ai_missing_criteria": [],
+    "ai_notes": null,
+    "ai_redirect": null,
+    "ai_safety_alert": null,
+    "ai_suggested_wording": null,
+    "overrides": null
+  },
+  {
+    "id": 232,
+    "timestamp": "2026-05-30T05:55:05.584Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Chest/Abdomen/Pelvis",
+    "model_used": "claude-sonnet-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 236,
+      "cache_read": 0,
+      "cache_write": 23809,
+      "output": 591
+    },
+    "cost_nzd": 0.1639,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "CT chest abdo pelvis\n68 yo man\nSudden onset painless jaundice.\nDate: 19/12/2025 16:03:59 diabetes\non metformin 2 bd\nhas tried cutting down and stopping metformin\nocc doscomfort R side some pallor and jaundice\nliver ~ 2 cm\n\\bp 141/90\n\\hr 93 \n \\wt 58",
+    "interpreted_note": "CT chest abdo pelvis\n68 yo man\nSudden onset painless jaundice.\nDate: 19/12/2025 16:03:59 diabetes\non metformin 2 bd\nhas tried cutting down and stopping metformin\noccasional discomfort R side some pallor and jaundice\nliver ~ 2 cm\nbp 141/90\nhr 93\nwt 58",
+    "ai_verdict": "declined",
+    "ai_verdict_title": "Referral likely to be declined",
+    "ai_verdict_summary": "Painless jaundice requires urgent ultrasound abdomen first, not CT CAP.",
+    "ai_met_criteria": [
+      "Male >50 [p10]",
+      "Abdominal symptoms (occasional discomfort R side) [p10]"
+    ],
+    "ai_missing_criteria": [
+      "Unintentional unexplained weight loss >5% over 3-6 months [p10]",
+      "2+ persistently abnormal bloods (Hb, CRP, Ca, ALP, platelets, albumin) [p10]"
+    ],
+    "ai_notes": "Painless jaundice is specifically listed as Acute 48hr priority for ultrasound abdomen [p31]. CT CAP criteria require weight loss documentation and abnormal blood results that are not provided in this note.",
+    "ai_redirect": "Painless jaundice without obvious cause requires urgent ultrasound abdomen as first-line investigation - see Ultrasound Abdomen pathway [p31]",
+    "ai_safety_alert": null,
+    "ai_suggested_wording": "68 yo man with unintentional weight loss >5% over 3-6 months and strong suspicion of malignancy. Occasional right-sided abdominal discomfort. Recent bloods show 2+ persistently abnormal results: [specify which of Hb, CRP, Ca, ALP, platelets, albumin are abnormal]. No focal pathology identified on examination or initial investigations. Diabetes on metformin.",
+    "overrides": null
+  },
+  {
+    "id": 233,
+    "timestamp": "2026-05-30T05:55:06.188Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Chest/Abdomen/Pelvis",
+    "model_used": "claude-opus-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 236,
+      "cache_read": 0,
+      "cache_write": 23809,
+      "output": 400
+    },
+    "cost_nzd": 0.2652,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "CT chest abdo pelvis\n68 yo man\nSudden onset painless jaundice.\nDate: 19/12/2025 16:03:59 diabetes\non metformin 2 bd\nhas tried cutting down and stopping metformin\nocc doscomfort R side some pallor and jaundice\nliver ~ 2 cm\n\\bp 141/90\n\\hr 93 \n \\wt 58",
+    "interpreted_note": "CT chest abdo pelvis. 68 yo man. Sudden onset painless jaundice. Date: 19/12/2025 16:03:59. Diabetes on metformin 2 bd. Has tried cutting down and stopping metformin. Occasional discomfort R side, some pallor and jaundice. Liver ~ 2 cm. BP 141/90. HR 93. Wt 58.",
+    "ai_verdict": "declined",
+    "ai_verdict_title": "Referral likely to be declined",
+    "ai_verdict_summary": "Painless jaundice requires acute assessment via ultrasound abdomen first, not CT CAP.",
+    "ai_met_criteria": [],
+    "ai_missing_criteria": [],
+    "ai_notes": "CT CAP criteria require strong suspicion of malignancy with weight loss >5% over 3-6 months plus other features. This presentation of painless jaundice has its own acute pathway via ultrasound.",
+    "ai_redirect": "Ultrasound Abdomen \u2014 Acute within 48 hours for painless jaundice without obvious cause (consider discussing with secondary care or PCRL \u2014 CT may be more appropriate) [p31]",
+    "ai_safety_alert": "Painless jaundice requires urgent investigation \u2014 refer for acute ultrasound abdomen within 48 hours as first-line investigation",
+    "ai_suggested_wording": null,
+    "overrides": null
+  },
+  {
+    "id": 234,
+    "timestamp": "2026-05-30T05:57:31.613Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Renal \u2014 Ultrasound",
+    "model_used": "claude-sonnet-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 305,
+      "cache_read": 23809,
+      "cache_write": 0,
+      "output": 669
+    },
+    "cost_nzd": 0.0287,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "requesting renal ultrasound and soft tissue ultrasound\n82 year old woman\nDate: 17/12/2025 13:35:20 Ongoing issues with LUQ ache in her back radaiites to L side needs to hold herself on L \nfeels liek something has shifted to wrong place \nothwerwise well in herslef \nhas tried removing various things from diet - not made a diffrence has lost \nFisding this ache really tiring \nache causing cough \nFeel like she i s blaoted and lots of gas \nBeching - H pylori neg pain is just above the L lipoma \n\n\n\nPLAN \nRefer surgeon ?> needs CT and removal of same \nalso refer USS",
+    "interpreted_note": "requesting renal ultrasound and soft tissue ultrasound\n82 year old woman\nDate: 17/12/2025 13:35:20 Ongoing issues with LUQ ache in her back radiates to L side needs to hold herself on L\nfeels like something has shifted to wrong place\notherwise well in herself\nhas tried removing various things from diet - not made a difference has lost\nFinding this ache really tiring\nache causing cough\nFeel like she is bloated and lots of gas\nBelching - H pylori neg pain is just above the L lipoma\n\nPLAN\nRefer surgeon ?> needs CT and removal of same\nalso refer USS",
+    "ai_verdict": "declined",
+    "ai_verdict_title": "Referral likely to be declined",
+    "ai_verdict_summary": "The clinical presentation does not match any funded criteria for renal ultrasound.",
+    "ai_met_criteria": [],
+    "ai_missing_criteria": [
+      "No documented criteria for renal ultrasound: no macroscopic haematuria, no microscopic haematuria, no renal colic, no pyelonephritis, no acute renal function deterioration, no chronic urinary retention, no new CKD diagnosis, no varicocele, no recurrent UTIs, no urinary incontinence in men, no recurrent loin pain suggesting obstruction [p53]"
+    ],
+    "ai_notes": "The note requests both renal and soft tissue ultrasound but the clinical presentation (LUQ pain, bloating, belching) does not match renal ultrasound criteria. The soft tissue ultrasound for lipoma assessment would need separate evaluation under the soft tissue ultrasound pathway.",
+    "ai_redirect": "Left upper quadrant pain with bloating and systemic symptoms may warrant CT abdomen rather than renal ultrasound - see CT Chest/Abdomen/Pelvis pathway or discuss with PCRL",
+    "ai_safety_alert": null,
+    "ai_suggested_wording": "82 year old woman with ongoing left upper quadrant ache radiating to left side, associated with bloating, gas, belching, and cough. Pain described as tiring and feels like 'something has shifted to wrong place'. H pylori negative. Pain located just above left lipoma. Patient otherwise well. Requesting renal ultrasound for [specific funded indication needed] and soft tissue ultrasound for assessment of left lipoma.",
+    "overrides": null
+  },
+  {
+    "id": 235,
+    "timestamp": "2026-05-30T05:57:41.323Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Abdomen \u2014 Renal",
+    "model_used": "claude-opus-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 305,
+      "cache_read": 23809,
+      "cache_write": 0,
+      "output": 808
+    },
+    "cost_nzd": 0.0536,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "requesting renal ultrasound and soft tissue ultrasound\n82 year old woman\nDate: 17/12/2025 13:35:20 Ongoing issues with LUQ ache in her back radaiites to L side needs to hold herself on L \nfeels liek something has shifted to wrong place \nothwerwise well in herslef \nhas tried removing various things from diet - not made a diffrence has lost \nFisding this ache really tiring \nache causing cough \nFeel like she i s blaoted and lots of gas \nBeching - H pylori neg pain is just above the L lipoma \n\n\n\nPLAN \nRefer surgeon ?> needs CT and removal of same \nalso refer USS",
+    "interpreted_note": "requesting renal ultrasound and soft tissue ultrasound. 82 year old woman. Date: 17/12/2025 13:35:20 Ongoing issues with LUQ ache in her back radiates to L side needs to hold herself on L feels like something has shifted to wrong place otherwise well in herself has tried removing various things from diet - not made a difference has lost Finding this ache really tiring ache causing cough Feel like she is bloated and lots of gas Belching - H pylori neg pain is just above the L lipoma PLAN Refer surgeon ?> needs CT and removal of same also refer USS",
+    "ai_verdict": "at_risk",
+    "ai_verdict_title": "Referral at risk \u2014 add missing information",
+    "ai_verdict_summary": "Left upper quadrant pain requires more specific clinical details to meet criteria for either abdominal or renal ultrasound.",
+    "ai_met_criteria": [
+      "Patient age documented (82 years) [p31]",
+      "Gender documented (woman) [p53]"
+    ],
+    "ai_missing_criteria": [
+      "Duration of symptoms not specified (required: >4 weeks for recurrent pain) [p31]",
+      "No liver function tests documented (ALP, GGT, ALT, bilirubin) [p31]",
+      "No examination findings for abdominal mass or hepatomegaly [p31]",
+      "No urinary symptoms documented [p53]",
+      "No renal function tests (creatinine, eGFR) documented [p53]",
+      "No haematuria mentioned [p53]"
+    ],
+    "ai_notes": "Two ultrasound requests mentioned (renal and soft tissue) but clinical details primarily support abdominal ultrasound for LUQ pain investigation. Soft tissue ultrasound for lipoma would require separate assessment under soft tissue pathway.",
+    "ai_redirect": null,
+    "ai_safety_alert": null,
+    "ai_suggested_wording": "82-year-old woman with left upper quadrant pain for [X weeks/months]. Pain radiates to left side of back, feels like something has shifted. Associated with bloating, gas, and belching. H. pylori negative. Pain located just above left-sided lipoma. Otherwise well. Dietary modifications unsuccessful. No weight loss quantified. Examination findings: [document any masses, organomegaly, or tenderness]. LFTs: ALP [X], GGT [X], ALT [X], bilirubin [X]. Renal function: eGFR [X]. Urinalysis: [results if available]. No urinary symptoms. Requesting ultrasound abdomen to investigate cause of persistent LUQ pain.",
+    "overrides": null
+  },
+  {
+    "id": 236,
+    "timestamp": "2026-05-30T05:59:05.484Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Ultrasound \u2014 Soft Tissue",
+    "model_used": "claude-sonnet-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 345,
+      "cache_read": 23809,
+      "cache_write": 0,
+      "output": 668
+    },
+    "cost_nzd": 0.0287,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "82 year old woman \nrequesting uss soft tissue lump \nAppologies for clinical details \n24 nov had USS showing A well-encapsulated lesion is identified within the superficial soft\ntissue of the upper abdominal wall, at the left flank. It is\ngenerally isoechoic and measures 2.8 x 6.6 x 3.5 cm. It is partially\ncompressible to probe pressure, however no cystic spaces are\nidentified within it. There is minimal internal vascularity.\n\nCOMMENT:\nThe soft tissue lesion within the abdominal wall at the left flank\nis favoured to represent a lipoma, without suspicious features.. \nsince then ongoing pain in area lump is soft but feel more died and getting larger in size. \nPt is bnothered by pain and pressure of same. WOuld appreicate repeat imaging to see growth etc.",
+    "interpreted_note": "82 year old woman requesting USS soft tissue lump. Apologies for clinical details. 24 Nov had USS showing A well-encapsulated lesion is identified within the superficial soft tissue of the upper abdominal wall, at the left flank. It is generally isoechoic and measures 2.8 x 6.6 x 3.5 cm. It is partially compressible to probe pressure, however no cystic spaces are identified within it. There is minimal internal vascularity. COMMENT: The soft tissue lesion within the abdominal wall at the left flank is favoured to represent a lipoma, without suspicious features. Since then ongoing pain in area lump is soft but feels more fixed and getting larger in size. Patient is bothered by pain and pressure of same. Would appreciate repeat imaging to see growth etc.",
+    "ai_verdict": "at_risk",
+    "ai_verdict_title": "Referral at risk \u2014 add missing information",
+    "ai_verdict_summary": "The referral describes a changing soft tissue mass but lacks specific timeframe documentation for the changes and clear size comparison.",
+    "ai_met_criteria": [
+      "New lump on trunk with changing rapidly [p59]",
+      "Larger than 5cm (6.6cm documented) [p59]",
+      "Painful [p59]"
+    ],
+    "ai_missing_criteria": [
+      "Specific timeframe for 'changing rapidly' - need duration since 24 Nov USS [p59]",
+      "Quantified size increase documentation [p59]"
+    ],
+    "ai_notes": "The lump meets P2 criteria for urgent referral due to size >5cm, pain, and changing characteristics. However, specific timeframe documentation would strengthen the referral.",
+    "ai_redirect": null,
+    "ai_safety_alert": null,
+    "ai_suggested_wording": "82 year old woman requesting USS soft tissue lump. 24 Nov had USS showing well-encapsulated lesion in superficial soft tissue of upper abdominal wall, left flank, generally isoechoic measuring 2.8 x 6.6 x 3.5 cm, partially compressible, no cystic spaces, minimal internal vascularity. Radiology comment: soft tissue lesion favoured to represent lipoma without suspicious features. Since [specify date/timeframe], patient reports lump feels more fixed and is getting larger in size [specify current size if measured]. Patient bothered by ongoing pain and pressure in area. Request repeat imaging to assess for growth.",
+    "overrides": null
+  },
+  {
+    "id": 237,
+    "timestamp": "2026-05-30T05:59:09.700Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Soft Tissue",
+    "model_used": "claude-opus-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 345,
+      "cache_read": 23809,
+      "cache_write": 0,
+      "output": 560
+    },
+    "cost_nzd": 0.0433,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "82 year old woman \nrequesting uss soft tissue lump \nAppologies for clinical details \n24 nov had USS showing A well-encapsulated lesion is identified within the superficial soft\ntissue of the upper abdominal wall, at the left flank. It is\ngenerally isoechoic and measures 2.8 x 6.6 x 3.5 cm. It is partially\ncompressible to probe pressure, however no cystic spaces are\nidentified within it. There is minimal internal vascularity.\n\nCOMMENT:\nThe soft tissue lesion within the abdominal wall at the left flank\nis favoured to represent a lipoma, without suspicious features.. \nsince then ongoing pain in area lump is soft but feel more died and getting larger in size. \nPt is bnothered by pain and pressure of same. WOuld appreicate repeat imaging to see growth etc.",
+    "interpreted_note": "82 year old woman requesting USS soft tissue lump. Apologies for clinical details. 24 Nov had USS showing a well-encapsulated lesion is identified within the superficial soft tissue of the upper abdominal wall, at the left flank. It is generally isoechoic and measures 2.8 x 6.6 x 3.5 cm. It is partially compressible to probe pressure, however no cystic spaces are identified within it. There is minimal internal vascularity. COMMENT: The soft tissue lesion within the abdominal wall at the left flank is favoured to represent a lipoma, without suspicious features. Since then ongoing pain in area lump is soft but feel more solid and getting larger in size. Pt is bothered by pain and pressure of same. Would appreciate repeat imaging to see growth etc.",
+    "ai_verdict": "declined",
+    "ai_verdict_title": "Referral likely to be declined",
+    "ai_verdict_summary": "Follow-up of a previously diagnosed lipoma without suspicious features is not routinely funded under CRR criteria.",
+    "ai_met_criteria": [
+      "Patient age documented (82 years) [p59]",
+      "Gender documented (woman) [p59]",
+      "Previous ultrasound documented showing soft tissue mass [p59]"
+    ],
+    "ai_missing_criteria": [
+      "No features meeting urgent criteria: not deep to deep fascia, not fixed, not hard, not irregular, not >5cm, not changing rapidly, not recurring after previous sarcoma excision [p59]",
+      "No features meeting non-urgent criteria: not a new lump, already diagnosed as lipoma on previous imaging [p59]"
+    ],
+    "ai_notes": "Previous ultrasound already characterized this as a lipoma without suspicious features. The criteria explicitly state that soft tissue masses with characteristic appearance of lipomas without concerning features are not routinely funded. Pain and subjective increase in size of a previously diagnosed lipoma do not meet the criteria for publicly funded follow-up imaging.",
+    "ai_redirect": null,
+    "ai_safety_alert": null,
+    "ai_suggested_wording": null,
+    "overrides": null
+  },
+  {
+    "id": 238,
+    "timestamp": "2026-05-30T06:08:33.874Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Hand \u2014 Both",
+    "model_used": "claude-sonnet-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 407,
+      "cache_read": 0,
+      "cache_write": 23809,
+      "output": 533
+    },
+    "cost_nzd": 0.1625,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "Xray Hand Both\n77 year old woman\nDate: 09/04/2026 14:46:32 Here for reivew \n\nR thumb is really swollen and painful anddeformed \nHot to touch \nBloods for rhematoid NAD \nPulling up pants and getting a pot out is really hard for her \n\nCRP is nad 18/3/26 \n\npain radiaiting up R arm \nhad carpal tunnel injection may years ago \nhad steroid injection in her R elebow for pain \nreaching for coffee is painful \n\ndaughter is in Au striggling partner commited suicide Tinnel test pos \nphalens neg \nR shoulder reduced ROM \npainful to move \nNeewrs and awkin test pos \\\naddductiuon and externa rpotation NAD \nLift off test pos \nnormal ROM ROM elbow \npain radaiites from shoulder to neck \n\n\nIMP refer ortho for shoulder and R thumb\n\nPLAN \nImaging R shoulder \nRefer ortho for review R thumb and shouulder pain \ntrial of amitrline \nRepeat Rx of usual meds \nphysio",
+    "interpreted_note": "X-ray Hand Both\n77 year old woman\nDate: 09/04/2026 14:46:32 Here for review\n\nR thumb is really swollen and painful and deformed\nHot to touch\nBloods for rheumatoid NAD\nPulling up pants and getting a pot out is really hard for her\n\nCRP is NAD 18/3/26\n\npain radiating up R arm\nhad carpal tunnel injection many years ago\nhad steroid injection in her R elbow for pain\nreaching for coffee is painful\n\ndaughter is in Au struggling partner committed suicide Tinel test pos\nPhalens neg\nR shoulder reduced ROM\npainful to move\nNeers and Hawkins test pos\nadduction and external rotation NAD\nLift off test pos\nnormal ROM elbow\npain radiates from shoulder to neck\n\nIMP refer ortho for shoulder and R thumb\n\nPLAN\nImaging R shoulder\nRefer ortho for review R thumb and shoulder pain\ntrial of amitriline\nRepeat Rx of usual meds\nphysio",
+    "ai_verdict": "proceeds",
+    "ai_verdict_title": "Referral likely to proceed",
+    "ai_verdict_summary": "Meets P2 criteria for new unexplained bony swelling or joint deformity of the thumb.",
+    "ai_met_criteria": [
+      "New, unexplained bony swelling or joint deformity \u2014 R thumb swollen, painful and deformed [p80]"
+    ],
+    "ai_missing_criteria": [],
+    "ai_notes": "Note mentions plan for shoulder imaging and orthopaedic referral for both thumb and shoulder \u2014 ensure appropriate separate referrals are made for shoulder assessment as this X-ray hand referral addresses only the thumb pathology.",
+    "ai_redirect": null,
+    "ai_safety_alert": null,
+    "ai_suggested_wording": null,
+    "overrides": null
+  },
+  {
+    "id": 239,
+    "timestamp": "2026-05-30T06:08:39.000Z",
+    "session_id": "sess_n8selr4qmprwnonj",
+    "user": {
+      "name": "Michaela Wood",
+      "role": "PCRL"
+    },
+    "exam_identified": "Wrist / Hand",
+    "model_used": "claude-opus-4-20250514",
+    "documentation_standard": "strict",
+    "prompt_version": "2.2.0",
+    "temperature": null,
+    "tokens": {
+      "input": 407,
+      "cache_read": 0,
+      "cache_write": 23809,
+      "output": 605
+    },
+    "cost_nzd": 0.2738,
+    "ip_address": "163.116.194.32",
+    "clinical_note": "Xray Hand Both\n77 year old woman\nDate: 09/04/2026 14:46:32 Here for reivew \n\nR thumb is really swollen and painful anddeformed \nHot to touch \nBloods for rhematoid NAD \nPulling up pants and getting a pot out is really hard for her \n\nCRP is nad 18/3/26 \n\npain radiaiting up R arm \nhad carpal tunnel injection may years ago \nhad steroid injection in her R elebow for pain \nreaching for coffee is painful \n\ndaughter is in Au striggling partner commited suicide Tinnel test pos \nphalens neg \nR shoulder reduced ROM \npainful to move \nNeewrs and awkin test pos \\\naddductiuon and externa rpotation NAD \nLift off test pos \nnormal ROM ROM elbow \npain radaiites from shoulder to neck \n\n\nIMP refer ortho for shoulder and R thumb\n\nPLAN \nImaging R shoulder \nRefer ortho for review R thumb and shouulder pain \ntrial of amitrline \nRepeat Rx of usual meds \nphysio",
+    "interpreted_note": "Xray Hand Both\n77 year old woman\nDate: 09/04/2026 14:46:32 Here for review\n\nR thumb is really swollen and painful and deformed\nHot to touch\nBloods for rheumatoid NAD\nPulling up pants and getting a pot out is really hard for her\n\nCRP is nad 18/3/26\n\npain radiating up R arm\nhad carpal tunnel injection many years ago\nhad steroid injection in her R elbow for pain\nreaching for coffee is painful\n\ndaughter is in Au struggling partner committed suicide Tinel test pos\nPhalens neg\nR shoulder reduced ROM\npainful to move\nNeers and Hawkins test pos\nabduction and external rotation NAD\nLift off test pos\nnormal ROM elbow\npain radiates from shoulder to neck\n\nIMP refer ortho for shoulder and R thumb\n\nPLAN\nImaging R shoulder\nRefer ortho for review R thumb and shoulder pain\ntrial of amitriptyline\nRepeat Rx of usual meds\nphysio",
+    "ai_verdict": "proceeds",
+    "ai_verdict_title": "Referral likely to proceed",
+    "ai_verdict_summary": "Referral meets P2 criteria for new, unexplained bony swelling or joint deformity with the swollen, painful, deformed right thumb that is hot to touch.",
+    "ai_met_criteria": [
+      "New, unexplained bony swelling or joint deformity \u2014 swollen and deformed R thumb [p80]",
+      "77 year old woman \u2014 age and gender documented",
+      "Significant functional impairment \u2014 pulling up pants and getting a pot out is really hard for her [p80]"
+    ],
+    "ai_missing_criteria": [],
+    "ai_notes": "Note that prominent signs of inflammation (hot to touch) also support the referral. The referral is for bilateral hand X-rays though only right thumb pathology is documented. Shoulder symptoms are also documented but would require a separate shoulder X-ray referral.",
+    "ai_redirect": null,
+    "ai_safety_alert": null,
+    "ai_suggested_wording": null,
+    "overrides": null
+  }
+]

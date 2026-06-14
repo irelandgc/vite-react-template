@@ -16,6 +16,12 @@ const API_BASE = 'https://crr-criteria-api.fk4dsrmq5r.workers.dev';
 const ADMIN_KEY = process.env.ADMIN_KEY || '';
 const DELAY_MS = 3500;
 
+// Optional: --model <model-id>  (defaults to claude-sonnet-4-20250514)
+// Optional: --case  <CASE-ID>   (run only this case, e.g. RP-002)
+const _args = process.argv.slice(2);
+const MODEL_OVERRIDE = _args[_args.indexOf('--model') + 1] || 'claude-sonnet-4-20250514';
+const CASE_FILTER   = _args[_args.indexOf('--case')  + 1] || null;
+
 const TEST_CASES = [
   { case_id: 'RP-002', runs: 5, exam: 'Ultrasound Abdomen',
     clinical_note: '61yo european male newly diagnosed autoimmune hepatitis – liver edge felt just below RCM. Screen for HCC, cirrhosis',
@@ -235,7 +241,7 @@ async function callAPI(systemPrompt, note) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: MODEL_OVERRIDE,
       max_tokens: 2400,
       temperature: 0.1,
       system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
@@ -271,6 +277,8 @@ async function callAPI(systemPrompt, note) {
 
 async function main() {
   console.log('=== Post-Processing Validation Test ===\n');
+  console.log(`Model:  ${MODEL_OVERRIDE}`);
+  if (CASE_FILTER) console.log(`Filter: ${CASE_FILTER} only`);
 
   // Fetch prompt
   let promptText;
@@ -293,7 +301,7 @@ async function main() {
 
   const summary = [];
 
-  for (const tc of TEST_CASES) {
+  for (const tc of TEST_CASES.filter(t => !CASE_FILTER || t.case_id === CASE_FILTER)) {
     console.log(`\n──────────────────────────────────────────────`);
     console.log(`Case: ${tc.case_id}  (${tc.runs} run${tc.runs > 1 ? 's' : ''})`);
     console.log(`Note: ${tc.clinical_note.slice(0, 80)}…`);

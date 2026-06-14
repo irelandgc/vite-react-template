@@ -1421,11 +1421,75 @@ function UsageLogTab(){
   const users=[...new Set(logs.map(r=>r.user_name).filter(Boolean))].sort();
   const totalCost=logs.reduce((s,r)=>s+(r.cost_nzd||0),0);
 
+  const parseJson=s=>{ try{ return s?JSON.parse(s):null; }catch(_){ return null; } };
+
+  function exportJSON(){
+    if(!logs.length){alert('No logs to export.');return;}
+    const out=logs.map(r=>{
+      const ai=parseJson(r.ai_response_json)||{};
+      return {
+        id: r.id,
+        timestamp: r.timestamp,
+        session_id: r.session_id,
+        user: { name: r.user_name||null, role: r.user_role||null },
+        exam_identified: r.exam_identified||null,
+        model_used: r.model_used||null,
+        documentation_standard: r.documentation_standard||null,
+        prompt_version: r.prompt_version||null,
+        temperature: r.temperature!=null?r.temperature:null,
+        tokens: { input: r.input_tokens||0, cache_read: r.cache_read_tokens||0, cache_write: r.cache_write_tokens||0, output: r.output_tokens||0 },
+        cost_nzd: r.cost_nzd||0,
+        ip_address: r.ip_address||null,
+        clinical_note: r.presentation_text||null,
+        interpreted_note: ai.interpreted_note||null,
+        ai_verdict: ai.verdict||r.verdict||null,
+        ai_verdict_title: ai.verdict_title||null,
+        ai_verdict_summary: ai.verdict_summary||null,
+        ai_met_criteria: ai.met_criteria||null,
+        ai_missing_criteria: ai.missing_criteria||null,
+        ai_notes: ai.notes||null,
+        ai_redirect: ai.redirect||null,
+        ai_safety_alert: ai.safety_alert||null,
+        ai_suggested_wording: ai.suggested_wording||null,
+        overrides: ai.overrides||ai._overrides||null
+      };
+    });
+    const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download='usage_log_'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  }
+
   function exportCSV(){
     if(!logs.length){alert('No logs to export.');return;}
-    const cols=['id','timestamp','session_id','user_name','user_role','exam_identified','verdict','prompt_version','model_used','documentation_standard','temperature','input_tokens','cache_read_tokens','cache_write_tokens','output_tokens','cost_nzd','ip_address'];
     const esc=v=>v==null?'':'"'+String(v).replace(/"/g,'""')+'"';
-    const rows=[cols.join(','),...logs.map(r=>cols.map(c=>esc(r[c])).join(','))];
+    const headers=['id','timestamp','session_id','user_name','user_role','exam_identified','verdict','prompt_version','model_used','documentation_standard','temperature','input_tokens','cache_read_tokens','cache_write_tokens','output_tokens','cost_nzd','ip_address','clinical_note','interpreted_note','ai_verdict','ai_verdict_title','ai_verdict_summary','ai_met_criteria','ai_missing_criteria','ai_notes','ai_redirect','ai_safety_alert','ai_suggested_wording','overrides'];
+    const rows=[headers.join(','),...logs.map(r=>{
+      const ai=parseJson(r.ai_response_json)||{};
+      const flat={
+        id:r.id, timestamp:r.timestamp, session_id:r.session_id,
+        user_name:r.user_name, user_role:r.user_role, exam_identified:r.exam_identified,
+        verdict:r.verdict, prompt_version:r.prompt_version, model_used:r.model_used,
+        documentation_standard:r.documentation_standard, temperature:r.temperature,
+        input_tokens:r.input_tokens, cache_read_tokens:r.cache_read_tokens,
+        cache_write_tokens:r.cache_write_tokens, output_tokens:r.output_tokens,
+        cost_nzd:r.cost_nzd, ip_address:r.ip_address,
+        clinical_note:r.presentation_text,
+        interpreted_note:ai.interpreted_note||null,
+        ai_verdict:ai.verdict||r.verdict||null,
+        ai_verdict_title:ai.verdict_title||null,
+        ai_verdict_summary:ai.verdict_summary||null,
+        ai_met_criteria:ai.met_criteria?JSON.stringify(ai.met_criteria):null,
+        ai_missing_criteria:ai.missing_criteria?JSON.stringify(ai.missing_criteria):null,
+        ai_notes:ai.notes||null,
+        ai_redirect:ai.redirect||null,
+        ai_safety_alert:ai.safety_alert||null,
+        ai_suggested_wording:ai.suggested_wording||null,
+        overrides:(ai.overrides||ai._overrides)?JSON.stringify(ai.overrides||ai._overrides):null
+      };
+      return headers.map(h=>esc(flat[h])).join(',');
+    })];
     const blob=new Blob([rows.join('\n')],{type:'text/csv'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
@@ -1440,7 +1504,10 @@ function UsageLogTab(){
           <h2 style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:2}}>Triage Usage Log</h2>
           <p style={{fontSize:12,color:C.mid}}>{logs.length} assessment{logs.length!==1?'s':''} logged · Total API cost: NZ${totalCost.toFixed(4)}</p>
         </div>
-        <button onClick={exportCSV} style={{fontSize:12,padding:'5px 14px',background:C.teal,color:'#fff',border:'none',borderRadius:3,cursor:'pointer',fontFamily:font,fontWeight:600}}>Export CSV</button>
+        <div style={{display:'flex',gap:6}}>
+          <button onClick={exportJSON} style={{fontSize:12,padding:'5px 14px',background:C.teal,color:'#fff',border:'none',borderRadius:3,cursor:'pointer',fontFamily:font,fontWeight:600}}>Export JSON</button>
+          <button onClick={exportCSV} style={{fontSize:12,padding:'5px 14px',background:'#fff',color:C.teal,border:`1px solid ${C.teal}`,borderRadius:3,cursor:'pointer',fontFamily:font,fontWeight:600}}>Export CSV</button>
+        </div>
       </div>
 
       <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12,background:'#fff',border:`1px solid ${C.rule}`,borderRadius:3,padding:'10px 12px'}}>
@@ -1496,8 +1563,8 @@ function UsageLogTab(){
                             <pre style={{whiteSpace:'pre-wrap',fontFamily:'inherit',fontSize:11,color:C.ink,background:'#fff',border:`1px solid ${C.rule}`,borderRadius:2,padding:'8px 10px',maxHeight:140,overflow:'auto',margin:0}}>{r.presentation_text||'—'}</pre>
                           </div>
                           <div>
-                            <div style={{fontWeight:700,color:C.navy,fontSize:11,marginBottom:4}}>AI response summary</div>
-                            <pre style={{whiteSpace:'pre-wrap',fontFamily:'inherit',fontSize:11,color:C.ink,background:'#fff',border:`1px solid ${C.rule}`,borderRadius:2,padding:'8px 10px',maxHeight:140,overflow:'auto',margin:0}}>{r.ai_response_summary||'—'}</pre>
+                            <div style={{fontWeight:700,color:C.navy,fontSize:11,marginBottom:4}}>AI response</div>
+                            <pre style={{whiteSpace:'pre-wrap',fontFamily:mono,fontSize:10,color:C.ink,background:'#fff',border:`1px solid ${C.rule}`,borderRadius:2,padding:'8px 10px',maxHeight:300,overflow:'auto',margin:0}}>{(()=>{try{return JSON.stringify(JSON.parse(r.ai_response_json||''),null,2);}catch(e){return r.ai_response_summary||'—';}})()}</pre>
                           </div>
                         </div>
                         <div style={{marginTop:8,fontSize:10,color:C.mid}}>

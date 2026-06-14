@@ -11,6 +11,9 @@ const API_BASE = 'https://crr-criteria-api.fk4dsrmq5r.workers.dev';
 const ADMIN_KEY = process.env.ADMIN_KEY || '';
 const DELAY_MS = 3000; // 3s between calls — stays within 30/hr limit for single pass
 
+const _args = process.argv.slice(2);
+const MODEL_OVERRIDE = _args[_args.indexOf('--model') + 1] || 'claude-sonnet-4-20250514';
+
 const TEST_CASES = [
   { case_id: 'RP-000', qa_id: 13, exam: 'CT Head',
     clinical_note: '45 maori woman with 2/12 h/o progressively worsening HA present nocturnally and first thing in the morning with associated blurred vision and nausea',
@@ -230,7 +233,7 @@ async function runCase(tc, systemPrompt, retries = 3) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: MODEL_OVERRIDE,
         max_tokens: 2400,
         temperature: 0.1,
         system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
@@ -410,7 +413,7 @@ async function main() {
     test_run: {
       date: new Date().toISOString(),
       prompt_version: '2.3.0',
-      model: 'claude-sonnet-4-20250514',
+      model: MODEL_OVERRIDE,
       mode: 'strict',
       paediatric_detection: 'enabled',
       baseline_comparison: 'v2.2.0',
