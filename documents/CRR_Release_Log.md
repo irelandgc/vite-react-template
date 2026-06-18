@@ -4,6 +4,75 @@ Changes are listed newest-first. Each entry covers one deployment cycle.
 
 ---
 
+## 2026-06-14 — Admin tool: model column in usage log and QA tables
+
+**Deployed:** `vite-react-template` worker
+
+- Model column added between Mode and Prompt in the Usage Log table
+- Model, Mode, and Prompt columns added to the Triage QA table (after Exam, before IP)
+- Model names displayed in short form (`sonnet-4`, `sonnet-4-6`, `opus-4`)
+- Redundant model/mode line in QA expanded row removed (now in table columns)
+
+---
+
+## 2026-06-12 — Usage log: full AI response capture + JSON export
+
+**Deployed:** `vite-react-template` worker (triage tool + admin tool)
+
+- `ai_response_json` now stores a clean structured object with all AI response fields: verdict, verdict_title, verdict_summary, priority, criteria_page, interpreted_note, met_criteria, missing_criteria, add_to_note, suggested_wording, notes, redirect, safety_alert, overrides
+- Previously stored full `result` object including internal `_` fields; now stores only the audit-relevant fields
+- `interpreted_note` (AI spelling-corrected version of the note) added to stored JSON
+- Admin Usage Log expanded row now displays full pretty-printed JSON instead of truncated summary
+- **Export JSON** button added to Usage Log tab (primary export) — each record includes all AI response fields and clinical note, matching QA reviews export structure
+- CSV export updated to include the same 12 new columns (arrays JSON-stringified in cells)
+
+---
+
+## 2026-06-02 — Triage Advisor: reliability improvements + Sonnet 4.6 model option
+
+**Deployed:** `vite-react-template` worker
+
+### QA feedback form fix
+- QA submit button was not re-enabling for second/subsequent reviews in the same session
+- Root cause 1: reviewer name field not included in enabled-state check — button could enable with empty name, causing silent failure on submit
+- Root cause 2: role button visual state not explicitly cleared on modal open — ghost selection could block enable logic when localStorage was unavailable
+- Fix: name added to `checkQaSubmitEnabled()`, explicit `.qa-role-btn` clear added before localStorage pre-population in `openQaModal()`
+
+### Post-processing override accuracy (MET_PHRASES)
+- Added 7 new phrases without trailing 's': `meet criteria`, `meet p1`, `meet p2`, `meet p3`, `meet p4`, `meet acute`, `meet urgent`
+- Added `criteria met independently` and `criteria met`
+- MET_PHRASES array now 18 entries — covers all observed AI documentation patterns for confirmed-met pathways
+
+### Sonnet 4.6 model toggle
+- `claude-sonnet-4-6` added as selectable model in the Triage Advisor
+- Model toggle row added below the Check Referral button: Sonnet 4 (default, active) | Sonnet 4.6
+- Default remains Sonnet 4 pending full regression suite validation
+- Regression testing (v2.2.0 prompt): Sonnet 4.6 scores 3 improved / 10 unchanged / 7 regressed vs baseline — not suitable as default on v2.2.0 prompt
+- v2.3.0 prompt + Sonnet 4.6: 3 improved / 15 unchanged / 2 regressed — better pairing if v2.3.0 is promoted
+
+---
+
+## 2026-05-28 — Criteria Viewer search improvements + Triage display overhaul
+
+**Deployed:** `vite-react-template` worker (both tools)
+
+### Criteria Viewer
+- Global search now recognises 25+ clinical abbreviations (PMB, DVT, TIA, CXR, AUB, OA, etc.)
+- Gateway tooltip added — hover info icon explains gateway criteria
+- Footnote cross-references — asterisked items have clickable superscript scrolling to footnote
+- Inline definitions — asterisked items can expand definition inline without scrolling
+- Expandable sections — Definitions, Alternative management, Not routinely funded start collapsed
+
+### Triage Advisor display
+- Staged loading messages — Loading criteria → Assessing referral → Preparing result with elapsed-seconds counter
+- Output reordered — verdict block and missing criteria shown first
+- Merged 'What's missing' section — missing criteria paired with documentation hints in single list
+- Criteria panel filtering — matching exam groups expand automatically after assessment
+- Character count on clinical note input
+- Session info footer — model, documentation mode, and prompt version shown per assessment
+
+---
+
 ## 2026-05-24 — Triage Advisor System Prompt v2.2.0 (Production)
 
 **Deployed:** D1 system_prompts table (no worker redeployment required)
