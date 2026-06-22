@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CRR Triage Advisor v1.0.0 DEV</title>
+<title>CRR Triage Advisor v1.1.0 DEV</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/crr-criteria/shared/crr-design-system.css">
 <style>
@@ -241,7 +241,7 @@ textarea.note::placeholder{color:#8b919a}
     <span class="logo">CRR</span>
     <div>
       <div class="hd-title">CRR Triage Advisor</div>
-      <div class="hd-sub">Community Referred Radiology — AI Triage Assessment &nbsp;·&nbsp; <button id="verBtn" onclick="openProvenanceModal()" style="background:none;border:none;color:#5f6b7c;font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:inherit;opacity:.8" title="Criteria provenance and version information">v1.0.0 DEV</button></div>
+      <div class="hd-sub">Community Referred Radiology — AI Triage Assessment &nbsp;·&nbsp; <button id="verBtn" onclick="openProvenanceModal()" style="background:none;border:none;color:#5f6b7c;font-size:11px;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;font-family:inherit;opacity:.8" title="Criteria provenance and version information">v1.1.0 DEV</button></div>
     </div>
   </div>
   <div class="hd-right">
@@ -250,7 +250,7 @@ textarea.note::placeholder{color:#8b919a}
       <span>News</span>
     </button>
     <span class="method-badge method-rule" id="methodBadge">Ready</span>
-    <button id="compareBtn" onclick="toggleCompareMode()" class="btn-compare" title="Compare Sonnet 4 vs Opus 4.6 side by side">
+    <button id="compareBtn" onclick="toggleCompareMode()" class="btn-compare" title="Compare Sonnet 4.6 vs Opus 4.8 side by side">
       &#9316; Compare Models
     </button>
     <button class="btn-stats" onclick="openStatsModal()" title="Usage statistics" id="statsBtn" style="background:#f0f2f5;border:1px solid #dde1e6;color:#5f6b7c;padding:4px 10px;border-radius:6px;font-family:var(--sans);font-size:11px;font-weight:500;cursor:pointer;margin-right:4px">
@@ -307,8 +307,7 @@ textarea.note::placeholder{color:#8b919a}
         </div>
         <div class="model-toggle-row">
           <span class="model-toggle-lbl">Model</span>
-          <button class="model-toggle-btn active" id="modelSonnet4" onclick="setModel(SONNET_MODEL, this)">Sonnet 4</button>
-          <button class="model-toggle-btn" id="modelSonnet46" onclick="setModel(SONNET_46_MODEL, this)">Sonnet 4.6</button>
+          <button class="model-toggle-btn active" id="modelSonnet46">Sonnet 4.6</button>
         </div>
       </div>
     </div>
@@ -417,11 +416,11 @@ textarea.note::placeholder{color:#8b919a}
         <div style="background:var(--lite);border-radius:3px;padding:10px 12px;border:1px solid var(--rule)">
           <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--mid);margin-bottom:5px">Tool &amp; criteria version</div>
           <table style="width:100%;border-collapse:collapse;font-size:12px">
-            <tr><td style="padding:2px 0;color:var(--mid);width:55%">Tool version</td><td id="provToolVer" style="font-weight:600;color:var(--navy)">v1.0.0 DEV</td></tr>
+            <tr><td style="padding:2px 0;color:var(--mid);width:55%">Tool version</td><td id="provToolVer" style="font-weight:600;color:var(--navy)">v1.1.0 DEV</td></tr>
             <tr><td style="padding:2px 0;color:var(--mid)">Criteria data</td><td style="font-weight:600;color:var(--navy)">Aug 2025 reissue 3</td></tr>
             <tr><td style="padding:2px 0;color:var(--mid)">Adult updated</td><td style="font-weight:600;color:var(--navy)">March 2026</td></tr>
             <tr><td style="padding:2px 0;color:var(--mid)">Paediatric updated</td><td style="font-weight:600;color:var(--navy)">March 2026</td></tr>
-            <tr><td style="padding:2px 0;color:var(--mid)">AI model</td><td style="font-weight:600;color:var(--navy)">Claude Sonnet 4</td></tr>
+            <tr><td style="padding:2px 0;color:var(--mid)">AI model</td><td style="font-weight:600;color:var(--navy)">Claude Sonnet 4.6</td></tr>
             <tr><td style="padding:2px 0;color:var(--mid)">Prompt version</td><td id="provPromptVer" style="font-weight:600;color:var(--navy)">loading…</td></tr>
           </table>
         </div>
@@ -433,7 +432,7 @@ textarea.note::placeholder{color:#8b919a}
         <table style="width:100%;border-collapse:collapse;font-size:12px">
           <tr style="border-bottom:1px solid var(--rule)">
             <td style="padding:5px 8px 5px 0;color:var(--mid);width:22%;vertical-align:top;white-space:nowrap">Model</td>
-            <td style="padding:5px 0;color:var(--ink)"><strong style="color:var(--navy)">Claude Sonnet 4</strong> (claude-sonnet-4-20250514, Anthropic)</td>
+            <td style="padding:5px 0;color:var(--ink)"><strong style="color:var(--navy)">Claude Sonnet 4.6</strong> (claude-sonnet-4-6, Anthropic)</td>
           </tr>
           <tr style="border-bottom:1px solid var(--rule)">
             <td style="padding:5px 8px 5px 0;color:var(--mid);vertical-align:top">Temperature</td>
@@ -595,12 +594,12 @@ textarea.note::placeholder{color:#8b919a}
 <script>
 // ══════════════════════════════════════════════════════════════
 //  CRR TRIAGE ADVISOR — DECOUPLED
-//  Version: v1.0.0 DEV
+//  Version: v1.1.0 DEV
 //  Data source: API endpoint (with embedded fallback)
 // ══════════════════════════════════════════════════════════════
 
-var VER = "v1.0.0 DEV";
-var BUILD = "2026-05-14"; // bump on each deployment
+var VER = "v1.1.0 DEV";
+var BUILD = "2026-06-20"; // bump on each deployment
 
 // ── UX Feature flags ──────────────────────────────────────────────────────────
 var UX02_REORDER_OUTPUT  = true;
@@ -608,6 +607,7 @@ var UX03_MERGE_MISSING   = true;
 var UX04_PANEL_FILTERING = true;
 
 // Changelog:
+// v1.1.0 DEV — default model updated to claude-sonnet-4-6; claude-sonnet-4-20250514 retired; compare mode updated to Sonnet 4.6 vs Opus 4.8 (2026-06-20)
 // v1.0.0 DEV — version reset for review cycle (2026-05-14); previously v2.1.1
 // v2.1.1 — API key proxy (key removed from browser), wide provenance modal, single-source VER
 // v2.0.0 — decoupled from viewer, loads criteria from API
@@ -2434,7 +2434,7 @@ function renderAIResult(r) {
 
   // Session info footer
   var hSessionInfo = '';
-  var sessionParts = ['Model: ' + (r._model || 'claude-sonnet-4-20250514'), 'Mode: ' + (r._docMode || 'strict')];
+  var sessionParts = ['Model: ' + (r._model || 'claude-sonnet-4-6'), 'Mode: ' + (r._docMode || 'strict')];
   if (loadedPrompt && loadedPrompt.version) sessionParts.push('Prompt: v' + loadedPrompt.version);
   hSessionInfo += '<div style="font-size:10px;color:#8ab4c8;margin-top:10px;padding-top:8px;border-top:1px solid var(--rule)">' + sessionParts.join(' · ') + '</div>';
 
@@ -2604,7 +2604,7 @@ function logTriageUsage(result, usage, parseSuccess, rawText) {
       user_role: userRole,
       exam_identified: result.exam || result.modality || null,
       verdict: result.verdict_title || result.verdict || null,
-      model_used: result._model || 'claude-sonnet-4-20250514',
+      model_used: result._model || 'claude-sonnet-4-6',
       documentation_standard: docMode,
       input_tokens: usage.input_tokens || 0,
       cache_read_tokens: usage.cache_read_input_tokens || 0,
@@ -3026,7 +3026,7 @@ function submitQaEntry() {
     ai_response_json: JSON.stringify(r),
     prompt_version: loadedPrompt ? loadedPrompt.version : null,
     exam_identified: r.exam || r.modality || null,
-    model_used: (lastAiResult && lastAiResult._model) || 'claude-sonnet-4-20250514',
+    model_used: (lastAiResult && lastAiResult._model) || 'claude-sonnet-4-6',
     documentation_standard: docMode,
     region: null
   };
@@ -3071,10 +3071,9 @@ var compareMode = false;
 var compLog = [];
 var LS_COMP_KEY = 'crr_comparison_log';
 
-var OPUS_MODEL      = 'claude-opus-4-20250514';
-var SONNET_MODEL    = 'claude-sonnet-4-20250514';
+var OPUS_MODEL      = 'claude-opus-4-8';
 var SONNET_46_MODEL = 'claude-sonnet-4-6';
-var currentModel    = SONNET_MODEL;
+var currentModel    = SONNET_46_MODEL;
 
 function loadCompLog() { try { return JSON.parse(localStorage.getItem(LS_COMP_KEY)||'[]'); } catch(e) { return []; } }
 function saveCompLog(log) { try { localStorage.setItem(LS_COMP_KEY, JSON.stringify(log,null,2)); } catch(e) {} }
@@ -3090,7 +3089,7 @@ function toggleCompareMode() {
   var aiHd = document.querySelector('.col-hd');
   if (aiHd) {
     aiHd.innerHTML = compareMode
-      ? '<span class="col-hd-dot" style="background:var(--ai)"></span>AI Assessment <span style="font-size:10px;color:#b080e0;margin-left:6px;font-weight:600">COMPARE MODE \u2014 Sonnet 4 vs Opus 4.6</span>'
+      ? '<span class="col-hd-dot" style="background:var(--ai)"></span>AI Assessment <span style="font-size:10px;color:#b080e0;margin-left:6px;font-weight:600">COMPARE MODE \u2014 Sonnet 4.6 vs Opus 4.8</span>'
       : '<span class="col-hd-dot" style="background:var(--ai)"></span>AI Assessment';
   }
   // Reset panel to empty state
@@ -3110,8 +3109,8 @@ function runComparison() {
   var note = lastNote;
   if (!note) { return; }
 
-  var sPanel = '<div><div class="comp-model-hdr sonnet">Claude Sonnet 4 <span id="sCompCost" style="font-size:10px;opacity:.7"></span></div><div id="sCompBody" style="padding:0"><div class="panel"><div class="ai-col-empty" style="padding:20px 14px"><div class="ai-spinner" style="justify-content:center"><span></span><span></span><span></span></div><p style="margin-top:8px">Calling Sonnet 4\u2026</p></div></div></div></div>';
-  var oPanel = '<div><div class="comp-model-hdr opus">Claude Opus 4.6 <span id="oCompCost" style="font-size:10px;opacity:.7"></span></div><div id="oCompBody" style="padding:0"><div class="panel"><div class="ai-col-empty" style="padding:20px 14px"><div class="ai-spinner" style="justify-content:center"><span></span><span></span><span></span></div><p style="margin-top:8px">Calling Opus 4.6\u2026</p></div></div></div>';
+  var sPanel = '<div><div class="comp-model-hdr sonnet">Claude Sonnet 4.6 <span id="sCompCost" style="font-size:10px;opacity:.7"></span></div><div id="sCompBody" style="padding:0"><div class="panel"><div class="ai-col-empty" style="padding:20px 14px"><div class="ai-spinner" style="justify-content:center"><span></span><span></span><span></span></div><p style="margin-top:8px">Calling Sonnet 4.6\u2026</p></div></div></div></div>';
+  var oPanel = '<div><div class="comp-model-hdr opus">Claude Opus 4.8 <span id="oCompCost" style="font-size:10px;opacity:.7"></span></div><div id="oCompBody" style="padding:0"><div class="panel"><div class="ai-col-empty" style="padding:20px 14px"><div class="ai-spinner" style="justify-content:center"><span></span><span></span><span></span></div><p style="margin-top:8px">Calling Opus 4.8\u2026</p></div></div></div>';
 
   document.getElementById('aiPanel').innerHTML = '<div id="compSummaryBar"></div><div class="comp-panels">' + sPanel + oPanel + '</div>';
 
@@ -3133,7 +3132,7 @@ function runComparison() {
     }
   }
 
-  callModelForComp(SONNET_MODEL, note, 'sCompBody', 'sCompCost', false, function(r, err) {
+  callModelForComp(SONNET_46_MODEL, note, 'sCompBody', 'sCompCost', false, function(r, err) {
     sRes = r; sErr = err; checkDone();
   });
   callModelForComp(OPUS_MODEL, note, 'oCompBody', 'oCompCost', true, function(r, err) {
@@ -3305,7 +3304,7 @@ function exportCompEntryMd(idx) {
   if (s.interpreted_note && s.interpreted_note !== e.full_note) md += '> **Sonnet corrected:** ' + s.interpreted_note + '\n\n';
   if (o.interpreted_note && o.interpreted_note !== e.full_note) md += '> **Opus corrected:** ' + o.interpreted_note + '\n\n';
   md += '---\n\n## Summary\n\n';
-  md += '| | Sonnet 4 | Opus 4.6 |\n|---|---|---|\n';
+  md += '| | Sonnet 4.6 | Opus 4.8 |\n|---|---|---|\n';
   md += '| Verdict | **' + (e.sonnet.verdict||'') + '** | **' + (e.opus.verdict||'') + '** |\n';
   md += '| Exam | ' + (e.sonnet.exam||'\u2014') + ' | ' + (e.opus.exam||'\u2014') + ' |\n';
   md += '| Priority | ' + (e.sonnet.priority||'\u2014') + ' | ' + (e.opus.priority||'\u2014') + ' |\n';
@@ -3315,7 +3314,7 @@ function exportCompEntryMd(idx) {
   md += '| Met criteria | ' + e.sonnet.met + ' | ' + e.opus.met + ' |\n';
   md += '| Missing criteria | ' + e.sonnet.missing + ' | ' + e.opus.missing + ' |\n';
   md += '| Cost | NZ$' + e.sonnet.cost_nzd + ' | NZ$' + e.opus.cost_nzd + ' |\n\n---\n\n';
-  md += '## Sonnet 4 \u2014 Full Assessment\n\n';
+  md += '## Sonnet 4.6 \u2014 Full Assessment\n\n';
   if (s.safety_alert) md += '> \u26d4 **Safety alert:** ' + s.safety_alert + '\n\n';
   if (s.redirect) md += '> \u21aa **Redirect:** ' + s.redirect + '\n\n';
   if (s.not_funded_flag) md += '> \u26ab **Not routinely funded**\n\n';
@@ -3326,7 +3325,7 @@ function exportCompEntryMd(idx) {
   md += '\n### Add to note\n\n' + mdList(s.add_to_note);
   if (s.suggested_wording) md += '\n### Suggested wording\n\n> ' + s.suggested_wording.replace(/\n/g,'\n> ') + '\n';
   if (s.notes) md += '\n**Notes:** ' + s.notes + '\n';
-  md += '\n---\n\n## Opus 4.6 \u2014 Full Assessment\n\n';
+  md += '\n---\n\n## Opus 4.8 \u2014 Full Assessment\n\n';
   if (o.safety_alert) md += '> \u26d4 **Safety alert:** ' + o.safety_alert + '\n\n';
   if (o.redirect) md += '> \u21aa **Redirect:** ' + o.redirect + '\n\n';
   if (o.not_funded_flag) md += '> \u26ab **Not routinely funded**\n\n';
@@ -3361,7 +3360,7 @@ function exportCompLog() {
     var e = log[i];
     all += '## Comparison ' + (i+1) + ' \u2014 ' + (e.verdict_agree&&e.exam_agree?'AGREE':'DIFFER') + '\n\n';
     all += '**Note:** `' + e.note_preview + (e.note_preview.length>=80?'\u2026':'') + '`\n\n';
-    all += '| | Sonnet 4 | Opus 4.6 |\n|---|---|---|\n';
+    all += '| | Sonnet 4.6 | Opus 4.8 |\n|---|---|---|\n';
     all += '| Verdict | **' + (e.sonnet.verdict||'') + '** | **' + (e.opus.verdict||'') + '** |\n';
     all += '| Safety alert | ' + (e.sonnet.safety_alert||'\u2014') + ' | ' + (e.opus.safety_alert||'\u2014') + ' |\n';
     all += '| Redirect | ' + (e.sonnet.redirect||'\u2014') + ' | ' + (e.opus.redirect||'\u2014') + ' |\n';

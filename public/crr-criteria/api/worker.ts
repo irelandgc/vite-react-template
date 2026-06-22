@@ -1050,8 +1050,9 @@ app.post('/api/triage/usage-log', async (c) => {
         timestamp, session_id, user_name, user_role,
         exam_identified, verdict, model_used, documentation_standard,
         input_tokens, cache_read_tokens, cache_write_tokens, output_tokens, cost_nzd,
-        presentation_text, ai_response_summary, ai_response_json, prompt_version, parse_success, ip_address, temperature
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        presentation_text, ai_response_summary, ai_response_json, prompt_version, parse_success, ip_address, temperature,
+        source, regression_run_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       body.timestamp || now,
       body.session_id || '',
@@ -1072,7 +1073,9 @@ app.post('/api/triage/usage-log', async (c) => {
       body.prompt_version || null,
       body.parse_success != null ? (body.parse_success ? 1 : 0) : 1,
       ip,
-      body.temperature != null ? body.temperature : null
+      body.temperature != null ? body.temperature : null,
+      body.source || null,
+      body.regression_run_id || null
     ).run();
     return c.json({ success: true, id: result.meta.last_row_id });
   } catch (e: any) {

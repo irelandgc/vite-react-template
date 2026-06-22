@@ -4,6 +4,42 @@ Changes are listed newest-first. Each entry covers one deployment cycle.
 
 ---
 
+## 2026-06-20 — Triage Advisor v1.1.0: default model updated to claude-sonnet-4-6
+
+**Deployed:** `vite-react-template` worker
+
+- Default model changed from `claude-sonnet-4-20250514` (retired by Anthropic) to `claude-sonnet-4-6`
+- `claude-sonnet-4-20250514` removed from the model toggle; Sonnet 4.6 is now the only non-compare model
+- Model comparison mode updated to Sonnet 4.6 vs Opus 4.8 (was Sonnet 4 vs Opus 4.6; `claude-opus-4-20250514` → `claude-opus-4-8`)
+- Tool version bumped to v1.1.0 DEV; BUILD date updated to 2026-06-20
+- No changes to criteria content, prompts, or clinical logic
+
+---
+
+## [backfilled 2026-06-21] System Prompt v2.3.0 — active in production (date promoted: UNKNOWN)
+
+**Note:** Live API confirms v2.3.0 is the active system prompt as of 2026-06-21. The 2026-05-24 release log entry incorrectly stated v2.2.0 was the promoted version and v2.3.0 was "not promoted". v2.3.0 was created on 2026-05-24 (same day) and has been active since — exact promotion date unconfirmed; Gary to verify.
+
+Key changes in v2.3.0 vs v2.2.0 (from prompt label and regression tests):
+- Verdict consistency check (Step 3b) — explicit self-check rules before JSON output
+- General-vs-specific pathway rule — general pathway can be fully met even when specific variant has unmet requirements
+- Clinical severity override fix — redirect/safety concerns after Step 0 do not downgrade a met verdict
+
+Regression test results (v2.3.0, 20 cases): 3 improved / 15 unchanged / 2 regressed (LP-004, CR-003) vs v2.2.0.
+
+---
+
+## [backfilled 2026-06-21] Viewer Fixes 9, 10, 11, 13 — confirmed present, original ship date unknown
+
+Verified present in `public/crr-criteria/viewer/index.html` source on 2026-06-21. These fixes shipped without release log entries (likely during the 2026-05-28 display overhaul or 2026-05-18 passive mode fix cycle).
+
+- **Fix 9:** Per-item expand/collapse arrows removed. `UX11_EXPANDABLE_SECTIONS = false` (viewer line 333); neither `toolRenderCb` nor `toolRenderIndicCb` renders arrow HTML.
+- **Fix 10:** Not-funded items excluded from tickable checkbox list. `isNonClinicalGroup()` (viewer line 621) identifies groups with "not fund" / "not routinely" / "alternative management" and excludes them from `nonEmergencyGroups`; shown only in `renderFooterBlocks()` as a non-interactive `not-funded-box`.
+- **Fix 11:** Urgency-view group header de-duplication. `getPriorityShortFromGroup()` (viewer line 1548) replaces raw group titles (which contained P-codes) with clean short labels ("Urgent (within two weeks)" etc.); used in both `toolRenderGroup` and `toolRenderGroupPassive`.
+- **Fix 13:** Before-Referring items not pre-ticked in urgency view. No pre-ticking logic exists; live criteria contain no "Before Referring" groups; all checkboxes default to unticked via empty `TS.cbs = {}`.
+
+---
+
 ## 2026-06-14 — Admin tool: model column in usage log and QA tables
 
 **Deployed:** `vite-react-template` worker

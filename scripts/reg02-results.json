@@ -1,0 +1,1489 @@
+{
+  "runDate": "2026-06-21T05:28:14.544Z",
+  "cases": {
+    "INT-SAH|A|1": {
+      "caseId": "INT-SAH",
+      "config": "A",
+      "run": 1,
+      "promptVersion": "2.2.0",
+      "rawVerdict": "declined",
+      "overrideVerdict": null,
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a classic thunderclap/worst-ever headache with meningism — a medical emergency requiring immediate ED assessment for possible subarachnoid haemorrhage, not community radiology.",
+        "priority": null,
+        "met_criteria": [],
+        "missing_criteria": [],
+        "notes": "Step 0 exclusion applies: worst-ever/thunderclap headache is an absolute redirect to ED regardless of any other CRR-eligible elements. CRR criteria assessment does not proceed.",
+        "safety_alert": "EMERGENCY — DO NOT REFER TO CRR. This presentation (thunderclap headache reaching maximum intensity within seconds, 'worst headache of my life', with vomiting, neck stiffness, and photophobia) is a classic subarachnoid haemorrhage (SAH) presentation. Call 111 or send immediately to ED. Time-critical: LP or CT must be performed in a monitored acute setting. Community imaging is contraindicated.",
+        "redirect": "Emergency Department via 111. SAH protocol: non-contrast CT Head followed by LP if CT negative, within a monitored acute setting. Do not delay for community CRR imaging.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 193,
+        "cache_creation_input_tokens": 23839,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 23839,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 435,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.1602
+    },
+    "INT-SAH|A|2": {
+      "caseId": "INT-SAH",
+      "config": "A",
+      "run": 2,
+      "promptVersion": "2.2.0",
+      "rawVerdict": "declined",
+      "overrideVerdict": null,
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a classic thunderclap/worst-ever headache with meningism — a medical emergency requiring immediate ED assessment for possible subarachnoid haemorrhage, not community radiology.",
+        "priority": null,
+        "met_criteria": [],
+        "missing_criteria": [],
+        "notes": "Classic sentinel bleed presentation: exertional thunderclap headache, instantaneous onset to peak intensity, worst-ever severity, meningism (neck stiffness, photophobia), vomiting. CRR CT Head criteria explicitly exclude this scenario. Even if CT were negative, LP would be required within the hospital setting to exclude xanthochromia. Community imaging pathway is contraindicated.",
+        "safety_alert": "EMERGENCY — DO NOT REFER TO CRR. Thunderclap headache reaching maximum intensity within seconds ('worst headache of my life') with neck stiffness, vomiting, and photophobia is a presumed subarachnoid haemorrhage until proven otherwise. Call 111 or send immediately to ED. Do not delay for community CT.",
+        "redirect": "Emergency Department via 111. This is a Step 0 exclusion — possible subarachnoid haemorrhage requires immediate ED assessment including urgent CT head and LP under acute hospital care, not community-referred radiology.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 193,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23839,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 463,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.0235
+    },
+    "INT-SAH|A|3": {
+      "caseId": "INT-SAH",
+      "config": "A",
+      "run": 3,
+      "promptVersion": "2.2.0",
+      "rawVerdict": "declined",
+      "overrideVerdict": null,
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a medical emergency consistent with subarachnoid haemorrhage — call 111 immediately, do not refer for community imaging.",
+        "priority": null,
+        "met_criteria": [],
+        "missing_criteria": [],
+        "notes": null,
+        "safety_alert": "POSSIBLE SUBARACHNOID HAEMORRHAGE — CALL 111 NOW. Thunderclap headache reaching maximum intensity within seconds ('worst headache of my life') during exertion, with vomiting, neck stiffness, and photophobia in a 44-year-old woman is a classic SAH presentation. This is a life-threatening emergency. Do NOT refer for community CT. Call 111 or send directly to ED by ambulance immediately.",
+        "redirect": "Emergency — 111 / ED. This patient requires immediate hospital assessment, urgent non-contrast CT Head, and LP if CT is negative. Community radiology is not appropriate.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 193,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23839,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 379,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.0214
+    },
+    "INT-SAH|B|1": {
+      "caseId": "INT-SAH",
+      "config": "B",
+      "run": 1,
+      "promptVersion": "2.3.0",
+      "rawVerdict": "declined",
+      "overrideVerdict": "declined",
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a classic thunderclap/worst-ever headache with meningism — a medical emergency requiring immediate ED assessment for possible subarachnoid haemorrhage, not community imaging.",
+        "priority": null,
+        "met_criteria": [
+          "Worst-ever headache reaching maximum intensity within seconds (thunderclap pattern) [Step 0 — SAH red flag]",
+          "Associated vomiting, neck stiffness, and photophobia [Step 0 — meningism features]",
+          "Onset during exertion [Step 0 — SAH risk factor]",
+          "No prior similar headache [Step 0 — new sentinel event]"
+        ],
+        "missing_criteria": [],
+        "notes": "Step 0 exclusion applied. Thunderclap headache reaching peak intensity within seconds, described as worst-ever, with meningism signs is the classic SAH presentation. Community CT is contraindicated regardless of CRR criteria — this patient requires acute neurovascular assessment, CT head, and likely LP in ED. CRR criteria assessment was not performed.",
+        "safety_alert": "EMERGENCY — DO NOT IMAGE IN COMMUNITY. This is a thunderclap 'worst headache of my life' with meningism (neck stiffness, photophobia, vomiting) onset during exertion. Possible subarachnoid haemorrhage. Call 111 or send immediately to ED. Do not wait for community CT.",
+        "redirect": "Emergency Department via 111 — suspected subarachnoid haemorrhage. CT head and LP must be performed in a monitored acute setting, not community radiology.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 193,
+        "cache_creation_input_tokens": 23969,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 23969,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 547,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.1638
+    },
+    "INT-SAH|B|2": {
+      "caseId": "INT-SAH",
+      "config": "B",
+      "run": 2,
+      "promptVersion": "2.3.0",
+      "rawVerdict": "declined",
+      "overrideVerdict": "declined",
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a classic thunderclap/worst-ever headache with meningism — a medical emergency requiring immediate ED assessment for possible subarachnoid haemorrhage, not community imaging.",
+        "priority": null,
+        "met_criteria": [
+          "Headache reaching maximum intensity within seconds (thunderclap pattern) [p20]",
+          "Worst headache of patient's life [p20]",
+          "Associated vomiting, neck stiffness, and photophobia — meningeal irritation signs [p20]",
+          "Onset during exertion [p20]",
+          "No prior similar headache [p20]"
+        ],
+        "missing_criteria": [],
+        "notes": "Step 0 exclusion applied: thunderclap/worst-ever headache is an absolute emergency redirect under Step 0(a). CRR criteria assessment does not proceed. Even if CT Head criteria were otherwise met, community radiology is not the appropriate setting for this presentation — the patient requires immediate resuscitation-capable assessment, CT with contrast capability, LP if CT negative, and neurosurgical access.",
+        "safety_alert": "POSSIBLE SUBARACHNOID HAEMORRHAGE — DO NOT REFER FOR COMMUNITY IMAGING. Call 111 or send immediately to ED. Thunderclap headache reaching peak intensity within seconds, described as worst-ever, with vomiting, neck stiffness, and photophobia is a classic SAH presentation. Time-critical emergency.",
+        "redirect": "Emergency Department via 111 — suspected subarachnoid haemorrhage. CT Head and LP must be performed in a hospital setting with immediate neurosurgical backup available.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 193,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23969,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 550,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.0258
+    },
+    "INT-SAH|B|3": {
+      "caseId": "INT-SAH",
+      "config": "B",
+      "run": 3,
+      "promptVersion": "2.3.0",
+      "rawVerdict": "declined",
+      "overrideVerdict": "declined",
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a classic thunderclap/worst-ever headache with meningism — a medical emergency requiring immediate ED assessment for possible subarachnoid haemorrhage, not community imaging.",
+        "priority": null,
+        "met_criteria": [
+          "Worst-ever headache documented [p20]",
+          "Thunderclap onset (maximum intensity within seconds) [p20]",
+          "Associated vomiting, neck stiffness, photophobia — meningeal irritation signs [p20]",
+          "Onset during exertion [p20]",
+          "No prior similar headache [p20]"
+        ],
+        "missing_criteria": [],
+        "notes": "Step 0 exclusion applies: thunderclap/worst-ever headache is an absolute redirect to emergency care before any CRR criteria assessment. Even if CT Head criteria were otherwise met, community radiology is contraindicated here — time-critical diagnosis requires ED-level care including LP capability and neurosurgical backup.",
+        "safety_alert": "POSSIBLE SUBARACHNOID HAEMORRHAGE — DO NOT DEFER. Call 111 or send immediately to ED. Thunderclap worst-ever headache with meningism (neck stiffness, photophobia, vomiting) onset during exertion is a SAH until proven otherwise. Community CT is not appropriate — this patient requires emergency assessment, LP if CT negative, and neurosurgical access.",
+        "redirect": "Emergency Department via 111. Do not arrange community imaging. SAH protocol: non-contrast CT Head in ED, followed by LP at ≥12 hours from onset if CT negative.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 193,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23969,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 544,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.0256
+    },
+    "INT-TORSION|A|1": {
+      "caseId": "INT-TORSION",
+      "config": "A",
+      "run": 1,
+      "promptVersion": "2.2.0",
+      "rawVerdict": "declined",
+      "overrideVerdict": null,
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a surgical emergency — do not image, refer immediately to ED for suspected testicular torsion.",
+        "priority": null,
+        "met_criteria": [
+          "Suspected testicular torsion — explicitly listed as 'Refer for acute assessment without initial imaging' [p57]"
+        ],
+        "missing_criteria": [],
+        "notes": "The US Scrotum criteria explicitly list 'Suspected testicular torsion' under 'Refer for acute assessment — without initial imaging' [p57]. Community imaging is contraindicated. The US Abdomen criteria also list suspected testicular torsion as a redirect to acute assessment without imaging [p31].",
+        "safety_alert": "SURGICAL EMERGENCY: Clinical findings (sudden onset severe testicular pain, high-riding testis, absent cremasteric reflex, nausea/vomiting, 3-hour onset) are classic for testicular torsion. Viability is time-critical — surgical salvage rates exceed 90% within 6 hours but fall sharply thereafter. Do NOT wait for ultrasound. Send patient to ED immediately via the fastest available means.",
+        "redirect": "ED immediately — suspected testicular torsion is a surgical emergency. CRR community ultrasound is explicitly excluded. Ultrasound must not delay surgical assessment.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 190,
+        "cache_creation_input_tokens": 23839,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 23839,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 471,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.1611
+    },
+    "INT-TORSION|A|2": {
+      "caseId": "INT-TORSION",
+      "config": "A",
+      "run": 2,
+      "promptVersion": "2.2.0",
+      "rawVerdict": "declined",
+      "overrideVerdict": null,
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a surgical emergency — do not image, refer immediately to ED for suspected testicular torsion.",
+        "priority": null,
+        "met_criteria": [],
+        "missing_criteria": [],
+        "notes": "Classic presentation: adolescent male, sudden severe testicular pain waking from sleep, high-riding testis, absent cremasteric reflex, nausea and vomiting. Sensitivity of ultrasound for torsion is insufficient to rule out the diagnosis and must never be used as a gatekeeper to surgery. Time to detorsion is the critical determinant of testicular salvage.",
+        "safety_alert": "SUSPECTED TESTICULAR TORSION — SURGICAL EMERGENCY. Do not wait for imaging. Call 111 or send directly to ED immediately. Viability window is approximately 6 hours from onset; this patient is already 3 hours in. Imaging must not delay surgical exploration.",
+        "redirect": "ED / surgical emergency — testicular torsion is explicitly excluded from community ultrasound (US Scrotum criteria, p57). Refer for acute surgical assessment without imaging.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 190,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23839,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 421,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.0225
+    },
+    "INT-TORSION|A|3": {
+      "caseId": "INT-TORSION",
+      "config": "A",
+      "run": 3,
+      "promptVersion": "2.2.0",
+      "rawVerdict": "declined",
+      "overrideVerdict": null,
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a surgical emergency — suspected testicular torsion requires immediate ED referral, not community imaging.",
+        "priority": null,
+        "met_criteria": [
+          "Acute onset severe testicular pain with high-riding testis and absent cremasteric reflex — classic presentation of testicular torsion [p57]"
+        ],
+        "missing_criteria": [],
+        "notes": "The clinical findings (sudden onset, woke from sleep, high-riding testis, absent cremasteric reflex, nausea/vomiting) are highly specific for testicular torsion. Testicular salvage rates are >90% if detorsion occurs within 6 hours, dropping sharply thereafter. No imaging should delay surgical exploration.",
+        "safety_alert": "SURGICAL EMERGENCY — suspected testicular torsion. Do NOT wait for imaging. Call 111 or send directly to ED immediately. Viability window is approximately 6 hours from onset — this patient is within that window. Scrotal ultrasound is explicitly excluded from CRR community imaging for suspected torsion.",
+        "redirect": "ED / surgical emergency — suspected testicular torsion is listed under 'Refer for acute assessment without initial imaging' on the Ultrasound Scrotum pathway [p57]. Community ultrasound is contraindicated. Immediate surgical assessment is required.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 190,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23839,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 478,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.0239
+    },
+    "INT-TORSION|B|1": {
+      "caseId": "INT-TORSION",
+      "config": "B",
+      "run": 1,
+      "promptVersion": "2.3.0",
+      "rawVerdict": "declined",
+      "overrideVerdict": "declined",
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a surgical emergency consistent with testicular torsion — community imaging is contraindicated; immediate ED transfer is required.",
+        "priority": null,
+        "met_criteria": [
+          "Acute scrotal pain with high-riding testis, absent cremasteric reflex, and associated nausea/vomiting — classic presentation of testicular torsion [p57]"
+        ],
+        "missing_criteria": [],
+        "notes": "The Ultrasound Scrotum criteria explicitly list 'Suspected testicular torsion' as a 'Refer for acute assessment — without initial imaging' presentation [p57]. Community ultrasound must not be used as a gatekeeper here — a normal Doppler does not exclude torsion and would cause dangerous delay.",
+        "safety_alert": "SURGICAL EMERGENCY — SUSPECTED TESTICULAR TORSION. Do NOT wait for imaging. Call 111 or arrange immediate transfer to ED. Viability is time-critical: salvage rates exceed 90% within 6 hours but fall sharply after that. This patient is already 3 hours into the episode.",
+        "redirect": "ED immediately — suspected testicular torsion requires urgent surgical exploration, not community ultrasound. The CRR criteria explicitly redirect this presentation to acute surgical assessment without imaging [p57].",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 190,
+        "cache_creation_input_tokens": 23969,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 23969,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 472,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.1619
+    },
+    "INT-TORSION|B|2": {
+      "caseId": "INT-TORSION",
+      "config": "B",
+      "run": 2,
+      "promptVersion": "2.3.0",
+      "rawVerdict": "declined",
+      "overrideVerdict": "declined",
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a surgical emergency consistent with testicular torsion — community imaging is contraindicated; immediate ED transfer is required.",
+        "priority": null,
+        "met_criteria": [
+          "Acute scrotal pain with high-riding testis, absent cremasteric reflex, and associated nausea/vomiting — classic presentation of testicular torsion [p57]"
+        ],
+        "missing_criteria": [],
+        "notes": "Step 0 exclusion applied: suspected testicular torsion is a listed surgical emergency requiring immediate care, not community imaging. CRR criteria explicitly state 'Suspected testicular torsion — refer for acute assessment without initial imaging' [p57]. Verdict set to declined and assessment stopped.",
+        "safety_alert": "SURGICAL EMERGENCY — suspected testicular torsion. Call 111 or transfer immediately to ED. Viability window is approximately 6 hours from onset; this patient is already 3 hours in. Do NOT wait for imaging — scrotal ultrasound is explicitly excluded for suspected torsion under CRR criteria. Urgent surgical exploration is required.",
+        "redirect": "ED / surgical emergency — do not image in the community. Refer per local Testicular Torsion HealthPathway.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 190,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23969,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 457,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.0235
+    },
+    "INT-TORSION|B|3": {
+      "caseId": "INT-TORSION",
+      "config": "B",
+      "run": 3,
+      "promptVersion": "2.3.0",
+      "rawVerdict": "declined",
+      "overrideVerdict": "declined",
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a surgical emergency — community imaging is contraindicated and will not proceed.",
+        "priority": null,
+        "met_criteria": [
+          "Acute scrotal pain in a male patient [p57]",
+          "High-riding testis on examination [p57]",
+          "Absent cremasteric reflex [p57]",
+          "Onset within hours, waking from sleep [p57]"
+        ],
+        "missing_criteria": [],
+        "notes": "Step 0 exclusion applied: suspected testicular torsion is a listed surgical emergency requiring immediate ED referral, not community imaging. Verdict set to declined and assessment stopped. Community ultrasound is contraindicated — scrotal US has sensitivity limitations for torsion and a negative scan does not exclude it. Surgical exploration is the definitive management.",
+        "safety_alert": "SUSPECTED TESTICULAR TORSION — SURGICAL EMERGENCY. Do not wait for imaging. Call 111 or send immediately to ED. Testicular viability is time-critical: salvage rates exceed 90% within 6 hours but fall sharply thereafter. Classic triad present: sudden severe pain, high-riding testis, absent cremasteric reflex.",
+        "redirect": "ED / surgical emergency — per US Scrotum criteria [p57]: 'Suspected testicular torsion — refer for acute assessment without initial imaging.' Community ultrasound is explicitly excluded and must not delay surgical exploration.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 190,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23969,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 502,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.0246
+    },
+    "INT-AKI|A|1": {
+      "caseId": "INT-AKI",
+      "config": "A",
+      "run": 1,
+      "promptVersion": "2.2.0",
+      "rawVerdict": "declined",
+      "overrideVerdict": null,
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined — patient requires acute hospital assessment, not community imaging",
+        "verdict_summary": "An eGFR of 8 (drop from baseline 62) meets the red-flag threshold for acute renal function deterioration requiring urgent secondary care assessment, not community ultrasound.",
+        "priority": null,
+        "met_criteria": [
+          "Acute renal function deterioration — serum creatinine/eGFR drop far exceeds threshold (eGFR 8 vs baseline 62, drop >54 units, well above the 'eGFR decrease >15 in 12 months' progressive CKD marker and consistent with acute deterioration criteria) [p53]",
+          "No catheter in situ, no obvious precipitant, not on nephrotoxics — supports genuine unexplained AKI [p53]",
+          "Reduced urine output documented — consistent with AKI presentation [p53]"
+        ],
+        "missing_criteria": [],
+        "notes": "The US Renal criteria at p53 include 'Acute renal function deterioration — serum creatinine increase >50 micromol/L in 7 days or >25 micromol/L in 2 days' as an Acute 48hr criterion, with a note that discussion with secondary care/PCRL is recommended. However, an eGFR of 8 (from 62) represents end-organ failure severity that goes well beyond a community-managed acute demand scan — this patient almost certainly requires hospital admission. The CT KUB criteria also flag eGFR <45 as a red flag requiring admission rather than imaging [p26]. The redirect to secondary care takes precedence over any community imaging pathway here.",
+        "safety_alert": "ACUTE HOSPITAL REFERRAL REQUIRED: eGFR of 8 with a baseline of 62 represents a severe, life-threatening acute kidney injury. This patient requires immediate secondary care assessment — do not defer for community imaging. Manage per Acute Kidney Injury pathway or call secondary care now. Community ultrasound is not appropriate at this stage.",
+        "redirect": "Acute Kidney Injury pathway — refer immediately to secondary care (ED or acute medical team). Community renal ultrasound criteria note that acute renal function deterioration should be managed per the Acute Kidney Injury pathway or with secondary care specialist advice [p55]. If secondary care recommends ultrasound as part of inpatient or urgent outpatient workup, that request should come from the admitting team.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 200,
+        "cache_creation_input_tokens": 23839,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 23839,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 753,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.1682
+    },
+    "INT-AKI|A|2": {
+      "caseId": "INT-AKI",
+      "config": "A",
+      "run": 2,
+      "promptVersion": "2.2.0",
+      "rawVerdict": "declined",
+      "overrideVerdict": null,
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined — patient requires acute hospital assessment, not community imaging",
+        "verdict_summary": "An eGFR of 8 (drop from baseline 62) meets the CT KUB red flag threshold for acute admission; for renal ultrasound, an acute deterioration of this severity requires urgent secondary care assessment before or instead of community imaging.",
+        "priority": null,
+        "met_criteria": [
+          "Acute renal function deterioration documented — serum creatinine/eGFR drop consistent with significant AKI (eGFR 8 from baseline 62 over approximately 3 months) [p53]",
+          "Male patient, age 72 [p53]",
+          "No catheter, no obvious precipitant, not on nephrotoxics documented [p53]",
+          "Obs otherwise stable noted [p53]"
+        ],
+        "missing_criteria": [
+          "Acute renal ultrasound criteria require discussion with secondary care/PCRL before requesting — this has not been documented [p53]",
+          "eGFR of 8 falls well below the CT KUB red flag threshold of eGFR <45 (admit, do not image) [p26]; by analogy, an eGFR this severely reduced warrants acute admission rather than community imaging",
+          "Serum creatinine value not documented — required to confirm AKI severity and guide acute pathway (creatinine >160 mmol/L is a CT KUB red flag for admission) [p26]"
+        ],
+        "notes": "The Ultrasound Renal criteria [p53] include an Acute 48hr pathway for 'acute renal function deterioration — serum creatinine increase >50 micromol/L in 7 days or >25 micromol/L in 2 days' with a note that discussion with secondary care/PCRL is recommended. However, the degree of deterioration here (eGFR 8 from 62) is extreme and the criteria explicitly redirect AKI to the Acute Kidney Injury pathway rather than community imaging. The CT KUB criteria [p26] list eGFR <45 as a red flag requiring admission rather than imaging — this patient's eGFR of 8 far exceeds that threshold. Community ultrasound should only be arranged on explicit secondary care recommendation after acute assessment.",
+        "safety_alert": "ACUTE ADMISSION REQUIRED: eGFR of 8 (from baseline 62) represents severe acute kidney injury with no identified cause. This patient requires urgent hospital assessment — refer to ED or acute medical team. Community imaging is not appropriate at this stage. Do not delay admission for imaging.",
+        "redirect": "Refer to ED or acute medical assessment. Manage according to the Acute Kidney Injury HealthPathway. Community renal ultrasound may be appropriate after acute stabilisation if recommended by the inpatient team.",
+        "suggested_wording": null,
+        "add_to_note": [
+          "Document serum creatinine value to confirm AKI severity.",
+          "This presentation requires acute hospital assessment — refer to ED or acute medical team rather than requesting community renal ultrasound.",
+          "If secondary care specialist subsequently advises community renal ultrasound after acute assessment, document their recommendation explicitly to support a CRR referral."
+        ]
+      },
+      "usage": {
+        "input_tokens": 200,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23839,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 928,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.0352
+    },
+    "INT-AKI|A|3": {
+      "caseId": "INT-AKI",
+      "config": "A",
+      "run": 3,
+      "promptVersion": "2.2.0",
+      "rawVerdict": "declined",
+      "overrideVerdict": null,
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined — patient requires acute hospital assessment, not community imaging",
+        "verdict_summary": "An eGFR of 8 (dropped from 62 over approximately 3 months) meets the CT KUB red flag threshold for acute admission; this patient requires urgent secondary care assessment, not community ultrasound.",
+        "priority": null,
+        "met_criteria": [
+          "Male patient with new acute renal function deterioration [p54]",
+          "Serum creatinine/eGFR change consistent with acute kidney injury — eGFR 8 vs baseline 62 [p54]",
+          "No catheter in situ, no obvious precipitant documented [p53]"
+        ],
+        "missing_criteria": [
+          "Community renal ultrasound for acute renal function deterioration requires discussion with secondary care/PCRL before imaging — this degree of AKI (eGFR 8) warrants acute hospital assessment, not community imaging [p54]",
+          "CT KUB red flag criteria are met: eGFR <45 (eGFR 8) — criteria state 'admit, do not image' [p26]"
+        ],
+        "notes": "The Ultrasound Renal criteria [p54] do include acute renal function deterioration (creatinine increase >50 micromol/L in 7 days or >25 micromol/L in 2 days) as an acute 48-hour indication, but note that 'discussion with secondary care/PCRL is recommended' and this is intended for milder AKI where community management is appropriate. An eGFR of 8 in a 72-year-old man is a medical emergency — the degree of deterioration here (eGFR 8 from baseline 62) far exceeds the threshold for safe community imaging. The CT KUB red flag rule (eGFR <45 = admit, do not image) [p26] reinforces that patients with this level of renal impairment must be admitted. Community imaging is contraindicated.",
+        "safety_alert": "ACUTE ADMISSION REQUIRED: eGFR of 8 (baseline 62) represents severe acute kidney injury. CT KUB criteria explicitly state eGFR <45 is a red flag requiring acute admission — do not image in the community. Refer this patient urgently to the Emergency Department or acute medical team for assessment, investigation, and management of AKI. Do not arrange community radiology.",
+        "redirect": "Acute hospital assessment — refer to ED or acute medical team urgently. Manage per Acute Kidney Injury HealthPathway. Community renal ultrasound is not appropriate at this acuity; inpatient imaging will be arranged by the admitting team as required.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 200,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23839,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 816,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.0324
+    },
+    "INT-AKI|B|1": {
+      "caseId": "INT-AKI",
+      "config": "B",
+      "run": 1,
+      "promptVersion": "2.3.0",
+      "rawVerdict": "proceeds",
+      "overrideVerdict": "proceeds",
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "proceeds",
+        "verdict_title": "Referral likely to proceed",
+        "verdict_summary": "Acute renal function deterioration with eGFR drop from 62 to 8 (a decrease of 54 units) meets the Acute 48hr criterion for renal ultrasound; however, the severity of this AKI warrants urgent secondary care discussion before or alongside imaging.",
+        "priority": "Acute 48hr",
+        "met_criteria": [
+          "Acute renal function deterioration — serum creatinine/eGFR change consistent with AKI: eGFR dropped from baseline 62 to 8 over approximately 3 months, with acute presentation over 1 week [p53]",
+          "Male patient, 72 years old [p53]",
+          "No catheter in situ, no obvious precipitant, not on nephrotoxics — obstruction not yet excluded [p53]",
+          "Haemodynamically stable (obs stable, BP 158/94) — no immediate red flags precluding community imaging [p53]"
+        ],
+        "missing_criteria": [],
+        "notes": "The Acute 48hr criterion for renal ultrasound is met on the basis of acute renal function deterioration. The criteria note explicitly recommends secondary care/PCRL discussion for this presentation. The CT KUB red flag threshold (eGFR <45) is far exceeded, confirming CT KUB is contraindicated. Renal ultrasound is the appropriate modality to exclude obstruction as a reversible cause. If secondary care advises admission, imaging will be arranged in-hospital and this community referral may not be required.",
+        "safety_alert": "eGFR of 8 represents a severe AKI (Stage 3) with a drop of 54 units from baseline. This patient requires urgent secondary care discussion (nephrology or acute medicine) before or concurrent with community imaging — admission may be required. Do not delay secondary care contact pending ultrasound result.",
+        "redirect": "Acute Kidney Injury pathway: criteria note that discussion with secondary care or PCRL is recommended for acute renal function deterioration. Given the severity (eGFR 8), nephrology or acute medicine input should be sought urgently — this patient may require admission rather than community imaging alone.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 200,
+        "cache_creation_input_tokens": 23969,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 23969,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 691,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.1674
+    },
+    "INT-AKI|B|2": {
+      "caseId": "INT-AKI",
+      "config": "B",
+      "run": 2,
+      "promptVersion": "2.3.0",
+      "rawVerdict": "proceeds",
+      "overrideVerdict": "proceeds",
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "proceeds",
+        "verdict_title": "Referral likely to proceed",
+        "verdict_summary": "Acute renal function deterioration with eGFR drop from 62 to 8 (a decrease of 54 points) meets the Acute 48hr criterion for renal ultrasound, though the severity of this AKI warrants urgent secondary care discussion before or alongside imaging.",
+        "priority": "Acute 48hr",
+        "met_criteria": [
+          "Acute renal function deterioration — serum creatinine/eGFR change consistent with AKI: eGFR dropped from 62 (baseline 3 months ago) to 8 — a decrease of 54 points, meeting the acute deterioration threshold [p53]",
+          "Discussion with secondary care/PCRL recommended — noted as part of this criterion [p53]"
+        ],
+        "missing_criteria": [],
+        "notes": "The criteria note that discussion with secondary care or PCRL is recommended for acute renal function deterioration — this is embedded within the criterion itself, not an additional gateway. The CT KUB red flag threshold (creatinine >160 or eGFR <45) is a separate pathway and does not block this renal ultrasound criterion. The referral meets the Acute 48hr criterion as written. However, an eGFR of 8 in a 72-year-old with no obvious precipitant is clinically alarming and likely warrants inpatient assessment rather than community imaging alone — this is flagged as advisory and does not alter the CRR verdict.",
+        "safety_alert": "eGFR of 8 represents severe AKI (Stage 3) with a drop of 54 points from baseline. This patient requires urgent secondary care discussion (nephrology or acute medicine) before or concurrent with community imaging — admission may be required. Do not delay secondary care contact pending ultrasound result.",
+        "redirect": "Acute Kidney Injury pathway — manage according to AKI HealthPathway or seek advice from relevant secondary care specialist (nephrology/acute medicine) urgently. Community renal ultrasound may proceed concurrently if secondary care advises, but admission should be considered given severity.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 200,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23969,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 664,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.0286
+    },
+    "INT-AKI|B|3": {
+      "caseId": "INT-AKI",
+      "config": "B",
+      "run": 3,
+      "promptVersion": "2.3.0",
+      "rawVerdict": "proceeds",
+      "overrideVerdict": "proceeds",
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "proceeds",
+        "verdict_title": "Referral likely to proceed",
+        "verdict_summary": "Acute renal function deterioration with eGFR drop from 62 to 8 (a decrease of 54 ml/min) meets the Acute 48hr criterion for renal ultrasound; however, the severity of this AKI warrants urgent secondary care discussion before or alongside imaging.",
+        "priority": "Acute 48hr",
+        "met_criteria": [
+          "Acute renal function deterioration — eGFR drop from 62 (3 months ago) to 8 now, representing a decrease of >15 ml/min, meeting the acute deterioration threshold [p53]",
+          "Male patient, 72 years old [p53]",
+          "No catheter in situ, no obvious precipitant, not on nephrotoxics — obstruction is a plausible cause warranting imaging [p53]",
+          "Observations otherwise stable (BP 158/94, no fever, no peritonitis documented) [p53]"
+        ],
+        "missing_criteria": [],
+        "notes": "The criteria for CT KUB list eGFR <45 as a red flag requiring admission rather than imaging — this applies to CT KUB specifically, not renal ultrasound. The renal ultrasound Acute 48hr criterion for acute renal function deterioration is independently met and does not carry the same contraindication. However, given the severity of the AKI (eGFR 8 from a baseline of 62 in one week), secondary care involvement is strongly advisable. The criteria note explicitly recommends discussion with secondary care or PCRL for this presentation.",
+        "safety_alert": "eGFR of 8 represents a severe AKI (likely AKI stage 3). The criteria note that discussion with secondary care or PCRL is recommended for acute renal function deterioration. This patient should be assessed urgently by secondary care — consider same-day nephrology or medical admission rather than community imaging alone. If obstruction is suspected and the patient is stable, renal ultrasound within 48 hours is appropriate, but do not delay secondary care referral pending imaging.",
+        "redirect": "Acute Kidney Injury — manage according to the Acute Kidney Injury HealthPathway or seek advice from the relevant secondary care specialist. Renal ultrasound may proceed concurrently if the patient remains stable and obstruction needs to be excluded, but secondary care assessment should not be deferred.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 200,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23969,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 734,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.0304
+    },
+    "INT-SAH": {
+      "A": [
+        {
+          "caseId": "INT-SAH",
+          "config": "A",
+          "run": 1,
+          "promptVersion": "2.2.0",
+          "rawVerdict": "declined",
+          "overrideVerdict": null,
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "declined",
+            "verdict_title": "Referral likely to be declined",
+            "verdict_summary": "This presentation is a classic thunderclap/worst-ever headache with meningism — a medical emergency requiring immediate ED assessment for possible subarachnoid haemorrhage, not community radiology.",
+            "priority": null,
+            "met_criteria": [],
+            "missing_criteria": [],
+            "notes": "Step 0 exclusion applies: worst-ever/thunderclap headache is an absolute redirect to ED regardless of any other CRR-eligible elements. CRR criteria assessment does not proceed.",
+            "safety_alert": "EMERGENCY — DO NOT REFER TO CRR. This presentation (thunderclap headache reaching maximum intensity within seconds, 'worst headache of my life', with vomiting, neck stiffness, and photophobia) is a classic subarachnoid haemorrhage (SAH) presentation. Call 111 or send immediately to ED. Time-critical: LP or CT must be performed in a monitored acute setting. Community imaging is contraindicated.",
+            "redirect": "Emergency Department via 111. SAH protocol: non-contrast CT Head followed by LP if CT negative, within a monitored acute setting. Do not delay for community CRR imaging.",
+            "suggested_wording": null,
+            "add_to_note": []
+          },
+          "usage": {
+            "input_tokens": 193,
+            "cache_creation_input_tokens": 23839,
+            "cache_read_input_tokens": 0,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 23839,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 435,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.1602
+        },
+        {
+          "caseId": "INT-SAH",
+          "config": "A",
+          "run": 2,
+          "promptVersion": "2.2.0",
+          "rawVerdict": "declined",
+          "overrideVerdict": null,
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "declined",
+            "verdict_title": "Referral likely to be declined",
+            "verdict_summary": "This presentation is a classic thunderclap/worst-ever headache with meningism — a medical emergency requiring immediate ED assessment for possible subarachnoid haemorrhage, not community radiology.",
+            "priority": null,
+            "met_criteria": [],
+            "missing_criteria": [],
+            "notes": "Classic sentinel bleed presentation: exertional thunderclap headache, instantaneous onset to peak intensity, worst-ever severity, meningism (neck stiffness, photophobia), vomiting. CRR CT Head criteria explicitly exclude this scenario. Even if CT were negative, LP would be required within the hospital setting to exclude xanthochromia. Community imaging pathway is contraindicated.",
+            "safety_alert": "EMERGENCY — DO NOT REFER TO CRR. Thunderclap headache reaching maximum intensity within seconds ('worst headache of my life') with neck stiffness, vomiting, and photophobia is a presumed subarachnoid haemorrhage until proven otherwise. Call 111 or send immediately to ED. Do not delay for community CT.",
+            "redirect": "Emergency Department via 111. This is a Step 0 exclusion — possible subarachnoid haemorrhage requires immediate ED assessment including urgent CT head and LP under acute hospital care, not community-referred radiology.",
+            "suggested_wording": null,
+            "add_to_note": []
+          },
+          "usage": {
+            "input_tokens": 193,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 23839,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 463,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.0235
+        },
+        {
+          "caseId": "INT-SAH",
+          "config": "A",
+          "run": 3,
+          "promptVersion": "2.2.0",
+          "rawVerdict": "declined",
+          "overrideVerdict": null,
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "declined",
+            "verdict_title": "Referral likely to be declined",
+            "verdict_summary": "This presentation is a medical emergency consistent with subarachnoid haemorrhage — call 111 immediately, do not refer for community imaging.",
+            "priority": null,
+            "met_criteria": [],
+            "missing_criteria": [],
+            "notes": null,
+            "safety_alert": "POSSIBLE SUBARACHNOID HAEMORRHAGE — CALL 111 NOW. Thunderclap headache reaching maximum intensity within seconds ('worst headache of my life') during exertion, with vomiting, neck stiffness, and photophobia in a 44-year-old woman is a classic SAH presentation. This is a life-threatening emergency. Do NOT refer for community CT. Call 111 or send directly to ED by ambulance immediately.",
+            "redirect": "Emergency — 111 / ED. This patient requires immediate hospital assessment, urgent non-contrast CT Head, and LP if CT is negative. Community radiology is not appropriate.",
+            "suggested_wording": null,
+            "add_to_note": []
+          },
+          "usage": {
+            "input_tokens": 193,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 23839,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 379,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.0214
+        }
+      ],
+      "B": [
+        {
+          "caseId": "INT-SAH",
+          "config": "B",
+          "run": 1,
+          "promptVersion": "2.3.0",
+          "rawVerdict": "declined",
+          "overrideVerdict": "declined",
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "declined",
+            "verdict_title": "Referral likely to be declined",
+            "verdict_summary": "This presentation is a classic thunderclap/worst-ever headache with meningism — a medical emergency requiring immediate ED assessment for possible subarachnoid haemorrhage, not community imaging.",
+            "priority": null,
+            "met_criteria": [
+              "Worst-ever headache reaching maximum intensity within seconds (thunderclap pattern) [Step 0 — SAH red flag]",
+              "Associated vomiting, neck stiffness, and photophobia [Step 0 — meningism features]",
+              "Onset during exertion [Step 0 — SAH risk factor]",
+              "No prior similar headache [Step 0 — new sentinel event]"
+            ],
+            "missing_criteria": [],
+            "notes": "Step 0 exclusion applied. Thunderclap headache reaching peak intensity within seconds, described as worst-ever, with meningism signs is the classic SAH presentation. Community CT is contraindicated regardless of CRR criteria — this patient requires acute neurovascular assessment, CT head, and likely LP in ED. CRR criteria assessment was not performed.",
+            "safety_alert": "EMERGENCY — DO NOT IMAGE IN COMMUNITY. This is a thunderclap 'worst headache of my life' with meningism (neck stiffness, photophobia, vomiting) onset during exertion. Possible subarachnoid haemorrhage. Call 111 or send immediately to ED. Do not wait for community CT.",
+            "redirect": "Emergency Department via 111 — suspected subarachnoid haemorrhage. CT head and LP must be performed in a monitored acute setting, not community radiology.",
+            "suggested_wording": null,
+            "add_to_note": []
+          },
+          "usage": {
+            "input_tokens": 193,
+            "cache_creation_input_tokens": 23969,
+            "cache_read_input_tokens": 0,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 23969,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 547,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.1638
+        },
+        {
+          "caseId": "INT-SAH",
+          "config": "B",
+          "run": 2,
+          "promptVersion": "2.3.0",
+          "rawVerdict": "declined",
+          "overrideVerdict": "declined",
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "declined",
+            "verdict_title": "Referral likely to be declined",
+            "verdict_summary": "This presentation is a classic thunderclap/worst-ever headache with meningism — a medical emergency requiring immediate ED assessment for possible subarachnoid haemorrhage, not community imaging.",
+            "priority": null,
+            "met_criteria": [
+              "Headache reaching maximum intensity within seconds (thunderclap pattern) [p20]",
+              "Worst headache of patient's life [p20]",
+              "Associated vomiting, neck stiffness, and photophobia — meningeal irritation signs [p20]",
+              "Onset during exertion [p20]",
+              "No prior similar headache [p20]"
+            ],
+            "missing_criteria": [],
+            "notes": "Step 0 exclusion applied: thunderclap/worst-ever headache is an absolute emergency redirect under Step 0(a). CRR criteria assessment does not proceed. Even if CT Head criteria were otherwise met, community radiology is not the appropriate setting for this presentation — the patient requires immediate resuscitation-capable assessment, CT with contrast capability, LP if CT negative, and neurosurgical access.",
+            "safety_alert": "POSSIBLE SUBARACHNOID HAEMORRHAGE — DO NOT REFER FOR COMMUNITY IMAGING. Call 111 or send immediately to ED. Thunderclap headache reaching peak intensity within seconds, described as worst-ever, with vomiting, neck stiffness, and photophobia is a classic SAH presentation. Time-critical emergency.",
+            "redirect": "Emergency Department via 111 — suspected subarachnoid haemorrhage. CT Head and LP must be performed in a hospital setting with immediate neurosurgical backup available.",
+            "suggested_wording": null,
+            "add_to_note": []
+          },
+          "usage": {
+            "input_tokens": 193,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 23969,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 550,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.0258
+        },
+        {
+          "caseId": "INT-SAH",
+          "config": "B",
+          "run": 3,
+          "promptVersion": "2.3.0",
+          "rawVerdict": "declined",
+          "overrideVerdict": "declined",
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "declined",
+            "verdict_title": "Referral likely to be declined",
+            "verdict_summary": "This presentation is a classic thunderclap/worst-ever headache with meningism — a medical emergency requiring immediate ED assessment for possible subarachnoid haemorrhage, not community imaging.",
+            "priority": null,
+            "met_criteria": [
+              "Worst-ever headache documented [p20]",
+              "Thunderclap onset (maximum intensity within seconds) [p20]",
+              "Associated vomiting, neck stiffness, photophobia — meningeal irritation signs [p20]",
+              "Onset during exertion [p20]",
+              "No prior similar headache [p20]"
+            ],
+            "missing_criteria": [],
+            "notes": "Step 0 exclusion applies: thunderclap/worst-ever headache is an absolute redirect to emergency care before any CRR criteria assessment. Even if CT Head criteria were otherwise met, community radiology is contraindicated here — time-critical diagnosis requires ED-level care including LP capability and neurosurgical backup.",
+            "safety_alert": "POSSIBLE SUBARACHNOID HAEMORRHAGE — DO NOT DEFER. Call 111 or send immediately to ED. Thunderclap worst-ever headache with meningism (neck stiffness, photophobia, vomiting) onset during exertion is a SAH until proven otherwise. Community CT is not appropriate — this patient requires emergency assessment, LP if CT negative, and neurosurgical access.",
+            "redirect": "Emergency Department via 111. Do not arrange community imaging. SAH protocol: non-contrast CT Head in ED, followed by LP at ≥12 hours from onset if CT negative.",
+            "suggested_wording": null,
+            "add_to_note": []
+          },
+          "usage": {
+            "input_tokens": 193,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 23969,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 544,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.0256
+        }
+      ]
+    },
+    "INT-TORSION": {
+      "A": [
+        {
+          "caseId": "INT-TORSION",
+          "config": "A",
+          "run": 1,
+          "promptVersion": "2.2.0",
+          "rawVerdict": "declined",
+          "overrideVerdict": null,
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "declined",
+            "verdict_title": "Referral likely to be declined",
+            "verdict_summary": "This presentation is a surgical emergency — do not image, refer immediately to ED for suspected testicular torsion.",
+            "priority": null,
+            "met_criteria": [
+              "Suspected testicular torsion — explicitly listed as 'Refer for acute assessment without initial imaging' [p57]"
+            ],
+            "missing_criteria": [],
+            "notes": "The US Scrotum criteria explicitly list 'Suspected testicular torsion' under 'Refer for acute assessment — without initial imaging' [p57]. Community imaging is contraindicated. The US Abdomen criteria also list suspected testicular torsion as a redirect to acute assessment without imaging [p31].",
+            "safety_alert": "SURGICAL EMERGENCY: Clinical findings (sudden onset severe testicular pain, high-riding testis, absent cremasteric reflex, nausea/vomiting, 3-hour onset) are classic for testicular torsion. Viability is time-critical — surgical salvage rates exceed 90% within 6 hours but fall sharply thereafter. Do NOT wait for ultrasound. Send patient to ED immediately via the fastest available means.",
+            "redirect": "ED immediately — suspected testicular torsion is a surgical emergency. CRR community ultrasound is explicitly excluded. Ultrasound must not delay surgical assessment.",
+            "suggested_wording": null,
+            "add_to_note": []
+          },
+          "usage": {
+            "input_tokens": 190,
+            "cache_creation_input_tokens": 23839,
+            "cache_read_input_tokens": 0,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 23839,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 471,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.1611
+        },
+        {
+          "caseId": "INT-TORSION",
+          "config": "A",
+          "run": 2,
+          "promptVersion": "2.2.0",
+          "rawVerdict": "declined",
+          "overrideVerdict": null,
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "declined",
+            "verdict_title": "Referral likely to be declined",
+            "verdict_summary": "This presentation is a surgical emergency — do not image, refer immediately to ED for suspected testicular torsion.",
+            "priority": null,
+            "met_criteria": [],
+            "missing_criteria": [],
+            "notes": "Classic presentation: adolescent male, sudden severe testicular pain waking from sleep, high-riding testis, absent cremasteric reflex, nausea and vomiting. Sensitivity of ultrasound for torsion is insufficient to rule out the diagnosis and must never be used as a gatekeeper to surgery. Time to detorsion is the critical determinant of testicular salvage.",
+            "safety_alert": "SUSPECTED TESTICULAR TORSION — SURGICAL EMERGENCY. Do not wait for imaging. Call 111 or send directly to ED immediately. Viability window is approximately 6 hours from onset; this patient is already 3 hours in. Imaging must not delay surgical exploration.",
+            "redirect": "ED / surgical emergency — testicular torsion is explicitly excluded from community ultrasound (US Scrotum criteria, p57). Refer for acute surgical assessment without imaging.",
+            "suggested_wording": null,
+            "add_to_note": []
+          },
+          "usage": {
+            "input_tokens": 190,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 23839,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 421,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.0225
+        },
+        {
+          "caseId": "INT-TORSION",
+          "config": "A",
+          "run": 3,
+          "promptVersion": "2.2.0",
+          "rawVerdict": "declined",
+          "overrideVerdict": null,
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "declined",
+            "verdict_title": "Referral likely to be declined",
+            "verdict_summary": "This presentation is a surgical emergency — suspected testicular torsion requires immediate ED referral, not community imaging.",
+            "priority": null,
+            "met_criteria": [
+              "Acute onset severe testicular pain with high-riding testis and absent cremasteric reflex — classic presentation of testicular torsion [p57]"
+            ],
+            "missing_criteria": [],
+            "notes": "The clinical findings (sudden onset, woke from sleep, high-riding testis, absent cremasteric reflex, nausea/vomiting) are highly specific for testicular torsion. Testicular salvage rates are >90% if detorsion occurs within 6 hours, dropping sharply thereafter. No imaging should delay surgical exploration.",
+            "safety_alert": "SURGICAL EMERGENCY — suspected testicular torsion. Do NOT wait for imaging. Call 111 or send directly to ED immediately. Viability window is approximately 6 hours from onset — this patient is within that window. Scrotal ultrasound is explicitly excluded from CRR community imaging for suspected torsion.",
+            "redirect": "ED / surgical emergency — suspected testicular torsion is listed under 'Refer for acute assessment without initial imaging' on the Ultrasound Scrotum pathway [p57]. Community ultrasound is contraindicated. Immediate surgical assessment is required.",
+            "suggested_wording": null,
+            "add_to_note": []
+          },
+          "usage": {
+            "input_tokens": 190,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 23839,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 478,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.0239
+        }
+      ],
+      "B": [
+        {
+          "caseId": "INT-TORSION",
+          "config": "B",
+          "run": 1,
+          "promptVersion": "2.3.0",
+          "rawVerdict": "declined",
+          "overrideVerdict": "declined",
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "declined",
+            "verdict_title": "Referral likely to be declined",
+            "verdict_summary": "This presentation is a surgical emergency consistent with testicular torsion — community imaging is contraindicated; immediate ED transfer is required.",
+            "priority": null,
+            "met_criteria": [
+              "Acute scrotal pain with high-riding testis, absent cremasteric reflex, and associated nausea/vomiting — classic presentation of testicular torsion [p57]"
+            ],
+            "missing_criteria": [],
+            "notes": "The Ultrasound Scrotum criteria explicitly list 'Suspected testicular torsion' as a 'Refer for acute assessment — without initial imaging' presentation [p57]. Community ultrasound must not be used as a gatekeeper here — a normal Doppler does not exclude torsion and would cause dangerous delay.",
+            "safety_alert": "SURGICAL EMERGENCY — SUSPECTED TESTICULAR TORSION. Do NOT wait for imaging. Call 111 or arrange immediate transfer to ED. Viability is time-critical: salvage rates exceed 90% within 6 hours but fall sharply after that. This patient is already 3 hours into the episode.",
+            "redirect": "ED immediately — suspected testicular torsion requires urgent surgical exploration, not community ultrasound. The CRR criteria explicitly redirect this presentation to acute surgical assessment without imaging [p57].",
+            "suggested_wording": null,
+            "add_to_note": []
+          },
+          "usage": {
+            "input_tokens": 190,
+            "cache_creation_input_tokens": 23969,
+            "cache_read_input_tokens": 0,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 23969,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 472,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.1619
+        },
+        {
+          "caseId": "INT-TORSION",
+          "config": "B",
+          "run": 2,
+          "promptVersion": "2.3.0",
+          "rawVerdict": "declined",
+          "overrideVerdict": "declined",
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "declined",
+            "verdict_title": "Referral likely to be declined",
+            "verdict_summary": "This presentation is a surgical emergency consistent with testicular torsion — community imaging is contraindicated; immediate ED transfer is required.",
+            "priority": null,
+            "met_criteria": [
+              "Acute scrotal pain with high-riding testis, absent cremasteric reflex, and associated nausea/vomiting — classic presentation of testicular torsion [p57]"
+            ],
+            "missing_criteria": [],
+            "notes": "Step 0 exclusion applied: suspected testicular torsion is a listed surgical emergency requiring immediate care, not community imaging. CRR criteria explicitly state 'Suspected testicular torsion — refer for acute assessment without initial imaging' [p57]. Verdict set to declined and assessment stopped.",
+            "safety_alert": "SURGICAL EMERGENCY — suspected testicular torsion. Call 111 or transfer immediately to ED. Viability window is approximately 6 hours from onset; this patient is already 3 hours in. Do NOT wait for imaging — scrotal ultrasound is explicitly excluded for suspected torsion under CRR criteria. Urgent surgical exploration is required.",
+            "redirect": "ED / surgical emergency — do not image in the community. Refer per local Testicular Torsion HealthPathway.",
+            "suggested_wording": null,
+            "add_to_note": []
+          },
+          "usage": {
+            "input_tokens": 190,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 23969,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 457,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.0235
+        },
+        {
+          "caseId": "INT-TORSION",
+          "config": "B",
+          "run": 3,
+          "promptVersion": "2.3.0",
+          "rawVerdict": "declined",
+          "overrideVerdict": "declined",
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "declined",
+            "verdict_title": "Referral likely to be declined",
+            "verdict_summary": "This presentation is a surgical emergency — community imaging is contraindicated and will not proceed.",
+            "priority": null,
+            "met_criteria": [
+              "Acute scrotal pain in a male patient [p57]",
+              "High-riding testis on examination [p57]",
+              "Absent cremasteric reflex [p57]",
+              "Onset within hours, waking from sleep [p57]"
+            ],
+            "missing_criteria": [],
+            "notes": "Step 0 exclusion applied: suspected testicular torsion is a listed surgical emergency requiring immediate ED referral, not community imaging. Verdict set to declined and assessment stopped. Community ultrasound is contraindicated — scrotal US has sensitivity limitations for torsion and a negative scan does not exclude it. Surgical exploration is the definitive management.",
+            "safety_alert": "SUSPECTED TESTICULAR TORSION — SURGICAL EMERGENCY. Do not wait for imaging. Call 111 or send immediately to ED. Testicular viability is time-critical: salvage rates exceed 90% within 6 hours but fall sharply thereafter. Classic triad present: sudden severe pain, high-riding testis, absent cremasteric reflex.",
+            "redirect": "ED / surgical emergency — per US Scrotum criteria [p57]: 'Suspected testicular torsion — refer for acute assessment without initial imaging.' Community ultrasound is explicitly excluded and must not delay surgical exploration.",
+            "suggested_wording": null,
+            "add_to_note": []
+          },
+          "usage": {
+            "input_tokens": 190,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 23969,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 502,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.0246
+        }
+      ]
+    },
+    "INT-AKI": {
+      "A": [
+        {
+          "caseId": "INT-AKI",
+          "config": "A",
+          "run": 1,
+          "promptVersion": "2.2.0",
+          "rawVerdict": "declined",
+          "overrideVerdict": null,
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "declined",
+            "verdict_title": "Referral likely to be declined — patient requires acute hospital assessment, not community imaging",
+            "verdict_summary": "An eGFR of 8 (drop from baseline 62) meets the red-flag threshold for acute renal function deterioration requiring urgent secondary care assessment, not community ultrasound.",
+            "priority": null,
+            "met_criteria": [
+              "Acute renal function deterioration — serum creatinine/eGFR drop far exceeds threshold (eGFR 8 vs baseline 62, drop >54 units, well above the 'eGFR decrease >15 in 12 months' progressive CKD marker and consistent with acute deterioration criteria) [p53]",
+              "No catheter in situ, no obvious precipitant, not on nephrotoxics — supports genuine unexplained AKI [p53]",
+              "Reduced urine output documented — consistent with AKI presentation [p53]"
+            ],
+            "missing_criteria": [],
+            "notes": "The US Renal criteria at p53 include 'Acute renal function deterioration — serum creatinine increase >50 micromol/L in 7 days or >25 micromol/L in 2 days' as an Acute 48hr criterion, with a note that discussion with secondary care/PCRL is recommended. However, an eGFR of 8 (from 62) represents end-organ failure severity that goes well beyond a community-managed acute demand scan — this patient almost certainly requires hospital admission. The CT KUB criteria also flag eGFR <45 as a red flag requiring admission rather than imaging [p26]. The redirect to secondary care takes precedence over any community imaging pathway here.",
+            "safety_alert": "ACUTE HOSPITAL REFERRAL REQUIRED: eGFR of 8 with a baseline of 62 represents a severe, life-threatening acute kidney injury. This patient requires immediate secondary care assessment — do not defer for community imaging. Manage per Acute Kidney Injury pathway or call secondary care now. Community ultrasound is not appropriate at this stage.",
+            "redirect": "Acute Kidney Injury pathway — refer immediately to secondary care (ED or acute medical team). Community renal ultrasound criteria note that acute renal function deterioration should be managed per the Acute Kidney Injury pathway or with secondary care specialist advice [p55]. If secondary care recommends ultrasound as part of inpatient or urgent outpatient workup, that request should come from the admitting team.",
+            "suggested_wording": null,
+            "add_to_note": []
+          },
+          "usage": {
+            "input_tokens": 200,
+            "cache_creation_input_tokens": 23839,
+            "cache_read_input_tokens": 0,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 23839,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 753,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.1682
+        },
+        {
+          "caseId": "INT-AKI",
+          "config": "A",
+          "run": 2,
+          "promptVersion": "2.2.0",
+          "rawVerdict": "declined",
+          "overrideVerdict": null,
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "declined",
+            "verdict_title": "Referral likely to be declined — patient requires acute hospital assessment, not community imaging",
+            "verdict_summary": "An eGFR of 8 (drop from baseline 62) meets the CT KUB red flag threshold for acute admission; for renal ultrasound, an acute deterioration of this severity requires urgent secondary care assessment before or instead of community imaging.",
+            "priority": null,
+            "met_criteria": [
+              "Acute renal function deterioration documented — serum creatinine/eGFR drop consistent with significant AKI (eGFR 8 from baseline 62 over approximately 3 months) [p53]",
+              "Male patient, age 72 [p53]",
+              "No catheter, no obvious precipitant, not on nephrotoxics documented [p53]",
+              "Obs otherwise stable noted [p53]"
+            ],
+            "missing_criteria": [
+              "Acute renal ultrasound criteria require discussion with secondary care/PCRL before requesting — this has not been documented [p53]",
+              "eGFR of 8 falls well below the CT KUB red flag threshold of eGFR <45 (admit, do not image) [p26]; by analogy, an eGFR this severely reduced warrants acute admission rather than community imaging",
+              "Serum creatinine value not documented — required to confirm AKI severity and guide acute pathway (creatinine >160 mmol/L is a CT KUB red flag for admission) [p26]"
+            ],
+            "notes": "The Ultrasound Renal criteria [p53] include an Acute 48hr pathway for 'acute renal function deterioration — serum creatinine increase >50 micromol/L in 7 days or >25 micromol/L in 2 days' with a note that discussion with secondary care/PCRL is recommended. However, the degree of deterioration here (eGFR 8 from 62) is extreme and the criteria explicitly redirect AKI to the Acute Kidney Injury pathway rather than community imaging. The CT KUB criteria [p26] list eGFR <45 as a red flag requiring admission rather than imaging — this patient's eGFR of 8 far exceeds that threshold. Community ultrasound should only be arranged on explicit secondary care recommendation after acute assessment.",
+            "safety_alert": "ACUTE ADMISSION REQUIRED: eGFR of 8 (from baseline 62) represents severe acute kidney injury with no identified cause. This patient requires urgent hospital assessment — refer to ED or acute medical team. Community imaging is not appropriate at this stage. Do not delay admission for imaging.",
+            "redirect": "Refer to ED or acute medical assessment. Manage according to the Acute Kidney Injury HealthPathway. Community renal ultrasound may be appropriate after acute stabilisation if recommended by the inpatient team.",
+            "suggested_wording": null,
+            "add_to_note": [
+              "Document serum creatinine value to confirm AKI severity.",
+              "This presentation requires acute hospital assessment — refer to ED or acute medical team rather than requesting community renal ultrasound.",
+              "If secondary care specialist subsequently advises community renal ultrasound after acute assessment, document their recommendation explicitly to support a CRR referral."
+            ]
+          },
+          "usage": {
+            "input_tokens": 200,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 23839,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 928,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.0352
+        },
+        {
+          "caseId": "INT-AKI",
+          "config": "A",
+          "run": 3,
+          "promptVersion": "2.2.0",
+          "rawVerdict": "declined",
+          "overrideVerdict": null,
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "declined",
+            "verdict_title": "Referral likely to be declined — patient requires acute hospital assessment, not community imaging",
+            "verdict_summary": "An eGFR of 8 (dropped from 62 over approximately 3 months) meets the CT KUB red flag threshold for acute admission; this patient requires urgent secondary care assessment, not community ultrasound.",
+            "priority": null,
+            "met_criteria": [
+              "Male patient with new acute renal function deterioration [p54]",
+              "Serum creatinine/eGFR change consistent with acute kidney injury — eGFR 8 vs baseline 62 [p54]",
+              "No catheter in situ, no obvious precipitant documented [p53]"
+            ],
+            "missing_criteria": [
+              "Community renal ultrasound for acute renal function deterioration requires discussion with secondary care/PCRL before imaging — this degree of AKI (eGFR 8) warrants acute hospital assessment, not community imaging [p54]",
+              "CT KUB red flag criteria are met: eGFR <45 (eGFR 8) — criteria state 'admit, do not image' [p26]"
+            ],
+            "notes": "The Ultrasound Renal criteria [p54] do include acute renal function deterioration (creatinine increase >50 micromol/L in 7 days or >25 micromol/L in 2 days) as an acute 48-hour indication, but note that 'discussion with secondary care/PCRL is recommended' and this is intended for milder AKI where community management is appropriate. An eGFR of 8 in a 72-year-old man is a medical emergency — the degree of deterioration here (eGFR 8 from baseline 62) far exceeds the threshold for safe community imaging. The CT KUB red flag rule (eGFR <45 = admit, do not image) [p26] reinforces that patients with this level of renal impairment must be admitted. Community imaging is contraindicated.",
+            "safety_alert": "ACUTE ADMISSION REQUIRED: eGFR of 8 (baseline 62) represents severe acute kidney injury. CT KUB criteria explicitly state eGFR <45 is a red flag requiring acute admission — do not image in the community. Refer this patient urgently to the Emergency Department or acute medical team for assessment, investigation, and management of AKI. Do not arrange community radiology.",
+            "redirect": "Acute hospital assessment — refer to ED or acute medical team urgently. Manage per Acute Kidney Injury HealthPathway. Community renal ultrasound is not appropriate at this acuity; inpatient imaging will be arranged by the admitting team as required.",
+            "suggested_wording": null,
+            "add_to_note": []
+          },
+          "usage": {
+            "input_tokens": 200,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 23839,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 816,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.0324
+        }
+      ],
+      "B": [
+        {
+          "caseId": "INT-AKI",
+          "config": "B",
+          "run": 1,
+          "promptVersion": "2.3.0",
+          "rawVerdict": "proceeds",
+          "overrideVerdict": "proceeds",
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "proceeds",
+            "verdict_title": "Referral likely to proceed",
+            "verdict_summary": "Acute renal function deterioration with eGFR drop from 62 to 8 (a decrease of 54 units) meets the Acute 48hr criterion for renal ultrasound; however, the severity of this AKI warrants urgent secondary care discussion before or alongside imaging.",
+            "priority": "Acute 48hr",
+            "met_criteria": [
+              "Acute renal function deterioration — serum creatinine/eGFR change consistent with AKI: eGFR dropped from baseline 62 to 8 over approximately 3 months, with acute presentation over 1 week [p53]",
+              "Male patient, 72 years old [p53]",
+              "No catheter in situ, no obvious precipitant, not on nephrotoxics — obstruction not yet excluded [p53]",
+              "Haemodynamically stable (obs stable, BP 158/94) — no immediate red flags precluding community imaging [p53]"
+            ],
+            "missing_criteria": [],
+            "notes": "The Acute 48hr criterion for renal ultrasound is met on the basis of acute renal function deterioration. The criteria note explicitly recommends secondary care/PCRL discussion for this presentation. The CT KUB red flag threshold (eGFR <45) is far exceeded, confirming CT KUB is contraindicated. Renal ultrasound is the appropriate modality to exclude obstruction as a reversible cause. If secondary care advises admission, imaging will be arranged in-hospital and this community referral may not be required.",
+            "safety_alert": "eGFR of 8 represents a severe AKI (Stage 3) with a drop of 54 units from baseline. This patient requires urgent secondary care discussion (nephrology or acute medicine) before or concurrent with community imaging — admission may be required. Do not delay secondary care contact pending ultrasound result.",
+            "redirect": "Acute Kidney Injury pathway: criteria note that discussion with secondary care or PCRL is recommended for acute renal function deterioration. Given the severity (eGFR 8), nephrology or acute medicine input should be sought urgently — this patient may require admission rather than community imaging alone.",
+            "suggested_wording": null,
+            "add_to_note": []
+          },
+          "usage": {
+            "input_tokens": 200,
+            "cache_creation_input_tokens": 23969,
+            "cache_read_input_tokens": 0,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 23969,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 691,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.1674
+        },
+        {
+          "caseId": "INT-AKI",
+          "config": "B",
+          "run": 2,
+          "promptVersion": "2.3.0",
+          "rawVerdict": "proceeds",
+          "overrideVerdict": "proceeds",
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "proceeds",
+            "verdict_title": "Referral likely to proceed",
+            "verdict_summary": "Acute renal function deterioration with eGFR drop from 62 to 8 (a decrease of 54 points) meets the Acute 48hr criterion for renal ultrasound, though the severity of this AKI warrants urgent secondary care discussion before or alongside imaging.",
+            "priority": "Acute 48hr",
+            "met_criteria": [
+              "Acute renal function deterioration — serum creatinine/eGFR change consistent with AKI: eGFR dropped from 62 (baseline 3 months ago) to 8 — a decrease of 54 points, meeting the acute deterioration threshold [p53]",
+              "Discussion with secondary care/PCRL recommended — noted as part of this criterion [p53]"
+            ],
+            "missing_criteria": [],
+            "notes": "The criteria note that discussion with secondary care or PCRL is recommended for acute renal function deterioration — this is embedded within the criterion itself, not an additional gateway. The CT KUB red flag threshold (creatinine >160 or eGFR <45) is a separate pathway and does not block this renal ultrasound criterion. The referral meets the Acute 48hr criterion as written. However, an eGFR of 8 in a 72-year-old with no obvious precipitant is clinically alarming and likely warrants inpatient assessment rather than community imaging alone — this is flagged as advisory and does not alter the CRR verdict.",
+            "safety_alert": "eGFR of 8 represents severe AKI (Stage 3) with a drop of 54 points from baseline. This patient requires urgent secondary care discussion (nephrology or acute medicine) before or concurrent with community imaging — admission may be required. Do not delay secondary care contact pending ultrasound result.",
+            "redirect": "Acute Kidney Injury pathway — manage according to AKI HealthPathway or seek advice from relevant secondary care specialist (nephrology/acute medicine) urgently. Community renal ultrasound may proceed concurrently if secondary care advises, but admission should be considered given severity.",
+            "suggested_wording": null,
+            "add_to_note": []
+          },
+          "usage": {
+            "input_tokens": 200,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 23969,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 664,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.0286
+        },
+        {
+          "caseId": "INT-AKI",
+          "config": "B",
+          "run": 3,
+          "promptVersion": "2.3.0",
+          "rawVerdict": "proceeds",
+          "overrideVerdict": "proceeds",
+          "overrideFired": false,
+          "fabrication": "REVIEW",
+          "parseSuccess": true,
+          "result": {
+            "verdict": "proceeds",
+            "verdict_title": "Referral likely to proceed",
+            "verdict_summary": "Acute renal function deterioration with eGFR drop from 62 to 8 (a decrease of 54 ml/min) meets the Acute 48hr criterion for renal ultrasound; however, the severity of this AKI warrants urgent secondary care discussion before or alongside imaging.",
+            "priority": "Acute 48hr",
+            "met_criteria": [
+              "Acute renal function deterioration — eGFR drop from 62 (3 months ago) to 8 now, representing a decrease of >15 ml/min, meeting the acute deterioration threshold [p53]",
+              "Male patient, 72 years old [p53]",
+              "No catheter in situ, no obvious precipitant, not on nephrotoxics — obstruction is a plausible cause warranting imaging [p53]",
+              "Observations otherwise stable (BP 158/94, no fever, no peritonitis documented) [p53]"
+            ],
+            "missing_criteria": [],
+            "notes": "The criteria for CT KUB list eGFR <45 as a red flag requiring admission rather than imaging — this applies to CT KUB specifically, not renal ultrasound. The renal ultrasound Acute 48hr criterion for acute renal function deterioration is independently met and does not carry the same contraindication. However, given the severity of the AKI (eGFR 8 from a baseline of 62 in one week), secondary care involvement is strongly advisable. The criteria note explicitly recommends discussion with secondary care or PCRL for this presentation.",
+            "safety_alert": "eGFR of 8 represents a severe AKI (likely AKI stage 3). The criteria note that discussion with secondary care or PCRL is recommended for acute renal function deterioration. This patient should be assessed urgently by secondary care — consider same-day nephrology or medical admission rather than community imaging alone. If obstruction is suspected and the patient is stable, renal ultrasound within 48 hours is appropriate, but do not delay secondary care referral pending imaging.",
+            "redirect": "Acute Kidney Injury — manage according to the Acute Kidney Injury HealthPathway or seek advice from the relevant secondary care specialist. Renal ultrasound may proceed concurrently if the patient remains stable and obstruction needs to be excluded, but secondary care assessment should not be deferred.",
+            "suggested_wording": null,
+            "add_to_note": []
+          },
+          "usage": {
+            "input_tokens": 200,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 23969,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 734,
+            "service_tier": "standard",
+            "inference_geo": "global"
+          },
+          "cost_nzd": 0.0304
+        }
+      ]
+    }
+  }
+}
