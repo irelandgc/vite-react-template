@@ -606,6 +606,20 @@ var UX02_REORDER_OUTPUT  = true;
 var UX03_MERGE_MISSING   = true;
 var UX04_PANEL_FILTERING = true;
 
+// ── Role-aware view ──────────────────────────────────────────────────────────
+// activeRole is null when no ?role= param is present — default behaviour is then
+// byte-identical to production. 'referrer' and 'triager' activate the role views.
+var activeRole = (function() {
+  var p = getParam('role');
+  return (p === 'referrer' || p === 'triager') ? p : null;
+})();
+
+// Strip trailing [pXX] / [pXX-YY] page refs from a criterion string.
+// Only strips from the end of the string; leaves any other brackets intact.
+function stripPageRefs(s) {
+  return s.replace(/(?:\s*\[p\d+(?:[-–\d]+)?\])+\s*$/, '').trim();
+}
+
 // Changelog:
 // v1.1.0 DEV — default model updated to claude-sonnet-4-6; claude-sonnet-4-20250514 retired; compare mode updated to Sonnet 4.6 vs Opus 4.8 (2026-06-20)
 // v1.0.0 DEV — version reset for review cycle (2026-05-14); previously v2.1.1
@@ -639,6 +653,23 @@ document.addEventListener('DOMContentLoaded', function() {
       runCheck();
     }
   }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Role toggle — only injected when a valid ?role= param is present.
+  // Lets evaluators flip role on the same assessment without re-running the model.
+  if (activeRole === null) return;
+  var hdRight = document.querySelector('.hd-right');
+  if (!hdRight) return;
+  var wrap = document.createElement('div');
+  wrap.id = 'roleToggleWrap';
+  wrap.style.cssText = 'display:flex;align-items:center;gap:0;margin-right:6px;border:1px solid var(--rule);border-radius:6px;overflow:hidden;font-family:var(--sans);font-size:11px;';
+  wrap.innerHTML =
+    '<span style="padding:4px 8px;background:var(--mist);color:var(--mid);white-space:nowrap;border-right:1px solid var(--rule);font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;">Viewing as</span>' +
+    '<button id="roleToggleReferrer" onclick="setActiveRole(\'referrer\')" style="padding:4px 9px;border:none;border-right:1px solid var(--rule);cursor:pointer;font-family:var(--sans);font-size:11px;font-weight:600;">Referrer</button>' +
+    '<button id="roleToggleTriager"  onclick="setActiveRole(\'triager\')"  style="padding:4px 9px;border:none;cursor:pointer;font-family:var(--sans);font-size:11px;font-weight:600;">Triager</button>';
+  hdRight.insertBefore(wrap, hdRight.firstChild);
+  _updateRoleToggleState();
 });
 
 // ── CONFIGURATION ────────────────────────────────────────────
@@ -2263,6 +2294,11 @@ function renderCriteriaBrowser(r) {
 }
 
 function renderAIResult(r) {
+  // Role-aware dispatch — only active when ?role= param is present.
+  // When activeRole is null the function falls through to the unchanged production path.
+  if (activeRole === 'referrer') { _renderReferrerView(r); return; }
+  if (activeRole === 'triager')  { _renderTriagerView(r);  return; }
+
   var vc = r.verdict === 'proceeds' ? 'proceed' : r.verdict === 'at_risk' ? 'atrisk' : 'decline';
   var vi = r.verdict === 'proceeds' ? '&#10003;' : r.verdict === 'at_risk' ? '&#9888;' : '&#10007;';
 
@@ -2481,6 +2517,332 @@ function renderAIResult(r) {
 
   h += '</div></div>';
 
+  document.getElementById('aiPanel').innerHTML = h;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ROLE-AWARE VIEW
+// ═══════════════════════════════════════════════════════════════
+
+function setActiveRole(role) {
+  activeRole = role;
+  _updateRoleToggleState();
+  if (lastAiResult) renderAIResult(lastAiResult);
+}
+
+function _updateRoleToggleState() {
+  var refBtn = document.getElementById('roleToggleReferrer');
+  var triBtn = document.getElementById('roleToggleTriager');
+  if (!refBtn || !triBtn) return;
+  var on  = 'padding:4px 9px;border:none;border-right:1px solid var(--rule);cursor:pointer;font-family:var(--sans);font-size:11px;font-weight:600;background:var(--accent);color:#fff;';
+  var off = 'padding:4px 9px;border:none;border-right:1px solid var(--rule);cursor:pointer;font-family:var(--sans);font-size:11px;font-weight:600;background:transparent;color:var(--mid);';
+  var onLast  = on.replace('border-right:1px solid var(--rule);', '');
+  var offLast = off.replace('border-right:1px solid var(--rule);', '');
+  refBtn.style.cssText = activeRole === 'referrer' ? on  : off;
+  triBtn.style.cssText = activeRole === 'triager'  ? onLast : offLast;
+}
+
+function toggleDraftNote() {
+  var c   = document.getElementById('roleRefDraftContent');
+  var btn = document.getElementById('roleRefDraftBtn');
+  if (!c || !btn) return;
+  var open = c.style.display !== 'block';
+  c.style.display = open ? 'block' : 'none';
+  btn.textContent = (open ? '▾ ' : '▸ ') + 'Draft note — confirm every detail is true for this patient before use';
+}
+
+function toggleReferrerAdvice() {
+  var c   = document.getElementById('roleTriAdviceContent');
+  var btn = document.getElementById('roleTriAdviceBtn');
+  if (!c || !btn) return;
+  var open = c.style.display !== 'block';
+  c.style.display = open ? 'block' : 'none';
+  btn.textContent = (open ? '▾ ' : '▸ ') + 'What the referrer is advised';
+}
+
+// Shared panel top: header, cost, doc-mode badge, correction, safety alert, not-funded flag.
+function _roleSharedTop(r) {
+  var usage = r._usage || {};
+  var inputTok  = usage.input_tokens            || 0;
+  var outputTok = usage.output_tokens           || 0;
+  var cachedTok = usage.cache_read_input_tokens || 0;
+  var costUSD   = (inputTok * 3.0 + cachedTok * 0.30 + outputTok * 15.0) / 1000000;
+  var costNZD   = costUSD * 1.65;
+  var cacheNote = cachedTok > 0 ? ' ⚡cached' : '';
+  var costStr   = inputTok
+    ? inputTok.toLocaleString() + ' in' + cacheNote + ' / ' + outputTok.toLocaleString() + ' out &nbsp;&middot;&nbsp; NZ$' + costNZD.toFixed(4)
+    : '';
+  var modeBadge = r._docMode === 'strict'
+    ? '<span style="font-size:10px;font-weight:700;background:rgba(0,60,100,0.3);padding:1px 6px;border-radius:8px;letter-spacing:0.3px;">STRICT</span> '
+    : '<span style="font-size:10px;font-weight:700;background:rgba(80,140,80,0.3);padding:1px 6px;border-radius:8px;letter-spacing:0.3px;">INFERRED</span> ';
+
+  var h = '<div class="panel">';
+  h += '<div style="background:var(--navy);color:#fff;font-size:11px;font-weight:700;letter-spacing:0.7px;text-transform:uppercase;padding:9px 14px;display:flex;align-items:center;justify-content:space-between;">';
+  h += '<span>&#9733; AI Assessment ' + modeBadge + '</span>';
+  h += costStr ? '<span style="font-size:10px;font-weight:400;opacity:.7;letter-spacing:0;">' + costStr + '</span>' : '';
+  h += '</div><div style="padding:12px 14px">';
+
+  if (r._originalNote && r._correctedNote && hasCorrectionChanges(r._originalNote, r._correctedNote)) {
+    h += '<div class="correction-box">';
+    h += '<div class="correction-lbl">&#9999;&#65039; Note interpreted as';
+    h += '<span class="correction-toggle" id="corrToggle" onclick="toggleCorrectionDetail()">show original</span>';
+    h += '</div>';
+    h += '<div class="correction-interpreted">' + esc(r._correctedNote) + '</div>';
+    h += '<div class="correction-original" id="corrOrig" style="display:none">Original: ' + esc(r._originalNote) + '</div>';
+    h += '</div>';
+  } else if (r._correctedNote !== undefined) {
+    h += '<div style="font-size:10px;color:#8ab4c8;margin-bottom:8px;display:flex;align-items:center;gap:4px;"><span>&#10003;</span> Note assessed as entered — no spelling corrections needed</div>';
+  }
+
+  // Safety alert — always visible, non-negotiable across both roles
+  if (r.safety_alert) {
+    h += '<div style="background:#fff0f0;border:2px solid #c62828;border-radius:3px;padding:12px 14px;margin-bottom:10px;">';
+    h += '<div style="font-size:12px;font-weight:700;color:#c62828;letter-spacing:0.3px;margin-bottom:4px;">&#9888;&#65039; SAFETY ALERT</div>';
+    h += '<div style="font-size:13px;color:#7a0000;font-weight:600;line-height:1.5;">' + esc(r.safety_alert) + '</div>';
+    h += '</div>';
+  }
+
+  if (r.not_funded_flag) {
+    h += '<div style="background:var(--fail-bg);border-left:3px solid #c62828;padding:8px 10px;font-size:11px;color:var(--fail);margin-bottom:8px;border-radius:2px;">&#9888; <strong>Not routinely funded:</strong> This presentation appears to fall in the not-routinely-funded category for CRR.</div>';
+  }
+
+  return h;
+}
+
+// Shared session footer.
+function _roleSharedBottom(r) {
+  var sessionParts = ['Model: ' + (r._model || 'claude-sonnet-4-6'), 'Mode: ' + (r._docMode || 'strict')];
+  if (loadedPrompt && loadedPrompt.version) sessionParts.push('Prompt: v' + loadedPrompt.version);
+  return '<div style="font-size:10px;color:#8ab4c8;margin-top:10px;padding-top:8px;border-top:1px solid var(--rule)">' + sessionParts.join(' · ') + '</div>';
+}
+
+// ── Referrer view ─────────────────────────────────────────────────────────────
+
+function _renderReferrerView(r) {
+  var vc = r.verdict === 'proceeds' ? 'proceed' : r.verdict === 'at_risk' ? 'atrisk' : 'decline';
+  var vi = r.verdict === 'proceeds' ? '&#10003;' : r.verdict === 'at_risk' ? '&#9888;' : '&#10007;';
+  var missingCount = (r.missing_criteria || []).length;
+  var h = _roleSharedTop(r);
+
+  // Redirect — framed as pre-submission steer
+  if (r.redirect) {
+    h += '<div style="background:#fff8e6;border:1px solid #f0d070;border-left:3px solid #e09000;padding:9px 12px;font-size:12px;color:var(--warn);margin-bottom:8px;border-radius:2px;">';
+    h += '<strong style="display:block;font-size:10px;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:3px;">&#8594; Before you submit</strong>' + esc(r.redirect) + '</div>';
+  }
+
+  // Verdict — progress framing
+  var refVerdictTitle;
+  if (r.verdict === 'proceeds') {
+    refVerdictTitle = r.verdict_title || 'Referral looks complete';
+  } else if (r.verdict === 'at_risk') {
+    refVerdictTitle = missingCount > 0
+      ? 'Nearly there — ' + missingCount + ' item' + (missingCount === 1 ? '' : 's') + ' to add before submitting'
+      : r.verdict_title || 'Referral at risk';
+  } else {
+    refVerdictTitle = missingCount > 0
+      ? missingCount + ' item' + (missingCount === 1 ? '' : 's') + ' needed before this referral can proceed'
+      : r.verdict_title || 'Referral likely to be declined';
+  }
+  h += '<div class="action-verdict ' + vc + '">';
+  h += '<span class="av-icon">' + vi + '</span>';
+  h += '<div><div class="av-title">' + esc(refVerdictTitle) + '</div>';
+  h += '<div class="av-body">' + esc(r.verdict_summary) + '</div>';
+  if (r.priority) h += '<div style="margin-top:5px"><span class="badge badge-pass">' + esc(r.priority) + '</span></div>';
+  h += '</div></div>';
+
+  // Exam identified — criteria_page hidden in referrer view
+  if (r.exam) {
+    h += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 3px">Exam identified</div>';
+    h += '<div style="font-size:12px;font-weight:600;color:var(--navy);">' + esc(r.exam) + '</div>';
+  }
+
+  // "To complete this referral" — add_to_note[] canonical, [pXX] stripped from criterion labels
+  var missingList = r.missing_criteria || [];
+  var addList     = r.add_to_note     || [];
+  if (missingList.length) {
+    h += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 4px">To complete this referral (' + missingList.length + ')</div>';
+    missingList.forEach(function(c, i) {
+      var stripped = stripPageRefs(c);
+      h += '<div class="criteria-item missing"><span class="ci-tag missing">?</span>' + esc(stripped);
+      if (addList[i]) {
+        var addLower  = addList[i].toLowerCase();
+        var critLower = stripped.toLowerCase();
+        var isRestatement = addLower.indexOf(critLower.slice(0, Math.min(critLower.length, 30))) !== -1 && addLower.length < critLower.length * 1.5;
+        if (!isRestatement) {
+          h += '<div style="margin-top:3px;margin-left:20px;font-size:11px;color:var(--mid);font-style:italic">&#8594; ' + esc(addList[i]) + '</div>';
+        }
+      }
+      h += '</div>';
+    });
+    var extras = addList.slice(missingList.length);
+    if (extras.length) {
+      h += '<div style="font-size:10px;font-weight:700;color:var(--mid);letter-spacing:.3px;text-transform:uppercase;margin:8px 0 3px">General notes</div>';
+      extras.forEach(function(line) { h += '<div class="add-info-item">' + esc(line) + '</div>'; });
+    }
+  } else if (addList.length) {
+    h += '<div class="add-info-box" style="margin-top:10px"><div class="add-info-hd">&#9656; Add to your referral note</div>';
+    addList.forEach(function(line) { h += '<div class="add-info-item">' + esc(line) + '</div>'; });
+    h += '</div>';
+  }
+
+  // Documented — [pXX] stripped
+  if (r.met_criteria && r.met_criteria.length) {
+    h += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 4px">Documented in note (' + r.met_criteria.length + ')</div>';
+    r.met_criteria.forEach(function(c) {
+      h += '<div class="criteria-item met"><span class="ci-tag met">&#10003;</span>' + esc(stripPageRefs(c)) + '</div>';
+    });
+  } else {
+    h += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 4px">Documented in note</div>';
+    h += '<div style="font-size:12px;color:var(--mid);font-style:italic;padding:4px 0;">No criteria sub-elements confirmed as explicitly documented.</div>';
+  }
+
+  if (r.notes) {
+    h += '<div style="font-size:12px;color:var(--mid);line-height:1.6;padding:8px 10px;background:var(--mist);border-radius:2px;margin-top:8px;">' + esc(r.notes) + '</div>';
+  }
+
+  // suggested_wording — demoted, collapsed, relabelled. NOT canonical.
+  if (r.suggested_wording) {
+    h += '<div style="margin-top:12px;border:1px solid var(--rule);border-radius:3px;overflow:hidden;">';
+    h += '<button id="roleRefDraftBtn" onclick="toggleDraftNote()" style="width:100%;text-align:left;padding:8px 12px;background:var(--mist);border:none;cursor:pointer;font-family:var(--sans);font-size:11px;font-weight:600;color:var(--mid);">';
+    h += '&#9658; Draft note — confirm every detail is true for this patient before use';
+    h += '</button>';
+    h += '<div id="roleRefDraftContent" style="display:none;padding:10px 12px;">';
+    h += '<div style="font-size:10px;font-weight:700;color:var(--warn);letter-spacing:0.4px;text-transform:uppercase;margin-bottom:6px;">&#9888; Review before use — check every detail is accurate for this patient</div>';
+    h += '<div class="reword" style="margin-top:0;white-space:pre-wrap;">' + esc(r.suggested_wording) + '</div>';
+    h += '</div></div>';
+  }
+
+  h += _roleSharedBottom(r);
+
+  h += '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">';
+  h += '<button class="btn-run-ai" onclick="runCheck()" style="margin-bottom:0;flex:1;min-width:100px">Re-assess ›</button>';
+  if (r.suggested_wording) {
+    h += '<button class="btn-copy" onclick="copyResult()" style="flex:0 0 auto;padding:10px 14px">&#128203; Copy wording</button>';
+    if (showSendButton) {
+      h += '<button class="btn-send-assessment" onclick="sendAssessmentToForm()" style="flex:0 0 auto;padding:10px 14px;background:var(--teal);color:#fff;border:none;font-family:var(--sans);font-size:12px;font-weight:600;border-radius:2px;cursor:pointer">&#8593; Send to Form</button>';
+    }
+  }
+  h += '<button class="btn-qa" onclick="openQaModal()" title="Rate the accuracy of this assessment for clinical QA">Submit Feedback</button>';
+  h += '</div>';
+
+  h += '</div></div>';
+  document.getElementById('aiPanel').innerHTML = h;
+}
+
+// ── Triager view ──────────────────────────────────────────────────────────────
+
+function _renderTriagerView(r) {
+  var vc = r.verdict === 'proceeds' ? 'proceed' : r.verdict === 'at_risk' ? 'atrisk' : 'decline';
+  var vi = r.verdict === 'proceeds' ? '&#10003;' : r.verdict === 'at_risk' ? '&#9888;' : '&#10007;';
+  var missingCount = (r.missing_criteria || []).length;
+  var h = _roleSharedTop(r);
+
+  // Redirect — framed as an observational pathway finding
+  if (r.redirect) {
+    h += '<div style="background:#fff8e6;border:1px solid #f0d070;border-left:3px solid #e09000;padding:9px 12px;font-size:12px;color:var(--warn);margin-bottom:8px;border-radius:2px;">';
+    h += '<strong style="display:block;font-size:10px;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:3px;">&#8594; Pathway finding</strong>' + esc(r.redirect) + '</div>';
+  }
+
+  // Verdict — assessment framing
+  var triVerdictTitle;
+  if (r.verdict === 'proceeds') {
+    triVerdictTitle = r.verdict_title || 'Referral likely to proceed';
+  } else if (r.verdict === 'at_risk') {
+    triVerdictTitle = 'At risk · ' + missingCount + ' gap' + (missingCount === 1 ? '' : 's') + (r.exam ? ' · ' + r.exam : '');
+  } else {
+    triVerdictTitle = 'Insufficient · ' + missingCount + ' gap' + (missingCount === 1 ? '' : 's') + (r.exam ? ' · ' + r.exam : '');
+  }
+  h += '<div class="action-verdict ' + vc + '">';
+  h += '<span class="av-icon">' + vi + '</span>';
+  h += '<div><div class="av-title">' + esc(triVerdictTitle) + '</div>';
+  h += '<div class="av-body">' + esc(r.verdict_summary) + '</div>';
+  if (r.priority) h += '<div style="margin-top:5px"><span class="badge badge-pass">' + esc(r.priority) + '</span></div>';
+  h += '</div></div>';
+
+  // Exam identified — criteria_page badge visible
+  if (r.exam) {
+    h += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 3px">Exam identified</div>';
+    h += '<div style="font-size:12px;font-weight:600;color:var(--navy);display:flex;align-items:center;gap:8px;">' + esc(r.exam);
+    if (r.criteria_page) {
+      h += '<span style="font-size:10px;font-weight:700;color:var(--teal);background:var(--lite);padding:2px 7px;border-radius:2px;border:1px solid var(--rule);" title="National Primary Care Referral Criteria for Imaging, April 2026 reissue">&#128196; ' + esc(r.criteria_page) + '</span>';
+    }
+    h += '</div>';
+  }
+
+  // "Gap against criteria" — [pXX] refs intact, no add_to_note inline
+  if (r.missing_criteria && r.missing_criteria.length) {
+    h += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 4px">Gap against criteria (' + r.missing_criteria.length + ')</div>';
+    r.missing_criteria.forEach(function(c) {
+      h += '<div class="criteria-item missing"><span class="ci-tag missing">?</span>' + esc(c) + '</div>';
+    });
+  }
+
+  // "Documented against criteria" — [pXX] refs intact
+  if (r.met_criteria && r.met_criteria.length) {
+    h += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 4px">Documented against criteria (' + r.met_criteria.length + ')</div>';
+    r.met_criteria.forEach(function(c) {
+      h += '<div class="criteria-item met"><span class="ci-tag met">&#10003;</span>' + esc(c) + '</div>';
+    });
+  } else {
+    h += '<div style="font-size:11px;font-weight:700;color:var(--mid);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 4px">Documented against criteria</div>';
+    h += '<div style="font-size:12px;color:var(--mid);font-style:italic;padding:4px 0;">No criteria sub-elements confirmed as explicitly documented.</div>';
+  }
+
+  if (r.notes) {
+    h += '<div style="font-size:12px;color:var(--mid);line-height:1.6;padding:8px 10px;background:var(--mist);border-radius:2px;margin-top:8px;">' + esc(r.notes) + '</div>';
+  }
+
+  // "What the referrer is advised" — add_to_note + suggested_wording, both collapsed
+  var addList  = r.add_to_note || [];
+  var hasDraft = !!r.suggested_wording;
+  if (addList.length || hasDraft) {
+    h += '<div style="margin-top:12px;border:1px solid var(--rule);border-radius:3px;overflow:hidden;">';
+    h += '<button id="roleTriAdviceBtn" onclick="toggleReferrerAdvice()" style="width:100%;text-align:left;padding:8px 12px;background:var(--mist);border:none;cursor:pointer;font-family:var(--sans);font-size:11px;font-weight:600;color:var(--mid);">';
+    h += '&#9658; What the referrer is advised';
+    h += '</button>';
+    h += '<div id="roleTriAdviceContent" style="display:none;padding:10px 12px;">';
+
+    // Referrer's canonical channel: per-gap add_to_note list (mirroring referrer view)
+    var missingList = r.missing_criteria || [];
+    if (missingList.length && addList.length) {
+      h += '<div style="font-size:10px;font-weight:700;color:var(--mid);letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px">Per-gap action list (primary)</div>';
+      missingList.forEach(function(c, i) {
+        if (!addList[i]) return;
+        h += '<div style="margin-bottom:6px;font-size:12px;">';
+        h += '<span style="color:var(--mid);font-style:italic;">' + esc(stripPageRefs(c)) + '</span>';
+        h += '<div style="margin-top:2px;margin-left:16px;font-size:11px;color:var(--ink)">&#8594; ' + esc(addList[i]) + '</div>';
+        h += '</div>';
+      });
+      var extras = addList.slice(missingList.length);
+      extras.forEach(function(line) {
+        h += '<div style="font-size:12px;margin-bottom:4px;">&#8594; ' + esc(line) + '</div>';
+      });
+    } else if (addList.length) {
+      h += '<div style="font-size:10px;font-weight:700;color:var(--mid);letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px">Action list (primary)</div>';
+      addList.forEach(function(line) {
+        h += '<div style="font-size:12px;margin-bottom:4px;">&#8594; ' + esc(line) + '</div>';
+      });
+    }
+
+    if (hasDraft) {
+      h += '<div style="margin-top:10px;border-top:1px solid var(--rule);padding-top:8px;">';
+      h += '<div style="font-size:10px;font-weight:700;color:var(--mid);letter-spacing:.4px;text-transform:uppercase;margin-bottom:4px">Draft note shown to referrer (secondary)</div>';
+      h += '<div style="font-size:10px;color:var(--warn);margin-bottom:6px;">&#9888; Referrer is advised to confirm every detail before use</div>';
+      h += '<div class="reword" style="margin-top:0;font-size:11px;white-space:pre-wrap;">' + esc(r.suggested_wording) + '</div>';
+      h += '</div>';
+    }
+
+    h += '</div></div>';
+  }
+
+  h += _roleSharedBottom(r);
+
+  h += '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">';
+  h += '<button class="btn-run-ai" onclick="runCheck()" style="margin-bottom:0;flex:1;min-width:100px">Re-assess ›</button>';
+  h += '<button class="btn-qa" onclick="openQaModal()" title="Rate the accuracy of this assessment for clinical QA">Submit Feedback</button>';
+  h += '</div>';
+
+  h += '</div></div>';
   document.getElementById('aiPanel').innerHTML = h;
 }
 
