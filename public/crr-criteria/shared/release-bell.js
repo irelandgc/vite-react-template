@@ -9,7 +9,7 @@
 //  toggles a CSS class on the button when there is unread content.
 // ═══════════════════════════════════════════════════════════════
 (function (global) {
-  var API_BASE = 'https://crr-criteria-api.fk4dsrmq5r.workers.dev';
+  var API_BASE = '';  // relative — proxied via main worker /api/*
   var RELEASES_URL = '/crr-criteria/releases/';
 
   function storageKey(app) { return 'crr-lastSeenReleaseId-' + app; }

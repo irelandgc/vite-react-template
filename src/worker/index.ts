@@ -141,10 +141,11 @@ async function proxyPublic(c: any): Promise<Response> {
   });
 }
 
-app.all("/api/system-prompt",    (c) => proxyPublic(c));
-app.all("/api/triage/assess",    (c) => proxyPublic(c));
-app.all("/api/triage/usage-log", (c) => proxyPublic(c));
-app.all("/api/qa-review",        (c) => proxyPublic(c));
+app.all("/api/system-prompt",        (c) => proxyPublic(c));
+app.all("/api/triage/assess",        (c) => proxyPublic(c));
+app.all("/api/triage/usage-log",     (c) => proxyPublic(c));
+app.all("/api/qa-review",            (c) => proxyPublic(c));
+app.all("/api/releases/latest-id",   (c) => proxyPublic(c));
 
 app.all("/crr-api/api/admin/*", (c) => proxy(c, true));
 // Admin endpoints that live outside the /api/admin/* namespace on the upstream
