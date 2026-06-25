@@ -73,6 +73,79 @@ async function proxy(c: any, requireAdmin: boolean): Promise<Response> {
   });
 }
 
+// ── Public pass-through for triage tool (no CF Access, no admin key) ─────────
+// Used by the Triage Advisor's public fetch calls. This path is intentionally
+// NOT behind Cloudflare Access — do NOT route admin calls here.
+//
+// Security invariants:
+//   1. Inbound CF Access identity headers and the CF_Authorization cookie are
+//      stripped before forwarding — this proxy must never carry an Access
+//      identity to the API worker.
+//   2. Upstream CORS headers are stripped from the response — calls are
+//      same-origin after this proxy; relaying the API worker's cross-origin
+//      allowlist would be wrong and conflicting.
+//
+// Production deploy of these routes requires a separate security sign-off:
+// this adds a new public unauthenticated proxy to /api/triage/assess on
+// iteratio.nz — rate-limit and abuse controls must be confirmed first.
+
+const CF_ACCESS_STRIP_HEADERS = new Set([
+  "cf-access-jwt-assertion",
+  "cf-access-authenticated-user-email",
+]);
+
+function stripCFAuthCookie(cookieHeader: string): string {
+  return cookieHeader
+    .split(";")
+    .map((c) => c.trim())
+    .filter((c) => !c.toLowerCase().startsWith("cf_authorization="))
+    .join("; ");
+}
+
+async function proxyPublic(c: any): Promise<Response> {
+  const inUrl = new URL(c.req.url);
+  const target = API_BASE + inUrl.pathname + inUrl.search;
+
+  const fwdHeaders = new Headers();
+  c.req.raw.headers.forEach((v: string, k: string) => {
+    const lk = k.toLowerCase();
+    if (lk === "host" || lk === "connection" || lk === "content-length" || lk === "x-admin-key") return;
+    if (CF_ACCESS_STRIP_HEADERS.has(lk)) return;
+    if (lk === "cookie") {
+      const cleaned = stripCFAuthCookie(v);
+      if (cleaned) fwdHeaders.set("cookie", cleaned);
+      return;
+    }
+    fwdHeaders.set(k, v);
+  });
+
+  const method = c.req.method;
+  const init: RequestInit = { method, headers: fwdHeaders };
+  if (method !== "GET" && method !== "HEAD") {
+    init.body = c.req.raw.body;
+    // @ts-expect-error — Cloudflare Workers requires duplex for streaming bodies
+    init.duplex = "half";
+  }
+
+  const upstream = await fetch(target, init);
+
+  const respHeaders = new Headers(upstream.headers);
+  const corsKeys = [...respHeaders.keys()].filter((k) =>
+    k.toLowerCase().startsWith("access-control-allow-"),
+  );
+  corsKeys.forEach((k) => respHeaders.delete(k));
+
+  return new Response(upstream.body, {
+    status: upstream.status,
+    headers: respHeaders,
+  });
+}
+
+app.all("/api/system-prompt",    (c) => proxyPublic(c));
+app.all("/api/triage/assess",    (c) => proxyPublic(c));
+app.all("/api/triage/usage-log", (c) => proxyPublic(c));
+app.all("/api/qa-review",        (c) => proxyPublic(c));
+
 app.all("/crr-api/api/admin/*", (c) => proxy(c, true));
 // Admin endpoints that live outside the /api/admin/* namespace on the upstream
 // worker. These are protected by requireAccess on the API and need x-admin-key

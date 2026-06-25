@@ -831,7 +831,7 @@ var loadedPrompt = null; // populated on page load from /api/system-prompt
 
 // Fetch active system prompt from DB (with hardcoded fallback)
 (function fetchActivePrompt() {
-  fetch('https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/system-prompt')
+  fetch('/api/system-prompt')
     .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
     .then(function(data) {
       loadedPrompt = data;
@@ -2995,7 +2995,7 @@ function logTriageUsage(result, usage, parseSuccess, rawText) {
       prompt_version: loadedPrompt ? loadedPrompt.version : null,
       temperature: result._temperature != null ? result._temperature : TRIAGE_TEMPERATURE
     };
-    fetch('https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/triage/usage-log', {
+    fetch('/api/triage/usage-log', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -3129,7 +3129,7 @@ function callTriageAPI(model, note) {
     + '\n\nNote: silently correct any obvious typos or voice-to-text errors in the note (e.g. "vison"\u2192"vision", "irsk"\u2192"risk") before assessing, and include the corrected version in your response as "interpreted_note".'
     + '\n\nAssess this referral note:\n\n' + note
     + '\n\nIMPORTANT: Respond with ONLY the JSON object as specified. No preamble, no explanation, no commentary \u2014 even for safety alerts or redirects. Express urgency through the safety_alert and redirect fields in the JSON.';
-  return fetch('https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/triage/assess', {
+  return fetch('/api/triage/assess', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -3418,7 +3418,7 @@ function submitQaEntry() {
     setTimeout(function(){ if(banner.parentNode) banner.parentNode.removeChild(banner); }, 4000);
   }
 
-  fetch('https://crr-criteria-api.fk4dsrmq5r.workers.dev/api/qa-review', {
+  fetch('/api/qa-review', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
