@@ -104,7 +104,30 @@ function stripCFAuthCookie(cookieHeader: string): string {
 
 async function proxyPublic(c: any): Promise<Response> {
   const inUrl = new URL(c.req.url);
-  const target = API_BASE + inUrl.pathname + inUrl.search;
+  const path = inUrl.pathname;
+
+  // ── DIAGNOSTIC PROBES (remove before production deploy) ─────────────────
+  // Probe 1 (/api/system-prompt): pure Hono response — no fetch at all.
+  //   Tests whether Hono route registration works in the preview.
+  if (path === "/api/system-prompt") {
+    return c.json({ probe: 1, ok: true, path }, 200);
+  }
+  // Probe 2 (/api/qa-review): fetch a known-good third-party URL.
+  //   Tests whether outbound fetch from the preview worker works at all.
+  if (path === "/api/qa-review") {
+    let status = -1;
+    let err = "";
+    try {
+      const r = await fetch("https://example.com");
+      status = r.status;
+    } catch (e: any) {
+      err = String(e);
+    }
+    return c.json({ probe: 2, exampleComStatus: status, fetchErr: err || null }, 200);
+  }
+  // ── END DIAGNOSTIC ────────────────────────────────────────────────────────
+
+  const target = API_BASE + path + inUrl.search;
 
   const fwdHeaders = new Headers();
   c.req.raw.headers.forEach((v: string, k: string) => {
@@ -135,7 +158,8 @@ async function proxyPublic(c: any): Promise<Response> {
   );
   corsKeys.forEach((k) => respHeaders.delete(k));
 
-  return new Response(upstream.body, {
+  const body = await upstream.arrayBuffer();
+  return new Response(body, {
     status: upstream.status,
     headers: respHeaders,
   });
