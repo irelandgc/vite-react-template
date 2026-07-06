@@ -1,0 +1,337 @@
+site_id,old_item_id,published_item_id,match_confidence
+ct_head,cth_a1,,UNMAPPED(best 0.33)
+ct_head,cth_a2,,UNMAPPED(best 0.50)
+ct_head,cth_a3,cth_a48_3,fuzzy:0.99
+ct_head,cth_a4,cth_a48_4,fuzzy:0.86
+ct_head,cth_p2_1,,UNMAPPED(best 0.27)
+ct_head,cth_p2_2,cth_p2_2,REVIEW:0.77
+ct_head,cth_p2_3,,UNMAPPED(best 0.52)
+ct_head,cth_p2_4,cth_p2_4,REVIEW:0.84
+ct_head,cth_p4_1,cth_p4_1,fuzzy:0.95
+ct_head,cth_p4_2,cth_p4_2,REVIEW:0.85
+ct_cap,ctcap_1,,UNMAPPED(best 0.29)
+ct_cap,ctcap_2,,UNMAPPED(best 0.25)
+ct_cap,ctcap_3,ctcap_p2_3,fuzzy:0.85
+ct_chest,ctc_p2_1,,UNMAPPED(best 0.38)
+ct_chest,ctc_p2_2,ctch_p2_2,REVIEW:0.79
+ct_chest,ctc_p2_3,ctch_p2_3,fuzzy:0.89
+ct_chest,ctc_p2_4,ctch_p2_4,REVIEW:0.83
+ct_chest,ctc_p2_5,ctch_p2_5,REVIEW:0.61
+ct_chest,ctc_p2_6,ctch_p2_6,REVIEW:0.83
+ct_chest,ctc_p3_1,ctch_p3_1,fuzzy:0.94
+ct_chest,ctc_p3_2,ctch_p3_2,REVIEW:0.83
+ct_colonography,ctc_col_p2_1,,UNMAPPED(best 0.44)
+ct_colonography,ctc_col_p2_2,,UNMAPPED(best 0.32)
+ct_colonography,ctc_col_p2_3,,UNMAPPED(best 0.45)
+ct_colonography,ctc_col_p2_4,,UNMAPPED(best 0.17)
+ct_colonography,ctc_col_p3_1,,UNMAPPED(best 0.33)
+ct_colonography,ctc_col_p3_2,,UNMAPPED(best 0.33)
+ct_colonography,ctc_col_p3_3,,UNMAPPED(best 0.38)
+ct_colonography,ctc_col_p3_4,,UNMAPPED(best 0.27)
+ct_colonography,ctc_col_p3_5,,UNMAPPED(best 0.35)
+ct_colonography,ctc_col_p3_6,,UNMAPPED(best 0.37)
+ct_colonography,ctc_col_p3_7,,UNMAPPED(best 0.19)
+ct_ivu,ctivu_p2_1,ctivu_p2_1,REVIEW:0.84
+ct_ivu,ctivu_p2_2,,UNMAPPED(best 0.51)
+ct_ivu,ctivu_p2_3,ctivu_p2_3,REVIEW:0.84
+ct_ivu,ctivu_p3_1,ctivu_p3_1,exact
+ct_ivu,ctivu_p3_2,ctivu_p3_2,REVIEW:0.62
+ct_ivu,ctivu_p3_3,ctivu_p3_3,fuzzy:0.85
+ct_kub,kub_acute_1,,UNMAPPED(best 0.30)
+ct_kub,kub_acute_2,,UNMAPPED(best 0.16)
+ct_kub,kub_acute_3,,UNMAPPED(best 0.24)
+ct_kub,kub_acute_4,,UNMAPPED(best 0.27)
+ct_kub,kub_acute_5,,UNMAPPED(best 0.30)
+ct_kub,kub_48_1,ctkub_a48_1,fuzzy:0.99
+ct_kub,kub_48_2,ctkub_a48_2,REVIEW:0.81
+ct_kub,kub_s2_1,ctkub_s2_1,fuzzy:0.86
+ct_kub,kub_s2_2,ctkub_s2_2,REVIEW:0.80
+ct_sinus,sin_p3_1,ctsin_p3_1,fuzzy:0.99
+ct_sinus,sin_p3_2,ctsin_p3_2,REVIEW:0.82
+us_abdomen,usa_emerg_1,usab_em_1,fuzzy:0.90
+us_abdomen,usa_emerg_2,usab_em_2,exact
+us_abdomen,usa_emerg_3,usab_em_3,exact
+us_abdomen,usa_emerg_4,usab_em_4,exact
+us_abdomen,usa_48_1,usab_em_5,exact
+us_abdomen,usa_48_2,usab_48_1,REVIEW:0.83
+us_abdomen,usa_48_3,usab_48_2,fuzzy:0.85
+us_abdomen,usa_p2_1,,UNMAPPED(best 0.41)
+us_abdomen,usa_p2_2,usab_p2_2,fuzzy:0.98
+us_abdomen,usa_p2_3,usab_p2_3,REVIEW:0.84
+us_abdomen,usa_p3_1,usab_p3_1,fuzzy:0.98
+us_abdomen,usa_p3_2,usab_p3_2,fuzzy:0.95
+us_abdomen,usa_p3_3,,UNMAPPED(best 0.55)
+us_abdomen,usa_p3_4,,UNMAPPED(best 0.59)
+us_abdomen,usa_p3_5,usab_p3_5,fuzzy:0.93
+us_abdomen,usa_p3_6,usab_p3_6,exact
+us_abdomen,usa_p3_7,usab_p3_7,exact
+us_abdomen,usa_p3_8,usab_p3_8,REVIEW:0.84
+us_abdomen,usa_s3_1,usab_s3_1,REVIEW:0.76
+us_abdomen,usa_s3_2,usab_s3_2,REVIEW:0.83
+us_abdomen,usa_s3_3,usab_s3_3,REVIEW:0.68
+us_carotid,usc_emerg_1,,UNMAPPED(best 0.34)
+us_carotid,usc_48_1,,UNMAPPED(best 0.29)
+us_dvt,usd_24_1,usdvt_24_1,exact
+us_dvt,usd_24_2,usdvt_24_2,exact
+us_dvt,usd_24_3,usdvt_24_3,fuzzy:0.97
+us_dvt,usd_48_1,usdvt_48_1,REVIEW:0.63
+us_dvt,usd_48_2,usdvt_48_1,REVIEW:0.73
+us_dvt,usd_s1_1,usdvt_s1_1,fuzzy:0.87
+us_dvt,usd_s1_2,usdvt_s1_2,fuzzy:0.99
+us_dvt,usd_s2_1,usdvt_s2_1,exact
+us_msk,usmsk_1,usmsk_p3_1,exact
+us_neck_thyroid,usnt_p2_1,usnt_p2_1,fuzzy:0.95
+us_neck_thyroid,usnt_p2_2,usnt_p2_2,exact
+us_neck_thyroid,usnt_p2_3,usnt_p2_3,REVIEW:0.80
+us_neck_thyroid,usnt_p2_4,usnt_p2_4,fuzzy:0.86
+us_neck_thyroid,usnt_p3_1,usnt_p3_1,exact
+us_neck_thyroid,usnt_p3_2,usnt_p3_2,fuzzy:0.86
+us_neck_thyroid,usnt_p4_1,usnt_p4_1,REVIEW:0.72
+us_neck_thyroid,usnt_p4_2,usnt_p4_2,fuzzy:0.94
+us_neck_thyroid,usnt_s2_1,usnt_s2_1,fuzzy:0.88
+us_neck_thyroid,usnt_s2_2,usnt_s2_2,fuzzy:0.93
+us_pelvis,usp_emerg_1,uspv_em_1,exact
+us_pelvis,usp_24_1,,UNMAPPED(best 0.37)
+us_pelvis,usp_24_2,,UNMAPPED(best 0.43)
+us_pelvis,usp_24_3,,UNMAPPED(best 0.55)
+us_pelvis,usp_48_1,,UNMAPPED(best 0.37)
+us_pelvis,usp_48_2,uspv_48_2,fuzzy:0.87
+us_pelvis,usp_p2_1,uspv_p2_1,exact
+us_pelvis,usp_p2_2,uspv_p2_2,fuzzy:0.93
+us_pelvis,usp_p2_3,uspv_p2_3,fuzzy:0.87
+us_pelvis,usp_p2_4,uspv_p2_4,REVIEW:0.68
+us_pelvis,usp_p2_5,,UNMAPPED(best 0.38)
+us_pelvis,usp_p2_6,uspv_p2_6,fuzzy:0.97
+us_pelvis,usp_p2_7,uspv_p2_7,REVIEW:0.85
+us_pelvis,usp_p3_1,uspv_p3_1,fuzzy:0.92
+us_pelvis,usp_p3_2,uspv_p3_2,fuzzy:0.99
+us_pelvis,usp_p3_3,uspv_p3_3,fuzzy:0.90
+us_pelvis,usp_p3_4,uspv_p3_4,REVIEW:0.60
+us_pelvis,usp_p3_5,,UNMAPPED(best 0.39)
+us_pelvis,usp_p3_6,uspv_p3_7,REVIEW:0.84
+us_pelvis,usp_p3_7,uspv_p3_8,REVIEW:0.75
+us_pelvis,usp_p3_8,uspv_p3_9,fuzzy:0.98
+us_pelvis,usp_p3_9,uspv_p3_11,REVIEW:0.70
+us_pelvis,usp_p3_10,uspv_p3_12,fuzzy:0.86
+us_pelvis,usp_p4_1,uspv_p4_1,REVIEW:0.84
+us_pelvis,usp_p4_2,uspv_p4_2,fuzzy:0.92
+us_pelvis,usp_p4_3,uspv_p4_3,fuzzy:0.88
+us_renal,usr_24_1,,UNMAPPED(best 0.46)
+us_renal,usr_24_2,,UNMAPPED(best 0.57)
+us_renal,usr_48_1,,UNMAPPED(best 0.30)
+us_renal,usr_48_2,usrn_48_2,fuzzy:0.98
+us_renal,usr_48_3,usrn_48_3,fuzzy:0.86
+us_renal,usr_p2_1,usrn_p2_1,exact
+us_renal,usr_p2_2,usrn_p2_2,REVIEW:0.64
+us_renal,usr_p2_3,usrn_p2_3,fuzzy:0.86
+us_renal,usr_p3_1,usrn_p3_1,exact
+us_renal,usr_p3_2,usrn_p3_2,REVIEW:0.62
+us_renal,usr_p3_3,usrn_p3_3,exact
+us_renal,usr_p3_4,,UNMAPPED(best 0.37)
+us_renal,usr_p3_5,,UNMAPPED(best 0.45)
+us_renal,usr_p3_6,usrn_p3_6,exact
+us_renal,usr_p3_7,usrn_p3_7,exact
+us_renal,usr_p3_8,usrn_p3_8,fuzzy:0.87
+us_renal,usr_p4_1,usrn_p4_1,REVIEW:0.77
+us_renal,usr_p4_2,usrn_p4_3,REVIEW:0.81
+us_scrotum,ussc_emerg_1,ussc_em_1,exact
+us_scrotum,ussc_emerg_2,ussc_em_2,exact
+us_scrotum,ussc_48_1,ussc_p2_1,fuzzy:0.96
+us_scrotum,ussc_48_2,ussc_48_1,REVIEW:0.85
+us_scrotum,ussc_p2_1,ussc_p2_2,exact
+us_scrotum,ussc_p2_2,ussc_p2_3,fuzzy:0.85
+us_scrotum,ussc_p3_1,ussc_p3_1,fuzzy:0.97
+us_scrotum,ussc_p3_2,ussc_p3_2,exact
+us_scrotum,ussc_p3_3,ussc_p3_3,fuzzy:0.86
+us_scrotum,ussc_p4_1,ussc_p4_1,fuzzy:0.91
+us_soft_tissue,usst_48_1,usst_48_1,exact
+us_soft_tissue,usst_p2_1,usst_p2_1,REVIEW:0.80
+us_soft_tissue,usst_p2_2,usst_p2_2,fuzzy:0.85
+us_soft_tissue,usst_p3_1,usst_p3_1,fuzzy:0.93
+us_soft_tissue,usst_p3_2,usst_p3_2,fuzzy:0.86
+xr_chest,xrc_emerg_1,,UNMAPPED(best 0.53)
+xr_chest,xrc_emerg_2,xrch_em_5,exact
+xr_chest,xrc_emerg_3,xrch_em_6,exact
+xr_chest,xrc_emerg_4,xrch_em_7,fuzzy:0.98
+xr_chest,xrc_24_1,xrch_24_1,fuzzy:0.96
+xr_chest,xrc_24_2,xrch_24_2,exact
+xr_chest,xrc_48_1,,UNMAPPED(best 0.50)
+xr_chest,xrc_48_2,xrch_48_2,REVIEW:0.63
+xr_chest,xrc_48_3,,UNMAPPED(best 0.51)
+xr_chest,xrc_48_4,xrch_48_4,REVIEW:0.78
+xr_chest,xrc_48_5,xrch_48_5,REVIEW:0.64
+xr_chest,xrc_48_6,,UNMAPPED(best 0.52)
+xr_chest,xrc_48_7,xrch_48_7,REVIEW:0.63
+xr_chest,xrc_48_8,xrch_48_8,REVIEW:0.68
+xr_chest,xrc_48_9,,UNMAPPED(best 0.50)
+xr_chest,xrc_48_10,,UNMAPPED(best 0.49)
+xr_chest,xrc_48_11,xrch_48_11,REVIEW:0.60
+xr_chest,xrc_48_12,xrch_48_12,REVIEW:0.79
+xr_chest,xrc_48_13,xrch_48_13,exact
+xr_chest,xrc_48_14,xrch_48_14,fuzzy:0.95
+xr_chest,xrc_48_15,xrch_48_15,exact
+xr_chest,xrc_48_16,xrch_48_16,REVIEW:0.82
+xr_chest,xrc_p2_1,xrch_p2_1,fuzzy:0.99
+xr_chest,xrc_p2_2,xrch_p2_5,REVIEW:0.82
+xr_chest,xrc_p3_1,xrch_p3_2,exact
+xr_chest,xrc_p3_2,xrch_p3_3,exact
+xr_chest,xrc_p3_3,xrch_p3_4,fuzzy:0.94
+xr_chest,xrc_p3_4,xrch_p3_5,exact
+xr_chest,xrc_p3_5,xrch_p3_6,REVIEW:0.83
+xr_chest,xrc_s2_1,,UNMAPPED(best 0.51)
+xr_chest,xrc_s2_2,xrch_s2_2,exact
+xr_chest,xrc_s2_3,xrch_s2_3,fuzzy:0.95
+xr_chest,xrc_s2_4,xrch_s2_4,REVIEW:0.83
+xr_abdomen,xra_emerg_1,xrab_em_1,exact
+xr_abdomen,xra_48_1,xrab_48_1,exact
+xr_abdomen,xra_48_2,xrab_48_2,REVIEW:0.84
+xr_abdomen,xra_p3_1,xrab_p3_4,REVIEW:0.85
+xr_abdomen,xra_s2_1,xrab_s2_1,REVIEW:0.62
+xr_ankle_foot,xraf_emerg_1,xraf_em_1,exact
+xr_ankle_foot,xraf_48_1,xraf_p2_5,REVIEW:0.80
+xr_ankle_foot,xraf_p2_1,xraf_p2_1,REVIEW:0.83
+xr_ankle_foot,xraf_p2_2,xraf_p2_4,exact
+xr_ankle_foot,xraf_p3_1,,UNMAPPED(best 0.59)
+xr_ankle_foot,xraf_p3_2,xraf_p3_2,REVIEW:0.82
+xr_ankle_foot,xraf_p3_3,xraf_p3_3,exact
+xr_ankle_foot,xraf_p3_4,,UNMAPPED(best 0.38)
+xr_ankle_foot,xraf_p3_5,xraf_p3_5,REVIEW:0.85
+xr_elbow,xre_emerg_1,xrel_em_1,exact
+xr_elbow,xre_p2_1,xrel_p2_1,REVIEW:0.83
+xr_elbow,xre_p2_2,xrel_p2_4,exact
+xr_elbow,xre_p2_3,xrel_p2_5,REVIEW:0.84
+xr_elbow,xre_p3_1,,UNMAPPED(best 0.55)
+xr_elbow,xre_p3_2,xrel_p3_2,fuzzy:0.92
+xr_elbow,xre_p3_3,xrel_p3_3,exact
+xr_elbow,xre_p3_4,xrel_p3_4,REVIEW:0.85
+xr_knee,xrk_emerg_1,xrkn_em_1,exact
+xr_knee,xrk_p2_1,xrkn_p2_1,REVIEW:0.83
+xr_knee,xrk_p2_2,xrkn_p2_4,exact
+xr_knee,xrk_p2_3,xrkn_p2_5,REVIEW:0.84
+xr_knee,xrk_p3_1,,UNMAPPED(best 0.51)
+xr_knee,xrk_p3_2,xrkn_p3_2,REVIEW:0.81
+xr_knee,xrk_p3_3,xrkn_p3_3,exact
+xr_knee,xrk_p3_4,xrkn_p3_4,REVIEW:0.85
+xr_pelvis_hip,xrph_emerg_1,xrph_em_1,exact
+xr_pelvis_hip,xrph_p2_1,xrph_p2_1,REVIEW:0.83
+xr_pelvis_hip,xrph_p2_2,xrph_p2_5,REVIEW:0.84
+xr_pelvis_hip,xrph_p3_1,,UNMAPPED(best 0.51)
+xr_pelvis_hip,xrph_p3_2,xrph_p3_2,REVIEW:0.84
+xr_pelvis_hip,xrph_p3_3,xrph_p3_3,exact
+xr_pelvis_hip,xrph_p3_4,xrph_p3_4,REVIEW:0.85
+xr_shoulder,xrs_emerg_1,xrsh_em_1,exact
+xr_shoulder,xrs_p2_1,xrsh_p2_1,REVIEW:0.83
+xr_shoulder,xrs_p2_2,xrsh_p2_4,exact
+xr_shoulder,xrs_p2_3,xrsh_p2_5,REVIEW:0.84
+xr_shoulder,xrs_p3_1,xrsh_p3_1,fuzzy:0.93
+xr_shoulder,xrs_p3_2,xrsh_p3_2,fuzzy:0.91
+xr_shoulder,xrs_p3_3,xrsh_p3_3,fuzzy:0.99
+xr_shoulder,xrs_p3_4,xrsh_p3_4,exact
+xr_shoulder,xrs_p3_5,xrsh_p3_5,REVIEW:0.85
+xr_spine,xrsp_emerg_1,xrsp_em_1,fuzzy:0.86
+xr_spine,xrsp_emerg_2,xrsp_em_2,REVIEW:0.85
+xr_spine,xrsp_48_1,xrsp_48_1,fuzzy:0.85
+xr_spine,xrsp_p2_1,xrsp_p2_1,fuzzy:0.95
+xr_spine,xrsp_p2_2,,UNMAPPED(best 0.52)
+xr_spine,xrsp_p2_3,xrsp_p2_7,REVIEW:0.84
+xr_spine,xrsp_p3_1,xrsp_p3_1,fuzzy:0.92
+xr_spine,xrsp_p3_2,xrsp_p3_2,fuzzy:0.90
+xr_spine,xrsp_p3_3,xrsp_p3_3,REVIEW:0.85
+xr_wrist_hand,xrwh_emerg_1,xrwh_em_1,exact
+xr_wrist_hand,xrwh_p2_1,xrwh_p2_1,REVIEW:0.83
+xr_wrist_hand,xrwh_p2_2,xrwh_p2_4,exact
+xr_wrist_hand,xrwh_p2_3,xrwh_p2_5,REVIEW:0.84
+xr_wrist_hand,xrwh_p3_1,xrwh_p3_1,REVIEW:0.73
+xr_wrist_hand,xrwh_p3_2,xrwh_p3_2,fuzzy:0.99
+xr_wrist_hand,xrwh_p3_3,,UNMAPPED(best 0.58)
+xr_wrist_hand,xrwh_p3_4,xrwh_p3_4,exact
+xr_wrist_hand,xrwh_p3_5,xrwh_p3_5,REVIEW:0.85
+us_abdomen_paed,usa_p_em1,usabp_em_1_p,exact
+us_abdomen_paed,usa_p_48_1,usabp_48_1_p,fuzzy:0.90
+us_abdomen_paed,usa_p_48_2,usabp_48_2_p,fuzzy:0.90
+us_abdomen_paed,usa_p_48_3,usabp_48_3_p,fuzzy:0.88
+us_abdomen_paed,usa_p_p2_1,usabp_p2_1_p,fuzzy:0.86
+us_abdomen_paed,usa_p_p2_2,usabp_p2_2_p,REVIEW:0.85
+us_abdomen_paed,usa_p_p3_1,usabp_p3_1_p,fuzzy:0.98
+us_abdomen_paed,usa_p_p3_2,usabp_p3_2_p,fuzzy:0.85
+us_hip_paed,ush_p_48_1,,UNMAPPED(best 0.37)
+us_hip_paed,ush_p_48_2,ushp_p2_3_p,REVIEW:0.79
+us_hip_paed,ush_p_p2_1,,UNMAPPED(best 0.29)
+us_hip_paed,ush_p_p2_2,ushp_p2_3_p,REVIEW:0.82
+us_renal_paed,usr_p_48_1,,UNMAPPED(best 0.37)
+us_renal_paed,usr_p_48_2,usrep_p2_2_p,REVIEW:0.80
+us_renal_paed,usr_p_p2_1,,UNMAPPED(best 0.50)
+us_renal_paed,usr_p_p2_2,,UNMAPPED(best 0.34)
+us_renal_paed,usr_p_p2_3,usrep_p2_2_p,REVIEW:0.82
+us_renal_paed,usr_p_p3_1,,UNMAPPED(best 0.45)
+us_renal_paed,usr_p_p3_2,,UNMAPPED(best 0.48)
+us_renal_paed,usr_p_p3_3,usrep_p3_4_p,REVIEW:0.80
+us_scrotum_paed,ussc_p_em1,,UNMAPPED(best 0.34)
+us_scrotum_paed,ussc_p_48_1,,UNMAPPED(best 0.36)
+us_scrotum_paed,ussc_p_48_2,usscp_p2_2_p,REVIEW:0.77
+us_scrotum_paed,ussc_p_p2_1,,UNMAPPED(best 0.35)
+us_scrotum_paed,ussc_p_p2_2,usscp_p2_2_p,REVIEW:0.81
+us_soft_tissue_paed,usst_p_p2_1,,UNMAPPED(best 0.44)
+us_soft_tissue_paed,usst_p_p2_2,usstp_p2_1_p,fuzzy:0.87
+us_soft_tissue_paed,usst_p_p3_1,,UNMAPPED(best 0.59)
+us_soft_tissue_paed,usst_p_p3_2,usstp_p3_4_p,REVIEW:0.85
+xr_abdomen_paed,xra_p_em1,,UNMAPPED(best 0.31)
+xr_abdomen_paed,xra_p_em2,xrabd_em_2_p,exact
+xr_abdomen_paed,xra_p_48_1,,UNMAPPED(best 0.34)
+xr_abdomen_paed,xra_p_48_2,xrabd_48_2_p,fuzzy:0.87
+xr_abdomen_paed,xra_p_p3_1,xrabd_p3_1_p,REVIEW:0.79
+xr_abdomen_paed,xra_p_p3_2,xrabd_p3_2_p,fuzzy:0.86
+xr_chest_paed,xrc_p_em1,,UNMAPPED(best 0.30)
+xr_chest_paed,xrc_p_em2,,UNMAPPED(best 0.33)
+xr_chest_paed,xrc_p_em3,,UNMAPPED(best 0.20)
+xr_chest_paed,xrc_p_em4,,UNMAPPED(best 0.25)
+xr_chest_paed,xrc_p_24_1,,UNMAPPED(best 0.30)
+xr_chest_paed,xrc_p_24_2,xrch_24_2_p,fuzzy:0.87
+xr_chest_paed,xrc_p_p2_1,xrch_p2_1_p,exact
+xr_chest_paed,xrc_p_p2_2,xrch_p2_2_p,fuzzy:0.93
+xr_chest_paed,xrc_p_p2_3,xrch_p2_3_p,fuzzy:0.86
+xr_chest_paed,xrc_p_p3_1,xrch_p3_2_p,REVIEW:0.84
+xr_elbow_paed,xre_p_em1,,UNMAPPED(best 0.34)
+xr_elbow_paed,xre_p_p2_1,xrel_p2_1_p,exact
+xr_elbow_paed,xre_p_p2_2,xrel_p2_2_p,exact
+xr_elbow_paed,xre_p_p2_3,xrel_p2_3_p,fuzzy:0.86
+xr_elbow_paed,xre_p_p3_1,xrel_p3_1_p,exact
+xr_elbow_paed,xre_p_p3_2,,UNMAPPED(best 0.30)
+xr_elbow_paed,xre_p_p3_3,xrel_p3_3_p,fuzzy:0.86
+xr_knee_paed,xrk_p_em1,xrkn_em_1_p,fuzzy:0.96
+xr_knee_paed,xrk_p_p2_1,xrkn_p2_1_p,REVIEW:0.84
+xr_knee_paed,xrk_p_p2_2,xrkn_p2_3_p,fuzzy:0.86
+xr_knee_paed,xrk_p_p3_1,xrkn_p3_2_p,REVIEW:0.78
+xr_knee_paed,xrk_p_p3_2,xrkn_p3_3_p,REVIEW:0.85
+xr_knee_paed,xrk_p_p3_3,xrkn_p2_2_p,REVIEW:0.75
+xr_knee_paed,xrk_p_p3_4,xrkn_p3_4_p,fuzzy:0.93
+xr_knee_paed,xrk_p_p3_5,,UNMAPPED(best 0.34)
+xr_knee_paed,xrk_p_p3_6,xrkn_p3_1_p,fuzzy:0.86
+xr_pelvis_hip_paed,xrph_p_em1,xrph_em_1_p,REVIEW:0.80
+xr_pelvis_hip_paed,xrph_p_em2,,UNMAPPED(best 0.56)
+xr_pelvis_hip_paed,xrph_p_p2_1,,UNMAPPED(best 0.42)
+xr_pelvis_hip_paed,xrph_p_p2_2,,UNMAPPED(best 0.41)
+xr_pelvis_hip_paed,xrph_p_p2_3,xrph_p2_6_p,REVIEW:0.84
+xr_pelvis_hip_paed,xrph_p_p3_1,,UNMAPPED(best 0.52)
+xr_pelvis_hip_paed,xrph_p_p3_2,xrph_p2_6_p,REVIEW:0.83
+xr_spine_paed,xrsp_p_p3_1,,UNMAPPED(best 0.24)
+xr_spine_paed,xrsp_p_p3_2,xrsp_p3_2_p,fuzzy:0.87
+xr_wrist_hand_paed,xrwh_p_em1,xrwh_em_1_p,fuzzy:0.96
+xr_wrist_hand_paed,xrwh_p_p2_1,xrwh_p2_1_p,REVIEW:0.76
+xr_wrist_hand_paed,xrwh_p_p2_2,xrwh_p2_2_p,exact
+xr_wrist_hand_paed,xrwh_p_p2_3,xrwh_p2_3_p,fuzzy:0.86
+xr_wrist_hand_paed,xrwh_p_p3_1,xrwh_p3_1_p,exact
+xr_wrist_hand_paed,xrwh_p_p3_2,,UNMAPPED(best 0.45)
+xr_wrist_hand_paed,xrwh_p_p3_3,xrwh_p3_4_p,fuzzy:0.86
+xr_feet_paed,xrf_p_p2_1,xrft_p2_1_p,REVIEW:0.75
+xr_feet_paed,xrf_p_p2_2,xrft_p2_2_p,exact
+xr_feet_paed,xrf_p_p2_3,xrft_p2_3_p,fuzzy:0.86
+xr_feet_paed,xrf_p_p3_1,,UNMAPPED(best 0.34)
+xr_feet_paed,xrf_p_p3_2,,UNMAPPED(best 0.36)
+xr_feet_paed,xrf_p_p3_3,xrft_p3_1_p,fuzzy:0.86
+xr_shoulder_paed,xrs_p_em1,xrsh_em_1_p,fuzzy:0.96
+xr_shoulder_paed,xrs_p_p2_1,xrsh_p2_1_p,REVIEW:0.76
+xr_shoulder_paed,xrs_p_p2_2,xrsh_p2_2_p,exact
+xr_shoulder_paed,xrs_p_p2_3,xrsh_p2_3_p,fuzzy:0.86
+xr_shoulder_paed,xrs_p_p3_1,xrsh_p3_1_p,exact
+xr_shoulder_paed,xrs_p_p3_2,xrsh_p3_2_p,fuzzy:0.86
