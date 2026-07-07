@@ -1,4 +1,4 @@
-# Claude Code Brief: TA-009 — System Prompt Version Control
+r# Claude Code Brief: TA-009 — System Prompt Version Control
 
 **Requirement:** TA-009 (v2.0, Must have)  
 **Brief version:** 1.0  

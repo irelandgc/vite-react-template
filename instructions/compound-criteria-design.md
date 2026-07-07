@@ -330,6 +330,32 @@ reweighted clinical meaning. Named items with additional rulings needed:
 | Each denormalised family | Collapse decision per family (Decision 2) |
 | `xrph_p2_4_p` | Inline footnote *1 risk factors as conditions vs keep flat with footnote reference |
 
+### 6.1.1 Migration mechanics — clarification (added 6 July 2026, Gary)
+
+"Hybrid, weighted heavily to manual" means the following division of labour —
+it does NOT mean hand-typing 60 decompositions:
+
+1. **Scripted draft pass (Claude Code).** Generate draft `logic` blocks for
+   the tier's items from the Phase 0 Appendix A census, written to a **draft
+   working copy via the admin API** — never published, never raw SQL. The
+   census already contains the sub-structure per item; the script only
+   mechanises it.
+2. **Human correction (Admin editor).** A reviewer walks each pre-populated
+   item with the source `label` alongside the draft conditions, correcting
+   split errors (footnote-marker artefacts, prefix strings, intra-option
+   conjunctions that must stay prose). Minutes per item.
+3. **Clinical sign-off** per the one-pager process (per-item consistency
+   check; family mergers and named rulings gated individually).
+4. **Snapshot → publish**, tier by tier.
+
+The prohibition in §6.1 is on **unsupervised parse-to-publish** — no parser
+output reaches a published snapshot without steps 2–3. The authority split:
+Claude Code drafts at scale; a human owns every publish decision.
+
+**Sequencing dependency:** steps 1–2 require the Admin editor's logic-editing
+UI (§5.1) to exist first. Order: Viewer/Admin logic support ships → scripted
+draft pass → review → sign-off → publish.
+
 ### 6.2 Tiers (Decision 5 — by value, not uniformly)
 
 - **Tier 1 — denormalised families + complex items.** Collapse arithmetic per
