@@ -249,7 +249,7 @@ Recommendation (flagged, not decided): keep **strict** as default for a point-of
 
 **Grading additions vs the current suite:** fabrication becomes a **hard gate** (deterministic grounding check per §3.1), not a REVIEW column; notes/redirect *content* is graded for G5, not just verdict. Restore or replace the dropped TEST-* cases (Phase 0 §6.1).
 
-**Measure the override first (Phase 0 §6.3):** before v3 restructures the Step-3b/client-override pair, run REG02 config C (resume from `scripts/reg02-checkpoint.json`) so the override's contribution is known. If it corrects zero cases that the prompt doesn't, §7's simplification (drop the redundant client checks) is justified by data.
+**Measure the override first (Phase 0 §6.3):** before v3 restructures the Step-3b/client-override pair, run config C fresh — no partial config-C data exists on any branch (confirmed 7 Jul, checkpoint contains only completed configs A/B) — so the override's contribution is known. If it corrects zero cases that the prompt doesn't, §7's simplification (drop the redundant client checks) is justified by data.
 
 ---
 
