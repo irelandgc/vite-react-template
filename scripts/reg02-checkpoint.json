@@ -7860,6 +7860,375 @@
         "inference_geo": "global"
       },
       "cost_nzd": 0.0214
+    },
+    "INT-SAH|B|1": {
+      "caseId": "INT-SAH",
+      "config": "B",
+      "run": 1,
+      "promptVersion": "2.3.0",
+      "model": "claude-sonnet-4-6",
+      "rawVerdict": "declined",
+      "overrideVerdict": "declined",
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a classic thunderclap/worst-ever headache with meningism — a medical emergency requiring immediate ED assessment for possible subarachnoid haemorrhage, not community imaging.",
+        "priority": null,
+        "met_criteria": [
+          "Headache reaching maximum intensity within seconds (thunderclap pattern) [p20]",
+          "Worst headache of patient's life [p20]",
+          "Associated vomiting, neck stiffness, and photophobia — meningeal irritation signs [p20]",
+          "Onset during exertion [p20]",
+          "No prior similar headache [p20]"
+        ],
+        "missing_criteria": [],
+        "notes": "Step 0 exclusion applied: thunderclap/worst-ever headache is an absolute emergency redirect under Step 0(a). CRR criteria assessment does not proceed. Even if CT Head criteria were otherwise met, community radiology is not appropriate — this patient requires immediate hospital assessment, CT, and likely lumbar puncture in an acute setting.",
+        "safety_alert": "POSSIBLE SUBARACHNOID HAEMORRHAGE — DO NOT REFER FOR COMMUNITY IMAGING. Call 111 or send immediately to ED. Thunderclap headache reaching peak intensity within seconds, described as worst-ever, with vomiting, neck stiffness, and photophobia is a classic SAH presentation. Time-critical emergency.",
+        "redirect": "Emergency Department via 111 — suspected subarachnoid haemorrhage. CT Head and LP must be performed in a hospital setting with immediate neurosurgical backup available.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 193,
+        "cache_creation_input_tokens": 23969,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 23969,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 537,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.1636
+    },
+    "INT-SAH|B|2": {
+      "caseId": "INT-SAH",
+      "config": "B",
+      "run": 2,
+      "promptVersion": "2.3.0",
+      "model": "claude-sonnet-4-6",
+      "rawVerdict": "declined",
+      "overrideVerdict": "declined",
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a classic thunderclap/worst-ever headache with meningism — a medical emergency requiring immediate ED assessment for possible subarachnoid haemorrhage, not community imaging.",
+        "priority": null,
+        "met_criteria": [
+          "Worst-ever headache reaching maximum intensity within seconds (thunderclap headache) [p20 — Step 0 emergency trigger]",
+          "Associated vomiting, neck stiffness, and photophobia — meningeal irritation signs [p20]",
+          "Onset during exertion [p20]",
+          "No prior similar headache [p20]"
+        ],
+        "missing_criteria": [],
+        "notes": "Step 0 emergency exclusion applies. CRR criteria assessment is not performed. Even if CT Head criteria were otherwise met, community radiology is not the appropriate pathway for this presentation. ED will perform CT head and LP as per SAH protocol.",
+        "safety_alert": "POSSIBLE SUBARACHNOID HAEMORRHAGE — DO NOT REFER FOR COMMUNITY CT. Call 111 or send immediately to ED. Thunderclap 'worst headache of life' with exertional onset, neck stiffness, vomiting, and photophobia is a SAH until proven otherwise. Time-critical emergency.",
+        "redirect": "Emergency Department via 111 — suspected subarachnoid haemorrhage. Do not delay for community imaging.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 193,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23969,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 497,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.0245
+    },
+    "INT-SAH|B|3": {
+      "caseId": "INT-SAH",
+      "config": "B",
+      "run": 3,
+      "promptVersion": "2.3.0",
+      "model": "claude-sonnet-4-6",
+      "rawVerdict": "declined",
+      "overrideVerdict": "declined",
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a classic thunderclap/worst-ever headache with meningism — a medical emergency requiring immediate ED assessment for possible subarachnoid haemorrhage, not community imaging.",
+        "priority": null,
+        "met_criteria": [
+          "Headache reaching maximum intensity within seconds (thunderclap pattern) [p20]",
+          "Self-described 'worst headache of my life' [p20]",
+          "Associated vomiting, neck stiffness, and photophobia — meningeal irritation signs [p20]",
+          "Onset during exertion [p20]",
+          "No prior similar headache [p20]"
+        ],
+        "missing_criteria": [],
+        "notes": "Step 0 exclusion applied. Even though CT Head is listed under CRR criteria, the thunderclap/worst-ever headache pattern is an absolute redirect to ED before any imaging. Community CT is not appropriate here — the patient requires LP, CT angiography, and neurosurgical assessment in a hospital setting. CRR criteria assessment was not performed.",
+        "safety_alert": "POSSIBLE SUBARACHNOID HAEMORRHAGE — DO NOT IMAGE IN COMMUNITY. Call 111 or send immediately to ED. Thunderclap headache ('worst of my life') with onset within seconds during exertion, plus neck stiffness, vomiting, and photophobia is a classic SAH presentation. Time-critical: LP or CT angiography must be performed in a hospital setting with neurosurgical backup.",
+        "redirect": "Emergency Department via 111 — suspected subarachnoid haemorrhage. This is a Step 0 exclusion: thunderclap/worst-ever headache mandates immediate emergency assessment, not community radiology referral.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 193,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23969,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 576,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.0264
+    },
+    "INT-TORSION|A|1": {
+      "caseId": "INT-TORSION",
+      "config": "A",
+      "run": 1,
+      "promptVersion": "2.2.0",
+      "model": "claude-sonnet-4-6",
+      "rawVerdict": "declined",
+      "overrideVerdict": null,
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a surgical emergency — do not image, refer immediately to ED for suspected testicular torsion.",
+        "priority": null,
+        "met_criteria": [
+          "Suspected testicular torsion — high-riding testis, absent cremasteric reflex, sudden onset severe pain, nausea and vomiting [p57]"
+        ],
+        "missing_criteria": [],
+        "notes": "The US Scrotum criteria explicitly list suspected testicular torsion as 'Refer for acute assessment — without initial imaging' [p57]. Imaging must not delay surgical exploration. This referral should not be submitted to CRR.",
+        "safety_alert": "SURGICAL EMERGENCY: Clinical findings (high-riding testis, absent cremasteric reflex, sudden onset severe pain waking from sleep) are classic for testicular torsion. Call 111 or send immediately to ED. Viability is time-critical — salvage rates exceed 90% within 6 hours but fall sharply after that. Do NOT wait for ultrasound.",
+        "redirect": "Suspected testicular torsion is explicitly listed as a surgical emergency under US Scrotum criteria [p57] — refer immediately to ED without imaging. Community ultrasound is contraindicated and not funded for this presentation.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 190,
+        "cache_creation_input_tokens": 23839,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 23839,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 464,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.1609
+    },
+    "INT-TORSION|A|2": {
+      "caseId": "INT-TORSION",
+      "config": "A",
+      "run": 2,
+      "promptVersion": "2.2.0",
+      "model": "claude-sonnet-4-6",
+      "rawVerdict": "declined",
+      "overrideVerdict": null,
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a surgical emergency — do not image, refer immediately to ED for suspected testicular torsion.",
+        "priority": null,
+        "met_criteria": [
+          "Suspected testicular torsion — high-riding testis, absent cremasteric reflex, sudden onset severe pain, nausea and vomiting [p57]"
+        ],
+        "missing_criteria": [],
+        "notes": "The US Scrotum criteria explicitly list suspected testicular torsion under 'Refer for acute assessment — without initial imaging' [p57]. This is also a Step 0 exclusion. Ultrasound must not be used as a gatekeeper when torsion is clinically suspected — surgical exploration cannot be delayed.",
+        "safety_alert": "SURGICAL EMERGENCY: Clinical findings (high-riding testis, absent cremasteric reflex, sudden onset severe pain waking from sleep) are classic for testicular torsion. Call 111 or send immediately to ED. Viability is time-critical — salvage rates exceed 90% within 6 hours but fall sharply after that. Do NOT wait for ultrasound.",
+        "redirect": "Suspected testicular torsion is explicitly listed as a surgical emergency under US Scrotum criteria [p57] — refer immediately to ED without imaging. Community ultrasound is contraindicated and not funded for this presentation.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 190,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23839,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 483,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.024
+    },
+    "INT-TORSION|A|3": {
+      "caseId": "INT-TORSION",
+      "config": "A",
+      "run": 3,
+      "promptVersion": "2.2.0",
+      "model": "claude-sonnet-4-6",
+      "rawVerdict": "declined",
+      "overrideVerdict": null,
+      "overrideFired": false,
+      "fabrication": "NO",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a surgical emergency — do not image in the community; send immediately to ED for surgical assessment.",
+        "priority": null,
+        "met_criteria": [],
+        "missing_criteria": [],
+        "notes": null,
+        "safety_alert": "SUSPECTED TESTICULAR TORSION — SURGICAL EMERGENCY. Classic triad: sudden-onset severe testicular pain, high-riding testis, absent cremasteric reflex. Viability is time-critical (salvage rate >90% within 6 hours, <10% after 24 hours). Do NOT wait for ultrasound. Send patient to ED immediately by the fastest means available (call 111 if needed). Surgical exploration is the definitive step.",
+        "redirect": "ED / surgical emergency — testicular torsion is listed as a 'refer for acute assessment without initial imaging' condition under US Scrotum [p57]. Community ultrasound is contraindicated and must not delay surgical referral.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 190,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23839,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 390,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.0217
+    },
+    "INT-TORSION|B|1": {
+      "caseId": "INT-TORSION",
+      "config": "B",
+      "run": 1,
+      "promptVersion": "2.3.0",
+      "model": "claude-sonnet-4-6",
+      "rawVerdict": "declined",
+      "overrideVerdict": "declined",
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a surgical emergency consistent with testicular torsion — community imaging is contraindicated and the patient must be sent to ED immediately.",
+        "priority": null,
+        "met_criteria": [
+          "Acute scrotal pain with high-riding testis, absent cremasteric reflex, and associated nausea/vomiting — classic presentation of testicular torsion [p57]"
+        ],
+        "missing_criteria": [],
+        "notes": "Classic triad of testicular torsion is present: sudden-onset severe pain, high-riding testis, absent cremasteric reflex. Sensitivity of ultrasound is insufficient to rule out torsion and imaging must never delay surgical exploration. This referral cannot proceed under CRR regardless of any other criteria.",
+        "safety_alert": "SURGICAL EMERGENCY — SUSPECTED TESTICULAR TORSION. Do NOT wait for imaging. Send patient to ED immediately via the fastest available means. Viability window is approximately 6 hours from onset; this patient is already 3 hours in. Call ahead to ED/surgical team.",
+        "redirect": "ED / Surgical emergency — testicular torsion is explicitly listed as a Step 0 exclusion. Community ultrasound is contraindicated. Refer directly to ED for urgent surgical assessment and likely operative exploration.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 190,
+        "cache_creation_input_tokens": 23969,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 23969,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 468,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.1618
+    },
+    "INT-TORSION|B|2": {
+      "caseId": "INT-TORSION",
+      "config": "B",
+      "run": 2,
+      "promptVersion": "2.3.0",
+      "model": "claude-sonnet-4-6",
+      "rawVerdict": "declined",
+      "overrideVerdict": "declined",
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a surgical emergency consistent with testicular torsion — community imaging is contraindicated; immediate ED transfer is required.",
+        "priority": null,
+        "met_criteria": [
+          "Acute scrotal pain with high-riding testis, absent cremasteric reflex, and associated nausea/vomiting — classic clinical features of testicular torsion [p57]"
+        ],
+        "missing_criteria": [],
+        "notes": "The criteria explicitly list suspected testicular torsion under 'Refer for acute assessment — without initial imaging' [p57]. Community ultrasound is contraindicated. The clinical picture (sudden onset, high-riding testis, absent cremasteric reflex, nausea/vomiting, woke from sleep) is highly consistent with torsion. Time to surgical detorsion is the critical determinant of testicular salvage.",
+        "safety_alert": "SURGICAL EMERGENCY — suspected testicular torsion. Call 111 or transfer immediately to ED. Viability window is approximately 6 hours from onset; this patient is already 3 hours in. Do NOT wait for imaging — scrotal ultrasound is explicitly excluded for suspected torsion and must not delay surgical assessment.",
+        "redirect": "ED / acute surgical assessment immediately. Testicular torsion is a Step 0 surgical emergency excluded from community imaging under the CRR programme [p57].",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 190,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23969,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 490,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.0243
+    },
+    "INT-TORSION|B|3": {
+      "caseId": "INT-TORSION",
+      "config": "B",
+      "run": 3,
+      "promptVersion": "2.3.0",
+      "model": "claude-sonnet-4-6",
+      "rawVerdict": "declined",
+      "overrideVerdict": "declined",
+      "overrideFired": false,
+      "fabrication": "REVIEW",
+      "parseSuccess": true,
+      "result": {
+        "verdict": "declined",
+        "verdict_title": "Referral likely to be declined",
+        "verdict_summary": "This presentation is a surgical emergency — suspected testicular torsion requires immediate ED referral, not community imaging.",
+        "priority": null,
+        "met_criteria": [
+          "Acute scrotal pain with high-riding testis, absent cremasteric reflex, and associated nausea/vomiting — classic presentation of testicular torsion [p57]"
+        ],
+        "missing_criteria": [],
+        "notes": "Testicular torsion is a Step 0 surgical emergency. CRR criteria explicitly list suspected testicular torsion under 'Refer for acute assessment — without initial imaging' [p57]. Time to surgical exploration is the critical determinant of testicular salvage: >90% salvage rate within 6 hours, dropping sharply thereafter. This referral must not proceed as a community imaging request.",
+        "safety_alert": "SURGICAL EMERGENCY: Clinical findings (sudden onset severe testicular pain, high-riding testis, absent cremasteric reflex, nausea/vomiting) are diagnostic of testicular torsion until proven otherwise. Call 111 or send immediately to ED — surgical exploration must occur within 6 hours of onset to maximise testicular salvage. Do NOT delay for imaging.",
+        "redirect": "ED / surgical emergency — testicular torsion is a Step 0 exclusion. Community ultrasound is explicitly excluded under US Scrotum criteria [p57]. The patient requires immediate surgical assessment.",
+        "suggested_wording": null,
+        "add_to_note": []
+      },
+      "usage": {
+        "input_tokens": 190,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 23969,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 499,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "cost_nzd": 0.0245
     }
   }
 }
