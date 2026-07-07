@@ -108,7 +108,7 @@ No row is dropped without a line. The only outright RETIREs are P0#35 (silent fa
 
 ### 3.0 What we are fixing (from Phase 0 §2, verbatim cases)
 
-- **DG-001** (`21y man, headche, known hx of met mel.`) — met_criteria asserted "cognitive impairment," absent from the note; proceeds. **Still fails on v2.3.0 + Sonnet 4.6** (REG02-B proceeds 3/3, fabrication flagged). Neither prompt accretion nor the model upgrade fixed it.
+- **DG-001** (`21y man, headche, known hx of met mel.`) — in the original evaluation run (DB 178, v1.1.0/Sonnet 4), met_criteria asserted "cognitive impairment," absent from the note; proceeds. **The verdict failure and fabrication flag persist on v2.3.0 + Sonnet 4.6** (REG02-B proceeds 3/3, expected declined): the phrase now surfaces as a notes-field pathway-name reference rather than a direct met_criteria assertion, but the underlying grounding gap and the wrong verdict are unchanged. Neither prompt accretion nor the model upgrade fixed it.
 - **DG-002** (`64y girl … differentn to usual headache …`) — suggested_wording asserted "progressively worsening," never stated. Danielle: "if they add it (even if it is not true) [it] will get it accepted."
 - **DG-003** (`21y man, frontal headche 6/12, not responding to saline rinses`) — met_criteria claimed "moderate to severe symptoms persisting daily despite daily nasal saline irrigation" (verbatim criteria-block language), none of it in the note; verdict correctly declined but fabricated en route.
 - **DG-005** (`21y old girl, PMB, on COC`) — the age/PMB contradiction was silently resolved (assumed AUB) instead of flagged.
