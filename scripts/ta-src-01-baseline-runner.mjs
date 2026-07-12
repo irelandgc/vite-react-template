@@ -66,6 +66,33 @@ const GATE_ARTEFACT_NOTE = 'TA-SRC-01 deployment gate. Baseline captured against
   + 'against it. Do not confuse with scripts/reg02-results.json (TA-REG-02), which measures '
   + 'prompt version × override contribution, not criteria source.';
 
+const CRITERIA_COVERAGE = {
+  adultSites: 25, adultItems: 247,
+  paedCombinations: 14, paedItems: 89,
+  combinedBlobSites: 39, combinedBlobItems: 336,
+  note: 'This baseline\'s LLM criteria block loads only the adult site index '
+    + '(25 sites / 247 items) — buildCriteriaBlock() is always called with isPaed=false '
+    + 'because all 30 suite cases are adult, matching production\'s per-assessment '
+    + 'SITE_INDEX-vs-PAED_INDEX selection. The paediatric index (14 combinations / 89 items) '
+    + 'was never loaded by this run — no suite case triggers it. The "39 sites / 336 items" '
+    + 'figure cited elsewhere (e.g. ta-src-phase0-findings.md) is the combined adult+paediatric '
+    + 'match-data blob; this baseline exercised only its adult half.',
+};
+
+const REG02_KEY_SHAPE_NOTE = 'scripts/reg02-results.json\'s cases object has flat '
+  + '{caseId}|{config}|{run} checkpoint keys mixed in alongside the aggregated {caseId} '
+  + 'keys (210 entries for 30 cases) — the same aliasing bug this baseline runner\'s '
+  + 'aggregation had until it was fixed here. REG02 is an accepted, cited artefact and was '
+  + 'not regenerated (would change cited bytes for no informational gain) — expect that key '
+  + 'shape there. This file\'s cases object contains only clean {caseId} keys.';
+
+const BORDERLINE_NOTE = 'Two cases show pre-existing run-to-run instability under the '
+  + 'CURRENT source, with no confirmed cause: INT-AKI (declined/proceeds/proceeds — '
+  + 'previously flagged in TA-REG-02) and CR-002 (proceeds/proceeds/declined — newly '
+  + 'observed in this run). Any verdict change on these two cases in the post-switch run '
+  + 'must be evaluated against this baseline instability, not assumed attributable to the '
+  + 'criteria-source switch.';
+
 // ── 3 synthetic dry-run cases (shared with TA-REG-02) ─────────────────────────
 
 const DRY_RUN_CASES = [
@@ -97,7 +124,7 @@ const DRY_RUN_CASES = [
 
 // ── Borderline cases (from TA-REG-02 brief §Part 4 — mark REVIEW, not pass/fail) ─
 
-const BORDERLINE_CASE_IDS = new Set(['RP-004', 'RP-006', 'INT-AKI', 'EQ-002', 'DG-005']);
+const BORDERLINE_CASE_IDS = new Set(['RP-004', 'RP-006', 'INT-AKI', 'EQ-002', 'DG-005', 'CR-002']);
 
 // ── Run-ID resolution ─────────────────────────────────────────────────────────
 // Format: reg_baseline_ta-src-01_YYYYMMDD_NN. Resumes an in-progress NN for
@@ -789,11 +816,14 @@ async function main() {
   writeFileSync(RESULTS_FILE, JSON.stringify({
     gateArtefact: GATE_ARTEFACT_NOTE,
     coverageNote: COVERAGE_NOTE,
+    borderlineNote: BORDERLINE_NOTE,
+    reg02KeyShapeNote: REG02_KEY_SHAPE_NOTE,
     runId: REG_RUN_ID,
     runDate: new Date().toISOString(),
     promptVersion: '2.3.0',
     model: MODEL,
     criteriaSource: 'match-data (current production, pre-switch)',
+    criteriaCoverage: CRITERIA_COVERAGE,
     runsPerCase: RUNS_PER_CASE,
     cases: allResults,
   }, null, 2), 'utf8');
