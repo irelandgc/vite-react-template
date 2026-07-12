@@ -20,11 +20,23 @@
 //     note (see COVERAGE_NOTE below).
 //
 // Usage:
-//   node scripts/ta-src-01-baseline-runner.mjs [--dry-run]
+//   node scripts/ta-src-01-baseline-runner.mjs [--dry-run] [--source match-data|published]
 //
-// --dry-run   Run 3 synthetic cases only (9 API calls, 3 runs each). Proves
-//             D1 tagging, checkpoint resume, and override logic before the
-//             full 90-call run.
+// --dry-run          Run 3 synthetic cases only (9 API calls, 3 runs each).
+//                     Proves D1 tagging, checkpoint resume, and override logic
+//                     before the full 90-call run.
+// --source           match-data (default) builds the LLM block from
+//                     GET /api/match-data via buildCriteriaBlock() — the
+//                     CURRENT production source, pre-switch. published builds
+//                     it from GET /api/criteria via buildCriteriaBlockV2()
+//                     (ta-src-design.md §4) — the POST-switch target. Per §9,
+//                     the cutover decision compares a match-data run and a
+//                     published run captured on the SAME day (paired run) —
+//                     a match-data baseline from an earlier day is a temporal
+//                     anchor only, not itself the switch measurement (the
+//                     model behind claude-sonnet-4-6 is an alias with no
+//                     dated snapshot and can drift day to day — see
+//                     borderlineNote).
 //
 // Checkpoint: scripts/<runId>-checkpoint.json
 //   Saved after every successful API call. On restart, skips completed tuples.
@@ -54,6 +66,16 @@ const RUN_DATE          = new Date().toISOString().slice(0, 10).replace(/-/g, ''
 
 const IS_DRY_RUN = process.argv.includes('--dry-run');
 
+// --source published|match-data (default match-data). See ta-src-design.md §9:
+// "the runner needs one addition: a --source published mode... Same cases,
+// same prompt version, same model, same worker endpoint."
+const SOURCE_ARG_IDX = process.argv.indexOf('--source');
+const SOURCE = SOURCE_ARG_IDX !== -1 ? process.argv[SOURCE_ARG_IDX + 1] : 'match-data';
+if (SOURCE !== 'match-data' && SOURCE !== 'published') {
+  console.error(`ERROR: --source must be "match-data" or "published", got "${SOURCE}".`);
+  process.exit(1);
+}
+
 const COVERAGE_NOTE = '12 of the 14 previously-invisible sites (ct_other, us_fna_biopsy, '
   + 'xr_femur, xr_forearm, xr_humerus, xr_tibia_fibula + 6 paediatric) have no case in this '
   + 'suite. Post-switch predictions are pre-registered only for RP-007/INT-002 and RP-001 per '
@@ -61,10 +83,14 @@ const COVERAGE_NOTE = '12 of the 14 previously-invisible sites (ct_other, us_fna
   + 'anything — those sites were never assessed under either source in this suite. Adding '
   + 'cases for them is deferred to the synthetic-case batch pending clinical sign-off.';
 
-const GATE_ARTEFACT_NOTE = 'TA-SRC-01 deployment gate. Baseline captured against the CURRENT '
-  + 'criteria source (match-data blob, pre-switch) so the post-switch run can be diffed '
-  + 'against it. Do not confuse with scripts/reg02-results.json (TA-REG-02), which measures '
-  + 'prompt version × override contribution, not criteria source.';
+function gateArtefactNote(source) {
+  const sourceClause = source === 'published'
+    ? 'Post-switch comparator run against the PUBLISHED criteria source (buildCriteriaBlockV2, ta-src-design.md §4) — the paired half of the TA-SRC-01 cutover measurement'
+    : 'Baseline captured against the CURRENT criteria source (match-data blob, pre-switch) so the post-switch run can be diffed against it';
+  return `TA-SRC-01 deployment gate. ${sourceClause}. Do not confuse with `
+    + 'scripts/reg02-results.json (TA-REG-02), which measures prompt version × override '
+    + 'contribution, not criteria source.';
+}
 
 const CRITERIA_COVERAGE = {
   adultSites: 25, adultItems: 247,
@@ -91,7 +117,22 @@ const BORDERLINE_NOTE = 'Two cases show pre-existing run-to-run instability unde
   + 'previously flagged in TA-REG-02) and CR-002 (proceeds/proceeds/declined — newly '
   + 'observed in this run). Any verdict change on these two cases in the post-switch run '
   + 'must be evaluated against this baseline instability, not assumed attributable to the '
-  + 'criteria-source switch.';
+  + 'criteria-source switch. Separately, DG-003 and INT-001 show cross-run divergence '
+  + 'between REG02-B (22 Jun) and this baseline (12 Jul) under a nominally identical '
+  + 'config — environment/model drift, not switch-attributable; this baseline (12 Jul) is '
+  + 'the sole comparator for the post-switch diff. claude-sonnet-4-6 is an alias with no '
+  + 'dated snapshot; the model behind it can change without notice (consistent with the '
+  + 'DG-003/INT-001 cross-run divergence). Therefore the authoritative switch measurement '
+  + 'is the same-day paired run at cutover (see §9 --source modes); this baseline serves '
+  + 'as the temporal anchor.';
+
+const PUBLISHED_SOURCE_NOTE = 'This run used --source published: the LLM criteria block was '
+  + 'built by buildCriteriaBlockV2() (ported per ta-src-design.md §4) from GET /api/criteria, '
+  + 'not the match-data blob. Same case set, same prompt version, same model, same worker '
+  + 'endpoint as the match-data baseline — the only variable is the criteria source. Compare '
+  + 'against a match-data-sourced run captured on the SAME day for the TA-SRC-01 cutover '
+  + 'decision; a match-data run from a different day conflates the source switch with '
+  + 'ordinary model/environment drift (see borderlineNote).';
 
 // ── 3 synthetic dry-run cases (shared with TA-REG-02) ─────────────────────────
 
@@ -127,13 +168,18 @@ const DRY_RUN_CASES = [
 const BORDERLINE_CASE_IDS = new Set(['RP-004', 'RP-006', 'INT-AKI', 'EQ-002', 'DG-005', 'CR-002']);
 
 // ── Run-ID resolution ─────────────────────────────────────────────────────────
-// Format: reg_baseline_ta-src-01_YYYYMMDD_NN. Resumes an in-progress NN for
-// today if its checkpoint isn't yet complete; otherwise picks the next unused
-// NN so a completed run is never overwritten.
+// Format: reg_baseline_ta-src-01_YYYYMMDD_NN (match-data, unchanged) or
+// reg_baseline_ta-src-01_published_YYYYMMDD_NN (--source published, kept out
+// of the match-data NN sequence so the two sources never collide). Resumes an
+// in-progress NN for today if its checkpoint isn't yet complete; otherwise
+// picks the next unused NN so a completed run is never overwritten.
 
-function resolveRunId(totalCalls) {
+function resolveRunId(totalCalls, source) {
+  const prefix = source === 'published'
+    ? `reg_baseline_ta-src-01_published_${RUN_DATE}_`
+    : `reg_baseline_ta-src-01_${RUN_DATE}_`;
   for (let nn = 1; nn <= 99; nn++) {
-    const id = `reg_baseline_ta-src-01_${RUN_DATE}_${String(nn).padStart(2, '0')}`;
+    const id = `${prefix}${String(nn).padStart(2, '0')}`;
     const cpFile = path.join(__dirname, `${id}-checkpoint.json`);
     if (!existsSync(cpFile)) return id;
     try {
@@ -218,6 +264,73 @@ function buildCriteriaBlock(siteIndex) {
     if (site.notFundedDetail) lines.push('NOT ROUTINELY FUNDED: ' + site.notFundedDetail);
     if (site.footnotes) lines.push('DEFINITIONS AND SUB-CRITERIA: ' + site.footnotes);
     lines.push('');
+  });
+  return lines.join('\n');
+}
+
+// ── buildCriteriaBlockV2 — implements ta-src-design.md §4 (target contract) ────
+// buildCriteriaBlockV2() does not exist in deployed code yet (TA-SRC-01
+// implementation checklist item 5 is unstarted) — this is a from-spec build,
+// not a port. Input: exams array from GET /api/criteria envelope's data.exams
+// (adult only — isPaed always false here, matching all 30 suite cases and the
+// match-data builder's scope). §4.1 per-site serialisation, §4.2 item
+// serialisation (flat + dormant compound-logic path per CC-DESIGN-01 §4.1),
+// §4.3 guidance rule (adult exam.guidance fallback suppressed).
+
+function guidanceForV2(site) {
+  // §4.3: Guidance: site.inlineGuidance || exam.guidance — refined to suppress
+  // the adult exam.guidance fallback entirely (this runner is adult-only, so
+  // that fallback never fires). Strip a leading "Guidance: " prefix some
+  // inlineGuidance strings already carry, to avoid "Guidance: Guidance: …".
+  if (!site.inlineGuidance) return null;
+  return site.inlineGuidance.replace(/^Guidance:\s*/i, '');
+}
+
+function serializeItemV2(lines, item) {
+  if (!item.logic) {
+    lines.push((item.mandatory ? '* MANDATORY: ' : '- ') + item.label);
+    return;
+  }
+  // Dormant path — no published item carries `logic` at switch time (Phase 0
+  // confirmed). Implemented per CC-DESIGN-01 §4.1 / ta-src-design.md §4.2 so
+  // the serialiser has a tested shape ready before any item exercises it.
+  var headline = item.shortLabel || item.label;
+  var logic = item.logic;
+  var letterFor = function(cond) { return cond.id.slice(cond.id.lastIndexOf('_') + 1); };
+  if (logic.type === 'mandatory_plus_any') {
+    var required = logic.conditions.filter(function(c) { return c.required; });
+    var optional = logic.conditions.filter(function(c) { return !c.required; });
+    lines.push('- [' + item.id + '] ' + headline + ' — REQUIRED:');
+    required.forEach(function(c) { lines.push('    (' + letterFor(c) + ') ' + c.text); });
+    lines.push('  PLUS AT LEAST ONE OF:');
+    optional.forEach(function(c) { lines.push('    (' + letterFor(c) + ') ' + c.text); });
+  } else {
+    var header = logic.type === 'all' ? 'ALL OF THE FOLLOWING:' : 'ANY OF THE FOLLOWING:';
+    lines.push('- [' + item.id + '] ' + headline + ' — ' + header);
+    logic.conditions.forEach(function(c) { lines.push('    (' + letterFor(c) + ') ' + c.text); });
+  }
+}
+
+function buildCriteriaBlockV2(exams) {
+  var lines = [];
+  exams.forEach(function(exam) {
+    var sites = exam.type === 'multisite' ? exam.sites : [exam];
+    sites.forEach(function(site) {
+      var pageRef = site.page ? ' [p' + site.page + ']' : '';
+      lines.push('=== ' + exam.title + ' — ' + site.label + ' (' + exam.modality + ')' + pageRef + ' ===');
+      var guidance = guidanceForV2(site);
+      if (guidance) lines.push('Guidance: ' + guidance);
+      if (site.guidanceNarrative) lines.push('Background: ' + site.guidanceNarrative);
+      site.groups.forEach(function(g) {
+        lines.push('[' + g.title + ']');
+        g.items.forEach(function(it) { serializeItemV2(lines, it); });
+      });
+      if (site.outOfCriteriaNote) lines.push('OUT OF CRITERIA: ' + site.outOfCriteriaNote);
+      if (site.alternativeManagement) lines.push('REDIRECT: ' + site.alternativeManagement);
+      if (site.notFundedDetail) lines.push('NOT ROUTINELY FUNDED: ' + site.notFundedDetail);
+      if (site.footnotes) lines.push('DEFINITIONS AND SUB-CRITERIA: ' + site.footnotes);
+      lines.push('');
+    });
   });
   return lines.join('\n');
 }
@@ -626,7 +739,7 @@ async function loadCasesFromSpreadsheet() {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log(`\nTA-SRC-01 Baseline Runner ${IS_DRY_RUN ? '[DRY-RUN — 3 cases]' : '[FULL RUN — 30 cases]'}`);
+  console.log(`\nTA-SRC-01 Baseline Runner ${IS_DRY_RUN ? '[DRY-RUN — 3 cases]' : '[FULL RUN — 30 cases]'} [--source ${SOURCE}]`);
   console.log(`Model: ${MODEL}  Temperature: ${TEMPERATURE}  Rate limit: ~${Math.round(3600000 / RATE_LIMIT_MS)}/hr  Runs/case: ${RUNS_PER_CASE}`);
 
   // Load cases first (no network dependency) so we know the total call count
@@ -635,7 +748,7 @@ async function main() {
   console.log(`Cases loaded: ${cases.length}`);
 
   const totalCalls = cases.length * RUNS_PER_CASE;
-  const REG_RUN_ID = resolveRunId(totalCalls);
+  const REG_RUN_ID = resolveRunId(totalCalls, SOURCE);
   const CHECKPOINT_FILE = path.join(__dirname, `${REG_RUN_ID}-checkpoint.json`);
   const RESULTS_FILE     = path.join(__dirname, `${REG_RUN_ID}-results.json`);
 
@@ -690,23 +803,45 @@ async function main() {
 
   console.log('Prompt verification complete. Proceeding with D1 prompt.\n');
 
-  // Fetch match data (criteria block) — current production source, pre-switch
-  console.log('Fetching match data (criteria block)...');
-  const respMD = await fetch(`${API_BASE}/match-data`);
-  if (!respMD.ok) {
-    console.error(`ERROR: Failed to fetch match data (${respMD.status}).`);
-    process.exit(1);
+  // Fetch criteria (block source depends on --source)
+  let criteriaBlock, criteriaSourceLabel, publishedVersion = null;
+  if (SOURCE === 'published') {
+    console.log('Fetching published criteria (buildCriteriaBlockV2 source)...');
+    const respPub = await fetch(`${API_BASE}/criteria`);
+    if (!respPub.ok) {
+      console.error(`ERROR: Failed to fetch published criteria (${respPub.status}).`);
+      process.exit(1);
+    }
+    const published = await respPub.json();
+    const exams = published?.data?.exams || [];
+    if (exams.length === 0) {
+      console.error('ERROR: published criteria has no exams. Cannot build criteria block.');
+      process.exit(1);
+    }
+    publishedVersion = { version: published.version, publishedAt: published.publishedAt };
+    console.log(`  Published version: ${published.version} (published ${published.publishedAt})`);
+    console.log(`  Criteria block: ${exams.length} exam groups\n`);
+    criteriaBlock = buildCriteriaBlockV2(exams);
+    criteriaSourceLabel = `published (${published.version})`;
+  } else {
+    console.log('Fetching match data (criteria block)...');
+    const respMD = await fetch(`${API_BASE}/match-data`);
+    if (!respMD.ok) {
+      console.error(`ERROR: Failed to fetch match data (${respMD.status}).`);
+      process.exit(1);
+    }
+    const matchData = await respMD.json();
+    const siteIndex = matchData.index || [];
+    if (siteIndex.length === 0) {
+      console.error('ERROR: match-data index is empty. Cannot build criteria block.');
+      process.exit(1);
+    }
+    console.log(`  Criteria block: ${siteIndex.length} sites\n`);
+    criteriaBlock = buildCriteriaBlock(siteIndex);
+    criteriaSourceLabel = 'match-data (current production, pre-switch)';
   }
-  const matchData = await respMD.json();
-  const siteIndex = matchData.index || [];
-  if (siteIndex.length === 0) {
-    console.error('ERROR: match-data index is empty. Cannot build criteria block.');
-    process.exit(1);
-  }
-  console.log(`  Criteria block: ${siteIndex.length} sites\n`);
 
-  // Assemble system prompt (single config: v2.3.0 + current match-data source)
-  const criteriaBlock = buildCriteriaBlock(siteIndex);
+  // Assemble system prompt (single config: v2.3.0 + selected criteria source)
   const system = assembleSystemPrompt(prompt23.instruction_text, criteriaBlock);
 
   // Load checkpoint
@@ -814,16 +949,18 @@ async function main() {
 
   // Write JSON results (always) — with gate-artefact header + coverage note
   writeFileSync(RESULTS_FILE, JSON.stringify({
-    gateArtefact: GATE_ARTEFACT_NOTE,
+    gateArtefact: gateArtefactNote(SOURCE),
     coverageNote: COVERAGE_NOTE,
     borderlineNote: BORDERLINE_NOTE,
     reg02KeyShapeNote: REG02_KEY_SHAPE_NOTE,
+    ...(SOURCE === 'published' ? { publishedSourceNote: PUBLISHED_SOURCE_NOTE } : {}),
     runId: REG_RUN_ID,
     runDate: new Date().toISOString(),
     promptVersion: '2.3.0',
     model: MODEL,
-    criteriaSource: 'match-data (current production, pre-switch)',
-    criteriaCoverage: CRITERIA_COVERAGE,
+    criteriaSource: criteriaSourceLabel,
+    ...(publishedVersion ? { publishedVersion } : {}),
+    criteriaCoverage: SOURCE === 'published' ? undefined : CRITERIA_COVERAGE,
     runsPerCase: RUNS_PER_CASE,
     cases: allResults,
   }, null, 2), 'utf8');
@@ -841,7 +978,7 @@ async function main() {
     console.log(`  ${c.id.padEnd(14)} expected:${(c.expected || '?').slice(0, 20).padEnd(22)}  [${verdicts.join('/')}] ${stable}${borderlineTag}${syntheticTag}`);
   }
 
-  console.log(`\n${GATE_ARTEFACT_NOTE}\n`);
+  console.log(`\n${gateArtefactNote(SOURCE)}\n`);
   console.log(`Coverage note: ${COVERAGE_NOTE}\n`);
   console.log('Done. Report to Gary for review before TA-SRC-01 implementation proceeds.\n');
 }
