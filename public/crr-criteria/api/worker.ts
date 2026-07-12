@@ -300,9 +300,6 @@ app.post('/api/admin/versions/:id/publish', requireAccess, async (c) => {
   // (reconstruct DATA structure from individual criteria rows)
   const viewerData = transformToViewerFormat(snapshot);
 
-  // Transform snapshot into MATCH_DATA format for Triage Advisor
-  const matchData = transformToMatchFormat(snapshot);
-
   // 1. Update version status
   await db.prepare(
     'UPDATE versions SET status = ?, published_at = ?, published_by = ? WHERE id = ?'
@@ -315,8 +312,6 @@ app.post('/api/admin/versions/:id/publish', requireAccess, async (c) => {
     publishedBy: email,
     data: viewerData,
   }));
-
-  await kv.put('criteria:match-data', JSON.stringify(matchData));
 
   await kv.put('criteria:version', JSON.stringify({
     version: version.version_label,
@@ -686,18 +681,6 @@ function transformToViewerFormat(snapshot) {
   }
   return { exams: Object.values(examMap) };
 }
-
-function transformToMatchFormat(snapshot) {
-  // Transform criteria into MATCH_DATA format for the Triage Advisor
-  // This includes synonyms, site index, and paediatric index
-  // Placeholder — actual implementation depends on how match groups are stored
-  return {
-    synonyms: {},
-    index: [],
-    paed_index: [],
-  };
-}
-
 
 // ── Region Overrides ────────────────────────────────────
 
