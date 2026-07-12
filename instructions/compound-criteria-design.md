@@ -476,14 +476,15 @@ requires — or builds — any FHIR artifact now.
 - Data model handles only census patterns; every feature traces to named items ✓ (§2.1 table, §2.3)
 - All four consumer contracts specified ✓ (§3–§5, regionalisation in §6.3)
 - Simple items remain simple, before/after shown ✓ (§2.1)
-- Migration + sequencing recommendation with reasoning ✓ (§6 — DRAFT pending this review)
+- Migration + sequencing recommendation with reasoning ✓ (§6)
 - Standards path check ✓ (§8)
 - Zero implementation code ✓
 - Non-goals substantive ✓ (§7)
 
-**STOP.** Awaiting Gary's review of this design. The clinical sign-off
-extract (`compound-criteria-clinical-signoff.md`) is ready for circulation to
-the working group on his go-ahead.
+**ACCEPTED (Gary, 12 July 2026).** Migration plan (§6) finalised with this
+acceptance. The clinical sign-off extract
+(`compound-criteria-clinical-signoff.md`) is ready for circulation to the
+working group on his go-ahead.
 
 *Recorded for the future Viewer implementation brief, not this design:
 sub-element tick events are to be included in usage telemetry (CV-025).*
