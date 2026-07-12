@@ -1,8 +1,8 @@
 # Compound Criteria — Data Model & Architecture Design
 
 **Brief:** CC-DESIGN-01 v1.1.0 · **Phase:** 1 (Design) · **Date:** 5 July 2026
-**Status:** For Gary's review. Migration plan (§6) finalised in place —
-clinical sign-off extract for the working group in
+**Status:** ACCEPTED (Gary, 12 July 2026). Migration plan (§6) finalised in
+place — clinical sign-off extract for the working group in
 `compound-criteria-clinical-signoff.md`.
 **Inputs:** `compound-criteria-phase0-findings.md` (census of 60 items / 23
 sites, Appendix A; both spot-checks accepted, Appendix B; seven recorded
