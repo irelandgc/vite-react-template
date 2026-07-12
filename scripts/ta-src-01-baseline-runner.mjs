@@ -276,6 +276,16 @@ function buildCriteriaBlock(siteIndex) {
 // match-data builder's scope). §4.1 per-site serialisation, §4.2 item
 // serialisation (flat + dormant compound-logic path per CC-DESIGN-01 §4.1),
 // §4.3 guidance rule (adult exam.guidance fallback suppressed).
+//
+// PARITY GUARD REQUIRED AT CUTOVER: once triage/index.html ships its own
+// buildCriteriaBlockV2(), diff this function against the deployed version
+// line-for-line and STOP on mismatch before running the --source published
+// leg of the paired comparison — same practice as the match-data leg's guard
+// against index.html (this script's buildCriteriaBlock() was verified
+// line-for-line against production earlier in the TA-SRC-01 baseline
+// session). Until then this function has no deployed counterpart to diff
+// against — it is a from-spec build, not yet a verified port. See
+// ta-src-design.md §10 item 10.
 
 function guidanceForV2(site) {
   // §4.3: Guidance: site.inlineGuidance || exam.guidance — refined to suppress

@@ -262,7 +262,7 @@ The regression suite runs **identically against both sources**; the runner needs
 7. [ ] admin/index.html: toast wording (§6.3)
 8. [ ] §4.3 guidance refinement (adult boilerplate suppression + prefix strip) and §3.4 usage-log `criteria_version` — both ACCEPTED, implement; any D1 schema change is proposed to Gary first, not executed
 9. [ ] Cutover deploy (root build+deploy); post-deploy verification per §8
-10. [ ] TA-REG-01 post-switch run (`--source published`); evaluate against §9 predictions; clinical review of unpredicted changes
+10. [ ] PARITY GUARD REQUIRED AT CUTOVER: before the paired run, diff `scripts/ta-src-01-baseline-runner.mjs`'s `buildCriteriaBlockV2()` port against the deployed `triage/index.html` `buildCriteriaBlockV2()` and STOP on mismatch — same practice as the match-data leg's guard against index.html. Then: TA-REG-01 post-switch run (`--source published`); evaluate against §9 predictions; clinical review of unpredicted changes
 11. [ ] Log follow-ups (§11)
 
 ## 11. Follow-ups logged (out of TA-SRC-01 scope)
