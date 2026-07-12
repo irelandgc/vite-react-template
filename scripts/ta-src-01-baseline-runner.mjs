@@ -49,7 +49,7 @@ const MAX_TOKENS       = 2400;
 const RATE_LIMIT_MS    = 125_000; // 125s between calls → ~28.8/hr, safely under the 30/hr cap
 const RUNS_PER_CASE    = 3;       // stability check — a 1-run baseline can't separate switch
                                    // effects from run-to-run noise (see REG02 DG-005 instability)
-const SPREADSHEET_FILE = path.join(ROOT, 'documents', 'CRR_Test_Case_Results_Matrix_REG02.xlsx');
+const SPREADSHEET_FILE = path.join(ROOT, 'documents', 'CRR_Test_Case_Results_Matrix_v2.xlsx');
 const RUN_DATE          = new Date().toISOString().slice(0, 10).replace(/-/g, '');
 
 const IS_DRY_RUN = process.argv.includes('--dry-run');
