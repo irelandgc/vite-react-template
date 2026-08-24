@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRR HealthLink Integration Mockup</title>
+    <meta name="referrer" content="no-referrer">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -309,7 +310,11 @@ function buildViewerUrl(exam, sites) {
 }
 function buildTriageUrl(exam, sites, presentation) {
     var url = BASE+'/triage/?exam='+exam+'&sites='+sites+'&region='+config.region+'&sendButton=on';
-    if (presentation) url += '&presentation='+encodeURIComponent(presentation);
+    // Clinical text is handed off via sessionStorage, never the URL — see SR-08.
+    // window.open() and same-origin iframes both inherit a copy of the opener's
+    // sessionStorage, so the Triage Advisor can read this without it ever being
+    // written to the URL, browser history, or a server access log.
+    if (presentation) sessionStorage.setItem('crr-triage-note', presentation);
     return url;
 }
 

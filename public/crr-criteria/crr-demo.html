@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRR Criteria Reference and Decision Tool Demonstrator</title>
+    <meta name="referrer" content="no-referrer">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -593,8 +594,9 @@ function buildToolUrl(exam, sites) {
     var r = config.region;
     if (config.tool === 'triage') {
         var url = BASE+'/triage/?exam='+exam+'&sites='+sites+'&region='+r+'&sendButton=on';
+        // Clinical text is handed off via sessionStorage, never the URL — see SR-08.
         var pres = getClinicalText();
-        if (pres) url += '&presentation='+encodeURIComponent(pres);
+        if (pres) sessionStorage.setItem('crr-triage-note', pres);
         return url;
     }
     var path = config.tool === 'popup' ? '/viewer/popup' : '/viewer/';

@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>CRR Triage Advisor v1.1.0 DEV</title>
+<meta name="referrer" content="no-referrer">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/crr-criteria/shared/crr-design-system.css">
 <style>
@@ -628,9 +629,10 @@ document.addEventListener('DOMContentLoaded', function() {
   var pv = document.getElementById('provToolVer'); if (pv) pv.textContent = VER + ' · ' + BUILD;
   document.title = 'CRR Triage Advisor ' + VER;
 
-  // Pre-populate from ?presentation= URL parameter
-  var pres = getParam('presentation');
+  // Pre-populate from session-storage handoff (never from a URL parameter — see SR-08)
+  var pres = sessionStorage.getItem('crr-triage-note');
   if (pres) {
+    sessionStorage.removeItem('crr-triage-note');
     var noteEl = document.getElementById('noteInput');
     if (noteEl) {
       noteEl.value = pres;
@@ -846,8 +848,8 @@ function onNoteChange() {
 }
 
 function buildDemogPrefix() {
-  // Demographics (age, sex) are now passed via the ?presentation= URL parameter
-  // and included directly in the note text — no separate prefix needed.
+  // Demographics (age, sex) are included directly in the handed-off note text
+  // (see sessionStorage handoff, SR-08) — no separate prefix needed.
   return '';
 }
 
