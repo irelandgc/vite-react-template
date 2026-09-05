@@ -1,0 +1,81 @@
+{
+  "id": "GT-RM-RP-001-ctcap",
+  "scenarioId": "RM-RP-001-ctcap",
+  "matrixId": "RP-001",
+  "title": "65M, 5% unintentional weight loss over 6 months, no localising signs, Hb mildly low",
+  "note": "65yo male w/ unexplained wt loss 5% over past 6/12 with no localising symptoms or signs. Hb mildly low. Ex-smoker.",
+  "questionnaires": [
+    "http://crr.health.nz/fhir/Questionnaire/CRR-National",
+    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult"
+  ],
+  "examSites": [
+    {
+      "id": "ct_cap",
+      "requested": true,
+      "quote": null
+    }
+  ],
+  "examSitesNote": "The note names no exam; the requested id came from the calling application, so its quote is null (contract §10). No candidate is labelled: nothing in the note points at a second exam without a clinical judgement this ground truth is not entitled to make. A reviewer may add one.",
+  "expected": {
+    "patient.age": {
+      "value": 65,
+      "status": "documented",
+      "quote": "65yo"
+    },
+    "patient.sex": {
+      "value": "male",
+      "status": "documented",
+      "quote": "65yo male"
+    },
+    "workup.bloods": {
+      "value": true,
+      "status": "inferred",
+      "quote": "Hb mildly low"
+    },
+    "workup.localisingFeatures": {
+      "value": false,
+      "status": "documented",
+      "quote": "no localising symptoms or signs"
+    },
+    "weightloss.present": {
+      "value": true,
+      "status": "documented",
+      "quote": "unexplained wt loss 5% over past 6/12"
+    },
+    "weightloss.percent": {
+      "value": 5,
+      "status": "documented",
+      "quote": "wt loss 5%"
+    },
+    "weightloss.periodMonths": {
+      "value": 6,
+      "status": "documented",
+      "quote": "over past 6/12"
+    },
+    "lab.hb.low": {
+      "value": true,
+      "status": "documented",
+      "quote": "Hb mildly low"
+    }
+  },
+  "expectedAbsent": {
+    "weightloss.measured": "The note does not say the loss was measured on scales. 'wt loss 5%' is a percentage the referrer states, not a recorded-weights claim.",
+    "workup.strongSuspicionMalignancy": "Not stated. 'Ex-smoker' is risk context, not a stated suspicion - concluding one is the reasoning step the equivalence list excludes.",
+    "workup.urinalysis": "Not mentioned.",
+    "workup.cxr": "Not mentioned.",
+    "lab.hb.value": "'mildly low' is qualitative; it answers the boolean flag and supplies no number (contract rule 11, KI-06).",
+    "lab.unexplained": "'unexplained' in the note qualifies the weight loss, not the lab results. Answering lab.unexplained from it would be reading one word onto a different concept."
+  },
+  "engineExpectation": {
+    "determination": "INSUFFICIENT_INFORMATION"
+  },
+  "provenance": {
+    "source": "documents/CRR_Test_Case_Results_Matrix_v2.xlsx",
+    "matrixId": "RP-001",
+    "evaluator": "Rhys Parry",
+    "caseType": "evaluator-submitted",
+    "noteProvenance": "verbatim from the results matrix, as already encoded in tests/scenarios.mjs",
+    "evaluatorExpectation": "at risk (needs 2 abnormal bloods)",
+    "divergence": "The engine returns INSUFFICIENT_INFORMATION, not 'at risk'. 5% is not 'more than 5%' (CT CAP p10), so neither B1 nor B2 can be met, and the work-up items are undocumented. REVIEW Q7 asks whether exactly 5% should satisfy 'more than 5%'; the literal reading is encoded."
+  }
+}

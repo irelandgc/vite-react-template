@@ -64,7 +64,7 @@ Effort is relative (S/M/L) — no dates were given (D1). Dependencies name the s
 **Done:** Vitest covers evaluate route (CT CAP scenarios via HTTP), version stamping, audit write, purge job; service-binding round trip works in `wrangler dev`; **SD-11** raised (service binding replaces SD-02/SD-05's public proxy; public `workers.dev` assess route to close at slice 10); **SD-12** raised (audit record and retention).
 
 ### Slice 4 — Extraction service · L · Opus (prompt) + Sonnet (service) · after 1; parallel with 2–3
-**Status: 4a in progress (Opus, parallel).**
+**Status: 4a complete (content: contract v2, national Questionnaire, prompt v3.0.0, equivalence list, ground-truth seed, gate vectors — AD-14/15/16). 4b not started (service: PII gate, `/api/assess/extract`, provider abstraction, gate implementation).**
 - API worker `POST /api/assess/extract` (internal — called by the pipeline route in slice 5): input `{ note, context: { age, sex, labs[] }, examSiteHint }`.
 - **Server-side PII gate** (new requirement): port the client pipeline's detection to the worker with a test suite (NHI mod-11/23 incl. mod-24 legacy, names, DOB, address, phone, email, referrer patterns); redacts before any model call; residual-PII policy = reject with a visible reason if a hard pattern (NHI) survives redaction. Client pipeline retained as courtesy (KI-32).
 - Prompt assembled server-side from the extraction contract: skeleton in `arch-mig-prompt-decomposition.md` §2; concept-equivalence list versioned with the prompt (TA-009 table reused; `performed_by` via `actorFrom(c)` — KI-26). Model parameters owned here; startup health check (KI-28). Provider abstraction: Anthropic now, Azure OpenAI later (NFR-009, KI-35).

@@ -209,6 +209,62 @@ if (fs.existsSync(examSitesMigrationPath)) {
   console.log("AD-01 mapping: migration file not found (slice 2 not yet merged) - skipped");
 }
 
+// 12. (ARCH-MIG-01 slice 4a) National Questionnaire: every answerable linkId resolves to
+// the vocabulary with the vocabulary's type and text, no linkId appears twice, and every
+// linkId CRR_RedFlags.cql reads has an item to answer it. The last rule is the one that
+// matters - a qualifier the library composes but the Questionnaire omits is a red flag
+// that can never fire from a note.
+const nationalQPath = path.join(root, "fhir", "Questionnaire-CRR-National.json");
+if (fs.existsSync(nationalQPath)) {
+  const nq = JSON.parse(fs.readFileSync(nationalQPath, "utf8"));
+  const nqLinkIds = new Set();
+  (function walkNq(items, trail) { for (const i of items || []) {
+    if (nqLinkIds.has(i.linkId)) problems.push(`National Questionnaire: linkId "${i.linkId}" appears more than once`);
+    nqLinkIds.add(i.linkId);
+    if (i.type !== "group") {
+      const v = vocabByLinkId.get(i.linkId);
+      if (!v) problems.push(`National Questionnaire item "${i.linkId}" is not in the national vocabulary (the national Questionnaire has no site-local escape hatch)`);
+      else {
+        if (v.type !== i.type) problems.push(`National Questionnaire item "${i.linkId}": type "${i.type}" != vocabulary type "${v.type}"`);
+        if (v.text !== i.text) problems.push(`National Questionnaire item "${i.linkId}": text differs from the vocabulary's published text`);
+      }
+    }
+    walkNq(i.item, trail + "/" + i.linkId);
+  } })(nq.item, "");
+  if (fs.existsSync(redFlagsCqlPath)) {
+    const rfSrc = fs.readFileSync(redFlagsCqlPath, "utf8");
+    const usedInRedFlags = new Set([...rfSrc.matchAll(/'([a-z]+\.[A-Za-z0-9.]+)'/g)].map(m => m[1]));
+    for (const id of usedInRedFlags) if (!nqLinkIds.has(id)) problems.push(`CRR_RedFlags.cql reads linkId "${id}" but the national Questionnaire has no item for it - the flag composing it can never be answered from a note`);
+    console.log(`National Questionnaire: ${[...nqLinkIds].filter(id => id.includes(".")).length} answerable items; CRR_RedFlags reads ${usedInRedFlags.size}, all present`);
+  }
+} else {
+  console.log("National Questionnaire: not found - skipped");
+}
+
+// 13. (slice 4a) The extraction prompt has two forms: prompt-v3.0.0.json is canonical and the
+// service loads it; prompt-v3.0.0.md is what a reviewer reads. They must be the same words.
+// Also: no criteria content may re-enter the prompt (invariant 3) - a prompt that starts
+// naming thresholds or lab lists has begun re-acquiring the criteria the migration removed.
+const promptJsonPath = path.join(root, "extraction", "prompt-v3.0.0.json");
+if (fs.existsSync(promptJsonPath)) {
+  const prompt = JSON.parse(fs.readFileSync(promptJsonPath, "utf8"));
+  const body = prompt.parts.map(p => p.text).join("\n\n");
+  const md = fs.readFileSync(path.join(root, "extraction", "prompt-v3.0.0.md"), "utf8");
+  const rendered = md.match(/<!-- PROMPT-BODY-BEGIN -->\n```text\n([\s\S]*?)\n```\n<!-- PROMPT-BODY-END -->/);
+  if (!rendered) problems.push(`prompt-v3.0.0.md: no PROMPT-BODY block found`);
+  else if (rendered[1] !== body) problems.push(`prompt-v3.0.0.md has drifted from prompt-v3.0.0.json (the JSON is canonical - re-render the md)`);
+  const equivPath = path.join(root, "extraction", prompt.equivalenceListVersion + ".md");
+  if (!fs.existsSync(equivPath)) problems.push(`prompt names equivalenceListVersion "${prompt.equivalenceListVersion}" but ${path.basename(equivPath)} does not exist`);
+  // Criteria content must not reappear in the prompt. These are the shapes it would take.
+  for (const [label, re] of [
+    ["a numeric threshold", /\b(more than|greater than|less than|at least|≥|>=)\s*\d/i],
+    ["a priority code", /\bP[1-4]\b|\bAcute 48\s?hr\b/],
+    ["a named analyte list", /\b(ALP|GGT|bilirubin|ferritin|Ca-?125|D-dimer|eGFR|creatinine)\b/i],
+    ["a redirect destination", /\b(ED|111|ACC|emergency department)\b/]
+  ]) if (re.test(body)) problems.push(`prompt-v3.0.0 body contains what looks like ${label} - criteria content belongs in a bundle, not the prompt (invariant 3)`);
+  console.log(`Extraction prompt v${prompt.version}: ${body.length} chars in ${prompt.parts.length} parts; md matches json; equivalence list ${prompt.equivalenceListVersion}`);
+}
+
 const unusedLinkIds = [...linkIds].filter(id => id.includes(".") && !usedInCql.has(id));
 console.log(`Library defines: ${defines.size}; population defines: ${popDefines.size}; Questionnaire linkIds: ${linkIds.size}; used in criteria CQL: ${usedInCql.size}; populatable: ${initialExprs.length}`);
 if (unusedLinkIds.length) console.log(`Info - Questionnaire items not used by logic (documentation only): ${unusedLinkIds.join(", ")}`);

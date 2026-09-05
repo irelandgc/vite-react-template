@@ -1,0 +1,64 @@
+{
+  "id": "GT-RM-MW-009-ctcap",
+  "scenarioId": "RM-MW-009-ctcap",
+  "matrixId": "MW-009",
+  "title": "68M painless jaundice with hepatomegaly: CT CAP redirected, US Abdomen is the cross-exam candidate",
+  "note": "CT chest abdo pelvis. 68 yo man. Sudden onset painless jaundice. Diabetes on metformin. Occasional discomfort R side, some pallor and jaundice. Liver ~2 cm below costal margin. wt 58",
+  "questionnaires": [
+    "http://crr.health.nz/fhir/Questionnaire/CRR-National",
+    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult"
+  ],
+  "examSites": [
+    {
+      "id": "ct_cap",
+      "requested": true,
+      "quote": "CT chest abdo pelvis"
+    },
+    {
+      "id": "us_abdomen",
+      "requested": false,
+      "quote": "Sudden onset painless jaundice"
+    }
+  ],
+  "examSitesNote": "The only case in this seed where the note names the requested exam, so the requested entry carries a quote. The us_abdomen candidate is the cross-exam behaviour the matrix records as valued (KI-08, gap analysis §4); the engine, not the model, decides what to do with it, and it can only do so once US Abdomen is transcribed (slice 7).",
+  "expected": {
+    "patient.age": {
+      "value": 68,
+      "status": "documented",
+      "quote": "68 yo man"
+    },
+    "patient.sex": {
+      "value": "male",
+      "status": "documented",
+      "quote": "68 yo man"
+    },
+    "workup.localisingFeatures": {
+      "value": true,
+      "status": "documented",
+      "quote": "Liver ~2 cm below costal margin"
+    },
+    "symptom.abdominalPain": {
+      "value": true,
+      "status": "documented",
+      "quote": "Occasional discomfort R side"
+    }
+  },
+  "expectedAbsent": {
+    "weightloss.present": "'wt 58' is a single recorded weight with nothing to compare it to. It is not a statement of weight loss (contract rule 3).",
+    "weightloss.percent": "No usual body weight; not computable.",
+    "symptom.jaundice": "Not in the CT CAP Questionnaire. It is a national-vocabulary concept whose sites are US Abdomen and US Abdomen Paediatric - it becomes answerable when US Abdomen is transcribed, and is the indicator the us_abdomen candidate would be scored on."
+  },
+  "engineExpectation": {
+    "determination": "ALTERNATIVE_MANAGEMENT"
+  },
+  "provenance": {
+    "source": "documents/CRR_Test_Case_Results_Matrix_v2.xlsx",
+    "matrixId": "MW-009",
+    "evaluator": "Michaela Wood",
+    "caseType": "evaluator-submitted",
+    "noteProvenance": "verbatim from the results matrix, as already encoded in tests/scenarios.mjs",
+    "evaluatorExpectation": "CT CAP declined; US Abdomen recommended acutely.",
+    "divergence": "Half the expectation is met today and half is not. CT CAP correctly redirects (localising features). The US Abdomen recommendation needs multi-bundle evaluation (slice 3) and a published US Abdomen bundle (slice 7); this ground truth records the candidate so the behaviour is measurable the moment both exist.",
+    "quoteCorrection": "tests/scenarios.mjs records this indicator's quote as 'painless jaundice ... Liver ~2 cm below costal margin' - two spans joined by an ellipsis, which is NOT a verbatim span of the note and would be rejected by gate rule 1. The ground truth uses the shortest single verbatim span that supports the answer: 'Liver ~2 cm below costal margin'. The scenario file is unchanged (out of this brief's scope); see manifest.json findings F-GT-01."
+  }
+}

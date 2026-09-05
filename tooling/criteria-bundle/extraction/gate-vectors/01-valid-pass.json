@@ -1,0 +1,214 @@
+{
+  "id": "01-valid-pass",
+  "expect": "pass",
+  "gateRule": null,
+  "why": "Every quote appears in the note, every linkId is in one of the supplied Questionnaires, every value type matches its item type, every answer carries the evidence extension, and no forbidden field is present. The gate must let this through unchanged. It is the RM-RP-001 ground-truth response minus the inferred workup.bloods answer, so it is also a worked example of a well-formed extraction.",
+  "note": "65yo male w/ unexplained wt loss 5% over past 6/12 with no localising symptoms or signs. Hb mildly low. Ex-smoker.",
+  "response": {
+    "questionnaires": [
+      "http://crr.health.nz/fhir/Questionnaire/CRR-National",
+      "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult"
+    ],
+    "examSites": [
+      {
+        "id": "ct_cap",
+        "requested": true,
+        "quote": "unexplained wt loss"
+      }
+    ],
+    "questionnaireResponse": {
+      "resourceType": "QuestionnaireResponse",
+      "questionnaire": "http://crr.health.nz/fhir/Questionnaire/CRR-National",
+      "status": "completed",
+      "subject": {
+        "reference": "Patient/gate-vector"
+      },
+      "item": [
+        {
+          "linkId": "patient",
+          "item": [
+            {
+              "linkId": "patient.age",
+              "answer": [
+                {
+                  "valueInteger": 65,
+                  "extension": [
+                    {
+                      "url": "http://crr.health.nz/fhir/StructureDefinition/answer-evidence",
+                      "extension": [
+                        {
+                          "url": "status",
+                          "valueCode": "documented"
+                        },
+                        {
+                          "url": "quote",
+                          "valueString": "65yo"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "linkId": "patient.sex",
+              "answer": [
+                {
+                  "valueCoding": {
+                    "system": "http://hl7.org/fhir/administrative-gender",
+                    "code": "male"
+                  },
+                  "extension": [
+                    {
+                      "url": "http://crr.health.nz/fhir/StructureDefinition/answer-evidence",
+                      "extension": [
+                        {
+                          "url": "status",
+                          "valueCode": "documented"
+                        },
+                        {
+                          "url": "quote",
+                          "valueString": "65yo male"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "linkId": "workup",
+          "item": [
+            {
+              "linkId": "workup.localisingFeatures",
+              "answer": [
+                {
+                  "valueBoolean": false,
+                  "extension": [
+                    {
+                      "url": "http://crr.health.nz/fhir/StructureDefinition/answer-evidence",
+                      "extension": [
+                        {
+                          "url": "status",
+                          "valueCode": "documented"
+                        },
+                        {
+                          "url": "quote",
+                          "valueString": "no localising symptoms or signs"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "linkId": "weightloss",
+          "item": [
+            {
+              "linkId": "weightloss.present",
+              "answer": [
+                {
+                  "valueBoolean": true,
+                  "extension": [
+                    {
+                      "url": "http://crr.health.nz/fhir/StructureDefinition/answer-evidence",
+                      "extension": [
+                        {
+                          "url": "status",
+                          "valueCode": "documented"
+                        },
+                        {
+                          "url": "quote",
+                          "valueString": "unexplained wt loss 5% over past 6/12"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "linkId": "weightloss.percent",
+              "answer": [
+                {
+                  "valueDecimal": 5,
+                  "extension": [
+                    {
+                      "url": "http://crr.health.nz/fhir/StructureDefinition/answer-evidence",
+                      "extension": [
+                        {
+                          "url": "status",
+                          "valueCode": "documented"
+                        },
+                        {
+                          "url": "quote",
+                          "valueString": "wt loss 5%"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "linkId": "weightloss.periodMonths",
+              "answer": [
+                {
+                  "valueDecimal": 6,
+                  "extension": [
+                    {
+                      "url": "http://crr.health.nz/fhir/StructureDefinition/answer-evidence",
+                      "extension": [
+                        {
+                          "url": "status",
+                          "valueCode": "documented"
+                        },
+                        {
+                          "url": "quote",
+                          "valueString": "over past 6/12"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "linkId": "lab",
+          "item": [
+            {
+              "linkId": "lab.hb.low",
+              "answer": [
+                {
+                  "valueBoolean": true,
+                  "extension": [
+                    {
+                      "url": "http://crr.health.nz/fhir/StructureDefinition/answer-evidence",
+                      "extension": [
+                        {
+                          "url": "status",
+                          "valueCode": "documented"
+                        },
+                        {
+                          "url": "quote",
+                          "valueString": "Hb mildly low"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
