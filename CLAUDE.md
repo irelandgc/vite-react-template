@@ -61,6 +61,42 @@ See @README.md for project overview. See @documents/CRR_Architecture_Briefing.md
 - Prefer vanilla CSS — avoid CSS-in-JS
 - When writing standalone HTML tools, keep CSS/JS in a single file unless complexity demands separation
 
+## Instruction file lifecycle
+
+Files in `instructions/` are pending work. If a file is in `instructions/`, it is
+still to be done. Registers and reference material live in `documents/` and
+`documents/reference/`, never in `instructions/`.
+
+When the work described by an instruction file is finished, file it in the same
+session, as part of the same commit as the work itself:
+
+1. Prepend a filing tag to the top of the file:
+
+   > **[COMPLETE — YYYY-MM-DD]** <one line: what was done>
+   > Verification: <one of — "verified: <specific evidence, e.g. commit hash, test
+   > output, live API check>" | "not independently verified: <what could not be
+   > confirmed and why>">
+   > Filed by: <Claude Code | Gary>
+
+2. `git mv` it to `instructions.complete/`.
+
+Superseded or obsolete files go to `instructions/archive/` instead, with the same
+tag but `[SUPERSEDED — YYYY-MM-DD]` and a one-line reason plus what replaced them.
+
+**The verification line is not optional and must not be softened.** "Not
+independently verified" is an acceptable and often correct answer — a file's
+presence in `instructions.complete/` records that the work was carried out, never
+that its outcome was confirmed. A future session must be able to tell those apart
+from the file alone, without re-running an audit.
+
+**Do not tag or move a file whose completion you are inferring rather than
+observing.** If evidence is absent, leave it in `instructions/` and raise it with
+Gary. Absence of a release-log entry is not evidence work was skipped; equally,
+having written the code is not evidence the outcome was verified.
+
+Add a corresponding entry to `documents/CRR_Release_Log.md` for any change that
+alters deployed behaviour, at the time it happens, not retrospectively.
+
 ## Before Committing
 - Do not commit secrets, API keys, or credentials
 - Do not commit node_modules or .wrangler directories
