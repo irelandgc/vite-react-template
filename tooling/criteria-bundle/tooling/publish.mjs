@@ -3,10 +3,14 @@
 // PlanDefinition, Questionnaire, regional overlays, vocabularyVersion, last test
 // results, source provenance, state, a content hash, and publishedAt.
 //
-// Usage: node publish.mjs <examSite> [--state transcribed|signed-off] [--registry <dir>]
+// Usage: node publish.mjs <examSite> [--state transcribed|signed-off] [--version <semver>] [--registry <dir>]
 //
-// A published bundle file is never rewritten - a re-publish is a new version
-// (bump the site's PlanDefinition.version to publish again).
+// A published bundle file is never rewritten - a re-publish is a new version.
+// Bundle version is independent of the FHIR resources' own `version` field; pass
+// --version explicitly once a site has publish history (see below). Publishing a
+// major version bump is refused when the compiled logic (ELM) hasn't changed since
+// the previous published version - that's a metadata-only republish, not a new
+// major version.
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -56,7 +60,7 @@ function publishToKvStub(_bundle) {
 
 function usageError(msg) {
   console.error(msg);
-  console.error("Usage: node publish.mjs <examSite> [--state transcribed|signed-off] [--registry <dir>]");
+  console.error("Usage: node publish.mjs <examSite> [--state transcribed|signed-off] [--version <semver>] [--registry <dir>]");
   process.exit(1);
 }
 
@@ -64,13 +68,16 @@ const args = process.argv.slice(2);
 const examSite = args[0];
 if (!examSite || examSite.startsWith("--")) usageError("Missing <examSite>.");
 let state = null;
+let versionOverride = null;
 let registryDir = path.join(root, "registry");
 for (let i = 1; i < args.length; i++) {
   if (args[i] === "--state") state = args[++i];
+  else if (args[i] === "--version") versionOverride = args[++i];
   else if (args[i] === "--registry") registryDir = path.resolve(args[++i]);
   else usageError(`Unrecognised argument "${args[i]}".`);
 }
 if (state && !["transcribed", "signed-off"].includes(state)) usageError(`--state must be "transcribed" or "signed-off", got "${state}".`);
+if (versionOverride && !/^\d+\.\d+\.\d+$/.test(versionOverride)) usageError(`--version must be semver (X.Y.Z), got "${versionOverride}".`);
 
 const manifest = MANIFESTS[examSite];
 if (!manifest) usageError(`No publish manifest for examSite "${examSite}". Known: ${Object.keys(MANIFESTS).join(", ")}`);
@@ -129,9 +136,34 @@ const testResults = {
   redFlags: summariseResults("tests/results-redflags.md"),
 };
 
+// Bundle version is a publish-history concept, independent of the FHIR resource's own
+// `version` field (PlanDefinition.version tracks the *template's* iteration, not how
+// many times it's been published as a bundle - conflating the two produced a real bug:
+// the first-ever bundle publish inherited "2.0.0" from the PlanDefinition and looked
+// like a second major release when it was the first). Default to the PlanDefinition's
+// version only when there's no publish history yet; otherwise --version is required
+// to make a deliberate choice instead of drifting off whatever the FHIR resource says.
+const siteDir = path.join(registryDir, examSite);
+const indexPath = path.join(siteDir, "index.json");
+const existingIndex = fs.existsSync(indexPath) ? JSON.parse(fs.readFileSync(indexPath, "utf8")) : null;
+const previous = existingIndex?.versions?.[existingIndex.versions.length - 1] ?? null;
+if (!versionOverride && previous) usageError(`${examSite} has a previous published version (${previous.version}) - pass --version explicitly (a minor/patch bump if logic is unchanged, per the major-bump guard below).`);
+const bundleVersion = versionOverride ?? planDefinition.version;
+
+// Refuse a major version bump when the compiled logic hasn't changed. A same-hash
+// republish is metadata-only (vocabularyVersion, source, state, etc.) and must be a
+// minor/patch bump, never a major one - a major bump asserts a logic change happened.
+if (previous) {
+  const newMajor = Number(bundleVersion.split(".")[0]);
+  const prevMajor = Number(previous.version.split(".")[0]);
+  if (previous.logicHash === `sha256:${logicHash}` && newMajor > prevMajor) {
+    usageError(`Refusing to publish ${bundleVersion}: the compiled logic (site + population ELM) is byte-identical to ${previous.version} (${previous.logicHash}), but ${bundleVersion} is a major bump over it. A major version asserts a logic change. Use a minor or patch version instead (e.g. ${prevMajor}.${Number(previous.version.split(".")[1]) + 1}.0), or if the logic genuinely changed, something is wrong with this check - do not work around it, report it.`);
+  }
+}
+
 const bundle = {
   examSite,
-  version: planDefinition.version,
+  version: bundleVersion,
   state: resolvedState,
   vocabularyVersion: vocabulary.version,
   source: manifest.source,
@@ -151,16 +183,14 @@ const bundle = {
     .filter((d) => d.name !== "FHIRHelpers"),
 };
 
-const siteDir = path.join(registryDir, examSite);
 const bundlePath = path.join(siteDir, `${bundle.version}.json`);
-if (fs.existsSync(bundlePath)) usageError(`${path.relative(root, bundlePath)} already exists. A published bundle is never rewritten - bump ${manifest.planDefinition}'s "version" to publish again.`);
+if (fs.existsSync(bundlePath)) usageError(`${path.relative(root, bundlePath)} already exists. A published bundle is never rewritten - publish a new version (--version) instead.`);
 
 fs.mkdirSync(siteDir, { recursive: true });
 fs.writeFileSync(bundlePath, JSON.stringify(bundle, null, 2));
 publishToKvStub(bundle);
 
-const indexPath = path.join(siteDir, "index.json");
-const index = fs.existsSync(indexPath) ? JSON.parse(fs.readFileSync(indexPath, "utf8")) : { examSite, versions: [] };
+const index = existingIndex ?? { examSite, versions: [] };
 index.versions.push({ version: bundle.version, state: bundle.state, publishedAt: bundle.publishedAt, logicHash: bundle.logicHash, dependencies: bundle.dependencies });
 index.latestPublished = bundle.version;
 fs.writeFileSync(indexPath, JSON.stringify(index, null, 2));
