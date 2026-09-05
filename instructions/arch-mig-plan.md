@@ -87,7 +87,8 @@ Effort is relative (S/M/L) — no dates were given (D1). Dependencies name the s
 - Compound rendering (CV-014) from `selectionBehavior` nesting; badges from action codes; page references; regional overlay rendering from `regions.json` + overlays (region from URL param, CV-021); output text from action `description` (CV-017).
 - Ticks produce a QuestionnaireResponse (kept client-side); optional "Check against criteria" button calls `/api/assess/evaluate` with the ticked response (no LLM) and shows the Advisory — a deterministic self-check for referrers.
 - Indicator-based grouping option in the Viewer using the vocabulary groups (evaluator feedback), behind a UX flag.
-**Done:** CT CAP renders from its bundle with visual parity to today (screenshots in the PR); all other sites unchanged; QA viewer review still works.
+- **`checkSafetyText()`'s hard-coded, unsourced, negation-blind safety-alert list (KI-51) must not be carried forward silently.** Resolve per the outcome of review-pack decision D1 (AD-05) before this slice ships: either the six phrases become a governed national safety define with real provenance/sign-off, sourced the same way as everything else the Viewer renders, or the check is dropped. Do not port the current `indexOf` substring match as-is.
+**Done:** CT CAP renders from its bundle with visual parity to today (screenshots in the PR); all other sites unchanged; QA viewer review still works; `checkSafetyText()` resolved per D1, not carried forward unexamined.
 
 ### Slice 7 — Criteria transcription programme (waves) · L overall · Opus per site · after 1; runs alongside 2–6
 **Status: not started.**
