@@ -19,6 +19,7 @@
 	},
 	"devDependencies": {
 		"@cloudflare/vite-plugin": "1.15.3",
+		"@cloudflare/vitest-plugin": "^1.1.4",
 		"@cloudflare/vitest-pool-workers": "^0.22.0",
 		"@eslint/js": "9.39.1",
 		"@types/node": "24.10.1",
@@ -47,6 +48,7 @@
 		"dev": "vite",
 		"lint": "eslint .",
 		"test": "vitest run",
+		"test:api-worker": "vitest run --config public/crr-criteria/api/vitest.config.ts",
 		"preview": "npm run build && vite preview"
 	},
 	"type": "module",

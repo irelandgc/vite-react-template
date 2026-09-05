@@ -39,3 +39,5 @@ jobs:
         run: npm ci
       - name: Test
         run: npm test
+      - name: Test (crr-criteria-api worker — D1/KV bundle registry)
+        run: npm run test:api-worker
