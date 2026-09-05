@@ -1,0 +1,902 @@
+{
+  "resourceType": "CRRIndicatorVocabulary",
+  "id": "crr-national-indicators",
+  "version": "1.0.0",
+  "status": "draft",
+  "date": "2026-09-05",
+  "publisher": "Health New Zealand | Te Whatu Ora - Community Referred Radiology Programme",
+  "title": "CRR national indicator vocabulary",
+  "description": "Shared clinical indicators referenced by more than one CRR exam/site bundle, plus the national red-flag and ACC indicators consumed by CRR_RedFlags. Per-site Questionnaires reuse these linkIds rather than minting near-duplicates (KI-01). NOT CLINICALLY REVIEWED - the groupings, the `sites` attributions and the red-flag list are a first-pass transcription from the published PDF and require clinician review before any site transcription references them.",
+
+  "_convention": {
+    "linkIdShape": "<group>.<concept>, and <group>.<subject>.<qualifier> where a concept has both a qualitative flag and a measured value (lab.hb.low / lab.hb.value). `group` is always the first dot-segment of the linkId - there is no case where the declared group and the prefix differ.",
+    "concept": "lowerCamelCase. Name the clinical concept, never the pathway, priority or exam that happens to use it.",
+    "oneConceptOneIndicator": "KI-01. A concept gets exactly one linkId even when it appears as both a positive condition and an exclusion (workup.localisingFeatures is the worked example). Before adding an entry, search this file for the concept; a near-duplicate is a defect, not an addition.",
+    "immutability": "E3. A linkId is immutable once any published bundle references it. The CT CAP linkIds (patient.*, workup.*, weightloss.*, symptom.abdominalPain|fatigue|nausea, lab.*, advice.urgentCTRecommended, advice.adviserNameRole, excl.*, funding.unfitOrUnwilling) were the seed and are reproduced here unchanged, including where a more consistent name exists. Renaming is a deprecation with a `successor`, never an edit.",
+    "deprecation": "status `deprecated` requires `successor` naming the replacement linkId. No entry in v1 is deprecated.",
+    "types": "FHIR Questionnaire item types: boolean, integer, decimal, string, choice, quantity.",
+    "threeValuedLogic": "Every indicator is nullable. An unanswered indicator is null and propagates to INSUFFICIENT_INFORMATION. Only exclusion-shaped and red-flag-shaped indicators are read through `is true` (absence does not assert presence); clinical criteria are never coalesced to false.",
+    "modifiersAreNotIndicators": "KI-05. Wording introduced by 'especially', 'typically', 'particularly', 'more commonly', 'e.g.' and '+/-' is epidemiological or illustrative and is NOT given an indicator. Such wording is listed in transcription-notes.md, not encoded.",
+    "labFlagsAreBooleans": "KI-06 / prompt clause 13. A lab concept is a boolean abnormality flag answerable from qualitative text ('Hb mildly low'). A `.value` sibling exists ONLY where a published criterion states a numeric threshold (KI-13: the referrer is never asked for a reference range).",
+    "gatewaysAreScoped": "KI-07. advice.* indicators are national in wording but belong to the pathway that gates them; the site library composes them inside that pathway only.",
+    "ageIsExtracted": "KI-09. patient.age (years) and patient.ageMonths (sub-year precision, paediatric) are extracted indicators carrying evidence, never derived from a heuristic.",
+    "equityProvisionsAreContent": "KI-11. Equity provisions are transcribed as criteria conditions at the site, not as model behaviour. No entry in v1 encodes one; none was found in the acute-assessment rows.",
+    "priorImaging": "imaging.<examSlug>.<window> where window is `withinNm` / `withinNy` / `moreThanNmAgo` / `ever`. NOTE: CT CAP's two prior-imaging concepts were published under the `excl.` prefix (excl.recentCTCAP12m, excl.recentUSAbdoPelvis3m) and are immutable; do NOT mint imaging.ctcap.within12m or imaging.usabdopelvis.within3m - they would be near-duplicates. See REVIEW Q14.",
+    "codes": "`code` is `PLACEHOLDER` on every entry. SR-11: no terminology code is authored by a model. NZHTS validation replaces these in the build once access exists (E6).",
+    "sites": "Each `sites` entry names the exam/site as printed in the published PDF and the page the concept was seen on. `source` is `pdf` unless marked otherwise. This list is what the clinician reviews - it is an attribution claim, not a completeness claim.",
+    "sourceDocument": "National Community Referral Criteria for Imaging (Part I). National ID 15372, Version 2.0, published 09/04/2026, review due 09/04/2028. Repo copy: documents/reference/National Primary Care Referral Criteria for Imaging.pdf. Page numbers are the PDF's own printed page numbers, which match its physical pages.",
+    "addingAnEntry": "A transcription session proposes additions in its own vocabulary-additions.json; the vocabulary owner merges. A session never edits an existing entry."
+  },
+
+  "groups": {
+    "patient": "Demographics extracted from the note or supplied by the calling application.",
+    "symptom": "Symptoms, signs and clinical findings shared across sites.",
+    "weightloss": "Unintentional weight loss. Retained as its own prefix because the CT CAP linkIds are published and immutable; see REVIEW Q13.",
+    "workup": "Initial assessment and investigations performed before referral.",
+    "lab": "Laboratory results. Boolean abnormality flags, with `.value` siblings only where a criterion states a numeric threshold.",
+    "imaging": "Prior imaging by exam and interval.",
+    "advice": "Specialist / PCRL / radiologist advice and decision-support gateways.",
+    "funding": "Funding-stream and not-routinely-funded markers.",
+    "excl": "CT CAP's published alternative-management (redirect) indicators. Immutable; see REVIEW Q14 for the naming inconsistency with `imaging`.",
+    "redflag": "One boolean per red flag in the national library CRR_RedFlags, plus the qualifying components of the compound red flags. Every entry traces to a 'Refer for acute assessment without initial imaging' row in the PDF."
+  },
+
+  "indicators": [
+    {
+      "linkId": "patient.age",
+      "text": "Age in years at referral",
+      "type": "integer",
+      "group": "patient",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10" },
+        { "examSite": "ct-head-adult", "page": "p21" },
+        { "examSite": "ct-kub-adult", "page": "p26" },
+        { "examSite": "us-renal-adult", "page": "p52" },
+        { "examSite": "us-pelvis-adult", "page": "p49" },
+        { "examSite": "overview", "page": "p4" }
+      ],
+      "notes": "Age conditions appear at many more sites than are listed; these are the ones read during this session. Overview p4 scope item 5 sets the paediatric age band at 'up to and including 15 years of age'."
+    },
+    {
+      "linkId": "patient.ageMonths",
+      "text": "Age in months at referral (used where a criterion states an infant age threshold)",
+      "type": "decimal",
+      "group": "patient",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "us-renal-paediatric", "page": "p83" },
+        { "examSite": "us-soft-tissue-mass-paediatric", "page": "p87" },
+        { "examSite": "us-scrotum-testis-paediatric", "page": "p86" }
+      ],
+      "notes": "New in v1. patient.age is integer years and cannot express 'younger than 3 months of age' (US Renal Paediatric p83) or 'child younger than 3 months old' (US Soft Tissue Paediatric p87). See REVIEW Q12."
+    },
+    {
+      "linkId": "patient.sex",
+      "text": "Sex",
+      "type": "choice",
+      "group": "patient",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "answerOptions": ["male", "female", "other"],
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10" },
+        { "examSite": "ct-kub-adult", "page": "p26" },
+        { "examSite": "us-renal-adult", "page": "p52" },
+        { "examSite": "us-pelvis-adult", "page": "p44" }
+      ]
+    },
+
+    {
+      "linkId": "weightloss.present",
+      "text": "Unintentional, unexplained weight loss",
+      "type": "boolean",
+      "group": "weightloss",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10" },
+        { "examSite": "xray-chest-adult", "page": "p63" },
+        { "examSite": "us-pelvis-adult", "page": "p49" }
+      ]
+    },
+    {
+      "linkId": "weightloss.measured",
+      "text": "Weight loss is documented by recorded weights (not patient report alone)",
+      "type": "boolean",
+      "group": "weightloss",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10" }]
+    },
+    {
+      "linkId": "weightloss.percent",
+      "text": "Weight loss as a percentage of usual body weight",
+      "type": "decimal",
+      "group": "weightloss",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10" }],
+      "notes": "Value sibling justified: CT CAP p10 states 'more than 5 % of usual body weight'."
+    },
+    {
+      "linkId": "weightloss.periodMonths",
+      "text": "Period over which the weight was lost, in months",
+      "type": "decimal",
+      "group": "weightloss",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10" }],
+      "notes": "Value sibling justified: CT CAP p10 states 'over 3-6 months'."
+    },
+
+    {
+      "linkId": "symptom.abdominalPain",
+      "text": "Abdominal pain",
+      "type": "boolean",
+      "group": "symptom",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10" },
+        { "examSite": "us-pelvis-adult", "page": "p49" },
+        { "examSite": "us-abdomen-paediatric", "page": "p76" }
+      ]
+    },
+    {
+      "linkId": "symptom.fatigue",
+      "text": "Fatigue",
+      "type": "boolean",
+      "group": "symptom",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10" },
+        { "examSite": "us-pelvis-adult", "page": "p49" }
+      ]
+    },
+    {
+      "linkId": "symptom.nausea",
+      "text": "Nausea",
+      "type": "boolean",
+      "group": "symptom",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10" },
+        { "examSite": "us-scrotum-testis-paediatric", "page": "p86" }
+      ]
+    },
+    {
+      "linkId": "symptom.persistentAbdominal",
+      "text": "Persistent or progressive abdominal symptoms",
+      "type": "boolean",
+      "group": "symptom",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "us-pelvis-adult", "page": "p49" },
+        { "examSite": "us-abdomen-paediatric", "page": "p76" },
+        { "examSite": "ct-abdomen-pelvis-adult", "page": "approved draft 27/08/26, CT AP row 1", "source": "approved-draft" }
+      ],
+      "notes": "Named by the slice-1 brief. The concept's clearest statement is in the CT AP approved draft ('persistent or progressive (typically greater than 6 weeks) abdominal symptoms'), which is a cross-check source only. NOTE for the CT AP transcription: 'typically greater than 6 weeks' is modifier wording (KI-05) and must not become a duration threshold without a clinical ruling. See REVIEW Q11."
+    },
+    {
+      "linkId": "symptom.fever",
+      "text": "Fever (documented, no threshold stated)",
+      "type": "boolean",
+      "group": "symptom",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "xray-spine-adult", "page": "p72" },
+        { "examSite": "us-abdomen-adult", "page": "p30" },
+        { "examSite": "us-pelvis-adult", "page": "p44" }
+      ]
+    },
+    {
+      "linkId": "symptom.temperatureCelsius",
+      "text": "Recorded temperature in degrees Celsius",
+      "type": "decimal",
+      "group": "symptom",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-kub-adult", "page": "p25" },
+        { "examSite": "us-renal-adult", "page": "p52" }
+      ],
+      "notes": "Value sibling justified: CT KUB p25 'Temperature above 38 degrees'; US Renal p52 'fever (higher than 38 degrees)'."
+    },
+    {
+      "linkId": "symptom.backPain",
+      "text": "Back pain",
+      "type": "boolean",
+      "group": "symptom",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "xray-spine-adult", "page": "p72" }],
+      "notes": "Both X-ray Spine acute rows use it: 'back pain' (spinal infection) and 'acute back pain' (cauda equina). One indicator; acuteness is carried by redflag.backPainAcuteOnset. See REVIEW Q9."
+    },
+    {
+      "linkId": "symptom.haematuria",
+      "text": "Haematuria",
+      "type": "boolean",
+      "group": "symptom",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "us-renal-adult", "page": "p52" },
+        { "examSite": "us-renal-paediatric", "page": "p83" },
+        { "examSite": "ct-kub-adult", "page": "p25" }
+      ]
+    },
+    {
+      "linkId": "symptom.jaundice",
+      "text": "Jaundice",
+      "type": "boolean",
+      "group": "symptom",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "us-abdomen-adult", "page": "p30" },
+        { "examSite": "us-abdomen-paediatric", "page": "p76" }
+      ]
+    },
+
+    {
+      "linkId": "workup.bloods",
+      "text": "Blood tests completed as part of initial investigations",
+      "type": "boolean",
+      "group": "workup",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10" },
+        { "examSite": "ct-abdomen-pelvis-adult", "page": "approved draft 27/08/26, footnote 3", "source": "approved-draft" }
+      ]
+    },
+    {
+      "linkId": "workup.urinalysis",
+      "text": "Urinalysis completed as part of initial investigations",
+      "type": "boolean",
+      "group": "workup",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10" }]
+    },
+    {
+      "linkId": "workup.cxr",
+      "text": "Chest X-ray completed as part of initial investigations",
+      "type": "boolean",
+      "group": "workup",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10" },
+        { "examSite": "ct-chest-adult", "page": "p14" },
+        { "examSite": "xray-chest-adult", "page": "p62" }
+      ]
+    },
+    {
+      "linkId": "workup.strongSuspicionMalignancy",
+      "text": "Following full clinical assessment and examination, the practitioner has a strong suspicion of underlying malignancy",
+      "type": "boolean",
+      "group": "workup",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10" },
+        { "examSite": "ct-other-adult", "page": "p27" },
+        { "examSite": "ct-abdomen-pelvis-adult", "page": "approved draft 27/08/26, CT AP row 1", "source": "approved-draft" }
+      ]
+    },
+    {
+      "linkId": "workup.localisingFeatures",
+      "text": "Focal pathology, localising signs/symptoms, or a potential biopsy site has been identified (true = identified; this is a redirect to the relevant system-specific pathway)",
+      "type": "boolean",
+      "group": "workup",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10, p11" },
+        { "examSite": "ct-abdomen-pelvis-adult", "page": "approved draft 27/08/26, Exclusions", "source": "approved-draft" }
+      ],
+      "notes": "The KI-01 worked example: one indicator carries both polarities (negated inside criterion A, asserted as a redirect). Never split it."
+    },
+
+    {
+      "linkId": "lab.crp.raised",
+      "text": "CRP raised",
+      "type": "boolean",
+      "group": "lab",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10, p11" },
+        { "examSite": "ct-abdomen-pelvis-adult", "page": "approved draft 27/08/26, footnote 3 ('raised inflammatory markers')", "source": "approved-draft" }
+      ]
+    },
+    { "linkId": "lab.crp.value", "text": "CRP value (mg/L)", "type": "quantity", "group": "lab", "status": "active", "code": "PLACEHOLDER", "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" }], "notes": "Captured, not used by any transcribed threshold. Retained: published CT CAP Questionnaire item." },
+    {
+      "linkId": "lab.hb.low",
+      "text": "Haemoglobin low",
+      "type": "boolean",
+      "group": "lab",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10, p11" },
+        { "examSite": "ct-colonography-adult", "page": "p17, p18" },
+        { "examSite": "ct-abdomen-pelvis-adult", "page": "approved draft 27/08/26, footnote 3 ('unexplained anaemia')", "source": "approved-draft" }
+      ]
+    },
+    { "linkId": "lab.hb.value", "text": "Haemoglobin value (g/L)", "type": "quantity", "group": "lab", "status": "active", "code": "PLACEHOLDER", "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" }], "notes": "Captured, not used by any transcribed threshold. Retained: published CT CAP Questionnaire item." },
+    {
+      "linkId": "lab.calcium.raised",
+      "text": "Calcium raised",
+      "type": "boolean",
+      "group": "lab",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10, p11" },
+        { "examSite": "xray-chest-adult", "page": "p63" }
+      ],
+      "notes": "X-ray Chest p63 cites hypercalcaemia as a paraneoplastic feature."
+    },
+    { "linkId": "lab.calcium.value", "text": "Calcium value (mmol/L)", "type": "quantity", "group": "lab", "status": "active", "code": "PLACEHOLDER", "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" }], "notes": "Captured, not used by any transcribed threshold. Retained: published CT CAP Questionnaire item." },
+    {
+      "linkId": "lab.platelets.high",
+      "text": "Platelet count high",
+      "type": "boolean",
+      "group": "lab",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" },
+        { "examSite": "ct-abdomen-pelvis-adult", "page": "approved draft 27/08/26, footnote 3 ('thrombocytosis')", "source": "approved-draft" }
+      ],
+      "notes": "The slice-1 brief writes this concept as `lab.platelets.raised`. The published CT CAP linkId is `lab.platelets.high` and is immutable - `.high` is correct. See REVIEW Q15."
+    },
+    { "linkId": "lab.platelets.value", "text": "Platelet count (x10^9/L)", "type": "quantity", "group": "lab", "status": "active", "code": "PLACEHOLDER", "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" }], "notes": "Captured, not used by any transcribed threshold. Retained: published CT CAP Questionnaire item." },
+    {
+      "linkId": "lab.alp.high",
+      "text": "Alkaline phosphatase high",
+      "type": "boolean",
+      "group": "lab",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" },
+        { "examSite": "us-abdomen-adult", "page": "p30, p33" },
+        { "examSite": "ct-abdomen-pelvis-adult", "page": "approved draft 27/08/26, footnote 3 ('cholestatic LFTs')", "source": "approved-draft" }
+      ],
+      "notes": "The slice-1 brief writes this concept as `lab.alp.raised`. The published CT CAP linkId is `lab.alp.high` and is immutable. See REVIEW Q15."
+    },
+    { "linkId": "lab.alp.value", "text": "ALP value (U/L)", "type": "quantity", "group": "lab", "status": "active", "code": "PLACEHOLDER", "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" }] },
+    {
+      "linkId": "lab.alp.timesULN",
+      "text": "ALP as a multiple of the upper limit of normal reported by the laboratory",
+      "type": "decimal",
+      "group": "lab",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "us-abdomen-adult", "page": "p30" }],
+      "notes": "KI-13. US Abdomen p30 states 'ALP more than 2 times the upper limit of normal (ULN)'. Expressed as a multiple so the referrer is never asked to supply a reference range. Single-site at v1; see REVIEW Q16."
+    },
+    {
+      "linkId": "lab.albumin.low",
+      "text": "Albumin low",
+      "type": "boolean",
+      "group": "lab",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" }]
+    },
+    { "linkId": "lab.albumin.value", "text": "Albumin value (g/L)", "type": "quantity", "group": "lab", "status": "active", "code": "PLACEHOLDER", "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" }] },
+    {
+      "linkId": "lab.ferritin.low",
+      "text": "Ferritin low",
+      "type": "boolean",
+      "group": "lab",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-colonography-adult", "page": "p17, p18" },
+        { "examSite": "us-abdomen-adult", "page": "p33" }
+      ]
+    },
+    {
+      "linkId": "lab.ferritin.raised",
+      "text": "Ferritin raised",
+      "type": "boolean",
+      "group": "lab",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "us-abdomen-adult", "page": "p33" }],
+      "notes": "Separate concept from lab.ferritin.low (different clinical meaning and a different published disposition), not the negation of it."
+    },
+    {
+      "linkId": "lab.creatinine.raised",
+      "text": "Creatinine raised",
+      "type": "boolean",
+      "group": "lab",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-kub-adult", "page": "p25, p26" },
+        { "examSite": "us-renal-paediatric", "page": "p84" }
+      ]
+    },
+    {
+      "linkId": "lab.creatinine.value",
+      "text": "Creatinine value, in the units reported by the laboratory",
+      "type": "quantity",
+      "group": "lab",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-kub-adult", "page": "p25, p26" },
+        { "examSite": "us-renal-adult", "page": "p55" }
+      ],
+      "notes": "Value sibling justified: 'Creatinine greater than 160'. UNIT DISCREPANCY IN THE PUBLISHED DOCUMENT: CT KUB p25 and p26 print 'mmol/L'; US Renal p55 prints 'micromol/L' for the same threshold. Encoded without a unit assertion. See REVIEW Q7."
+    },
+    {
+      "linkId": "lab.egfr.low",
+      "text": "eGFR low",
+      "type": "boolean",
+      "group": "lab",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-kub-adult", "page": "p25" },
+        { "examSite": "us-renal-adult", "page": "p52, p55" },
+        { "examSite": "ct-ivu-renal-adult", "page": "p23" }
+      ]
+    },
+    {
+      "linkId": "lab.egfr.value",
+      "text": "eGFR value (mL/min)",
+      "type": "quantity",
+      "group": "lab",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-kub-adult", "page": "p25" },
+        { "examSite": "us-renal-adult", "page": "p52, p55" },
+        { "examSite": "ct-ivu-renal-adult", "page": "p23" }
+      ],
+      "notes": "Value sibling justified: 'eGFR less than 45 ml/min' (CT KUB p25), 'eGFR less than 30 / 45 / 60' (US Renal p52), 'eGFR lower than 30' (CT IVU/Renal p23)."
+    },
+    {
+      "linkId": "lab.acr.value",
+      "text": "Urine albumin:creatinine ratio (mg/mmol)",
+      "type": "quantity",
+      "group": "lab",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "us-renal-adult", "page": "p52" },
+        { "examSite": "us-renal-paediatric", "page": "p83, p84" }
+      ],
+      "notes": "Value sibling justified: 'ACR more than 250' (p52); 'greater than 3mg/mmol', 'greater than 70mg/mmol' (p83)."
+    },
+    {
+      "linkId": "lab.pyuriaOnMicroscopy",
+      "text": "Pyuria on microscopy",
+      "type": "boolean",
+      "group": "lab",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "us-renal-adult", "page": "p52" }],
+      "notes": "Single-site, admitted because the national red-flag library composes it (RF-12 pyelonephritis). See REVIEW Q16."
+    },
+    {
+      "linkId": "lab.repeatConfirmed",
+      "text": "Abnormal results are persistent on repeat testing after three weeks",
+      "type": "boolean",
+      "group": "lab",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" },
+        { "examSite": "us-renal-paediatric", "page": "p83" }
+      ],
+      "notes": "The repeat interval differs by site (CT CAP 'after three weeks'; US Renal Paediatric 'on repeat testing after 2 weeks'). One indicator, interval asserted by the site's own define. See REVIEW Q10."
+    },
+    {
+      "linkId": "lab.unexplained",
+      "text": "Abnormal results are unexplained",
+      "type": "boolean",
+      "group": "lab",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" },
+        { "examSite": "ct-colonography-adult", "page": "p18" },
+        { "examSite": "us-renal-adult", "page": "p52" }
+      ]
+    },
+
+    {
+      "linkId": "imaging.ctkub.within5y",
+      "text": "Confirmed stone on CT KUB within the last 5 years",
+      "type": "boolean",
+      "group": "imaging",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "ct-kub-adult", "page": "p26" }]
+    },
+    {
+      "linkId": "imaging.ctsinus.ever",
+      "text": "Patient has previously had a CT sinus scan",
+      "type": "boolean",
+      "group": "imaging",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "ct-sinus-adult", "page": "p28" }]
+    },
+    {
+      "linkId": "imaging.xrayAffectedJoint.within6m",
+      "text": "X-ray of the affected joint within the last 6 months",
+      "type": "boolean",
+      "group": "imaging",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "xray-shoulder-upper-limb-adult", "page": "p67" },
+        { "examSite": "xray-pelvis-hip-lower-limb-adult", "page": "p69" }
+      ]
+    },
+    {
+      "linkId": "imaging.usrenal.moreThan12mAgo",
+      "text": "Renal ultrasound performed more than 12 months ago",
+      "type": "boolean",
+      "group": "imaging",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "us-renal-paediatric", "page": "p85" }]
+    },
+    {
+      "linkId": "imaging.biliaryTree.ever",
+      "text": "Biliary tree has previously been imaged",
+      "type": "boolean",
+      "group": "imaging",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "us-abdomen-adult", "page": "p30" }]
+    },
+
+    {
+      "linkId": "advice.urgentCTRecommended",
+      "text": "A secondary care clinician, Primary Care Radiology Liaison (PCRL) or radiologist advises referral for urgent CT Chest, Abdomen and Pelvis",
+      "type": "boolean",
+      "group": "advice",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" }],
+      "notes": "CT CAP's published, immutable, exam-specific instance of the national concept advice.urgentImagingRecommended. Do not deprecate without a governance decision. See REVIEW Q17."
+    },
+    {
+      "linkId": "advice.urgentImagingRecommended",
+      "text": "A secondary care clinician, Primary Care Radiology Liaison (PCRL) or radiologist advises referral for urgent imaging of the requested exam",
+      "type": "boolean",
+      "group": "advice",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-adult", "page": "p14" },
+        { "examSite": "ct-colonography-adult", "page": "p17" },
+        { "examSite": "ct-head-adult", "page": "p21" },
+        { "examSite": "ct-other-adult", "page": "p27" },
+        { "examSite": "us-abdomen-adult", "page": "p30" },
+        { "examSite": "us-fna-biopsy-adult", "page": "p38" },
+        { "examSite": "us-pelvis-adult", "page": "p46" },
+        { "examSite": "us-renal-adult", "page": "p52" },
+        { "examSite": "us-scrotum-testis-adult", "page": "p56" },
+        { "examSite": "us-soft-tissue-mass-adult", "page": "p58" },
+        { "examSite": "xray-chest-adult", "page": "p63" },
+        { "examSite": "xray-shoulder-upper-limb-adult", "page": "p66" },
+        { "examSite": "xray-pelvis-hip-lower-limb-adult", "page": "p69" },
+        { "examSite": "xray-spine-adult", "page": "p73" },
+        { "examSite": "ct-head-paediatric", "page": "p75" },
+        { "examSite": "us-abdomen-paediatric", "page": "p76" },
+        { "examSite": "us-hip-paediatric", "page": "p79" },
+        { "examSite": "us-neck-thyroid-paediatric", "page": "p81" },
+        { "examSite": "us-renal-paediatric", "page": "p83" },
+        { "examSite": "us-scrotum-testis-paediatric", "page": "p86" },
+        { "examSite": "us-spine-paediatric", "page": "p89" },
+        { "examSite": "xray-chest-paediatric", "page": "p93" },
+        { "examSite": "xray-shoulder-upper-limb-paediatric", "page": "p95" },
+        { "examSite": "xray-lower-limb-paediatric", "page": "p97" },
+        { "examSite": "xray-pelvis-hip-paediatric", "page": "p100" }
+      ],
+      "notes": "25 sites. CT CAP p11 carries the same concept under its own immutable linkId advice.urgentCTRecommended and is therefore not listed here. See REVIEW Q17."
+    },
+    {
+      "linkId": "advice.acuteImagingRecommended",
+      "text": "A secondary care clinician, Primary Care Radiology Liaison (PCRL) or radiologist advises referral for a same or next day scan",
+      "type": "boolean",
+      "group": "advice",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-head-adult", "page": "p20" },
+        { "examSite": "ct-kub-adult", "page": "p25" },
+        { "examSite": "ct-other-adult", "page": "p27" },
+        { "examSite": "us-abdomen-adult", "page": "p30" },
+        { "examSite": "us-pelvis-adult", "page": "p45" },
+        { "examSite": "us-renal-adult", "page": "p52" },
+        { "examSite": "us-scrotum-testis-adult", "page": "p56" },
+        { "examSite": "xray-abdomen-adult", "page": "p60" },
+        { "examSite": "xray-chest-adult", "page": "p63" },
+        { "examSite": "xray-spine-adult", "page": "p72" },
+        { "examSite": "ct-head-paediatric", "page": "p75" },
+        { "examSite": "us-abdomen-paediatric", "page": "p76" },
+        { "examSite": "us-pelvis-paediatric", "page": "p82" },
+        { "examSite": "us-soft-tissue-mass-paediatric", "page": "p87" },
+        { "examSite": "xray-abdomen-paediatric", "page": "p91" },
+        { "examSite": "xray-chest-paediatric", "page": "p93" }
+      ],
+      "notes": "16 sites. The published wording alternates between 'advises referral for same or next day <exam>' and 'advises referral for acute <exam>' (X-ray Abdomen p60, X-ray Spine p72). Encoded as one concept - see REVIEW Q25."
+    },
+    {
+      "linkId": "advice.nonUrgentImagingRecommended",
+      "text": "A secondary care clinician, Primary Care Radiology Liaison (PCRL) or radiologist advises referral for a non-urgent scan",
+      "type": "boolean",
+      "group": "advice",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-colonography-adult", "page": "p18" },
+        { "examSite": "ct-head-adult", "page": "p21" },
+        { "examSite": "ct-ivu-renal-adult", "page": "p24" },
+        { "examSite": "ct-other-adult", "page": "p27" },
+        { "examSite": "ct-sinus-adult", "page": "p29" },
+        { "examSite": "us-abdomen-adult", "page": "p32" },
+        { "examSite": "us-fna-biopsy-adult", "page": "p38" },
+        { "examSite": "us-pelvis-adult", "page": "p47" },
+        { "examSite": "us-renal-adult", "page": "p53" },
+        { "examSite": "us-scrotum-testis-adult", "page": "p56" },
+        { "examSite": "us-soft-tissue-mass-adult", "page": "p58" },
+        { "examSite": "xray-abdomen-adult", "page": "p60" },
+        { "examSite": "xray-chest-adult", "page": "p64" },
+        { "examSite": "xray-shoulder-upper-limb-adult", "page": "p67" },
+        { "examSite": "xray-pelvis-hip-lower-limb-adult", "page": "p70" },
+        { "examSite": "xray-spine-adult", "page": "p73" },
+        { "examSite": "ct-head-paediatric", "page": "p75" },
+        { "examSite": "us-abdomen-paediatric", "page": "p76" },
+        { "examSite": "us-neck-thyroid-paediatric", "page": "p81" },
+        { "examSite": "us-pelvis-paediatric", "page": "p82" },
+        { "examSite": "us-renal-paediatric", "page": "p84" },
+        { "examSite": "us-soft-tissue-mass-paediatric", "page": "p88" },
+        { "examSite": "xray-abdomen-paediatric", "page": "p91" },
+        { "examSite": "xray-chest-paediatric", "page": "p94" },
+        { "examSite": "xray-shoulder-upper-limb-paediatric", "page": "p95" },
+        { "examSite": "xray-lower-limb-paediatric", "page": "p97" },
+        { "examSite": "xray-spine-paediatric", "page": "p102" }
+      ],
+      "notes": "27 sites. US Scrotum / Testis p56 also has a P4 variant ('advises referral for deferrable, non-urgent ultrasound') which is folded in here rather than given its own indicator; it is the only such row in the document. See REVIEW Q26."
+    },
+    {
+      "linkId": "advice.adviserNameRole",
+      "text": "Name and role of the clinician who advised (must be included in the referral)",
+      "type": "string",
+      "group": "advice",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "overview", "page": "p5" }]
+    },
+    {
+      "linkId": "advice.decisionSupportToolCompleted",
+      "text": "The relevant bpacnz decision-support tool has been completed and indicates the requested imaging is appropriate",
+      "type": "boolean",
+      "group": "advice",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-head-adult", "page": "p20" },
+        { "examSite": "us-carotid-adult", "page": "p34" }
+      ]
+    },
+    {
+      "linkId": "advice.decisionSupportToolAvailable",
+      "text": "The relevant bpacnz decision-support tool is available to the referrer",
+      "type": "boolean",
+      "group": "advice",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "us-carotid-adult", "page": "p34" }],
+      "notes": "US Carotid p34 makes unavailability of the tool an alternative route ('bpacnz clinical module stroke/TIA tool is not available but the patient has been assessed as suitable...'). One indicator, both polarities (KI-01)."
+    },
+    {
+      "linkId": "advice.rapidSpecialistCareAccessible",
+      "text": "The patient is able to access rapid specialist assessment",
+      "type": "boolean",
+      "group": "advice",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-head-adult", "page": "p20" },
+        { "examSite": "us-carotid-adult", "page": "p34" }
+      ],
+      "notes": "CT Head p20 'Patient is unable to access rapid specialist care'; US Carotid p34 'Acute stroke specialist assessment is not available'. One indicator, both polarities (KI-01). See REVIEW Q18 - the two wordings may not be the same concept."
+    },
+
+    {
+      "linkId": "funding.unfitOrUnwilling",
+      "text": "Patient is unfit for treatment or unwilling to have further investigations and/or treatment",
+      "type": "boolean",
+      "group": "funding",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" }]
+    },
+    {
+      "linkId": "funding.accTrauma",
+      "text": "A recent trauma mechanism (fall, accident, injury) is the primary cause of the presentation, so the imaging is covered by ACC",
+      "type": "boolean",
+      "group": "funding",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "overview", "page": "p4" },
+        { "examSite": "xray-spine-adult", "page": "p73" }
+      ],
+      "notes": "The national ACC redirect (prompt clause 3, TA-012). Overview p4 scope item 3 puts ACC-covered imaging outside these criteria; X-ray Spine p73 is the only site row that states the trauma-mechanism rule explicitly. See REVIEW Q3 and Q4."
+    },
+    {
+      "linkId": "funding.accCovered",
+      "text": "The imaging is covered by ACC or another funding stream outside these criteria, for a reason other than a recent trauma mechanism",
+      "type": "boolean",
+      "group": "funding",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "overview", "page": "p4" },
+        { "examSite": "us-soft-tissue-mass-adult", "page": "p58" },
+        { "examSite": "xray-abdomen-paediatric", "page": "p92" }
+      ],
+      "notes": "Distinct from funding.accTrauma: the covering funding stream is established by eligibility, not by a trauma mechanism (foreign-body removal p58/p92; Primary Maternity Services Notice 2021, p4). Not evaluated by the national library at v1 - see REVIEW Q4."
+    },
+
+    {
+      "linkId": "excl.currentCancerFollowUp",
+      "text": "Patient has a current cancer diagnosis and is under continued follow up",
+      "type": "boolean",
+      "group": "excl",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" }]
+    },
+    {
+      "linkId": "excl.secondaryCareInvestigated12m",
+      "text": "Patient has been investigated by secondary care within the last 12 months for the same symptoms/signs",
+      "type": "boolean",
+      "group": "excl",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [
+        { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" },
+        { "examSite": "ct-abdomen-pelvis-adult", "page": "approved draft 27/08/26, Alternative management", "source": "approved-draft" }
+      ],
+      "notes": "The CT AP draft states the same concept without 'by secondary care' and with 'the same presentation' rather than 'the same symptoms/signs'. Reuse or a site-local variant is a clinical decision. See REVIEW Q19."
+    },
+    {
+      "linkId": "excl.urgentAdmissionRequired",
+      "text": "Presentation requires urgent admission or urgent secondary care assessment",
+      "type": "boolean",
+      "group": "excl",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" }],
+      "notes": "This is the ONLY published statement of the retired 'wrong pathway' judgement (prompt clause 4). It is a site criterion at CT CAP, not a national red flag, and is deliberately not lifted into CRR_RedFlags. See REVIEW Q5."
+    },
+    {
+      "linkId": "excl.recentUSAbdoPelvis3m",
+      "text": "Ultrasound of abdomen and pelvis within the last three months",
+      "type": "boolean",
+      "group": "excl",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" }],
+      "notes": "Prior-imaging concept published under the `excl.` prefix. Immutable. Do not mint an `imaging.*` duplicate. See REVIEW Q14."
+    },
+    {
+      "linkId": "excl.recentCTCAP12m",
+      "text": "CT Chest, Abdomen and Pelvis within the last 12 months",
+      "type": "boolean",
+      "group": "excl",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" }],
+      "notes": "Prior-imaging concept published under the `excl.` prefix. Immutable. Do not mint an `imaging.*` duplicate. See REVIEW Q14."
+    },
+
+    { "linkId": "redflag.haemoptysisMassive", "text": "Life threatening, massive haemoptysis - the patient is at high risk of asphyxiation or exsanguination", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-01", "sites": [{ "examSite": "ct-chest-adult", "page": "p12" }] },
+    { "linkId": "redflag.stridorOrSvcObstruction", "text": "Stridor or suspected superior vena cava (SVC) obstruction", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-02", "sites": [{ "examSite": "ct-chest-adult", "page": "p12" }] },
+
+    { "linkId": "redflag.renalColicAcuteEpisode", "text": "Acute episode of suspected renal colic", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-03 (stem)", "sites": [{ "examSite": "ct-kub-adult", "page": "p25" }] },
+    { "linkId": "redflag.solitaryKidney", "text": "Solitary kidney", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-03", "sites": [{ "examSite": "ct-kub-adult", "page": "p25, p26" }] },
+    { "linkId": "redflag.peritonitisOrSepsisSigns", "text": "Peritonitis or signs of sepsis", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-03", "sites": [{ "examSite": "ct-kub-adult", "page": "p25, p26" }] },
+    { "linkId": "redflag.knownBilateralUretericStones", "text": "Known bilateral ureteric stones", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-03", "sites": [{ "examSite": "ct-kub-adult", "page": "p25, p26" }] },
+
+    { "linkId": "redflag.rhinosinusitisSymptoms", "text": "Rhinosinusitis symptoms", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-04 (stem)", "sites": [{ "examSite": "ct-sinus-adult", "page": "p28" }] },
+    { "linkId": "redflag.severeFrontalHeadache", "text": "Severe frontal headache", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-04", "sites": [{ "examSite": "ct-sinus-adult", "page": "p28" }] },
+    { "linkId": "redflag.severeSystemicSymptoms", "text": "Severe systemic symptoms", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-04", "sites": [{ "examSite": "ct-sinus-adult", "page": "p28" }] },
+    { "linkId": "redflag.alteredVisualAcuityOrDiplopia", "text": "Altered visual acuity or diplopia", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-04", "sites": [{ "examSite": "ct-sinus-adult", "page": "p28" }] },
+
+    { "linkId": "redflag.cholecystitisOrCholangitis", "text": "Suspected acute cholecystitis or cholangitis (intractable biliary colic not relieved by simple analgesia)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-05", "sites": [{ "examSite": "us-abdomen-adult", "page": "p30" }], "notes": "'especially if accompanied by fever, persistent vomiting' is modifier wording (KI-05) and is not part of the condition." },
+    { "linkId": "redflag.acuteAbdomen", "text": "Acute abdomen (including possible appendicitis or suspected obstruction)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-06", "sites": [{ "examSite": "us-abdomen-adult", "page": "p30" }, { "examSite": "xray-abdomen-adult", "page": "p60" }, { "examSite": "xray-abdomen-paediatric", "page": "p91" }], "notes": "Three sites, three slightly different parentheticals. Merged as one concept. See REVIEW Q6." },
+    { "linkId": "redflag.rupturedAAA", "text": "Suspicion of ruptured abdominal aortic aneurysm", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-07", "sites": [{ "examSite": "us-abdomen-adult", "page": "p30" }] },
+    { "linkId": "redflag.testicularTorsion", "text": "Suspected testicular torsion", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-08", "sites": [{ "examSite": "us-abdomen-adult", "page": "p30" }, { "examSite": "us-scrotum-testis-adult", "page": "p56" }, { "examSite": "us-scrotum-testis-paediatric", "page": "p86" }], "notes": "The paediatric row adds confirmatory signs ('acute testicular pain, nausea/vomiting, high riding testis, absent cremasteric reflex') as a parenthetical description of the same suspicion, not as additional required conditions. See REVIEW Q6." },
+    { "linkId": "redflag.painfulJaundice", "text": "Painful jaundice", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-09", "sites": [{ "examSite": "us-abdomen-adult", "page": "p30" }] },
+
+    { "linkId": "redflag.suspectedTIA", "text": "Suspected transient ischaemic attack (TIA)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-10 (stem)", "sites": [{ "examSite": "us-carotid-adult", "page": "p34" }, { "examSite": "ct-head-adult", "page": "p20" }] },
+    { "linkId": "redflag.highSevenDayStrokeRisk", "text": "A high seven day stroke risk", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-10", "sites": [{ "examSite": "us-carotid-adult", "page": "p34" }] },
+    { "linkId": "redflag.tiaWithNeckPainOrHeadache", "text": "Suspected TIA with associated neck pain or headache (may indicate an underlying arterial dissection)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-10", "sites": [{ "examSite": "us-carotid-adult", "page": "p34" }] },
+
+    { "linkId": "redflag.clinicallyUnstableGynaePelvicCause", "text": "Clinically unstable patient with a suspected gynaecologic or pelvic cause", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-11", "sites": [{ "examSite": "us-pelvis-adult", "page": "p44" }] },
+
+    { "linkId": "redflag.pyelonephritisSuspected", "text": "Pyelonephritis suspected", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-12 (stem)", "sites": [{ "examSite": "us-renal-adult", "page": "p52" }, { "examSite": "ct-kub-adult", "page": "p25" }] },
+    { "linkId": "redflag.loinPainOrTenderness", "text": "Loin pain or tenderness", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-12", "sites": [{ "examSite": "us-renal-adult", "page": "p52" }] },
+    { "linkId": "redflag.notRespondingToAntibiotics72h", "text": "Not responding to antibiotics after 72 hours and abscess development is a consideration", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-12", "sites": [{ "examSite": "us-renal-adult", "page": "p52" }] },
+    { "linkId": "redflag.flankPainPersistingOnAntibiotics", "text": "Flank pain that does not improve within 24 hours of intravenous or 48 hours of oral antibiotics", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-12", "sites": [{ "examSite": "us-renal-adult", "page": "p52" }, { "examSite": "ct-kub-adult", "page": "p25" }] },
+
+    { "linkId": "redflag.strangulatedOrIncarceratedInguinalHernia", "text": "Strangulated or incarcerated inguinal hernia", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-13", "sites": [{ "examSite": "us-scrotum-testis-adult", "page": "p56" }, { "examSite": "us-scrotum-testis-paediatric", "page": "p86" }, { "examSite": "us-soft-tissue-mass-paediatric", "page": "p87" }], "notes": "Three published wordings ('Strangulated inguinal hernia'; 'Incarcerated inguinal hernia (acute scrotal and/or groin pain)'; 'Swelling in groin with pain and clinical suspicion of strangulation or incarceration of hernia - irreducible, irritability, pain, tenderness, inflammation'). Merged as one concept. See REVIEW Q6." },
+
+    { "linkId": "redflag.haemoptysisPresent", "text": "Haemoptysis", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-14 (stem)", "sites": [{ "examSite": "xray-chest-adult", "page": "p62" }, { "examSite": "ct-chest-adult", "page": "p14" }] },
+    { "linkId": "redflag.haemoptysisSignificantVolume", "text": "Significant or life threatening volume of haemoptysis (published examples: more than 20 ml in a single episode; more than 100 ml/hour)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-14", "sites": [{ "examSite": "xray-chest-adult", "page": "p62" }], "notes": "The volumes are introduced by 'e.g.' and are therefore encoded as illustrative, not as numeric thresholds (KI-05). See REVIEW Q8." },
+    { "linkId": "redflag.haemodynamicallyUnstable", "text": "Haemodynamically unstable", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-14", "sites": [{ "examSite": "xray-chest-adult", "page": "p62" }] },
+    { "linkId": "redflag.hoarsenessOrStridorWithHaemoptysis", "text": "Haemoptysis with hoarseness or stridor", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-14", "sites": [{ "examSite": "xray-chest-adult", "page": "p62" }] },
+    { "linkId": "redflag.acuteDyspnoeaOrChestPain", "text": "Acute dyspnoea and/or chest pain", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-14", "sites": [{ "examSite": "xray-chest-adult", "page": "p62" }] },
+    { "linkId": "redflag.severeRespiratoryDistress", "text": "Severe respiratory distress", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-15", "sites": [{ "examSite": "xray-chest-adult", "page": "p62" }] },
+    { "linkId": "redflag.pneumothoraxLarge", "text": "Suspected large pneumothorax with significant pain, breathlessness, tachycardia", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-16", "sites": [{ "examSite": "xray-chest-adult", "page": "p62" }], "notes": "The published red flag is a LARGE pneumothorax with those features. 'Suspected small pneumothorax' is an Acute-within-48-hours indication for X-ray Chest (p63) - it proceeds to imaging and must not fire this flag. See REVIEW Q2 and transcription-notes.md finding F-02." },
+    { "linkId": "redflag.activeTbAcutelyUnwell", "text": "Suspected active tuberculosis and the patient is acutely unwell", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-17", "sites": [{ "examSite": "xray-chest-adult", "page": "p62" }] },
+
+    { "linkId": "redflag.septicArthritis", "text": "Suspected septic arthritis", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-18", "sites": [{ "examSite": "xray-shoulder-upper-limb-adult", "page": "p66, p67" }, { "examSite": "xray-pelvis-hip-lower-limb-adult", "page": "p69" }, { "examSite": "xray-shoulder-upper-limb-paediatric", "page": "p95" }, { "examSite": "xray-lower-limb-paediatric", "page": "p97" }, { "examSite": "xray-pelvis-hip-paediatric", "page": "p99" }] },
+    { "linkId": "redflag.osteomyelitis", "text": "Suspected osteomyelitis", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-29", "sites": [{ "examSite": "xray-pelvis-hip-paediatric", "page": "p99" }], "notes": "Published in the same bullet as septic arthritis ('Suspected septic arthritis or osteomyelitis'), and separately as a non-acute alternative-management row at X-ray Spine Adult p73 ('Osteomyelitis - discuss with relevant specialist'). Split from septic arthritis because only one of the five sites names it. See REVIEW Q6." },
+    { "linkId": "redflag.sufe", "text": "Suspected Slipped Upper Femoral Epiphysis (SUFE)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-30", "sites": [{ "examSite": "xray-pelvis-hip-paediatric", "page": "p99" }] },
+
+    { "linkId": "redflag.spinalInfectionSuspected", "text": "Suspected spinal infection", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-19 (stem)", "sites": [{ "examSite": "xray-spine-adult", "page": "p72" }] },
+    { "linkId": "redflag.recentInfectionHistory", "text": "History of recent infection", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-19", "sites": [{ "examSite": "xray-spine-adult", "page": "p72" }] },
+    { "linkId": "redflag.ivDrugUse", "text": "Intravenous drug use", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-19", "sites": [{ "examSite": "xray-spine-adult", "page": "p72" }] },
+    { "linkId": "redflag.immunosuppression", "text": "Immunosuppression", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-19", "sites": [{ "examSite": "xray-spine-adult", "page": "p72" }, { "examSite": "ct-sinus-adult", "page": "p29" }] },
+
+    { "linkId": "redflag.backPainAcuteOnset", "text": "The back pain is of acute onset", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-20 (stem)", "sites": [{ "examSite": "xray-spine-adult", "page": "p72" }] },
+    { "linkId": "redflag.sphincterDisturbance", "text": "Sphincter disturbance", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-20", "sites": [{ "examSite": "xray-spine-adult", "page": "p72" }] },
+    { "linkId": "redflag.gaitDisturbance", "text": "Gait disturbance", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-20", "sites": [{ "examSite": "xray-spine-adult", "page": "p72" }] },
+    { "linkId": "redflag.saddleAnaesthesia", "text": "Saddle anaesthesia", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-20", "sites": [{ "examSite": "xray-spine-adult", "page": "p72" }] },
+    { "linkId": "redflag.bowelOrBladderIncontinence", "text": "Loss of bowel or bladder control", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-20", "sites": [{ "examSite": "xray-spine-adult", "page": "p72" }] },
+    { "linkId": "redflag.abnormalReflexesOrLegWeakness", "text": "Abnormal reflexes, or loss of muscle power or feeling in the legs", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-20", "sites": [{ "examSite": "xray-spine-adult", "page": "p72" }] },
+
+    { "linkId": "redflag.paedAcuteAbdominalPainOrPyloricStenosis", "text": "Acute abdominal pain or pyloric stenosis including possible appendicitis (child)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-21", "sites": [{ "examSite": "us-abdomen-paediatric", "page": "p76" }], "notes": "Kept separate from redflag.acuteAbdomen because the published wording names pyloric stenosis and directs to paediatric assessment. See REVIEW Q6." },
+    { "linkId": "redflag.paedAcutelyUnwellGynaeCause", "text": "Child who is acutely unwell from a suspected gynaecological cause (e.g. possible acute ovarian cyst accident or torsion)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-22", "sites": [{ "examSite": "us-pelvis-paediatric", "page": "p82" }] },
+
+    { "linkId": "redflag.paedUti", "text": "Urinary tract infection in a child", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-23 (stem)", "sites": [{ "examSite": "us-renal-paediatric", "page": "p83" }] },
+    { "linkId": "redflag.paedKnownUrinaryTractAnatomicalAbnormality", "text": "Known urinary tract anatomical abnormality (child)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-23", "sites": [{ "examSite": "us-renal-paediatric", "page": "p83" }] },
+    { "linkId": "redflag.paedSeriouslyUnwell", "text": "Child is seriously unwell (e.g. with sepsis)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-23", "sites": [{ "examSite": "us-renal-paediatric", "page": "p83" }] },
+
+    { "linkId": "redflag.hypertension", "text": "Hypertension", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-24", "sites": [{ "examSite": "us-renal-paediatric", "page": "p83, p85" }] },
+    { "linkId": "redflag.heavyProteinuria", "text": "Heavy proteinuria", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-24", "sites": [{ "examSite": "us-renal-paediatric", "page": "p83" }] },
+    { "linkId": "redflag.oedema", "text": "Oedema", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-24", "sites": [{ "examSite": "us-renal-paediatric", "page": "p83, p85" }] },
+    { "linkId": "redflag.impairedRenalFunction", "text": "Impaired renal function", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-24", "sites": [{ "examSite": "us-renal-paediatric", "page": "p83" }] },
+
+    { "linkId": "redflag.paedAbscessSuspected", "text": "Suspected abscess (child)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-25 (stem)", "sites": [{ "examSite": "us-soft-tissue-mass-paediatric", "page": "p87" }] },
+    { "linkId": "redflag.paedHospitalManagementConsideredNecessary", "text": "Hospital management is considered necessary (child)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-25", "sites": [{ "examSite": "us-soft-tissue-mass-paediatric", "page": "p87" }], "notes": "The four bullets that follow 'especially if red flags' are modifier wording (KI-05) and are NOT encoded as conditions. Listed in transcription-notes.md." },
+    { "linkId": "redflag.paedSoftTissueMassSuspiciousFeatures", "text": "Soft tissue mass with suspicious features including hard, irregular, fixed/deep to fascia, rapidly growing and/or more than 5 cm in diameter (child)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-26", "sites": [{ "examSite": "us-soft-tissue-mass-paediatric", "page": "p87" }], "notes": "'including' makes the feature list non-exhaustive, so it is one clinician judgement rather than five indicators. See REVIEW Q8." },
+
+    { "linkId": "redflag.paedForeignBodyIngestionHistory", "text": "History of foreign body ingestion (child)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-27 (stem)", "sites": [{ "examSite": "xray-abdomen-paediatric", "page": "p91" }] },
+    { "linkId": "redflag.paedFbOesophagealObstruction", "text": "Suspected oesophageal obstruction (e.g. drooling or reluctance to swallow)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-27", "sites": [{ "examSite": "xray-abdomen-paediatric", "page": "p91" }] },
+    { "linkId": "redflag.paedFbButtonBattery", "text": "Known or suspected disc / button battery ingestion", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-27", "sites": [{ "examSite": "xray-abdomen-paediatric", "page": "p91" }] },
+    { "linkId": "redflag.paedFbMultipleMagnets", "text": "Multiple magnets ingested", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-27", "sites": [{ "examSite": "xray-abdomen-paediatric", "page": "p91" }] },
+    { "linkId": "redflag.paedFbLargeObject", "text": "Large object ingested (more than 5 cm long and / or 2 cm wide)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-27", "sites": [{ "examSite": "xray-abdomen-paediatric", "page": "p91" }] },
+
+    { "linkId": "redflag.paedRespiratoryDistress", "text": "Respiratory distress - tachycardia, tachypnoea, stridor (child)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-28", "sites": [{ "examSite": "xray-chest-paediatric", "page": "p93" }] },
+    { "linkId": "redflag.paedBreathingDifficultyWithHypoxia", "text": "Breathing difficulties and SpO2 92% or lower (child)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-28", "sites": [{ "examSite": "xray-chest-paediatric", "page": "p93" }] },
+    { "linkId": "redflag.paedAcuteSevereAsthma", "text": "Acute severe asthma (child)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-28", "sites": [{ "examSite": "xray-chest-paediatric", "page": "p93" }] },
+    { "linkId": "redflag.paedInhaledForeignBody", "text": "Suspected inhaled foreign body (child)", "type": "boolean", "group": "redflag", "status": "active", "code": "PLACEHOLDER", "redFlag": "RF-28", "sites": [{ "examSite": "xray-chest-paediatric", "page": "p93" }] }
+  ]
+}
