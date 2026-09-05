@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  criteria-bundle:
+    name: tooling/criteria-bundle (build, test, check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        working-directory: tooling/criteria-bundle/tooling
+        run: npm ci
+      - name: Build (CQL -> ELM)
+        working-directory: tooling/criteria-bundle/tooling
+        run: npm run build
+      - name: Test (scenarios)
+        working-directory: tooling/criteria-bundle/tooling
+        run: npm test
+      - name: Check (cross-artefact consistency)
+        working-directory: tooling/criteria-bundle/tooling
+        run: npm run check
+
+  workers-vitest:
+    name: Vitest (Workers runtime)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        run: npm ci
+      - name: Test
+        run: npm test

@@ -1,3 +1,9 @@
+> **[SUPERSEDED — 2026-09-05]** ARCH-MIG-01 retires this design — the rules-bundle
+> architecture (slices 1–3) replaces the D1/KV published-JSON read path this document
+> designs against. Not implemented, and will not be. Decision recorded: SD-10.
+> Verification: verified — SD-10 raised, `documents/SECURITY_DECISIONS.md`.
+> Filed by: Claude Code
+
 # TA-SRC-01 Phase 1 — Design and Implementation Plan
 
 **Brief:** TA-SRC-01 v1.0.0 · **Phase:** 1 (Design) · **Date:** 6 July 2026

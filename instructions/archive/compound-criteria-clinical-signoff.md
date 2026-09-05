@@ -1,3 +1,16 @@
+> **[SUPERSEDED — 2026-09-05]** ARCH-MIG-01 retires the CC-DESIGN-01 `logic`-key data model
+> this sign-off request was written for (never built — see SD-10). Its six specific rulings
+> (Decision 6 / `xrph_p2_3_p` and the other five) were **never circulated to the working
+> group** and are **not resolved by this supersession** — they carry forward as clinician
+> REVIEW Qn items in the slice 7 transcription protocol
+> (`instructions/arch-mig-plan.md` §2 Slice 7), asked directly against the source PDF at
+> transcription time instead of via a separate one-page circulation. Nobody has answered
+> these questions yet; only the mechanism for asking has changed.
+> Verification: verified — SD-10 raised; not independently verified that slice 7's protocol
+> will in fact re-surface all six items — worth checking when W1 (which does not include the
+> paediatric hip/pelvis sites these six mostly concern) completes.
+> Filed by: Claude Code
+
 # Compound Criteria — Clinical Sign-off Requests
 
 **For:** CRR working group (James / clinical reviewers) · **From:** CRR digital

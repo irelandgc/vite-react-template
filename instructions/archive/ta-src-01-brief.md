@@ -1,3 +1,11 @@
+> **[SUPERSEDED — 2026-09-05]** ARCH-MIG-01 (`instructions.complete/arch-mig-01-brief.md`,
+> `instructions/arch-mig-plan.md`) retires the mechanism this brief specifies — switching the
+> Triage Advisor onto the existing D1/KV published-JSON path is replaced entirely by the
+> rules-bundle architecture (CQL/FHIR bundles, slices 1–3). Not implemented, and will not be;
+> this file's job is done by the target architecture instead. Decision recorded: SD-10.
+> Verification: verified — SD-10 raised, `documents/SECURITY_DECISIONS.md`.
+> Filed by: Claude Code
+
 # Claude Code Brief: Triage Advisor Criteria Source Switch
 
 **Brief ID:** TA-SRC-01

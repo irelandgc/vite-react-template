@@ -1,0 +1,12 @@
+{
+  // Test-only wrangler config for the SR-10 nodejs_compat smoke test
+  // (ARCH-MIG-01 slice 0). Isolated from the production worker configs —
+  // no assets, no bindings, no routes — so this test cannot become coupled
+  // to production behaviour. Compatibility settings match the root
+  // wrangler.json (the production main worker), since that's the runtime
+  // slice 3 will actually deploy the rules engine into.
+  "name": "arch-mig-smoke",
+  "main": "./fixtures/smoke-worker.ts",
+  "compatibility_date": "2025-10-08",
+  "compatibility_flags": ["nodejs_compat"]
+}

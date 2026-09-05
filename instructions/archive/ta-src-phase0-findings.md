@@ -1,3 +1,12 @@
+> **[SUPERSEDED — 2026-09-05]** ARCH-MIG-01 retires the TA-SRC-01 mechanism this findings
+> report was gathered for (see `ta-src-01-brief.md`, superseded same date). The evidence
+> itself is not discarded — the criteria-staleness facts this document establishes (embedded
+> blob divergence, `ct_other`'s three-way split, the 14 invisible sites) are the evidence base
+> cited by SD-10 (`documents/SECURITY_DECISIONS.md`) for the migration decision, and remain
+> valid history; only the proposed fix (switching onto the old JSON/D1 read path) is retired.
+> Verification: verified — SD-10 raised, citing this document.
+> Filed by: Claude Code
+
 # TA-SRC-01 Phase 0 Findings — Triage Advisor Criteria Source Switch
 
 **Brief:** TA-SRC-01 v1.0.0

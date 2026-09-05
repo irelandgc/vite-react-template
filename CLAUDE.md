@@ -61,6 +61,32 @@ See @README.md for project overview. See @documents/CRR_Architecture_Briefing.md
 - Prefer vanilla CSS — avoid CSS-in-JS
 - When writing standalone HTML tools, keep CSS/JS in a single file unless complexity demands separation
 
+## Target architecture (ARCH-MIG-01)
+
+The tool suite is migrating to the rules-bundle architecture (see
+documents/reference/architecture/). Invariants that hold from now on:
+
+1. The LLM never decides. No prompt may ask for a verdict, priority,
+   eligibility judgement or advice. Its output is a QuestionnaireResponse.
+2. Every LLM-produced answer carries evidence: status (documented|inferred)
+   and a verbatim quote. The validation gate rejects the whole response on
+   any unquotable value, unknown linkId or type mismatch.
+3. Criteria logic lives only in the published bundle, loaded by version at
+   runtime. No criteria logic in application code, prompts or constants.
+4. Strict documentation standard by default; inferred answers are surfaced,
+   not used, unless the parameter says otherwise.
+5. Retrieval from referrer systems is designed in and dormant; enabling a
+   tier is a governance event (PTA / IPP 3A, terminology validation).
+6. Terminology is validated against NZHTS in the build, never authored by a
+   model. Placeholders are marked and listed.
+7. Regional overlays add delivery information only; the build rejects an
+   overlay carrying logic.
+8. Bundle version, engine version, model identifier and prompt version are
+   stamped on every assessment.
+
+During the migration, a recorded fix that the target supersedes is not
+implemented unless the plan names it as an interim with a retirement date.
+
 ## Instruction file lifecycle
 
 Files in `instructions/` are pending work. If a file is in `instructions/`, it is
