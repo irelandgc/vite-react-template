@@ -195,6 +195,7 @@ Legend: U unchanged · R reworded · X replaced · – retired · N new.
 | E4 | Tabletop/benchmark mode may evaluate `signed-off` (not yet `published`) bundles | Yes, behind the same flag as population |
 | E5 | Clinical sign-off recording: a per-bundle file in the repo (`signoff.md` with reviewer, date, Qn answers) vs Admin Tool state only | Both: file is the record, Admin shows state |
 | E6 | Terminology validation access — who provides NZHTS credentials/network for the build | Build passes with placeholders flagged until access exists; publish blocked for bundles with unvalidated codes once wired |
+| E7 | Bundle key: PDF section (38) with published IDs mapped, or published ID (53) | Decided: AD-01 — section |
 
 ---
 
