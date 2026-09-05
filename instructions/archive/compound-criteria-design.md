@@ -1,3 +1,14 @@
+> **[SUPERSEDED — 2026-09-05]** ARCH-MIG-01 retires this design unbuilt (SD-10). The `logic`
+> key / compound-criteria data model this document specifies is replaced entirely by CQL
+> `define`s + FHIR PlanDefinition `selectionBehavior` nesting (see
+> `tooling/criteria-bundle/README.md`, "Compound criteria decompose cleanly..."). Decision 6
+> (`xrph_p2_3_p`) and the family-merger questions this design still poses are **not resolved**
+> — they carry forward into slice 7 transcription (see `compound-criteria-clinical-signoff.md`,
+> superseded same date, same note).
+> Verification: verified — SD-10 raised; the replacement approach is demonstrated working
+> (CT CAP bundle, `tooling/criteria-bundle/`), not merely proposed.
+> Filed by: Claude Code
+
 # Compound Criteria — Data Model & Architecture Design
 
 **Brief:** CC-DESIGN-01 v1.1.0 · **Phase:** 1 (Design) · **Date:** 5 July 2026

@@ -1,3 +1,12 @@
+> **[SUPERSEDED — 2026-09-05]** ARCH-MIG-01 retires the CC-DESIGN-01 mechanism this findings
+> report fed (SD-10). The census itself is not discarded — which items are compound and the
+> six ambiguous ones (incl. Decision 6 / `xrph_p2_3_p`) are exactly the input slice 7's
+> transcription protocol needs per site; nothing here has been re-verified against the target
+> architecture and it should be treated as a starting census for transcription, not as
+> pre-resolved decisions.
+> Verification: verified — SD-10 raised, citing this document.
+> Filed by: Claude Code
+
 # Compound Criteria — Phase 0 Findings Report
 
 **Brief:** CC-DESIGN-01 v1.1.0 · **Phase:** 0 (Discovery) · **Date:** 4 July 2026
