@@ -67,7 +67,10 @@ CREATE TABLE IF NOT EXISTS triage_usage_log (
   ai_response_json TEXT,
   prompt_version TEXT,
   parse_success INTEGER DEFAULT 1,
-  ip_address TEXT
+  ip_address TEXT,
+  temperature REAL,                -- migration 0007 (KI-37 catch-up)
+  source TEXT,                     -- migration 0007 (KI-37 catch-up) — 'regression' for automated runs
+  regression_run_id TEXT           -- migration 0007 (KI-37 catch-up)
 );
 
 -- Triage Advisor QA reviews
@@ -167,3 +170,52 @@ CREATE TABLE IF NOT EXISTS releases (
 
 CREATE INDEX IF NOT EXISTS idx_releases_status ON releases(status);
 CREATE INDEX IF NOT EXISTS idx_releases_published_at ON releases(published_at);
+
+-- Viewer usage telemetry (migration 0006, KI-37 catch-up)
+CREATE TABLE IF NOT EXISTS viewer_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  exam_id TEXT,
+  site_code TEXT,
+  event_data TEXT,
+  region TEXT,
+  user_name TEXT,
+  user_role TEXT,
+  user_agent TEXT,
+  ip_address TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_viewer_events_session ON viewer_events(session_id);
+CREATE INDEX IF NOT EXISTS idx_viewer_events_created ON viewer_events(created_at);
+
+-- ARCH-MIG-01 bundle registry (migration 0008, slice 2). See that migration
+-- for the exam_sites seed (53 published ids -> 38 bundle keys, AD-01).
+CREATE TABLE IF NOT EXISTS bundles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  exam_site TEXT NOT NULL,
+  version TEXT NOT NULL,
+  state TEXT NOT NULL DEFAULT 'transcribed',
+  logic_hash TEXT NOT NULL,
+  vocabulary_version TEXT NOT NULL,
+  source_type TEXT NOT NULL,
+  signoff_ref TEXT,
+  published_by TEXT,
+  published_at TEXT,
+  test_summary TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(exam_site, version)
+);
+
+CREATE INDEX IF NOT EXISTS idx_bundles_exam_site ON bundles(exam_site);
+CREATE INDEX IF NOT EXISTS idx_bundles_state ON bundles(state);
+
+CREATE TABLE IF NOT EXISTS exam_sites (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  bundle_key TEXT NOT NULL,
+  live INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_exam_sites_bundle_key ON exam_sites(bundle_key);

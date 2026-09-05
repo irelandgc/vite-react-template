@@ -69,9 +69,35 @@ app.get('/api/criteria', async (c) => {
 });
 
 // GET /api/criteria/:id — Returns a single exam/site criteria
+// ARCH-MIG-01 slice 2 (AD-01): resolves the published id through `exam_sites`
+// to its bundle key first. If that bundle has a `published` row, serves the
+// bundle's PlanDefinition/Questionnaire instead. Otherwise — which is every
+// id today, since no bundle has reached `published` state yet — falls
+// through to the current published JSON, byte-for-byte unchanged. The Viewer
+// keeps reading the legacy shape until slice 6 flips it (gap analysis §5).
 app.get('/api/criteria/:id', async (c) => {
   const kv = c.env.KV;
+  const db = c.env.DB;
   const id = c.req.param('id');
+
+  try {
+    const resolved = await loadForExamSiteId(db, kv, id);
+    if (resolved) {
+      return c.json({
+        examSite: { id: resolved.examSiteId, title: resolved.title },
+        bundle: {
+          key: resolved.bundle.examSite,
+          version: resolved.bundle.version,
+          sectionTitle: resolved.bundle.planDefinition?.title ?? null,
+          pages: resolved.bundle.source?.pages ?? resolved.bundle.source?.draftRef ?? null,
+        },
+        planDefinition: resolved.bundle.planDefinition,
+        questionnaire: resolved.bundle.questionnaire,
+      });
+    }
+  } catch (e: any) {
+    return c.json({ error: 'Failed to resolve bundle', message: e.message }, 500);
+  }
 
   const published = await kv.get('criteria:published', 'json');
   if (!published || !published.data) {
@@ -125,6 +151,87 @@ app.get('/api/match-data', async (c) => {
   }
 });
 
+// ══════════════════════════════════════════════════════════════
+//  ARCH-MIG-01 BUNDLE REGISTRY (slice 2)
+// ══════════════════════════════════════════════════════════════
+//
+// Runtime loading. Per-isolate cache keyed by KV key (immutable content, so
+// there is no staleness question — a given key's value never changes once
+// written). Fails visibly (throws / returns null) on a missing bundle —
+// invariant 3, no silent fallback to embedded criteria.
+const bundleCache = new Map<string, any>();
+
+async function loadBundle(kv: KVNamespace, examSite: string, version: string): Promise<any | null> {
+  const key = version === 'latest'
+    ? await kv.get(`bundle:${examSite}:latest-published`).then((v) => (v ? `bundle:${examSite}:${v}` : null))
+    : `bundle:${examSite}:${version}`;
+  if (!key) return null;
+  if (bundleCache.has(key)) return bundleCache.get(key);
+  const raw = await kv.get(key);
+  if (!raw) return null;
+  const bundle = JSON.parse(raw);
+  bundleCache.set(key, bundle);
+  return bundle;
+}
+
+// Resolves a published exam/site id (e.g. 'xr_elbow') to its bundle key (AD-01),
+// then to that bundle's `published` version, if one exists. Returns null (not
+// an error) when the id has no bundle yet, or the bundle isn't published —
+// both are the normal, expected state for every site until slice 7 transcribes it.
+async function loadForExamSiteId(db: D1Database, kv: KVNamespace, id: string): Promise<{ examSiteId: string; title: string; bundle: any } | null> {
+  const row: any = await db.prepare('SELECT title, bundle_key, live FROM exam_sites WHERE id = ?').bind(id).first();
+  if (!row || !row.live) return null;
+  const bundleRow: any = await db.prepare(
+    "SELECT version FROM bundles WHERE exam_site = ? AND state = 'published' ORDER BY id DESC LIMIT 1"
+  ).bind(row.bundle_key).first();
+  if (!bundleRow) return null;
+  const bundle = await loadBundle(kv, row.bundle_key, bundleRow.version);
+  if (!bundle) return null;
+  return { examSiteId: id, title: row.title, bundle };
+}
+
+// GET /api/bundle/:examSite/:version — serves the immutable bundle JSON.
+// :version may be a literal version or 'latest' (resolves latest-published).
+app.get('/api/bundle/:examSite/:version', async (c) => {
+  const examSite = c.req.param('examSite');
+  const requested = c.req.param('version');
+  try {
+    const bundle = await loadBundle(c.env.KV, examSite, requested);
+    if (!bundle) return c.json({ error: `No bundle for '${examSite}' at version '${requested}'` }, 404);
+    // KV content (logic, metadata) is immutable once published — a bundle is
+    // never rewritten. `state` is the one field that legitimately changes
+    // over the bundle's lifecycle (transcribed -> signed-off -> published)
+    // without any logic change, so it's tracked in D1, not frozen in KV.
+    // Overlay the live value rather than echo whatever `state` the bundle
+    // happened to say at the moment it was first written to KV.
+    const stateRow: any = await c.env.DB.prepare(
+      'SELECT state FROM bundles WHERE exam_site = ? AND version = ?'
+    ).bind(examSite, bundle.version).first();
+    const current = { ...bundle, state: stateRow?.state ?? bundle.state };
+    const isImmutableVersion = requested !== 'latest';
+    return c.json(current, 200, {
+      'Cache-Control': isImmutableVersion ? 'public, max-age=31536000, immutable' : 'public, max-age=60',
+      'ETag': bundle.logicHash ?? '',
+    });
+  } catch (e: any) {
+    return c.json({ error: 'Failed to read bundle', message: e.message }, 500);
+  }
+});
+
+// GET /api/bundles — states for all bundles + the exam_sites (AD-01) mapping.
+// Data source for the Admin Tool's read-only Bundles tab.
+app.get('/api/bundles', async (c) => {
+  const db = c.env.DB;
+  try {
+    const [bundles, examSites] = await Promise.all([
+      db.prepare('SELECT exam_site, version, state, logic_hash, vocabulary_version, source_type, signoff_ref, published_by, published_at, test_summary, created_at FROM bundles ORDER BY exam_site, id').all(),
+      db.prepare('SELECT id, title, bundle_key, live FROM exam_sites ORDER BY id').all(),
+    ]);
+    return c.json({ bundles: bundles.results, examSites: examSites.results });
+  } catch (e: any) {
+    return c.json({ error: 'Failed to read bundle registry', message: e.message }, 500);
+  }
+});
 
 // ══════════════════════════════════════════════════════════════
 //  ADMIN ROUTES (Cloudflare Access required)
@@ -1222,6 +1329,140 @@ app.delete('/api/admin/releases/:id', requireAccess, async (c) => {
   } catch (e: any) {
     return c.json({ error: 'Failed to delete release: ' + e.message }, 500);
   }
+});
+
+// ── ARCH-MIG-01 bundle registry — admin routes (slice 2) ──────────────────
+
+// Recomputes the logic hash exactly as tooling/criteria-bundle/tooling/publish.mjs
+// does, so a bundle produced there validates identically here (AD-02).
+async function computeLogicHash(site: any, population: any): Promise<string> {
+  const enc = new TextEncoder();
+  const bytes = enc.encode(JSON.stringify(site) + (population ? JSON.stringify(population) : ''));
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return 'sha256:' + [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// POST /api/admin/bundles/publish — accepts a bundle produced by publish.mjs
+// (the local-registry JSON, uploaded as the request body); validates it with
+// the same checks as `check --bundle`, then writes KV + D1 + an audit row.
+app.post('/api/admin/bundles/publish', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const kv = c.env.KV;
+  let bundle: any;
+  try {
+    bundle = await c.req.json();
+  } catch (e: any) {
+    return c.json({ error: 'Body is not valid JSON', message: e.message }, 400);
+  }
+
+  const problems: string[] = [];
+  for (const key of ['examSite', 'version', 'state', 'vocabularyVersion', 'source', 'logicHash', 'publishedAt', 'library', 'planDefinition', 'questionnaire', 'testResults']) {
+    if (!(key in bundle)) problems.push(`missing required key "${key}"`);
+  }
+  if (bundle.state && !['transcribed', 'signed-off'].includes(bundle.state)) {
+    problems.push(`state "${bundle.state}" must be "transcribed" or "signed-off" (a bundle only becomes "published" via the state-transition route)`);
+  }
+  if (bundle.source) {
+    if (!['pdf', 'approved-draft'].includes(bundle.source.type)) problems.push(`source.type "${bundle.source.type}" is not "pdf" or "approved-draft"`);
+    const hasPageRef = bundle.source.type === 'pdf' ? !!bundle.source.pages : !!(bundle.source.pages || bundle.source.draftRef);
+    if (!hasPageRef) problems.push('source carries neither a page nor a draft reference');
+  }
+  if (bundle.library?.site) {
+    const recomputed = await computeLogicHash(bundle.library.site, bundle.library.population);
+    if (recomputed !== bundle.logicHash) problems.push(`logicHash mismatch: bundle says ${bundle.logicHash}, recomputed is ${recomputed}`);
+  }
+  // linkId resolution: every PlanDefinition action input must resolve to a
+  // Questionnaire item in this same bundle (same check as `check --bundle`).
+  if (bundle.questionnaire && bundle.planDefinition) {
+    const qLinkIds = new Set<string>();
+    (function walk(items: any[]) { for (const i of items || []) { qLinkIds.add(i.linkId); walk(i.item); } })(bundle.questionnaire.item);
+    (function walkPd(actions: any[]) { for (const a of actions || []) {
+      for (const inp of a.input || []) for (const p of inp.profile || []) {
+        const id = String(p).split('#')[1];
+        if (id && !qLinkIds.has(id)) problems.push(`PlanDefinition action ${a.id}: linkId "${id}" not in this bundle's Questionnaire`);
+      }
+      walkPd(a.action);
+    } })(bundle.planDefinition.action);
+  }
+  if (problems.length) return c.json({ error: 'Bundle failed validation', problems }, 422);
+
+  // AD-02: the major version segment must change iff the logic hash changed,
+  // relative to the most recent existing row for this bundle key.
+  const previous: any = await db.prepare(
+    'SELECT version, logic_hash FROM bundles WHERE exam_site = ? ORDER BY id DESC LIMIT 1'
+  ).bind(bundle.examSite).first();
+  if (previous) {
+    const newMajor = Number(String(bundle.version).split('.')[0]);
+    const prevMajor = Number(String(previous.version).split('.')[0]);
+    const hashUnchanged = previous.logic_hash === bundle.logicHash;
+    const isMajorBump = newMajor > prevMajor;
+    if (hashUnchanged && isMajorBump) {
+      return c.json({ error: `Refusing: logic hash unchanged from ${previous.version} but ${bundle.version} is a major bump. Use a minor/patch version.` }, 422);
+    }
+    if (!hashUnchanged && !isMajorBump) {
+      return c.json({ error: `Refusing: logic hash changed from ${previous.version} but ${bundle.version} is not a major bump. A logic change must be a major version.` }, 422);
+    }
+  }
+
+  const kvKey = `bundle:${bundle.examSite}:${bundle.version}`;
+  const existing = await kv.get(kvKey);
+  if (existing) return c.json({ error: `${kvKey} already exists — a published bundle is never rewritten` }, 409);
+
+  await kv.put(kvKey, JSON.stringify(bundle));
+
+  const now = new Date().toISOString();
+  const signoffRef = bundle.state === 'signed-off' ? `tooling/criteria-bundle/sites/${bundle.examSite}/signoff.md` : null;
+  await db.prepare(
+    `INSERT INTO bundles (exam_site, version, state, logic_hash, vocabulary_version, source_type, signoff_ref, test_summary, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(bundle.examSite, bundle.version, bundle.state, bundle.logicHash, bundle.vocabularyVersion, bundle.source.type, signoffRef, JSON.stringify(bundle.testResults ?? null), now).run();
+
+  await db.prepare(
+    'INSERT INTO audit_log (action, entity_type, entity_id, changes, performed_by, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind('publish', 'bundle', `${bundle.examSite}:${bundle.version}`, JSON.stringify({ state: bundle.state, logicHash: bundle.logicHash, vocabularyVersion: bundle.vocabularyVersion }), actorFrom(c), now).run();
+
+  return c.json({ success: true, examSite: bundle.examSite, version: bundle.version, state: bundle.state }, 201);
+});
+
+// POST /api/admin/bundles/:examSite/state — body: { toState, signoffRef? }.
+// Only two transitions exist: transcribed -> signed-off (requires signoffRef),
+// and signed-off -> published (requires the bundle to already be in KV; sets
+// bundle:<examSite>:latest-published). No other transition is legal (AD-10).
+app.post('/api/admin/bundles/:examSite/state', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const kv = c.env.KV;
+  const examSite = c.req.param('examSite');
+  const body = await c.req.json().catch(() => ({}));
+  const toState = body.toState;
+
+  const row: any = await db.prepare(
+    'SELECT id, version, state FROM bundles WHERE exam_site = ? ORDER BY id DESC LIMIT 1'
+  ).bind(examSite).first();
+  if (!row) return c.json({ error: `No bundle found for "${examSite}"` }, 404);
+
+  const legal: Record<string, string> = { transcribed: 'signed-off', 'signed-off': 'published' };
+  if (legal[row.state] !== toState) {
+    return c.json({ error: `Illegal transition: "${row.state}" -> "${toState}". Only ${row.state} -> "${legal[row.state] ?? '(none — already published)'}" is allowed.` }, 422);
+  }
+  if (toState === 'signed-off' && !body.signoffRef) {
+    return c.json({ error: 'toState "signed-off" requires signoffRef in the request body' }, 400);
+  }
+  if (toState === 'published') {
+    const kvKey = `bundle:${examSite}:${row.version}`;
+    const existing = await kv.get(kvKey);
+    if (!existing) return c.json({ error: `${kvKey} not found in KV — publish the bundle before marking it published` }, 409);
+    await kv.put(`bundle:${examSite}:latest-published`, row.version);
+  }
+
+  const now = new Date().toISOString();
+  await db.prepare('UPDATE bundles SET state = ?, signoff_ref = COALESCE(?, signoff_ref), published_by = CASE WHEN ? = \'published\' THEN ? ELSE published_by END, published_at = CASE WHEN ? = \'published\' THEN ? ELSE published_at END WHERE id = ?')
+    .bind(toState, body.signoffRef ?? null, toState, actorFrom(c), toState, now, row.id).run();
+
+  await db.prepare(
+    'INSERT INTO audit_log (action, entity_type, entity_id, changes, performed_by, performed_at) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind('state', 'bundle', `${examSite}:${row.version}`, JSON.stringify({ from: row.state, to: toState }), actorFrom(c), now).run();
+
+  return c.json({ success: true, examSite, version: row.version, state: toState });
 });
 
 export default app;

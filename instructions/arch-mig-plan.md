@@ -48,7 +48,7 @@ Effort is relative (S/M/L) — no dates were given (D1). Dependencies name the s
 **Done:** vocabulary v1 reviewed by a clinician for grouping (evaluator feedback); CT CAP builds against it; red-flag library 100 % scenario-covered; `publish` produces a bundle that `check` validates.
 
 ### Slice 2 — Bundle registry and runtime loading · S–M · Sonnet · after 1
-**Status: in progress — this branch.**
+**Status: COMPLETE — PR (this branch); AD-12 recorded. Automated Vitest coverage not achieved (tooling limitation, see brief filing note); route behaviour verified live instead.**
 - KV keys `bundle:<examSite>:<version>` (immutable) and `bundle:<examSite>:latest-published`; D1 table `bundles` (examSite, version, state, vocabulary version, sign-off ref, published_by/at, test summary) — the publish record and the source of the Admin bundle-state view.
 - `examSites` mapping (AD-01): registry `index.json` carries a table mapping every published exam/site ID (53) onto exactly one bundle (38, keyed by PDF section) — e.g. `xr_elbow → xray-shoulder-upper-limb-adult`; non-limb IDs map one-to-one. The Viewer, `GET /api/criteria/<id>`, exam selection, the Advisory and the audit record all keep using the published ID; resolution happens in this layer.
 - API worker routes: `GET /api/bundle/:examSite/:version|latest`, `GET /api/bundles` (states), admin `POST /api/admin/bundles/publish` (writes KV + D1 + audit row — KI-23), `POST /api/admin/bundles/:examSite/state` (transcribed → signed-off with `signoff.md` reference).
