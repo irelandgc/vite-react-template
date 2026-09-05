@@ -30,6 +30,7 @@ Model allocation: Sonnet for slices 0, 2, 3, 5, 6, 8, 10; Opus for slice 1 (voca
 Effort is relative (S/M/L) — no dates were given (D1). Dependencies name the slice that must be merged first.
 
 ### Slice 0 — Repo hygiene and guardrails · S · Sonnet · no dependency
+**Status: COMPLETE — PR #1, SR-10 closed 2026-09-05.**
 - Move `_to_delete/` out of the repo; `.gitignore` for `tooling/**/node_modules` (already covered by the global rule — verify).
 - Append `CLAUDE.md` "Target architecture (ARCH-MIG-01)" section (brief Appendix A) — on Gary's approval.
 - Add Vitest to the root project for Worker tests; a smoke test that runs `cql-execution` on the CT CAP ELM under `nodejs_compat` in `wrangler dev` (**SR-10 closes here or the plan changes** — see §6).
@@ -37,6 +38,7 @@ Effort is relative (S/M/L) — no dates were given (D1). Dependencies name the s
 **Done:** CI runs build/test/check for `tooling/criteria-bundle` and Vitest for the workers; SR-10 recorded as closed or as a blocker.
 
 ### Slice 1 — Indicator vocabulary, red-flag library, bundle build and publish tooling · M · Opus (content) + Sonnet (tooling) · after 0
+**Status: COMPLETE (engineering) — PR #2, #3; clinical review of vocabulary pending.**
 - `tooling/criteria-bundle/vocabulary/indicators.json`: national vocabulary v1 — shared indicators (demographics, weight loss, common labs, prior imaging, specialist advice, funding, red flags) with `linkId`, text, type, group, status (`active`/`deprecated`), optional codes (placeholders flagged). Rule: linkIds immutable once any published bundle references them; deprecations point to successors. CT CAP retrofitted to reference it.
 - `cql/CRR_RedFlags.cql`: national red-flag and ACC library from prompt clauses 2–5, each item citing the PDF row it comes from; `Determination` precedence contract documented; scenarios.
 - Publish tooling: `npm run publish -- <examSite>` composes Library (ELM), PlanDefinition, Questionnaire, population Library, overlays, vocabulary version and test results into an immutable bundle JSON; requires `signoff.md` unless `--state transcribed|signed-off`; writes to KV via the API worker's admin route (slice 2) or a local registry dir for dev. Version rule (AD-02): bundle version is independent of `PlanDefinition.version`; first publish of a site is `1.0.0`; the major segment changes if and only if the ELM hash changed since the previous published version — `publish` refuses a mismatched bump either way.
@@ -46,6 +48,7 @@ Effort is relative (S/M/L) — no dates were given (D1). Dependencies name the s
 **Done:** vocabulary v1 reviewed by a clinician for grouping (evaluator feedback); CT CAP builds against it; red-flag library 100 % scenario-covered; `publish` produces a bundle that `check` validates.
 
 ### Slice 2 — Bundle registry and runtime loading · S–M · Sonnet · after 1
+**Status: in progress — this branch.**
 - KV keys `bundle:<examSite>:<version>` (immutable) and `bundle:<examSite>:latest-published`; D1 table `bundles` (examSite, version, state, vocabulary version, sign-off ref, published_by/at, test summary) — the publish record and the source of the Admin bundle-state view.
 - `examSites` mapping (AD-01): registry `index.json` carries a table mapping every published exam/site ID (53) onto exactly one bundle (38, keyed by PDF section) — e.g. `xr_elbow → xray-shoulder-upper-limb-adult`; non-limb IDs map one-to-one. The Viewer, `GET /api/criteria/<id>`, exam selection, the Advisory and the audit record all keep using the published ID; resolution happens in this layer.
 - API worker routes: `GET /api/bundle/:examSite/:version|latest`, `GET /api/bundles` (states), admin `POST /api/admin/bundles/publish` (writes KV + D1 + audit row — KI-23), `POST /api/admin/bundles/:examSite/state` (transcribed → signed-off with `signoff.md` reference).
@@ -53,6 +56,7 @@ Effort is relative (S/M/L) — no dates were given (D1). Dependencies name the s
 **Done:** CT CAP published as `2.0.0` in state `signed-off` (Gary as interim signatory until the clinical review) and loadable by version; audit row present; Admin Tool shows bundle states (read-only tab).
 
 ### Slice 3 — Rules-engine route and audit record · M · Sonnet · after 2
+**Status: not started.**
 - API worker `POST /api/assess/evaluate`: input `{ questionnaireResponse, examSites[], parameters }`; loads ELM by version from KV (per-isolate cache), evaluates red-flag library then each bundle (multi-bundle, gap analysis §4), returns the Advisory with `bundleVersions`, `engineVersion`, `vocabularyVersion`. API worker gains `nodejs_compat`.
 - Service binding: main worker `wrangler.json` `services: [{ binding: "CRR_API", service: "crr-criteria-api" }]`; main worker route `/api/assess/*` forwards via `c.env.CRR_API.fetch()` with trusted headers (`CF-Connecting-IP`, Access identity when present). No public HTTP hop.
 - Audit record tables (gap analysis §6): `assessments` (structured, no note text) and `assessment_notes` (redacted note, separate, off by default, `retention_days` config, default 180); Cron Trigger purge job on the API worker.
@@ -60,6 +64,7 @@ Effort is relative (S/M/L) — no dates were given (D1). Dependencies name the s
 **Done:** Vitest covers evaluate route (CT CAP scenarios via HTTP), version stamping, audit write, purge job; service-binding round trip works in `wrangler dev`; **SD-11** raised (service binding replaces SD-02/SD-05's public proxy; public `workers.dev` assess route to close at slice 10); **SD-12** raised (audit record and retention).
 
 ### Slice 4 — Extraction service · L · Opus (prompt) + Sonnet (service) · after 1; parallel with 2–3
+**Status: 4a in progress (Opus, parallel).**
 - API worker `POST /api/assess/extract` (internal — called by the pipeline route in slice 5): input `{ note, context: { age, sex, labs[] }, examSiteHint }`.
 - **Server-side PII gate** (new requirement): port the client pipeline's detection to the worker with a test suite (NHI mod-11/23 incl. mod-24 legacy, names, DOB, address, phone, email, referrer patterns); redacts before any model call; residual-PII policy = reject with a visible reason if a hard pattern (NHI) survives redaction. Client pipeline retained as courtesy (KI-32).
 - Prompt assembled server-side from the extraction contract: skeleton in `arch-mig-prompt-decomposition.md` §2; concept-equivalence list versioned with the prompt (TA-009 table reused; `performed_by` via `actorFrom(c)` — KI-26). Model parameters owned here; startup health check (KI-28). Provider abstraction: Anthropic now, Azure OpenAI later (NFR-009, KI-35).
@@ -69,6 +74,7 @@ Effort is relative (S/M/L) — no dates were given (D1). Dependencies name the s
 **Done:** extraction prompt v3.0.0 stored and active with a decision record; PII suite ≥ the client's pattern coverage; gate tests include an unquotable value, an unknown linkId, a type mismatch; the four CT CAP matrix notes produce QuestionnaireResponses whose engine results match the scenario expectations; **SR-09** raised (extraction drift, measurable via slice 9).
 
 ### Slice 5 — Pipeline route, merge, Advisory renderer, thin Triage page · L · Sonnet · after 3 and 4
+**Status: not started.**
 - API worker `POST /api/assess` orchestrates: PII gate → extract → (population, flag off) → merge → evaluate → Advisory; writes the audit record. Exposed same-origin via the service binding.
 - `triage/index.html`: becomes a thin client behind `ASSESS_PIPELINE_ENABLED` — note + context in, Advisory out; removes prompt assembly, `EMBEDDED_MATCH_DATA` loading, synonym auto-detect, post-processing validation, compare-verdict mode (kept code paths are deleted in slice 10, not now, so the flag can be flipped back during tabletop).
 - Renderer: referrer view and triager view from one Advisory — rebase `feature/role-aware-view` (SD-01) onto the Advisory object; "what to add" from `missingInformation` linkIds → published wording (D6: no `suggested_wording`); cross-exam recommendations from `alternatives[]`; page references from `source-page`; priority codes suppressed in referrer view (GEN-004).
@@ -76,6 +82,7 @@ Effort is relative (S/M/L) — no dates were given (D1). Dependencies name the s
 **Done:** end-to-end on the CT CAP matrix notes in `wrangler dev`; role-aware views rendered from Advisory; usage/QA submissions reference the audit record id; release-log entry drafted (not deployed to users — flag off).
 
 ### Slice 6 — Criteria Viewer on bundles · M–L · Sonnet · after 2; parallel with 3–5
+**Status: not started.**
 - Viewer loads PlanDefinition + Questionnaire by `latest-published` for each exam/site that has one; falls back to the current published JSON for sites without a published bundle (this is the only permitted "fallback" and it is the *current* source, not an embedded copy); `EMBEDDED_DATA` removed (KI-19).
 - Compound rendering (CV-014) from `selectionBehavior` nesting; badges from action codes; page references; regional overlay rendering from `regions.json` + overlays (region from URL param, CV-021); output text from action `description` (CV-017).
 - Ticks produce a QuestionnaireResponse (kept client-side); optional "Check against criteria" button calls `/api/assess/evaluate` with the ticked response (no LLM) and shows the Advisory — a deterministic self-check for referrers.
@@ -83,6 +90,7 @@ Effort is relative (S/M/L) — no dates were given (D1). Dependencies name the s
 **Done:** CT CAP renders from its bundle with visual parity to today (screenshots in the PR); all other sites unchanged; QA viewer review still works.
 
 ### Slice 7 — Criteria transcription programme (waves) · L overall · Opus per site · after 1; runs alongside 2–6
+**Status: not started.**
 Protocol per exam/site (one Claude Code session each, Opus):
 1. Inputs: PDF pages for the site (`documents/reference/` copy of the April 2026 PDF), `pdf-criteria-all.json` entry and current published JSON as cross-checks, CC-DESIGN-01 census entry, vocabulary.
 2. Outputs into `tooling/criteria-bundle/sites/<examSite>/`: `<Site>.cql` (verbatim `SOURCE:` on every clinical define; REVIEW Qn list), `Questionnaire-*.json` (vocabulary linkIds where shared; site-specific ones proposed to the vocabulary as additions), `PlanDefinition-*.json` (published wording verbatim, badges, `source-page`), `scenarios.mjs` (every matrix case for the site first, then the STEP-3 worked examples where they apply, then coverage of each pathway/redirect/boundary), `population.cql` where labs/imaging history apply, `signoff.md` template.
@@ -100,22 +108,26 @@ Waves (compound density from the census, matrix demand, and volume) — to be re
 **Done per wave:** every site in the wave at `signed-off` or with a recorded blocker; vocabulary additions merged; the matrix cases for those sites encoded and passing.
 
 ### Slice 8 — Population stage behind a flag · S · Sonnet · after 5
+**Status: not started.**
 - Integrate `populate.mjs` + population libraries into the pipeline behind `POPULATION_ENABLED` (default off); merge precedence and discrepancy reporting into the Advisory; synthetic-FHIR scenarios run in CI.
 **Done:** flag off in production; enabling documented as a governance event (invariant 7) with the PTA/IPP 3A and terminology gates named.
 
 ### Slice 9 — Benchmark harness · M · Sonnet (tooling) · after 4
+**Status: not started.**
 - Labelling aid: a small HTML page (single file, per repo style) that shows a note and the site's Questionnaire and lets a clinician set expected `(value, status, quote)` per linkId; saves JSON into `tooling/criteria-bundle/benchmark/cases/`.
 - Runner: posts cases through the Worker with `regression_run_id`; scores extraction per indicator/status, quote validity, exam/site selection; runs the ground-truth response through the engine to check rule correctness; manifest lists every case with provenance (matrix id, D1 id, consent) — replaces "138" (KI-30).
 - Model comparison mode over the same cases (Anthropic vs Azure OpenAI when available).
 **Done:** the 37 matrix cases labelled at indicator level for W1 sites by clinicians (this is the clinical-time item); baseline extraction scores recorded; **SR-09** has a measurement.
 
 ### Slice 10 — Cut-over and retirement · M · Sonnet · after 5, 6, 7-W1, 9
+**Status: not started.**
 - Pre-conditions: tabletop run on the pipeline with W1 bundles at `signed-off`/`published` (E4), results recorded per case; benchmark baseline recorded; SD-11/12 signed off.
 - Flip `ASSESS_PIPELINE_ENABLED`; close the public `workers.dev` `/api/triage/assess` and `/api/match-data` routes; delete `EMBEDDED_MATCH_DATA`, prompt assembly, synonym auto-detect, post-processing, `FALLBACK_INSTRUCTION_TEXT`, compare-verdict code from `triage/index.html`; delete `transformToMatchFormat`, match-data seed; retire `criteria:match-data` KV key; archive system prompt v2.3.0 (inactive, kept in D1 history); Admin criteria editing disabled with a notice pointing to the change process (**SD-13**); publish dialog copy corrected (KI-17); `iteratio.nz` page calls no `workers.dev` origin (KI-39).
 - Release-log entry; instruction files for ARCH-MIG-01 filed with verification lines.
 **Done:** no criteria text reaches a model anywhere in the codebase (grep gate in CI: `EMBEDDED_`, `buildCriteriaBlock`); every production assessment writes an audit record with bundle versions; old routes return 410.
 
 ### Slice 11 — Documents · S · Fable/Sonnet · alongside 10
+**Status: not started.**
 - Architecture Briefing v0.4 §3 replaced by the three architecture views (KI-41); NAIAEAG next-steps annex updated to reference this plan; BRD v3.2 (Phase 3, separate STOP).
 
 ## 3. Dependency order
