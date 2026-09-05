@@ -2,12 +2,12 @@
   "examSite": "ct-chest-abdomen-pelvis-adult",
   "versions": [
     {
-      "version": "1.1.0",
+      "version": "1.0.0",
       "state": "transcribed",
-      "publishedAt": "2026-09-05T09:42:46.462Z",
+      "publishedAt": "2026-09-05T09:50:33.327Z",
       "logicHash": "sha256:9292cde0e334a40b843427aeb58de1223596ced11b0ae1c1fc404c3ffa99c96f",
       "dependencies": []
     }
   ],
-  "latestPublished": "1.1.0"
+  "latestPublished": "1.0.0"
 }

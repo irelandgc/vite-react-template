@@ -1,6 +1,6 @@
 {
   "examSite": "ct-chest-abdomen-pelvis-adult",
-  "version": "1.1.0",
+  "version": "1.0.0",
   "state": "transcribed",
   "vocabularyVersion": "1.0.0",
   "source": {
@@ -11,7 +11,7 @@
     "pages": "10-11"
   },
   "logicHash": "sha256:9292cde0e334a40b843427aeb58de1223596ced11b0ae1c1fc404c3ffa99c96f",
-  "publishedAt": "2026-09-05T09:42:46.462Z",
+  "publishedAt": "2026-09-05T09:50:33.327Z",
   "library": {
     "site": {
       "library": {

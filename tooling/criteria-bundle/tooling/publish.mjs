@@ -6,11 +6,11 @@
 // Usage: node publish.mjs <examSite> [--state transcribed|signed-off] [--version <semver>] [--registry <dir>]
 //
 // A published bundle file is never rewritten - a re-publish is a new version.
-// Bundle version is independent of the FHIR resources' own `version` field; pass
-// --version explicitly once a site has publish history (see below). Publishing a
-// major version bump is refused when the compiled logic (ELM) hasn't changed since
-// the previous published version - that's a metadata-only republish, not a new
-// major version.
+// Bundle version is independent of the FHIR resources' own `version` field: with no
+// publish history, the first bundle is v1.0.0; once a site has history, --version is
+// required. The major segment must change if and only if the compiled logic (site +
+// population ELM) changed since the previous published version - major-with-unchanged
+// -hash and non-major-with-changed-hash are both refused.
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -140,24 +140,34 @@ const testResults = {
 // `version` field (PlanDefinition.version tracks the *template's* iteration, not how
 // many times it's been published as a bundle - conflating the two produced a real bug:
 // the first-ever bundle publish inherited "2.0.0" from the PlanDefinition and looked
-// like a second major release when it was the first). Default to the PlanDefinition's
-// version only when there's no publish history yet; otherwise --version is required
-// to make a deliberate choice instead of drifting off whatever the FHIR resource says.
+// like a second major release when it was the first). With no publish history at all,
+// the first bundle is v1.0.0, full stop - not the PlanDefinition's version, which has
+// no bearing on bundle-publish history. Once a site has history, --version is required
+// so the bump is a deliberate choice, not a default.
 const siteDir = path.join(registryDir, examSite);
 const indexPath = path.join(siteDir, "index.json");
 const existingIndex = fs.existsSync(indexPath) ? JSON.parse(fs.readFileSync(indexPath, "utf8")) : null;
 const previous = existingIndex?.versions?.[existingIndex.versions.length - 1] ?? null;
-if (!versionOverride && previous) usageError(`${examSite} has a previous published version (${previous.version}) - pass --version explicitly (a minor/patch bump if logic is unchanged, per the major-bump guard below).`);
-const bundleVersion = versionOverride ?? planDefinition.version;
+if (!versionOverride && previous) usageError(`${examSite} has a previous published version (${previous.version}) - pass --version explicitly (major iff the logic hash changed, per the guard below).`);
+const bundleVersion = versionOverride ?? "1.0.0";
 
-// Refuse a major version bump when the compiled logic hasn't changed. A same-hash
-// republish is metadata-only (vocabularyVersion, source, state, etc.) and must be a
-// minor/patch bump, never a major one - a major bump asserts a logic change happened.
+// The major version segment changes if and only if the compiled logic (site +
+// population ELM) changed. Both directions are enforced:
+//  - unchanged hash + major bump -> refused (that's a metadata-only republish
+//    - vocabularyVersion, source, state, etc. - dressed up as a new major version).
+//  - changed hash + non-major bump -> refused (a real logic change must be visible
+//    as a major version; silently shipping it as a minor/patch would let a rules
+//    change through without the version number saying so).
 if (previous) {
   const newMajor = Number(bundleVersion.split(".")[0]);
   const prevMajor = Number(previous.version.split(".")[0]);
-  if (previous.logicHash === `sha256:${logicHash}` && newMajor > prevMajor) {
+  const hashUnchanged = previous.logicHash === `sha256:${logicHash}`;
+  const isMajorBump = newMajor > prevMajor;
+  if (hashUnchanged && isMajorBump) {
     usageError(`Refusing to publish ${bundleVersion}: the compiled logic (site + population ELM) is byte-identical to ${previous.version} (${previous.logicHash}), but ${bundleVersion} is a major bump over it. A major version asserts a logic change. Use a minor or patch version instead (e.g. ${prevMajor}.${Number(previous.version.split(".")[1]) + 1}.0), or if the logic genuinely changed, something is wrong with this check - do not work around it, report it.`);
+  }
+  if (!hashUnchanged && !isMajorBump) {
+    usageError(`Refusing to publish ${bundleVersion}: the compiled logic (site + population ELM) has changed from ${previous.version} (${previous.logicHash} -> sha256:${logicHash}), but ${bundleVersion} is not a major bump over it (major stays at ${prevMajor}). A logic change must be published as a major version. Use ${prevMajor + 1}.0.0 (or higher), or if the logic did not genuinely change, something is wrong with this check - do not work around it, report it.`);
   }
 }
 
