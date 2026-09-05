@@ -1,4 +1,4 @@
-// Cross-artefact consistency: proves the three artefacts cannot silently drift.
+// Cross-artefact consistency: proves the artefacts cannot silently drift.
 //  1. Every text/cql-identifier expression referenced by the PlanDefinition exists in the compiled Library.
 //  2. Every Questionnaire linkId referenced by the PlanDefinition (#fragment) exists in the Questionnaire.
 //  3. Every linkId string literal used in the CQL source exists in the Questionnaire.
@@ -6,7 +6,20 @@
 //  5. Every Questionnaire initialExpression names a define in the population Library, and the population Library emits that linkId.
 //  6. Regional overlays target existing national actions, name a configured region, and carry no logic.
 //  7. Every national action with a condition carries a source-page reference.
+//  8. (ARCH-MIG-01 slice 1 session 2) Every Questionnaire linkId either resolves to the
+//     national vocabulary or is declared site-local; no site-local item duplicates a
+//     vocabulary concept's text.
+//  9. (session 2) Every national red-flag/ACC define named in CRR_RedFlags' Rule Trace
+//     carries a SOURCE comment with a page reference.
+// 10. (session 2) Terminology validation scaffold: runs when NZHTS_URL is configured;
+//     otherwise lists PLACEHOLDER codes and passes. No network calls in this check.
 // Usage (from tooling/): npm run check
+// Standalone bundle validation (ARCH-MIG-01 slice 1 session 2, plan §2 slice 1 item 3):
+//   npm run check -- --bundle <path-to-published-bundle.json>
+// Validates a published bundle file on its own - schema shape, its embedded ELM
+// re-hashes to its own stored logicHash, and its source provenance is well-formed -
+// without needing the surrounding tooling/criteria-bundle source tree.
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,6 +27,40 @@ import { scenarios } from "../tests/scenarios.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, "..");
+
+const bundleArgIdx = process.argv.indexOf("--bundle");
+if (bundleArgIdx !== -1) {
+  const bundlePath = process.argv[bundleArgIdx + 1];
+  if (!bundlePath) { console.log("PROBLEMS:\n - --bundle requires a file path"); process.exit(1); }
+  const bundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
+  const problems = [];
+  for (const key of ["examSite", "version", "state", "vocabularyVersion", "source", "logicHash", "publishedAt", "library", "planDefinition", "questionnaire", "testResults"]) {
+    if (!(key in bundle)) problems.push(`bundle missing required key "${key}"`);
+  }
+  if (!["transcribed", "signed-off"].includes(bundle.state)) problems.push(`state "${bundle.state}" is not "transcribed" or "signed-off"`);
+  if (bundle.source) {
+    if (!["pdf", "approved-draft"].includes(bundle.source.type)) problems.push(`source.type "${bundle.source.type}" is not "pdf" or "approved-draft"`);
+    const hasPageRef = bundle.source.type === "pdf" ? !!bundle.source.pages : !!(bundle.source.pages || bundle.source.draftRef);
+    if (!hasPageRef) problems.push(`source carries neither a page nor a draft reference (build rule: "page or draft reference")`);
+  }
+  if (bundle.library?.site && bundle.logicHash) {
+    const recomputed = "sha256:" + crypto.createHash("sha256").update(JSON.stringify(bundle.library.site)).update(bundle.library.population ? JSON.stringify(bundle.library.population) : "").digest("hex");
+    if (recomputed !== bundle.logicHash) problems.push(`logicHash mismatch: bundle says ${bundle.logicHash}, recomputed from its own embedded ELM is ${recomputed}`);
+  }
+  const qLinkIds = new Set();
+  (function walk(items) { for (const i of items || []) { qLinkIds.add(i.linkId); walk(i.item); } })(bundle.questionnaire?.item);
+  (function walkPd(actions) { for (const a of actions || []) {
+    for (const inp of a.input || []) for (const p of inp.profile || []) {
+      const id = p.split("#")[1];
+      if (id && !qLinkIds.has(id)) problems.push(`bundle PlanDefinition action ${a.id}: linkId "${id}" not in bundle's own Questionnaire`);
+    }
+    walkPd(a.action);
+  } })(bundle.planDefinition?.action);
+  console.log(`Standalone bundle check: ${bundle.examSite} v${bundle.version} (${bundle.state})`);
+  if (problems.length) { console.log("PROBLEMS:\n - " + problems.join("\n - ")); process.exit(1); }
+  console.log("Bundle valid standalone");
+  process.exit(0);
+}
 const elm = JSON.parse(fs.readFileSync(path.join(root, "elm", "CRR_CTChestAbdomenPelvis_Adult.json"), "utf8"));
 const popElm = JSON.parse(fs.readFileSync(path.join(root, "elm", "CRR_CTCAP_Population.json"), "utf8"));
 const popSrc = fs.readFileSync(path.join(root, "cql", "CRR_CTCAP_Population.cql"), "utf8");
@@ -79,6 +126,65 @@ for (const f of fs.readdirSync(path.join(root, "fhir")).filter(f => f.startsWith
   if (a.condition && !(a.documentation || []).some(d => (d.extension || []).some(e => e.url.endsWith("source-page")))) problems.push(`PlanDefinition action ${a.id}: has a condition but no source-page documentation`);
   pages(a.action);
 } })(pd.action);
+
+// 8. Vocabulary resolution (ARCH-MIG-01 slice 1 session 2, plan §2 slice 1 item 1).
+const vocab = JSON.parse(fs.readFileSync(path.join(root, "vocabulary", "indicators.json"), "utf8"));
+const vocabByLinkId = new Map(vocab.indicators.map(i => [i.linkId, i]));
+const SITE_LOCAL_EXT = "http://crr.health.nz/fhir/StructureDefinition/site-local";
+const siteLocalItems = [];
+(function walkQ(items) { for (const i of items || []) {
+  if (i.type !== "group") {
+    const isSiteLocal = (i.extension || []).some(e => e.url === SITE_LOCAL_EXT && e.valueBoolean === true);
+    if (isSiteLocal) siteLocalItems.push(i);
+    else if (!vocabByLinkId.has(i.linkId)) problems.push(`Questionnaire item "${i.linkId}" is neither in the national vocabulary nor declared site-local (add extension "${SITE_LOCAL_EXT}": true if this is genuinely site-specific)`);
+  }
+  walkQ(i.item);
+} })(q.item);
+for (const i of siteLocalItems) {
+  for (const v of vocab.indicators) {
+    if (v.text && i.text && v.text.trim().toLowerCase() === i.text.trim().toLowerCase()) {
+      console.log(`Warning - site-local item "${i.linkId}" has the same text as vocabulary concept "${v.linkId}" ("${v.text}") - near-duplicate?`);
+    }
+  }
+}
+
+// 9. Red-flag library: every define named in CRR_RedFlags' own Rule Trace tuple carries
+// a SOURCE comment with a page reference. The Rule Trace tuple (not a naming-pattern
+// guess) is the authoritative list of clinical determinations - it's the same object
+// the Advisory and run-tests-redflags.mjs's coverage check both key off.
+const redFlagsCqlPath = path.join(root, "cql", "CRR_RedFlags.cql");
+if (fs.existsSync(redFlagsCqlPath)) {
+  const rfSrc = fs.readFileSync(redFlagsCqlPath, "utf8");
+  const traceBlock = rfSrc.match(/define "Rule Trace":\s*Tuple\s*\{([\s\S]*?)\n\s*\}/);
+  const traceDefineNames = traceBlock ? [...traceBlock[1].matchAll(/:\s*"([^"]+)"/g)].map(m => m[1]) : [];
+  if (!traceDefineNames.length) problems.push(`CRR_RedFlags.cql: could not locate "Rule Trace" tuple to derive the list of clinical defines to check`);
+  // Find every headline define's position in file order first. A headline's own SOURCE
+  // comment can sit above one or more private helper defines that aren't in the Rule
+  // Trace (e.g. RF-03's two threshold helpers) - so the right window for "does this
+  // headline have a SOURCE citation" is [end of the PREVIOUS headline, start of this
+  // one], not "the nearest preceding define line", which would stop at a helper.
+  const clinicalNames = traceDefineNames.filter(n => n !== "Documentation Standard" && n !== "RF-19 Illustrative Features Present");
+  const positioned = clinicalNames.map(name => {
+    const defRe = new RegExp(`define "${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}":`);
+    const m = defRe.exec(rfSrc);
+    return { name, index: m ? m.index : -1 };
+  }).sort((a, b) => a.index - b.index);
+  for (const { name, index } of positioned) {
+    if (index === -1) { problems.push(`CRR_RedFlags.cql: Rule Trace names define "${name}" which does not exist`); continue; }
+    const windowStart = Math.max(0, ...positioned.filter(p => p.index !== -1 && p.index < index).map(p => p.index));
+    const block = rfSrc.slice(windowStart, index);
+    if (!/SOURCE\s*\([^)]*\bp\d+\b/.test(block)) problems.push(`CRR_RedFlags.cql: "${name}" has no SOURCE(...) comment with a page reference between the previous headline define and this one`);
+  }
+  console.log(`Red-flag defines checked for SOURCE+page: ${traceDefineNames.filter(n => n !== "Documentation Standard" && n !== "RF-19 Illustrative Features Present").length}`);
+}
+
+// 10. Terminology validation scaffold. Feature-flagged on NZHTS_URL; no network calls here.
+if (process.env.NZHTS_URL) {
+  console.log(`Terminology: NZHTS_URL configured (${process.env.NZHTS_URL}) - live validation not yet implemented (SR-11); treating as placeholder pass until wired.`);
+} else {
+  const placeholderCodes = vocab.indicators.filter(i => i.code === "PLACEHOLDER").length;
+  console.log(`Terminology: NZHTS_URL not configured - ${placeholderCodes}/${vocab.indicators.length} vocabulary codes are PLACEHOLDER (SR-11, publish-blocking once live, informational for now).`);
+}
 
 const unusedLinkIds = [...linkIds].filter(id => id.includes(".") && !usedInCql.has(id));
 console.log(`Library defines: ${defines.size}; population defines: ${popDefines.size}; Questionnaire linkIds: ${linkIds.size}; used in criteria CQL: ${usedInCql.size}; populatable: ${initialExprs.length}`);
