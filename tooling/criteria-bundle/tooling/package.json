@@ -1,0 +1,16 @@
+{
+  "name": "crr-cql-tooling",
+  "private": true,
+  "type": "module",
+  "description": "Translate CRR criteria CQL to ELM (@cqframework/cql, pure JS) and run scenario tests (cql-execution).",
+  "scripts": {
+    "build": "node translate.mjs libraries/FHIRHelpers-4.0.1.cql ../elm/FHIRHelpers-4.0.1.json && node translate.mjs ../cql/CRR_CTChestAbdomenPelvis_Adult.cql ../elm/CRR_CTChestAbdomenPelvis_Adult.json && node translate.mjs ../cql/CRR_CTCAP_Population.cql ../elm/CRR_CTCAP_Population.json",
+    "test": "node run-tests.mjs",
+    "check": "node check-consistency.mjs"
+  },
+  "dependencies": {
+    "@cqframework/cql": "5.2.0",
+    "cql-exec-fhir": "2.1.6",
+    "cql-execution": "3.3.2"
+  }
+}

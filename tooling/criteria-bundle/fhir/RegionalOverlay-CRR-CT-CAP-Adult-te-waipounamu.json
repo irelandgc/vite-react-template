@@ -1,0 +1,85 @@
+{
+  "resourceType": "PlanDefinition",
+  "id": "CRR-CT-CAP-Adult-overlay-te-waipounamu",
+  "url": "http://crr.health.nz/fhir/PlanDefinition/CRR-CT-CAP-Adult-overlay-te-waipounamu",
+  "version": "2.0.0-r1",
+  "name": "CRR_CTChestAbdomenPelvis_Adult_Overlay_TeWaipounamu",
+  "title": "CT Chest, Abdomen and Pelvis - Adult: Te Waipounamu regional delivery notes",
+  "type": {
+    "coding": [
+      {
+        "system": "http://crr.health.nz/fhir/CodeSystem/plan-definition-kind",
+        "code": "regional-overlay"
+      }
+    ]
+  },
+  "status": "draft",
+  "experimental": true,
+  "date": "2026-09-05",
+  "publisher": "Health New Zealand | Te Whatu Ora - Te Waipounamu CRR Hub (EXAMPLE CONTENT - not real regional guidance)",
+  "description": "Regional overlay. Adds delivery information ('how and where') against national criteria actions. By design an overlay may only carry title, description and documentation against an existing national action id; it cannot carry conditions, inputs, or a library reference, and the build rejects one that does. Content here is illustrative placeholder text.",
+  "useContext": [
+    {
+      "code": {
+        "system": "http://terminology.hl7.org/CodeSystem/usage-context-type",
+        "code": "program"
+      },
+      "valueCodeableConcept": {
+        "text": "region: te-waipounamu"
+      }
+    }
+  ],
+  "relatedArtifact": [
+    {
+      "type": "derived-from",
+      "resource": "http://crr.health.nz/fhir/PlanDefinition/CRR-CT-CAP-Adult|2.0.0"
+    }
+  ],
+  "action": [
+    {
+      "id": "ov-p2",
+      "extension": [
+        {
+          "url": "http://crr.health.nz/fhir/StructureDefinition/overlay-target-action",
+          "valueString": "p2-urgent"
+        }
+      ],
+      "title": "Regional delivery \u2014 P2 Urgent CT CAP",
+      "description": "EXAMPLE: Submit via ERMS to the regional CRR Hub. Include the referrer's contact number for same-day clarification. Imaging is provided at [site list TBC]; patients in [district] may be offered [provider] under the delegated imaging arrangement.",
+      "documentation": [
+        {
+          "type": "documentation",
+          "label": "Local HealthPathways: Suspected Abdominal and Pelvic Cancer",
+          "extension": [
+            {
+              "url": "http://crr.health.nz/fhir/StructureDefinition/healthpathways-page-id",
+              "valueString": "TBC-page-id"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ov-b3",
+      "extension": [
+        {
+          "url": "http://crr.health.nz/fhir/StructureDefinition/overlay-target-action",
+          "valueString": "b3"
+        }
+      ],
+      "title": "Regional delivery \u2014 specialist / PCRL advice",
+      "description": "EXAMPLE: PCRL advice line [number TBC], weekdays 0800\u20131700. Record the adviser's name and role in the referral (national requirement)."
+    },
+    {
+      "id": "ov-alt",
+      "extension": [
+        {
+          "url": "http://crr.health.nz/fhir/StructureDefinition/overlay-target-action",
+          "valueString": "alternative-management"
+        }
+      ],
+      "title": "Regional delivery \u2014 seeking radiologist advice on prior imaging",
+      "description": "EXAMPLE: Use the ERMS 'Radiology advice' request type rather than a new imaging referral."
+    }
+  ]
+}

@@ -1,0 +1,521 @@
+<title>CRR Decision Support Architecture</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+:root{
+  --ground:#F4F6F7; --surface:#FFFFFF; --surface-2:#E9EEF0;
+  --ink:#1A2730; --ink-2:#4A5A64; --ink-3:#7C8A92; --rule:#C9D3D8;
+  --accent:#0E6F6A; --accent-ink:#0A4F4B; --accent-soft:#D6ECEA;
+  --dormant:#6E4FB3; --dormant-soft:#E9E2F6;
+  --boundary:#B6791C; --boundary-soft:#FBF1DC;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#121A1F; --surface:#1B252C; --surface-2:#243039;
+    --ink:#E6ECEF; --ink-2:#B3C0C8; --ink-3:#7F8F98; --rule:#37454F;
+    --accent:#4FB8B0; --accent-ink:#8ED9D2; --accent-soft:#173B39;
+    --dormant:#A98CE6; --dormant-soft:#2C2342;
+    --boundary:#D9A24A; --boundary-soft:#3A2E17;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#121A1F; --surface:#1B252C; --surface-2:#243039;
+  --ink:#E6ECEF; --ink-2:#B3C0C8; --ink-3:#7F8F98; --rule:#37454F;
+  --accent:#4FB8B0; --accent-ink:#8ED9D2; --accent-soft:#173B39;
+  --dormant:#A98CE6; --dormant-soft:#2C2342;
+  --boundary:#D9A24A; --boundary-soft:#3A2E17;
+}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;margin:0}
+main{max-width:1120px;margin:0 auto;padding:40px 24px 80px}
+header{border-bottom:1px solid var(--rule);padding-bottom:20px;margin-bottom:28px}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+h1{font-family:var(--cond);font-weight:600;font-size:34px;line-height:1.1;margin:6px 0 10px;text-wrap:balance}
+h2{font-family:var(--cond);font-weight:600;font-size:24px;margin:0 0 4px;text-wrap:balance}
+p{max-width:68ch;color:var(--ink-2);margin:0 0 12px}
+p.lede{color:var(--ink);font-size:16px}
+section{margin:44px 0 0}
+.section-head{display:flex;align-items:baseline;gap:14px;margin-bottom:14px}
+.legend{display:flex;flex-wrap:wrap;gap:18px 28px;align-items:center;padding:12px 16px;border:1px solid var(--rule);background:var(--surface);margin:18px 0 6px;font-size:13px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend svg{width:44px;height:16px;overflow:visible}
+figure{margin:12px 0 0;background:var(--surface);border:1px solid var(--rule);padding:16px;overflow-x:auto}
+figure svg{display:block;width:100%;height:auto;min-width:760px;color:var(--ink);font-family:var(--sans)}
+figcaption{font-size:13px;color:var(--ink-2);margin-top:10px;max-width:none}
+code,.mono{font-family:var(--mono);font-size:.92em}
+/* SVG element styles */
+.box{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.1}
+.box.key{fill:var(--accent-soft);stroke:var(--accent)}
+.box.dorm{fill:var(--dormant-soft);stroke:var(--dormant);stroke-dasharray:5 4}
+.box.store{fill:var(--surface-2);stroke:var(--ink-2)}
+.zone{fill:none;stroke:var(--rule);stroke-width:1}
+.zone.trust{fill:var(--boundary-soft);stroke:var(--boundary);stroke-dasharray:7 5;fill-opacity:.55}
+.zone.transient{fill:none;stroke:var(--boundary);stroke-dasharray:7 5}
+.t{font-size:12.5px;fill:currentColor}
+.t.b{font-weight:600}
+.t.s{font-size:11px;fill:var(--ink-2)}
+.t.m{font-family:var(--mono);font-size:11px;fill:var(--ink-2)}
+.t.zone-l{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;fill:var(--ink-3)}
+.t.bound{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;fill:var(--boundary)}
+.t.dorm{fill:var(--dormant)}
+.t.acc{fill:var(--accent-ink)}
+.e{stroke:var(--ink-2);stroke-width:1.2;fill:none;marker-end:url(#ah)}
+.e.dorm{stroke:var(--dormant);stroke-dasharray:5 4;marker-end:url(#ahd)}
+.e.key{stroke:var(--accent);stroke-width:1.6;marker-end:url(#ahk)}
+.el{font-size:11px;fill:var(--ink-2)}
+.el.dorm{fill:var(--dormant)}
+.el.key{fill:var(--accent-ink)}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px 28px;margin-top:18px}
+.notes h3{font-family:var(--cond);font-size:15px;font-weight:600;margin:0 0 4px}
+.notes p{font-size:13.5px;margin:0}
+dl.qs{display:grid;grid-template-columns:max-content 1fr;gap:8px 18px;margin:14px 0 0;font-size:13.5px;max-width:78ch}
+dl.qs dt{font-family:var(--mono);color:var(--ink-3)}
+dl.qs dd{margin:0;color:var(--ink-2)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<main>
+<header>
+  <div class="eyebrow">Health NZ · Community Referred Radiology · decision support tools</div>
+  <h1>CRR Decision Support Architecture</h1>
+  <p class="lede">Target architecture for the criteria tools: the national criteria published as a versioned, testable rules bundle; the LLM confined to extraction; deterministic evaluation; and a retrieval path to referrer systems designed in from the start, dormant until enabled.</p>
+  <p>Three levels, each one picture. Solid elements are in scope for the next build. Dashed violet elements are built into the design now but not switched on initially. The amber boundary marks where the privacy and residency analysis changes.</p>
+</header>
+
+<div class="legend">
+  <span><svg viewBox="0 0 44 16"><rect x="1" y="1" width="42" height="14" class="box key"/></svg>rules bundle / governed artefact</span>
+  <span><svg viewBox="0 0 44 16"><rect x="1" y="1" width="42" height="14" class="box"/></svg>component / data in scope now</span>
+  <span><svg viewBox="0 0 44 16"><rect x="1" y="1" width="42" height="14" class="box dorm"/></svg>built in, dormant until enabled</span>
+  <span><svg viewBox="0 0 44 16"><rect x="1" y="1" width="42" height="14" class="zone trust"/></svg>privacy / residency boundary</span>
+</div>
+
+<!-- ============================ LEVEL 1 ============================ -->
+<section>
+  <div class="section-head"><span class="eyebrow">Level 1</span><h2>Information architecture</h2></div>
+  <p>What the data is, who owns it, and how each thing derives from or conforms to another. The rules bundle is the only thing that persists; everything in the middle column exists for the duration of one assessment.</p>
+  <figure>
+  <svg viewBox="0 0 1200 660" role="img" aria-label="Information architecture: the national criteria document is transcribed into a versioned rules bundle (Library, PlanDefinition, Questionnaire, terminology bindings, scenario tests); at runtime a referral note and, when enabled, patient record data populate a QuestionnaireResponse that conforms to the Questionnaire; the Library evaluates it to an Advisory, rendered as referrer and triager views and logged without PII.">
+    <defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink-2)"/></marker>
+      <marker id="ahd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--dormant)"/></marker>
+      <marker id="ahk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--accent)"/></marker>
+    </defs>
+
+    <!-- zone labels -->
+    <text x="40" y="30" class="t zone-l">Governed reference data · persists</text>
+    <text x="450" y="30" class="t zone-l">Runtime data · one assessment</text>
+    <text x="870" y="30" class="t zone-l">Outputs and audit</text>
+
+    <!-- transient boundary -->
+    <rect x="432" y="44" width="396" height="560" rx="6" class="zone transient"/>
+    <text x="440" y="596" class="t bound">transient · never at rest · PII redacted before extraction</text>
+
+    <!-- LEFT: source doc -->
+    <rect x="40" y="52" width="360" height="62" class="box store"/>
+    <text x="52" y="74" class="t b">National Community Referral Criteria for Imaging</text>
+    <text x="52" y="92" class="t s">PDF · v2.0 · published 09/04/2026 · authorised by NCGG</text>
+    <text x="52" y="106" class="t s">System owner: System Design Manager Community Radiology</text>
+
+    <path d="M220 114 V150" class="e"/>
+    <text x="230" y="138" class="el">transcribed exam-by-exam · verbatim provenance · clinical review</text>
+
+    <!-- LEFT: rules bundle -->
+    <rect x="40" y="152" width="360" height="330" rx="4" class="box key"/>
+    <text x="52" y="174" class="t b acc">Criteria rules bundle · one version per release</text>
+    <text x="52" y="190" class="t m">Bundle/CRR-Criteria|2.0.0 · one per exam/site</text>
+
+    <rect x="56" y="204" width="328" height="44" class="box"/>
+    <text x="66" y="222" class="t b">Library</text>
+    <text x="66" y="238" class="t s">CQL source → compiled ELM · one define per criterion</text>
+
+    <rect x="56" y="256" width="328" height="44" class="box"/>
+    <text x="66" y="274" class="t b">PlanDefinition</text>
+    <text x="66" y="290" class="t s">published structure and wording · timeframe rows · badges · sources</text>
+
+    <rect x="56" y="308" width="328" height="44" class="box"/>
+    <text x="66" y="326" class="t b">Questionnaire</text>
+    <text x="66" y="342" class="t s">indicator catalogue · stable linkIds · population expressions</text>
+
+    <rect x="56" y="360" width="328" height="44" class="box"/>
+    <text x="66" y="378" class="t b">Terminology bindings</text>
+    <text x="66" y="394" class="t s">SNOMED CT NZ / NZPOCS codes on items · build-validated</text>
+
+    <rect x="56" y="412" width="328" height="44" class="box"/>
+    <text x="66" y="430" class="t b">Scenario tests and expected results</text>
+    <text x="66" y="446" class="t s">clinician-set cases · run on every change</text>
+
+    <!-- internal relations -->
+    <text x="220" y="474" class="el" text-anchor="middle">conditions name Library defines · linkIds shared with Library</text>
+
+    <!-- NZHTS -->
+    <rect x="40" y="520" width="360" height="56" class="box store"/>
+    <text x="52" y="540" class="t b">NZHTS reference sets</text>
+    <text x="52" y="556" class="t s">SNOMED CT NZ edition · NZPOCS · Ontoserver</text>
+    <path d="M220 520 V456" class="e"/>
+    <text x="228" y="500" class="el">codes validated against</text>
+
+    <!-- MIDDLE: inputs -->
+    <rect x="450" y="60" width="170" height="70" class="box"/>
+    <text x="460" y="80" class="t b">Referral note</text>
+    <text x="460" y="96" class="t s">free text from GP / NP / UC</text>
+    <text x="460" y="112" class="t s">after PII redaction</text>
+
+    <rect x="648" y="60" width="170" height="70" class="box dorm"/>
+    <text x="658" y="80" class="t b dorm">Patient record data</text>
+    <text x="658" y="96" class="t s">Observation (labs, weights)</text>
+    <text x="658" y="112" class="t s">DiagnosticReport / imaging history</text>
+
+    <!-- QR -->
+    <rect x="450" y="210" width="368" height="140" class="box"/>
+    <text x="460" y="230" class="t b">QuestionnaireResponse</text>
+    <text x="460" y="248" class="t s">one answer per linkId, each carrying evidence:</text>
+    <text x="472" y="268" class="t m">status  documented | inferred | retrieved</text>
+    <text x="472" y="284" class="t m">quote   verbatim span of the note   (documented, inferred)</text>
+    <text x="472" y="300" class="t m">source  Observation/… reference     (retrieved)</text>
+    <text x="460" y="324" class="t s">unanswered = null → "insufficient information", never an assumption</text>
+    <text x="460" y="340" class="t s">precedence when both present: retrieved › documented › inferred</text>
+
+    <path d="M535 130 V208" class="e"/>
+    <text x="544" y="160" class="el">extracted (LLM)</text>
+    <text x="544" y="174" class="el">extraction only</text>
+    <path d="M733 130 V208" class="e dorm"/>
+    <text x="742" y="160" class="el dorm">populated (SDC)</text>
+    <text x="742" y="174" class="el dorm">from coded data</text>
+
+    <!-- conforms-to arrow from Questionnaire -->
+    <path d="M384 330 H420 V280 H448" class="e key"/>
+    <text x="392" y="274" class="el key">conforms to</text>
+
+    <!-- Advisory -->
+    <rect x="450" y="420" width="368" height="150" class="box"/>
+    <text x="460" y="440" class="t b">Advisory</text>
+    <text x="460" y="458" class="t s">determination · priority code and timeframe</text>
+    <text x="460" y="474" class="t s">active redirects · unconfirmed exclusions</text>
+    <text x="460" y="490" class="t s">missing information (linkIds) · inferred indicators</text>
+    <text x="460" y="506" class="t s">rule trace (every intermediate define)</text>
+    <text x="460" y="528" class="t m">criteriaVersion 2.0.0 · engineVersion · documentationStandard</text>
+    <text x="460" y="546" class="t s">same object whichever input path produced the response</text>
+
+    <path d="M634 350 V418" class="e key"/>
+    <text x="644" y="388" class="el key">input to evaluation</text>
+    <path d="M400 458 H448" class="e key"/>
+    <text x="404" y="450" class="el key">Library</text>
+    <text x="404" y="482" class="el key">evaluates</text>
+
+    <!-- RIGHT: views -->
+    <rect x="870" y="420" width="290" height="46" class="box"/>
+    <text x="880" y="438" class="t b">Referrer view</text>
+    <text x="880" y="454" class="t s">likely outcome · what to add · redirect warnings</text>
+
+    <rect x="870" y="478" width="290" height="46" class="box"/>
+    <text x="880" y="496" class="t b">Triager (PCRL) view</text>
+    <text x="880" y="512" class="t s">priority · rule trace · inferred items to confirm</text>
+
+    <path d="M818 470 H868" class="e"/>
+    <path d="M818 500 H868" class="e"/>
+    <text x="843" y="464" class="el" text-anchor="middle">renders</text>
+
+    <!-- PlanDefinition renders -->
+    <path d="M384 278 H428 V40 H1010 V418" class="e"/>
+    <text x="1018" y="380" class="el">wording and badges</text>
+    <text x="1018" y="394" class="el">from PlanDefinition</text>
+
+    <rect x="870" y="546" width="290" height="58" class="box store"/>
+    <text x="880" y="564" class="t b">Assessment audit record</text>
+    <text x="880" y="580" class="t s">bundle version · model id · prompt version · trace</text>
+    <text x="880" y="596" class="t s">no patient identifiers · retention policy applies</text>
+    <path d="M818 560 H868" class="e"/>
+    <text x="824" y="552" class="el">logged</text>
+  </svg>
+  <figcaption>The bundle on the left is the single governed source for both tools. Everything inside the amber box is created for one assessment and discarded. The Questionnaire is the contract that all three input paths converge on; the Library never reads notes, labs or forms directly.</figcaption>
+  </figure>
+  <div class="notes">
+    <div><h3>Ownership</h3><p>The bundle is owned by the same clinical process that owns the published criteria. A change to a criterion is a versioned change to the bundle, reviewed as a diff, with the scenario tests re-run. The prompt is an engineering component, not clinical content.</p></div>
+    <div><h3>Evidence, not verdicts</h3><p>Every answer says how it was established. Strict mode accepts only <span class="mono">documented</span> and <span class="mono">retrieved</span>; inferred values are listed for confirmation rather than silently used. This is the structural fix for the fabrication finding.</p></div>
+    <div><h3>Codes are metadata</h3><p>Terminology bindings sit on Questionnaire items, not in the rules. Adding a code changes nothing in the logic; it enables coded input to be mapped onto a linkId when the retrieval path is switched on.</p></div>
+  </div>
+</section>
+
+<!-- ============================ LEVEL 2 ============================ -->
+<section>
+  <div class="section-head"><span class="eyebrow">Level 2</span><h2>Application architecture</h2></div>
+  <p>The components and the order a referral moves through them. The Triage Advisor is a pipeline of small, separately testable stages; the publishing service is what makes the bundle trustworthy before the runtime ever loads it.</p>
+  <figure>
+  <svg viewBox="0 0 1200 780" role="img" aria-label="Application architecture: referral platforms launch the Criteria Viewer and Triage Advisor; the Triage Advisor pipeline runs PII gate, LLM extraction, validation gate, dormant SDC population from a dormant data-access adapter, merge, rules engine and advisory renderer; a criteria publishing service builds, validates and publishes versioned bundles to a registry that both tools load at runtime; audit and evaluation sit beneath.">
+    <!-- platforms -->
+    <rect x="40" y="40" width="1120" height="56" class="box store"/>
+    <text x="52" y="60" class="t b">Referral platforms · HealthLink SmartForms · ERMS · BPAC · standalone browser</text>
+    <text x="52" y="78" class="t s">launch or embed the tools (URL params, side panel, modal) · pass context: age, sex, exam, region, prefilled values · receive output text back (postMessage)</text>
+
+    <!-- Criteria Viewer -->
+    <rect x="40" y="140" width="260" height="96" class="box"/>
+    <text x="52" y="160" class="t b">Criteria Viewer</text>
+    <text x="52" y="178" class="t s">renders PlanDefinition: groups, badges,</text>
+    <text x="52" y="192" class="t s">timeframes, HealthPathways links by region</text>
+    <text x="52" y="210" class="t s">active mode: ticks produce a</text>
+    <text x="52" y="224" class="t s">QuestionnaireResponse (no LLM)</text>
+    <path d="M170 96 V138" class="e"/>
+
+    <!-- Data access adapter (dormant) -->
+    <rect x="40" y="330" width="260" height="150" class="box dorm"/>
+    <text x="52" y="350" class="t b dorm">Data access adapter</text>
+    <text x="52" y="368" class="t s">FHIR client · fetches only what the</text>
+    <text x="52" y="382" class="t s">Library's data requirements name</text>
+    <text x="52" y="402" class="t s">Tier 1 · values passed by calling form</text>
+    <text x="52" y="416" class="t s">Tier 2 · form prefill from PMS</text>
+    <text x="52" y="430" class="t s">Tier 3 · PMS / national platform FHIR API</text>
+    <text x="52" y="452" class="t s">transient · no storage · consent and</text>
+    <text x="52" y="466" class="t s">PTA re-answered before enabling</text>
+    <path d="M170 96 V120 H20 V405 H38" class="e dorm" style="marker-end:none"/>
+    <path d="M20 405 H38" class="e dorm"/>
+
+    <!-- Pipeline -->
+    <text x="340" y="128" class="t zone-l">Triage Advisor · pipeline</text>
+    <rect x="340" y="140" width="520" height="44" class="box"/>
+    <text x="352" y="158" class="t b">1 · Input gate</text>
+    <text x="352" y="174" class="t s">server-side PII redaction (NHI, names, DOB, contacts) · tested · rejects on failure</text>
+
+    <rect x="340" y="204" width="520" height="44" class="box"/>
+    <text x="352" y="222" class="t b">2 · Extraction service (LLM)</text>
+    <text x="352" y="238" class="t s">fills the Questionnaire from the note · every answer: status + verbatim quote · never guesses</text>
+
+    <rect x="340" y="268" width="520" height="44" class="box"/>
+    <text x="352" y="286" class="t b">3 · Validation gate</text>
+    <text x="352" y="302" class="t s">every quote exists in the note · linkIds and types match the Questionnaire · reject on failure</text>
+
+    <rect x="340" y="332" width="520" height="44" class="box dorm"/>
+    <text x="352" y="350" class="t b dorm">4 · Population service (SDC $populate)</text>
+    <text x="352" y="366" class="t s">runs Questionnaire initialExpressions over retrieved Observations · answers marked retrieved</text>
+
+    <rect x="340" y="396" width="520" height="44" class="box"/>
+    <text x="352" y="414" class="t b">5 · Merge</text>
+    <text x="352" y="430" class="t s">one response · precedence retrieved › documented › inferred · discrepancies flagged to triager</text>
+
+    <rect x="340" y="460" width="520" height="44" class="box key"/>
+    <text x="352" y="478" class="t b acc">6 · Rules engine</text>
+    <text x="352" y="494" class="t s">cql-execution loads the published ELM by bundle version · deterministic · parameterised</text>
+
+    <rect x="340" y="524" width="520" height="44" class="box"/>
+    <text x="352" y="542" class="t b">7 · Advisory renderer</text>
+    <text x="352" y="558" class="t s">referrer and triager views from one Advisory · output text for the form · safety alerts first</text>
+
+    <path d="M600 184 V202" class="e"/>
+    <path d="M600 248 V266" class="e"/>
+    <path d="M600 312 V330" class="e"/>
+    <path d="M600 376 V394" class="e"/>
+    <path d="M600 440 V458" class="e"/>
+    <path d="M600 504 V522" class="e"/>
+    <path d="M600 96 V138" class="e"/>
+    <text x="608" y="120" class="el">note + context</text>
+
+    <!-- adapter → population -->
+    <path d="M300 354 H338" class="e dorm"/>
+    <!-- viewer ticks → merge -->
+    <path d="M300 200 H320 V418 H338" class="e"/>
+    <text x="312" y="300" class="el" transform="rotate(-90 312 300)" text-anchor="middle">ticks as QR (check)</text>
+    <!-- renderer → platforms -->
+    <path d="M860 546 H885 V98" class="e"/>
+    <text x="892" y="110" class="el">advisory + output text back to the form</text>
+
+    <!-- Publishing service -->
+    <text x="900" y="128" class="t zone-l">Criteria publishing service</text>
+    <rect x="900" y="140" width="260" height="364" class="box"/>
+    <text x="912" y="160" class="t b">Change and build process</text>
+    <text x="912" y="182" class="t s">change request from clinical owner</text>
+    <text x="912" y="200" class="t s">edit CQL · PlanDefinition · Questionnaire</text>
+    <text x="912" y="224" class="t b">build</text>
+    <text x="924" y="242" class="t s">translate CQL → ELM (pure JS)</text>
+    <text x="924" y="258" class="t s">validate codes against NZHTS</text>
+    <text x="924" y="274" class="t s">run scenario tests</text>
+    <text x="924" y="290" class="t s">cross-artefact consistency check</text>
+    <text x="912" y="314" class="t b">review</text>
+    <text x="924" y="332" class="t s">clinical reviewer approves the diff</text>
+    <text x="924" y="348" class="t s">side-by-side with source wording</text>
+    <text x="912" y="372" class="t b">publish</text>
+    <text x="924" y="390" class="t s">immutable versioned bundle</text>
+    <text x="924" y="406" class="t s">previous versions retained</text>
+    <text x="912" y="432" class="t s">Admin tool = this process with a UI;</text>
+    <text x="912" y="448" class="t s">developer-mediated at first (BRD AD-002</text>
+    <text x="912" y="464" class="t s">to be revised) · no edit reaches runtime</text>
+    <text x="912" y="480" class="t s">without build + review + publish</text>
+
+    <rect x="900" y="540" width="260" height="52" class="box store"/>
+    <text x="912" y="560" class="t b">Bundle registry</text>
+    <text x="912" y="578" class="t s">ELM · PlanDefinition · Questionnaire · by version</text>
+    <path d="M1030 504 V538" class="e"/>
+
+    <path d="M900 566 H870 V482 H862" class="e key"/>
+    <text x="866" y="516" class="el key" text-anchor="end">rules engine loads bundle vN at runtime</text>
+    <path d="M900 580 H320 V236 H302" class="e" style="marker-end:none"/>
+    <path d="M320 236 H302" class="e"/>
+    <text x="330" y="596" class="el">Criteria Viewer loads PlanDefinition + Questionnaire vN</text>
+
+    <!-- Audit & evaluation -->
+    <rect x="340" y="640" width="820" height="104" class="box store"/>
+    <text x="352" y="660" class="t b">Audit and evaluation</text>
+    <text x="352" y="680" class="t s">assessment log: bundle version, pinned model identifier, prompt version, rule trace · no patient identifiers · retention and purge</text>
+    <text x="352" y="700" class="t s">benchmark harness: clinician-set cases labelled per indicator · extraction accuracy scored separately from rule correctness</text>
+    <text x="352" y="720" class="t s">model comparison: same extraction contract across candidate models (Claude, Azure OpenAI) · model change is a regression-tested event</text>
+    <path d="M760 568 V638" class="e"/>
+    <path d="M820 568 V638" class="e"/>
+  </svg>
+  <figcaption>Stages 1–3 and 5–7 are the initial build; stage 4 and the data access adapter are designed and stubbed but disabled. Switching them on changes which answers arrive marked <span class="mono">retrieved</span>; it does not change the rules, the Questionnaire, or either view.</figcaption>
+  </figure>
+  <div class="notes">
+    <div><h3>Why a pipeline</h3><p>Each stage has one input and one output and can be tested alone. The validation gate is what makes the extraction contract enforceable; the merge stage is where the three input paths become one, so the engine has a single code path whatever the source.</p></div>
+    <div><h3>Retrieval tiers</h3><p>Tier 1 is BRD TA-005 and works now. Tier 2 uses the prefill that HealthLink, ERMS and BPAC forms already do from the PMS, mapped once per platform onto linkIds. Tier 3 is a FHIR fetch from the PMS or a national platform driven by the Library's own data requirements.</p></div>
+    <div><h3>What the LLM cannot do</h3><p>Reach the rules engine, assign a priority, assert a value without a quote, or see an unredacted note. Its whole surface is stage 2, which is also the only stage that changes when the model changes.</p></div>
+  </div>
+</section>
+
+<!-- ============================ LEVEL 3 ============================ -->
+<section>
+  <div class="section-head"><span class="eyebrow">Level 3</span><h2>Infrastructure</h2></div>
+  <p>Where things run and where the boundaries are. Two are fixed by policy: the LLM endpoint must be under Health NZ control (the NAIAEAG test), and no patient data is stored by the tools. The application hosting platform is a decision still to be made; the diagram shows the current prototype and the target side by side.</p>
+  <figure>
+  <svg viewBox="0 0 1200 700" role="img" aria-label="Infrastructure: a general practice zone with clinician browser and PMS; a Health NZ-controlled zone in Aotearoa with application hosting, bundle registry, CI/CD, audit store, NZHTS terminology services and a dormant national data platform connection; an Australian HNZ-controlled tenancy hosting the LLM endpoint inside a residency boundary; and third-party referral platform servers. Arrows show launch, redacted-note processing, bundle loading, publishing, code validation and dormant data retrieval.">
+    <!-- zones -->
+    <rect x="40" y="40" width="300" height="600" rx="6" class="zone"/>
+    <text x="52" y="62" class="t zone-l">General practice / referrer</text>
+
+    <rect x="380" y="40" width="500" height="600" rx="6" class="zone"/>
+    <text x="392" y="62" class="t zone-l">Health NZ-controlled · Aotearoa</text>
+
+    <rect x="920" y="40" width="240" height="290" rx="6" class="zone trust"/>
+    <text x="932" y="62" class="t bound">Australia · HNZ-controlled tenancy</text>
+
+    <rect x="920" y="360" width="240" height="280" rx="6" class="zone"/>
+    <text x="932" y="382" class="t zone-l">Third-party · NZ hosted</text>
+
+    <!-- GP zone -->
+    <rect x="56" y="90" width="268" height="70" class="box"/>
+    <text x="68" y="110" class="t b">Clinician browser</text>
+    <text x="68" y="126" class="t s">referral form with embedded / launched tools</text>
+    <text x="68" y="142" class="t s">client-side PII check is a courtesy, not the control</text>
+
+    <rect x="56" y="200" width="268" height="86" class="box"/>
+    <text x="68" y="220" class="t b">Practice management system</text>
+    <text x="68" y="236" class="t s">MedTech · Indici · MyPractice …</text>
+    <text x="68" y="252" class="t s">holds labs (ORU), weights, imaging reports</text>
+    <text x="68" y="268" class="t s">prefills referral forms today</text>
+
+    <rect x="56" y="330" width="268" height="60" class="box dorm"/>
+    <text x="68" y="350" class="t b dorm">PMS FHIR / vendor API</text>
+    <text x="68" y="366" class="t s">Tier 3 retrieval · vendor-specific · consent model</text>
+    <text x="68" y="382" class="t s">dormant</text>
+
+    <path d="M190 286 V328" class="e dorm"/>
+
+    <!-- HNZ zone -->
+    <rect x="396" y="90" width="468" height="96" class="box key"/>
+    <text x="408" y="110" class="t b acc">Application hosting · API, rules engine, static tools</text>
+    <text x="408" y="128" class="t s">current prototype: Cloudflare Workers / Hono (edge, offshore control plane)</text>
+    <text x="408" y="144" class="t s">target: HNZ-controlled platform (Azure under HNZ tenancy or similar) · TBD</text>
+    <text x="408" y="160" class="t s">stateless · loads bundle by version · no patient data written to disk</text>
+    <text x="408" y="176" class="t m">TLS 1.2+ · HNZ identity for triager view · rate limiting · WAF</text>
+
+    <rect x="396" y="216" width="222" height="70" class="box store"/>
+    <text x="408" y="236" class="t b">Bundle registry</text>
+    <text x="408" y="252" class="t s">immutable versioned store</text>
+    <text x="408" y="268" class="t s">ELM · PlanDefinition · Questionnaire</text>
+
+    <rect x="642" y="216" width="222" height="70" class="box store"/>
+    <text x="654" y="236" class="t b">Audit store</text>
+    <text x="654" y="252" class="t s">logs · no patient identifiers</text>
+    <text x="654" y="268" class="t s">retention policy · purge job</text>
+
+    <rect x="396" y="316" width="222" height="86" class="box"/>
+    <text x="408" y="336" class="t b">CI/CD pipeline</text>
+    <text x="408" y="352" class="t s">source control for CQL + FHIR</text>
+    <text x="408" y="368" class="t s">build · test · check · review gate · publish</text>
+    <text x="408" y="384" class="t s">Node 22 · no JVM · runs on every change</text>
+
+    <rect x="642" y="316" width="222" height="86" class="box store"/>
+    <text x="654" y="336" class="t b">NZHTS · Ontoserver</text>
+    <text x="654" y="352" class="t s">SNOMED CT NZ · NZPOCS</text>
+    <text x="654" y="368" class="t s">$validate-code · $lookup at build time</text>
+    <text x="654" y="384" class="t s">Mule façade for runtime lookups</text>
+
+    <rect x="396" y="432" width="468" height="70" class="box dorm"/>
+    <text x="408" y="452" class="t b dorm">National data platform connection (Hira / HIP) · dormant</text>
+    <text x="408" y="468" class="t s">FHIR read of Observations and imaging history under national consent and access rules</text>
+    <text x="408" y="484" class="t s">strategic path for Tier 3; not a current dependency</text>
+
+    <rect x="396" y="532" width="468" height="90" class="box"/>
+    <text x="408" y="552" class="t b">Operational controls</text>
+    <text x="408" y="568" class="t s">model pinned by fixed identifier · model change = regression-tested release</text>
+    <text x="408" y="584" class="t s">bundle version + model id on every assessment · pilot monitoring, stopping rule</text>
+    <text x="408" y="600" class="t s">no patient data at rest in this zone · IPP 3A re-analysed before any retrieval tier</text>
+
+    <!-- AU zone -->
+    <rect x="936" y="90" width="208" height="110" class="box"/>
+    <text x="948" y="110" class="t b">LLM endpoint</text>
+    <text x="948" y="126" class="t s">target: Azure OpenAI, Australia East,</text>
+    <text x="948" y="140" class="t s">HNZ subscription and keys</text>
+    <text x="948" y="158" class="t s">current: Anthropic API (offshore)</text>
+    <text x="948" y="174" class="t s">receives redacted note only</text>
+    <text x="948" y="190" class="t s">zero retention · no training</text>
+
+    <text x="936" y="230" class="t s">Endpoint control, not geography, is the</text>
+    <text x="936" y="246" class="t s">test applied by NAIAEAG. Māori data</text>
+    <text x="936" y="262" class="t s">sovereignty remains an open question</text>
+    <text x="936" y="278" class="t s">that residency alone does not settle;</text>
+    <text x="936" y="294" class="t s">the extraction-only design minimises</text>
+    <text x="936" y="310" class="t s">what crosses this boundary.</text>
+
+    <!-- third party -->
+    <rect x="936" y="410" width="208" height="90" class="box store"/>
+    <text x="948" y="430" class="t b">Referral platform servers</text>
+    <text x="948" y="446" class="t s">HealthLink · ERMS · BPAC</text>
+    <text x="948" y="462" class="t s">form hosting, prefill from PMS,</text>
+    <text x="948" y="478" class="t s">delivery to CRR hub / RIS</text>
+    <text x="948" y="494" class="t s">Tier 2 retrieval = their prefill</text>
+
+    <!-- edges -->
+    <path d="M324 118 H394" class="e"/>
+    <text x="340" y="110" class="el">launch</text>
+    <path d="M324 232 H380 V170 H394" class="e"/>
+    <text x="330" y="200" class="el">Tier 1 · form context</text>
+
+    <path d="M324 150 H360 V660 H1040 V502" class="e"/>
+    <text x="700" y="674" class="el" text-anchor="middle">referral form session · third-party prefill from PMS (Tier 2) · submitted referral to CRR hub</text>
+
+    <path d="M864 130 H934" class="e key"/>
+    <text x="899" y="122" class="el key" text-anchor="middle">redacted note</text>
+    <text x="899" y="148" class="el key" text-anchor="middle">answers back</text>
+
+    <path d="M507 216 V186" class="e key"/>
+    <text x="516" y="206" class="el key">load bundle vN</text>
+    <path d="M753 216 V186" class="e"/>
+    <text x="762" y="206" class="el">write log</text>
+    <path d="M507 316 V288" class="e"/>
+    <text x="516" y="306" class="el">publish</text>
+    <path d="M618 360 H640" class="e"/>
+    <text x="629" y="310" class="el" text-anchor="middle">validate codes</text>
+
+    <path d="M630 432 V186" class="e dorm"/>
+    <text x="640" y="424" class="el dorm">FHIR read (dormant)</text>
+    <path d="M324 360 H372 V180 H394" class="e dorm"/>
+    <text x="330" y="352" class="el dorm">Tier 3 (dormant)</text>
+  </svg>
+  <figcaption>Everything inside the Health NZ zone can be stood up without the Australian boundary changing, and the Australian boundary can move (Azure NZ, an on-shore model) without touching anything else, because the only thing that crosses it is a redacted note and a QuestionnaireResponse.</figcaption>
+  </figure>
+  <div class="notes">
+    <div><h3>Decisions this level is waiting on</h3><p>Application hosting platform under HNZ control (the prototype's Cloudflare control plane is offshore). LLM provider under the HNZ Azure tenancy. Retention period for audit records. Whether the triager view requires HNZ identity.</p></div>
+    <div><h3>What does not change with the retrieval tiers</h3><p>The hosting, the registry, the pipeline, the LLM boundary. Enabling Tier 2 or 3 adds a read path from a system of record into the population service, and requires the PTA and IPP 3A analysis to be re-done for that path first.</p></div>
+    <div><h3>Prototype-to-target</h3><p>The rules engine, bundle format and tests are already platform-neutral Node.js. Moving from Workers to an HNZ platform is a hosting change, not a rewrite; the same ELM bundle runs unchanged.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head"><span class="eyebrow">Open questions carried on all three levels</span></div>
+  <dl class="qs">
+    <dt>Q1–Q6</dt><dd>Clinical readings of the CT CAP wording, listed in the template README; decided by a Community Radiology Lead before the bundle is used.</dd>
+    <dt>Hosting</dt><dd>Which HNZ-controlled platform hosts the API and engine; drives the residency answer for the application tier as well as the LLM tier.</dd>
+    <dt>Retrieval consent</dt><dd>Under what consent and access rules the tool may read a patient's record on the referrer's behalf; different for form prefill (already happening) versus a direct FHIR read.</dd>
+    <dt>Terminology</dt><dd>NZHTS binding of the indicator catalogue; who owns the CRR-specific codes for indicators that are assertions rather than clinical findings.</dd>
+    <dt>Admin tool</dt><dd>Developer-mediated change path with diff review versus a structured editor; BRD AD-002 needs revising either way.</dd>
+  </dl>
+</section>
+</main>

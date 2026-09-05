@@ -1,0 +1,456 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "CRR-CT-CAP-Adult",
+  "url": "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult",
+  "version": "2.0.0",
+  "name": "CRR_CTChestAbdomenPelvis_Adult_Indicators",
+  "title": "CT Chest, Abdomen and Pelvis - Adult: referral indicators",
+  "status": "draft",
+  "date": "2026-09-05",
+  "publisher": "Health New Zealand | Te Whatu Ora - Community Referred Radiology Programme",
+  "description": "Atomic clinical indicators for the CT Chest, Abdomen and Pelvis (Adult) national referral criteria (National Community Referral Criteria for Imaging Part I, v2.0, published 09/04/2026, pp.10-11). This is the single extraction contract: the LLM extraction step, structured referral forms and the Criteria Viewer tick-list all produce a QuestionnaireResponse against this Questionnaire, which the CQL library CRR_CTChestAbdomenPelvis_Adult evaluates. Each answer may carry the answer-evidence extension (status documented|inferred, quote). Items that can be populated from coded patient-record data carry an SDC initialExpression naming a define in the population library CRR_CTCAP_Population (dormant until a retrieval tier is enabled); items without one are clinical judgements that always come from the referrer or the note.",
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/cqf-library",
+      "valueCanonical": "http://crr.health.nz/fhir/Library/CRR_CTChestAbdomenPelvis_Adult"
+    },
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/cqf-library",
+      "valueCanonical": "http://crr.health.nz/fhir/Library/CRR_CTCAP_Population"
+    }
+  ],
+  "item": [
+    {
+      "linkId": "patient",
+      "text": "Patient",
+      "type": "group",
+      "item": [
+        {
+          "linkId": "patient.age",
+          "text": "Age in years at referral",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "linkId": "patient.sex",
+          "text": "Sex",
+          "type": "choice",
+          "required": true,
+          "answerOption": [
+            {
+              "valueCoding": {
+                "system": "http://hl7.org/fhir/administrative-gender",
+                "code": "male",
+                "display": "Male"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "http://hl7.org/fhir/administrative-gender",
+                "code": "female",
+                "display": "Female"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "http://hl7.org/fhir/administrative-gender",
+                "code": "other",
+                "display": "Other"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "workup",
+      "text": "Initial assessment and investigations (criterion A)",
+      "type": "group",
+      "item": [
+        {
+          "linkId": "workup.bloods",
+          "text": "Blood tests completed as part of initial investigations",
+          "type": "boolean"
+        },
+        {
+          "linkId": "workup.urinalysis",
+          "text": "Urinalysis completed as part of initial investigations",
+          "type": "boolean"
+        },
+        {
+          "linkId": "workup.cxr",
+          "text": "Chest X-ray completed as part of initial investigations",
+          "type": "boolean"
+        },
+        {
+          "linkId": "workup.strongSuspicionMalignancy",
+          "text": "Following full clinical assessment and examination, the practitioner has a strong suspicion of underlying malignancy",
+          "type": "boolean"
+        },
+        {
+          "linkId": "workup.localisingFeatures",
+          "text": "Focal pathology, localising signs/symptoms, or a potential biopsy site has been identified (true = identified; this is a redirect to the relevant system-specific pathway)",
+          "type": "boolean"
+        }
+      ]
+    },
+    {
+      "linkId": "weightloss",
+      "text": "Unintentional weight loss",
+      "type": "group",
+      "item": [
+        {
+          "linkId": "weightloss.present",
+          "text": "Unintentional, unexplained weight loss",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "Weight Loss Present From Record"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "weightloss.measured",
+          "text": "Weight loss is documented by recorded weights (not patient report alone)",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "Weight Loss Percent"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "weightloss.percent",
+          "text": "Weight loss as a percentage of usual body weight",
+          "type": "decimal",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "Weight Loss Percent"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "weightloss.periodMonths",
+          "text": "Period over which the weight was lost, in months",
+          "type": "decimal",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "Weight Loss Period Months"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "symptom",
+      "text": "Yellow flag symptoms (context only; do not affect eligibility)",
+      "type": "group",
+      "item": [
+        {
+          "linkId": "symptom.abdominalPain",
+          "text": "Abdominal pain",
+          "type": "boolean"
+        },
+        {
+          "linkId": "symptom.fatigue",
+          "text": "Fatigue",
+          "type": "boolean"
+        },
+        {
+          "linkId": "symptom.nausea",
+          "text": "Nausea",
+          "type": "boolean"
+        }
+      ]
+    },
+    {
+      "linkId": "lab",
+      "text": "Abnormal laboratory results (pathway B2)",
+      "type": "group",
+      "item": [
+        {
+          "linkId": "lab.crp.raised",
+          "text": "CRP raised",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "CRP Raised"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "lab.crp.value",
+          "text": "CRP value (mg/L)",
+          "type": "quantity",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "CRP Value"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "lab.hb.low",
+          "text": "Haemoglobin low",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "Hb Low"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "lab.hb.value",
+          "text": "Haemoglobin value (g/L)",
+          "type": "quantity",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "Hb Value"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "lab.calcium.raised",
+          "text": "Calcium raised",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "Calcium Raised"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "lab.calcium.value",
+          "text": "Calcium value (mmol/L)",
+          "type": "quantity",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "Calcium Value"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "lab.platelets.high",
+          "text": "Platelet count high",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "Platelets High"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "lab.platelets.value",
+          "text": "Platelet count (x10^9/L)",
+          "type": "quantity",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "Platelets Value"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "lab.alp.high",
+          "text": "Alkaline phosphatase high",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "ALP High"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "lab.alp.value",
+          "text": "ALP value (U/L)",
+          "type": "quantity",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "ALP Value"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "lab.albumin.low",
+          "text": "Albumin low",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "Albumin Low"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "lab.albumin.value",
+          "text": "Albumin value (g/L)",
+          "type": "quantity",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "Albumin Value"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "lab.repeatConfirmed",
+          "text": "Abnormal results are persistent on repeat testing after three weeks",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "Repeat Confirmed All"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "lab.unexplained",
+          "text": "Abnormal results are unexplained",
+          "type": "boolean"
+        }
+      ]
+    },
+    {
+      "linkId": "advice",
+      "text": "Specialist advice (pathway B3)",
+      "type": "group",
+      "item": [
+        {
+          "linkId": "advice.urgentCTRecommended",
+          "text": "A secondary care clinician, Primary Care Radiology Liaison (PCRL) or radiologist advises referral for urgent CT Chest, Abdomen and Pelvis",
+          "type": "boolean"
+        },
+        {
+          "linkId": "advice.adviserNameRole",
+          "text": "Name and role of the clinician who advised (must be included in the referral)",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "linkId": "excl",
+      "text": "Alternative management or HealthPathway recommended (redirects)",
+      "type": "group",
+      "item": [
+        {
+          "linkId": "excl.currentCancerFollowUp",
+          "text": "Patient has a current cancer diagnosis and is under continued follow up",
+          "type": "boolean"
+        },
+        {
+          "linkId": "excl.secondaryCareInvestigated12m",
+          "text": "Patient has been investigated by secondary care within the last 12 months for the same symptoms/signs",
+          "type": "boolean"
+        },
+        {
+          "linkId": "excl.urgentAdmissionRequired",
+          "text": "Presentation requires urgent admission or urgent secondary care assessment",
+          "type": "boolean"
+        },
+        {
+          "linkId": "excl.recentUSAbdoPelvis3m",
+          "text": "Ultrasound of abdomen and pelvis within the last three months",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "Recent US Abdomen Pelvis Reports"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "excl.recentCTCAP12m",
+          "text": "CT Chest, Abdomen and Pelvis within the last 12 months",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+              "valueExpression": {
+                "language": "text/cql-identifier",
+                "expression": "Recent CT CAP Reports"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "funding",
+      "text": "Not routinely funded",
+      "type": "group",
+      "item": [
+        {
+          "linkId": "funding.unfitOrUnwilling",
+          "text": "Patient is unfit for treatment or unwilling to have further investigations and/or treatment",
+          "type": "boolean"
+        }
+      ]
+    }
+  ]
+}

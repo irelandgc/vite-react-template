@@ -1,0 +1,812 @@
+{
+  "resourceType": "PlanDefinition",
+  "id": "CRR-CT-CAP-Adult",
+  "url": "http://crr.health.nz/fhir/PlanDefinition/CRR-CT-CAP-Adult",
+  "version": "2.0.0",
+  "name": "CRR_CTChestAbdomenPelvis_Adult",
+  "title": "CT Chest, Abdomen and Pelvis - Adult",
+  "type": {
+    "coding": [
+      {
+        "system": "http://terminology.hl7.org/CodeSystem/plan-definition-type",
+        "code": "eca-rule",
+        "display": "ECA Rule"
+      }
+    ]
+  },
+  "status": "draft",
+  "experimental": true,
+  "date": "2026-09-05",
+  "publisher": "Health New Zealand | Te Whatu Ora - Community Referred Radiology Programme",
+  "description": "Published structure and wording of the CT Chest, Abdomen and Pelvis (Adult) national referral criteria, with each criterion bound to a named expression in the CQL library. This resource carries everything the Criteria Viewer renders (grouping, published text, timeframe, badges, guidance, sources); the Library carries the logic; the Questionnaire carries the input contract. The three are published together as one versioned bundle.",
+  "useContext": [
+    {
+      "code": {
+        "system": "http://terminology.hl7.org/CodeSystem/usage-context-type",
+        "code": "focus"
+      },
+      "valueCodeableConcept": {
+        "text": "Community-referred radiology, adult"
+      }
+    },
+    {
+      "code": {
+        "system": "http://terminology.hl7.org/CodeSystem/usage-context-type",
+        "code": "user"
+      },
+      "valueCodeableConcept": {
+        "text": "GP & UC Doctors / NPs"
+      }
+    }
+  ],
+  "jurisdiction": [
+    {
+      "coding": [
+        {
+          "system": "urn:iso:std:iso:3166",
+          "code": "NZ"
+        }
+      ]
+    }
+  ],
+  "approvalDate": "2026-04-09",
+  "effectivePeriod": {
+    "start": "2026-04-09",
+    "end": "2028-04-09"
+  },
+  "author": [
+    {
+      "name": "System Design Manager Community Radiology"
+    }
+  ],
+  "endorser": [
+    {
+      "name": "National Clinical Governance Group"
+    }
+  ],
+  "relatedArtifact": [
+    {
+      "type": "derived-from",
+      "label": "National Community Referral Criteria for Imaging (Part I), National ID 15372, v2.0, published 09/04/2026, pp.10-11",
+      "citation": "Health New Zealand | Te Whatu Ora. National Community Referral Criteria for Imaging (Part I). September 2025 (Updated April 2026).",
+      "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf"
+    },
+    {
+      "type": "documentation",
+      "label": "Local HealthPathways page for this exam (domain supplied by region; page ID common to all instances)",
+      "extension": [
+        {
+          "url": "http://crr.health.nz/fhir/StructureDefinition/healthpathways-page-id",
+          "valueString": "TBC-page-id"
+        }
+      ]
+    },
+    {
+      "type": "citation",
+      "label": "NHS England - Faster diagnosis"
+    },
+    {
+      "type": "citation",
+      "label": "Prioritising primary care patients with unexpected weight loss for cancer investigation: diagnostic accuracy study (update) | The BMJ"
+    },
+    {
+      "type": "citation",
+      "label": "Routine blood tests and probability of cancer in patients referred with non-specific serious symptoms: a cohort study - PMC (nih.gov)"
+    },
+    {
+      "type": "citation",
+      "label": "A differentiated approach to referrals from general practice to support early cancer diagnosis - the Danish three-legged strategy - PMC (nih.gov)"
+    },
+    {
+      "type": "citation",
+      "label": "Suspected Abdominal and Pelvic Cancer - Community HealthPathways Waitaha | Canterbury"
+    },
+    {
+      "type": "citation",
+      "label": "Vague Symptoms Suspected Cancer Assessment - Community HealthPathways Cwm Taf Morgannwg"
+    }
+  ],
+  "library": [
+    "http://crr.health.nz/fhir/Library/CRR_CTChestAbdomenPelvis_Adult",
+    "http://crr.health.nz/fhir/Library/CRR_CTCAP_Population"
+  ],
+  "action": [
+    {
+      "id": "guidance",
+      "title": "Guidance",
+      "description": "This Radiology pathway is intended to cover the scenario where patients present with nonspecific symptoms, and the primary care practitioner suspects underlying primary or secondary malignancy in the abdomen or pelvis, no cause or localising features (or mass for tissue sampling) are evident on examination or initial investigations including CXR and blood tests, and there is no clear referral pathway available.\n\nThe use of CT Chest, Abdomen and Pelvis should be reserved for patients where after initial investigations and review, the primary care practitioner remains strongly suspicious of underlying malignancy. The presence of two or more persistently abnormal blood test results (Hb, CRP, Ca, ALP) significantly increases the probability of cancer being diagnosed.\n\nFor clinical presentations with other non-specific symptoms and signs and abnormal lab results where the primary care practitioner is strongly suspicious of underlying malignancy but not meeting either of these criteria below; discussion with Primary Care Radiology Liaison or secondary care specialist or radiologist for consideration of CT imaging is recommended.",
+      "code": [
+        {
+          "coding": [
+            {
+              "system": "http://crr.health.nz/fhir/CodeSystem/criteria-block",
+              "code": "guidance"
+            }
+          ]
+        }
+      ],
+      "documentation": [
+        {
+          "type": "documentation",
+          "label": "National criteria v2.0, p.10 \u2014 Guidance box",
+          "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=10",
+          "extension": [
+            {
+              "url": "http://crr.health.nz/fhir/StructureDefinition/source-page",
+              "valueInteger": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p2-urgent",
+      "title": "P2 Urgent: non-deferrable imaging or intervention that must be completed within 2 weeks of receiving referral",
+      "description": "Consider direct referral for CT chest, Abdomen and Pelvis if:",
+      "priority": "urgent",
+      "code": [
+        {
+          "coding": [
+            {
+              "system": "http://crr.health.nz/fhir/CodeSystem/criteria-block",
+              "code": "indication"
+            }
+          ]
+        },
+        {
+          "coding": [
+            {
+              "system": "http://crr.health.nz/fhir/CodeSystem/priority-code",
+              "code": "P2",
+              "display": "Urgent - within two weeks"
+            }
+          ]
+        }
+      ],
+      "condition": [
+        {
+          "kind": "applicability",
+          "expression": {
+            "language": "text/cql-identifier",
+            "expression": "Meets P2 Criteria"
+          }
+        }
+      ],
+      "selectionBehavior": "all",
+      "action": [
+        {
+          "id": "criterion-a",
+          "title": "Following full clinical assessment and examination and initial investigations (bloods, urinalysis and CX-RAY), the primary care practitioner has a strong suspicion of underlying malignancy but no focal pathology or localising signs/symptoms or potential biopsy site has been identified",
+          "code": [
+            {
+              "coding": [
+                {
+                  "system": "http://crr.health.nz/fhir/CodeSystem/criteria-badge",
+                  "code": "mandatory",
+                  "display": "MANDATORY"
+                }
+              ]
+            }
+          ],
+          "condition": [
+            {
+              "kind": "applicability",
+              "expression": {
+                "language": "text/cql-identifier",
+                "expression": "Criterion A: Assessed, Strong Suspicion, No Localising Features"
+              }
+            }
+          ],
+          "selectionBehavior": "all",
+          "action": [
+            {
+              "id": "a-bloods",
+              "title": "Initial investigations: bloods",
+              "input": [
+                {
+                  "type": "QuestionnaireResponse",
+                  "profile": [
+                    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#workup.bloods"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "a-urinalysis",
+              "title": "Initial investigations: urinalysis",
+              "input": [
+                {
+                  "type": "QuestionnaireResponse",
+                  "profile": [
+                    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#workup.urinalysis"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "a-cxr",
+              "title": "Initial investigations: chest X-ray",
+              "input": [
+                {
+                  "type": "QuestionnaireResponse",
+                  "profile": [
+                    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#workup.cxr"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "a-suspicion",
+              "title": "Strong suspicion of underlying malignancy",
+              "input": [
+                {
+                  "type": "QuestionnaireResponse",
+                  "profile": [
+                    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#workup.strongSuspicionMalignancy"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "a-no-localising",
+              "title": "No focal pathology, localising signs/symptoms or potential biopsy site identified",
+              "input": [
+                {
+                  "type": "QuestionnaireResponse",
+                  "profile": [
+                    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#workup.localisingFeatures"
+                  ]
+                }
+              ]
+            }
+          ],
+          "documentation": [
+            {
+              "type": "documentation",
+              "label": "National criteria v2.0, p.10 \u2014 P2 Urgent row, first bullet",
+              "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=10",
+              "extension": [
+                {
+                  "url": "http://crr.health.nz/fhir/StructureDefinition/source-page",
+                  "valueInteger": 10
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "criterion-b",
+          "title": "AND one of the following",
+          "selectionBehavior": "one-or-more",
+          "action": [
+            {
+              "id": "b1",
+              "title": "Male over 50 years of age or female over 60 years, and there is unintentional, unexplained, documented weight loss of more than 5 % of usual body weight over 3-6 months (+/- yellow flag symptoms of abdominal pain, fatigue, nausea)",
+              "condition": [
+                {
+                  "kind": "applicability",
+                  "expression": {
+                    "language": "text/cql-identifier",
+                    "expression": "Pathway B1: Age Threshold With Weight Loss"
+                  }
+                }
+              ],
+              "input": [
+                {
+                  "type": "QuestionnaireResponse",
+                  "profile": [
+                    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#patient.age"
+                  ]
+                },
+                {
+                  "type": "QuestionnaireResponse",
+                  "profile": [
+                    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#patient.sex"
+                  ]
+                },
+                {
+                  "type": "QuestionnaireResponse",
+                  "profile": [
+                    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#weightloss.percent"
+                  ]
+                },
+                {
+                  "type": "QuestionnaireResponse",
+                  "profile": [
+                    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#weightloss.periodMonths"
+                  ]
+                }
+              ],
+              "documentation": [
+                {
+                  "type": "documentation",
+                  "label": "National criteria v2.0, p.10 \u2014 P2 Urgent row, sub-bullet 1",
+                  "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=10",
+                  "extension": [
+                    {
+                      "url": "http://crr.health.nz/fhir/StructureDefinition/source-page",
+                      "valueInteger": 10
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "b2",
+              "title": "Male over 40 years of age or female over 50 years of age, and there is unintentional, unexplained, documented weight loss of more than 5 % of usual body weight over 3-6 months (+/- yellow flag symptoms of abdominal pain, fatigue, nausea) AND two or more of following abnormal lab test results, which are unexplained, and persistent on repeat testing after three weeks: raised CRP, low haemoglobin raised calcium, high platelet count, high alkaline phosphatase, low albumin.",
+              "code": [
+                {
+                  "coding": [
+                    {
+                      "system": "http://crr.health.nz/fhir/CodeSystem/criteria-badge",
+                      "code": "lab-value",
+                      "display": "LAB VALUE REQUIRED"
+                    }
+                  ]
+                }
+              ],
+              "condition": [
+                {
+                  "kind": "applicability",
+                  "expression": {
+                    "language": "text/cql-identifier",
+                    "expression": "Pathway B2: Lower Age Threshold With Weight Loss And Abnormal Labs"
+                  }
+                }
+              ],
+              "selectionBehavior": "all",
+              "action": [
+                {
+                  "id": "b2-weightloss",
+                  "title": "Documented unintentional weight loss > 5% over 3-6 months",
+                  "condition": [
+                    {
+                      "kind": "applicability",
+                      "expression": {
+                        "language": "text/cql-identifier",
+                        "expression": "Weight Loss Criterion"
+                      }
+                    }
+                  ],
+                  "documentation": [
+                    {
+                      "type": "documentation",
+                      "label": "National criteria v2.0, p.11 \u2014 P2 Urgent row, sub-bullet 2",
+                      "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
+                      "extension": [
+                        {
+                          "url": "http://crr.health.nz/fhir/StructureDefinition/source-page",
+                          "valueInteger": 11
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "b2-labs",
+                  "title": "Two or more abnormal lab results, unexplained and persistent on repeat testing after three weeks",
+                  "condition": [
+                    {
+                      "kind": "applicability",
+                      "expression": {
+                        "language": "text/cql-identifier",
+                        "expression": "Two Or More Persistent Unexplained Abnormal Labs"
+                      }
+                    }
+                  ],
+                  "selectionBehavior": "one-or-more",
+                  "action": [
+                    {
+                      "id": "lab-crp",
+                      "title": "Raised CRP",
+                      "input": [
+                        {
+                          "type": "QuestionnaireResponse",
+                          "profile": [
+                            "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#lab.crp.raised"
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "lab-hb",
+                      "title": "Low haemoglobin",
+                      "input": [
+                        {
+                          "type": "QuestionnaireResponse",
+                          "profile": [
+                            "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#lab.hb.low"
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "lab-ca",
+                      "title": "Raised calcium",
+                      "input": [
+                        {
+                          "type": "QuestionnaireResponse",
+                          "profile": [
+                            "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#lab.calcium.raised"
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "lab-plt",
+                      "title": "High platelet count",
+                      "input": [
+                        {
+                          "type": "QuestionnaireResponse",
+                          "profile": [
+                            "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#lab.platelets.high"
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "lab-alp",
+                      "title": "High alkaline phosphatase",
+                      "input": [
+                        {
+                          "type": "QuestionnaireResponse",
+                          "profile": [
+                            "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#lab.alp.high"
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "lab-alb",
+                      "title": "Low albumin",
+                      "input": [
+                        {
+                          "type": "QuestionnaireResponse",
+                          "profile": [
+                            "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#lab.albumin.low"
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "documentation": [
+                    {
+                      "type": "documentation",
+                      "label": "National criteria v2.0, p.11 \u2014 P2 Urgent row, sub-bullet 2, 'AND two or more...'",
+                      "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
+                      "extension": [
+                        {
+                          "url": "http://crr.health.nz/fhir/StructureDefinition/source-page",
+                          "valueInteger": 11
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "documentation": [
+                {
+                  "type": "documentation",
+                  "label": "National criteria v2.0, p.11 \u2014 P2 Urgent row, sub-bullet 2",
+                  "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
+                  "extension": [
+                    {
+                      "url": "http://crr.health.nz/fhir/StructureDefinition/source-page",
+                      "valueInteger": 11
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "b3",
+              "title": "Secondary care clinician or Primary Care Radiology Liaison (PCRL) or radiologist advises referral for urgent CT Chest, Abdomen and Pelvis.",
+              "description": "REVIEW Q1: as printed this is a sub-bullet under criterion A. If it is intended to stand alone, set the CQL parameter \"P2 Structure Reading\" to 'alternative' and move this action up one level.",
+              "code": [
+                {
+                  "coding": [
+                    {
+                      "system": "http://crr.health.nz/fhir/CodeSystem/criteria-badge",
+                      "code": "gateway",
+                      "display": "GATEWAY"
+                    }
+                  ]
+                }
+              ],
+              "documentation": [
+                {
+                  "type": "documentation",
+                  "label": "National criteria v2.0, p.11 \u2014 P2 Urgent row, sub-bullet 3",
+                  "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
+                  "extension": [
+                    {
+                      "url": "http://crr.health.nz/fhir/StructureDefinition/source-page",
+                      "valueInteger": 11
+                    }
+                  ]
+                },
+                {
+                  "type": "documentation",
+                  "display": "If the referral was discussed with and endorsed by any secondary care clinician, radiologist, or primary care radiology liaison, always include the name and role of that person in the referral."
+                }
+              ],
+              "condition": [
+                {
+                  "kind": "applicability",
+                  "expression": {
+                    "language": "text/cql-identifier",
+                    "expression": "Pathway B3: Specialist Advises Urgent CT CAP"
+                  }
+                }
+              ],
+              "input": [
+                {
+                  "type": "QuestionnaireResponse",
+                  "profile": [
+                    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#advice.urgentCTRecommended"
+                  ]
+                },
+                {
+                  "type": "QuestionnaireResponse",
+                  "profile": [
+                    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#advice.adviserNameRole"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "documentation": [
+        {
+          "type": "documentation",
+          "label": "National criteria v2.0, p.10 \u2014 P2 Urgent row",
+          "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=10",
+          "extension": [
+            {
+              "url": "http://crr.health.nz/fhir/StructureDefinition/source-page",
+              "valueInteger": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "alternative-management",
+      "title": "Alternative management or HealthPathway recommended.",
+      "code": [
+        {
+          "coding": [
+            {
+              "system": "http://crr.health.nz/fhir/CodeSystem/criteria-block",
+              "code": "alternative-management"
+            }
+          ]
+        }
+      ],
+      "condition": [
+        {
+          "kind": "applicability",
+          "expression": {
+            "language": "text/cql-identifier",
+            "expression": "Alternative Management Recommended"
+          }
+        }
+      ],
+      "selectionBehavior": "any",
+      "action": [
+        {
+          "id": "excl-cancer",
+          "title": "Patient has a current cancer diagnosis and under continued follow up.",
+          "condition": [
+            {
+              "kind": "applicability",
+              "expression": {
+                "language": "text/cql-identifier",
+                "expression": "Redirect: Current Cancer Under Follow Up"
+              }
+            }
+          ],
+          "documentation": [
+            {
+              "type": "documentation",
+              "label": "National criteria v2.0, p.11 \u2014 Alternative management row, bullet 1",
+              "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
+              "extension": [
+                {
+                  "url": "http://crr.health.nz/fhir/StructureDefinition/source-page",
+                  "valueInteger": 11
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "excl-secondary",
+          "title": "Patient has been investigated by secondary care within the last 12 months for the same symptoms/ signs - request follow-up review.",
+          "condition": [
+            {
+              "kind": "applicability",
+              "expression": {
+                "language": "text/cql-identifier",
+                "expression": "Redirect: Investigated By Secondary Care Within 12 Months"
+              }
+            }
+          ],
+          "documentation": [
+            {
+              "type": "documentation",
+              "label": "National criteria v2.0, p.11 \u2014 Alternative management row, bullet 2",
+              "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
+              "extension": [
+                {
+                  "url": "http://crr.health.nz/fhir/StructureDefinition/source-page",
+                  "valueInteger": 11
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "excl-urgent",
+          "title": "Presentation requiring urgent admission or urgent secondary care assessment.",
+          "condition": [
+            {
+              "kind": "applicability",
+              "expression": {
+                "language": "text/cql-identifier",
+                "expression": "Redirect: Requires Urgent Admission Or Assessment"
+              }
+            }
+          ],
+          "documentation": [
+            {
+              "type": "documentation",
+              "label": "National criteria v2.0, p.11 \u2014 Alternative management row, bullet 3",
+              "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
+              "extension": [
+                {
+                  "url": "http://crr.health.nz/fhir/StructureDefinition/source-page",
+                  "valueInteger": 11
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "excl-localising",
+          "title": "Localising clinical features or results from preliminary investigations which suggest cancer in a specific system.",
+          "condition": [
+            {
+              "kind": "applicability",
+              "expression": {
+                "language": "text/cql-identifier",
+                "expression": "Redirect: Localising Features Suggest Cancer In Specific System"
+              }
+            }
+          ],
+          "documentation": [
+            {
+              "type": "documentation",
+              "label": "National criteria v2.0, p.11 \u2014 Alternative management row, bullet 4",
+              "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
+              "extension": [
+                {
+                  "url": "http://crr.health.nz/fhir/StructureDefinition/source-page",
+                  "valueInteger": 11
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "excl-us",
+          "title": "Recent ultrasound of abdomen & pelvis within the last three months - Seek advice from a radiologist, or other appropriate secondary care specialist.",
+          "condition": [
+            {
+              "kind": "applicability",
+              "expression": {
+                "language": "text/cql-identifier",
+                "expression": "Redirect: US Abdomen Pelvis Within 3 Months"
+              }
+            }
+          ],
+          "documentation": [
+            {
+              "type": "documentation",
+              "label": "National criteria v2.0, p.11 \u2014 Alternative management row, bullet 5",
+              "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
+              "extension": [
+                {
+                  "url": "http://crr.health.nz/fhir/StructureDefinition/source-page",
+                  "valueInteger": 11
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "excl-ct",
+          "title": "CT Chest, Abdomen & Pelvis within the last 12 months - seek advice from a radiologist, or other appropriate secondary care specialist.",
+          "condition": [
+            {
+              "kind": "applicability",
+              "expression": {
+                "language": "text/cql-identifier",
+                "expression": "Redirect: CT CAP Within 12 Months"
+              }
+            }
+          ],
+          "documentation": [
+            {
+              "type": "documentation",
+              "label": "National criteria v2.0, p.11 \u2014 Alternative management row, bullet 6",
+              "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
+              "extension": [
+                {
+                  "url": "http://crr.health.nz/fhir/StructureDefinition/source-page",
+                  "valueInteger": 11
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "documentation": [
+        {
+          "type": "documentation",
+          "label": "National criteria v2.0, p.11 \u2014 Alternative management or HealthPathway recommended row",
+          "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
+          "extension": [
+            {
+              "url": "http://crr.health.nz/fhir/StructureDefinition/source-page",
+              "valueInteger": 11
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "not-funded",
+      "title": "Community-referred radiology not routinely funded by Health New Zealand in these clinical scenarios. Imaging may still be appropriate, and the patient may wish to consider privately funding imaging.",
+      "code": [
+        {
+          "coding": [
+            {
+              "system": "http://crr.health.nz/fhir/CodeSystem/criteria-block",
+              "code": "not-funded"
+            }
+          ]
+        }
+      ],
+      "condition": [
+        {
+          "kind": "applicability",
+          "expression": {
+            "language": "text/cql-identifier",
+            "expression": "Not Routinely Funded"
+          }
+        }
+      ],
+      "action": [
+        {
+          "id": "nf-unfit",
+          "title": "Patient is unfit for treatment or unwilling to have further investigations and / or treatment."
+        }
+      ],
+      "documentation": [
+        {
+          "type": "documentation",
+          "label": "National criteria v2.0, p.11 \u2014 Not routinely funded row",
+          "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
+          "extension": [
+            {
+              "url": "http://crr.health.nz/fhir/StructureDefinition/source-page",
+              "valueInteger": 11
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

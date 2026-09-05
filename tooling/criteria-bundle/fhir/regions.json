@@ -1,0 +1,27 @@
+{
+  "description": "Regional delivery configuration. Region is a render-time concern selected by URL parameter (BRD CV-021); it never reaches the rules. HealthPathways domains are placeholders to be confirmed with each region.",
+  "healthPathwaysUrlTemplate": "https://{domain}/{pageId}",
+  "regions": [
+    {
+      "code": "northern",
+      "name": "Northern",
+      "healthPathwaysDomain": "TBC.communityhealthpathways.org"
+    },
+    {
+      "code": "te-manawa-taki",
+      "name": "Te Manawa Taki",
+      "healthPathwaysDomain": "TBC.communityhealthpathways.org"
+    },
+    {
+      "code": "central",
+      "name": "Central",
+      "healthPathwaysDomain": "TBC.communityhealthpathways.org"
+    },
+    {
+      "code": "te-waipounamu",
+      "name": "Te Waipounamu",
+      "healthPathwaysDomain": "TBC.communityhealthpathways.org"
+    }
+  ],
+  "note": "Seven HealthPathways instances share a common page ID structure (BRD CV-012). Map each instance to the region(s) it serves here; more than one instance per region is allowed."
+}
