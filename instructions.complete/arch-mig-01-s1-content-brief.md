@@ -1,3 +1,10 @@
+> **[COMPLETE — 2026-09-05]** Indicator vocabulary v1 (131 indicators) and the national
+> red-flag/ACC library (30 flags, 79 ELM definitions, 47/47 scenarios) delivered. Marked
+> **NEEDS CLINICAL REVIEW** throughout, per this brief's own instruction — filing as
+> COMPLETE records the work was carried out, not that the content is clinically signed off.
+> Verification: verified — PR #2 (merged), 47/47 scenarios passing, 31/31 define coverage.
+> Filed by: Claude Code
+
 # Claude Code Brief: ARCH-MIG-01 slice 1 — Session 1 (content)
 
 **Brief ID:** ARCH-MIG-01-S1 · **Parent:** `instructions/arch-mig-plan.md` slice 1 · **Model:** Claude Opus · **Branch:** `feature/arch-mig-s1-content` · **Scope:** indicator vocabulary v1 and the national red-flag library. Nothing else.

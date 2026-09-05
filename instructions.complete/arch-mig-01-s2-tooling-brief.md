@@ -1,3 +1,12 @@
+> **[COMPLETE — 2026-09-05]** CT CAP retrofit (no changes needed — all 36 linkIds already
+> resolved), red-flag build/test wiring, `publish.mjs`, source provenance, cross-bundle
+> includes, terminology scaffold delivered and gated green. Two follow-up fixes to bundle
+> versioning (v1.0.0 default with no publish history; symmetric major-bump guard) applied
+> on the same branch before merge.
+> Verification: verified — PR #3 (merged), full gate (build/test/check/publish/standalone
+> check) green, version guard tested against scratch registries in both directions.
+> Filed by: Claude Code
+
 # Claude Code Brief: ARCH-MIG-01 slice 1 — Session 2 (tooling)
 
 **Brief ID:** ARCH-MIG-01-S2 · **Parent:** `instructions/arch-mig-plan.md` slice 1 · **Model:** Claude Sonnet · **Branch:** `feature/arch-mig-s2-tooling` (from the merged S1 branch) · **Scope:** CT CAP retrofit to the vocabulary, publish tooling, source provenance, cross-bundle includes.

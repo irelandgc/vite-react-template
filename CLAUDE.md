@@ -84,6 +84,10 @@ documents/reference/architecture/). Invariants that hold from now on:
 8. Bundle version, engine version, model identifier and prompt version are
    stamped on every assessment.
 
+Design decisions are recorded in `documents/ARCHITECTURE_DECISIONS.md` (AD-xx),
+append-only, same rules as `SECURITY_DECISIONS.md`. Add an entry whenever a
+design call is made; cite AD ids in briefs and PR descriptions.
+
 During the migration, a recorded fix that the target supersedes is not
 implemented unless the plan names it as an interim with a retirement date.
 
