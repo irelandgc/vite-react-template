@@ -229,6 +229,7 @@ function CRRAdmin() {
     {id:"releases",label:"Releases",icon:"📣"},
     {id:"qa",label:"Triage QA",icon:"⭐"},
     {id:"viewerqa",label:"Viewer QA",icon:"📋"},
+    {id:"bundles",label:"Bundles",icon:"📦"},
     {id:"viewerusage",label:"Viewer Usage",icon:"📊"},
     {id:"usagelog",label:"Usage Log",icon:"📋"},
     {id:"audit",label:"Audit Log",icon:"📋"},
@@ -282,6 +283,7 @@ function CRRAdmin() {
         {tab==="releases" && <ReleasesTab show={show} />}
         {tab==="qa" && <QAReviewsTab />}
         {tab==="viewerqa" && <ViewerQATab />}
+        {tab==="bundles" && <BundlesTab />}
         {tab==="viewerusage" && <ViewerUsageTab />}
         {tab==="usagelog" && <UsageLogTab />}
         {tab==="audit" && <AuditTab />}
@@ -1225,6 +1227,107 @@ function ViewerQATab(){
 // ══════════════════════════════════════════════════════════
 //  VIEWER USAGE TAB
 // ══════════════════════════════════════════════════════════
+
+// ARCH-MIG-01 slice 2 — read-only Bundles tab. No editing (AD-10, plan §4
+// interim): criteria changes go through Claude Code sessions against the
+// repo, not this UI, for the pilot.
+function BundlesTab(){
+  const [data,setData]=React.useState(null);
+  const [error,setError]=React.useState(null);
+  const [loading,setLoading]=React.useState(true);
+
+  React.useEffect(()=>{
+    (async()=>{
+      setLoading(true);setError(null);
+      try{
+        const res=await api('/api/bundles');
+        if(res && res.bundles && res.examSites) setData(res);
+        else setError(res?.error||'Unexpected response');
+      }catch(e){setError(e.message);}
+      finally{setLoading(false);}
+    })();
+  },[]);
+
+  if(loading) return <div style={{padding:20,fontSize:13,color:C.mid}}>Loading bundle registry…</div>;
+  if(error) return <div style={{padding:20,fontSize:13,color:C.fail}}>Failed to load: {error}</div>;
+
+  const bundleByKey={};
+  data.bundles.forEach(b=>{(bundleByKey[b.exam_site]=bundleByKey[b.exam_site]||[]).push(b);});
+  const liveKeys=new Set(data.examSites.filter(e=>e.live).map(e=>e.bundle_key));
+
+  const STATE_COLORS={
+    transcribed:{bg:'#fff7ed',fg:'#b45309'},
+    'signed-off':{bg:'#eff6ff',fg:'#2563eb'},
+    published:{bg:'#dcfce7',fg:'#166534'},
+  };
+
+  function fmtDate(s){
+    if(!s)return'—';
+    try{return new Date(s).toLocaleDateString('en-NZ',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){return s;}
+  }
+
+  const bundleKeys=[...new Set(data.examSites.map(e=>e.bundle_key))].sort();
+
+  return(
+    <div style={{padding:20,overflow:'auto',height:'calc(100vh - 130px)'}}>
+      <div style={{marginBottom:12}}>
+        <h2 style={{fontSize:16,fontWeight:700,color:C.navy,marginBottom:2}}>Bundles</h2>
+        <p style={{fontSize:12,color:C.mid}}>
+          {bundleKeys.length} bundle key{bundleKeys.length!==1?'s':''} (AD-01 — one per PDF section) ·
+          {' '}{data.examSites.length} published exam/site ids map onto them ·
+          {' '}{data.bundles.length} bundle version{data.bundles.length!==1?'s':''} published.
+          Read-only — criteria changes for the pilot go through the repo, not this tab (AD-10).
+        </p>
+      </div>
+
+      <table style={{width:'100%',borderCollapse:'collapse',fontSize:12,background:'#fff',border:`1px solid ${C.rule}`}}>
+        <thead>
+          <tr style={{background:C.mist,textAlign:'left'}}>
+            <th style={{padding:'8px 10px',borderBottom:`1px solid ${C.rule}`}}>Bundle key</th>
+            <th style={{padding:'8px 10px',borderBottom:`1px solid ${C.rule}`}}>Exam/site ids</th>
+            <th style={{padding:'8px 10px',borderBottom:`1px solid ${C.rule}`}}>Version</th>
+            <th style={{padding:'8px 10px',borderBottom:`1px solid ${C.rule}`}}>State</th>
+            <th style={{padding:'8px 10px',borderBottom:`1px solid ${C.rule}`}}>Logic hash</th>
+            <th style={{padding:'8px 10px',borderBottom:`1px solid ${C.rule}`}}>Vocab v</th>
+            <th style={{padding:'8px 10px',borderBottom:`1px solid ${C.rule}`}}>Source</th>
+            <th style={{padding:'8px 10px',borderBottom:`1px solid ${C.rule}`}}>Sign-off</th>
+            <th style={{padding:'8px 10px',borderBottom:`1px solid ${C.rule}`}}>Published</th>
+            <th style={{padding:'8px 10px',borderBottom:`1px solid ${C.rule}`}}>Tests</th>
+          </tr>
+        </thead>
+        <tbody>
+          {bundleKeys.map(key=>{
+            const ids=data.examSites.filter(e=>e.bundle_key===key).map(e=>e.id);
+            const versions=(bundleByKey[key]||[]).slice().sort((a,b)=>b.id-a.id);
+            const latest=versions[0];
+            return(
+              <tr key={key} style={{borderBottom:`1px solid ${C.rule}`}}>
+                <td style={{padding:'8px 10px',fontFamily:mono,fontWeight:600}}>
+                  {key}{liveKeys.has(key)&&<span title='This bundle key is the engine\'s live source for at least one exam/site id' style={{marginLeft:6,fontSize:10,background:'#dcfce7',color:'#166534',padding:'1px 6px',borderRadius:2,fontWeight:700}}>LIVE</span>}
+                </td>
+                <td style={{padding:'8px 10px',fontFamily:mono,fontSize:11,color:C.mid}}>{ids.join(', ')}</td>
+                {latest ? (<>
+                  <td style={{padding:'8px 10px',fontFamily:mono}}>{latest.version}</td>
+                  <td style={{padding:'8px 10px'}}><span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:2,background:(STATE_COLORS[latest.state]||{}).bg,color:(STATE_COLORS[latest.state]||{}).fg}}>{latest.state}</span></td>
+                  <td style={{padding:'8px 10px',fontFamily:mono,fontSize:11,color:C.mid}} title={latest.logic_hash}>{latest.logic_hash.slice(0,17)}…</td>
+                  <td style={{padding:'8px 10px'}}>{latest.vocabulary_version}</td>
+                  <td style={{padding:'8px 10px'}}>{latest.source_type}</td>
+                  <td style={{padding:'8px 10px',fontSize:11,color:C.mid}}>{latest.signoff_ref?'✓':'—'}</td>
+                  <td style={{padding:'8px 10px',fontSize:11,color:C.mid}}>{fmtDate(latest.published_at)}{latest.published_by?' · '+latest.published_by:''}</td>
+                  <td style={{padding:'8px 10px',fontSize:11,color:C.mid}}>
+                    {(()=>{try{const t=JSON.parse(latest.test_summary||'null'); return t?Object.values(t).map(v=>v.summary).join(' · '):'—';}catch(e){return '—';}})()}
+                  </td>
+                </>) : (
+                  <td colSpan={7} style={{padding:'8px 10px',fontSize:11,color:C.mid,fontStyle:'italic'}}>not yet transcribed</td>
+                )}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 function ViewerUsageTab(){
   const [events,setEvents]=React.useState([]);

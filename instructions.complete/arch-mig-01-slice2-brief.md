@@ -1,3 +1,25 @@
+> **[COMPLETE — 2026-09-05]** Storage (D1 migrations 0006–0008, catch-up + bundle
+> registry), API worker routes (2 public GET, 2 admin POST, `/api/criteria/:id`
+> resolving through `exam_sites`), runtime loading (`loadBundle`,
+> `loadForExamSiteId`), read-only Admin Bundles tab, and the AD-01 `check` rule
+> delivered. One real design call made mid-session, recorded as AD-12 (KV
+> content is immutable; `state` lives in D1 and is overlaid on GET). CT CAP
+> exercised through the full `transcribed → signed-off → published` lifecycle
+> live against `wrangler dev` with real local D1/KV — every scenario in the
+> Done gate proven, including both AD-02 guard directions and the unresolved-
+> linkId rejection.
+> Verification: verified for all route behaviour (19 live request/response
+> pairs against `wrangler dev`, both positive and negative cases, recorded in
+> the PR). **Not independently verified: automated Vitest coverage.**
+> `@cloudflare/vitest-pool-workers` 0.22.0 fails to inject the `cloudflare:test`
+> module for any worker whose wrangler config declares D1/KV bindings —
+> reproduced in isolation against a trivial worker with zero application code,
+> so this is a tooling-version issue, not a defect in this session's code. The
+> Admin Bundles tab is new UI verified only by close mirroring of the existing,
+> working `ViewerUsageTab` pattern and a manual JS bracket-balance check — not
+> rendered in a real browser this session.
+> Filed by: Claude Code
+
 # Claude Code Brief: ARCH-MIG-01 slice 2 — Bundle registry and runtime loading
 
 **Model:** Claude Sonnet · **Branch:** `feature/arch-mig-slice2-registry` from main · **Scope:** plan slice 2 only. Sonnet is right for this: it is plumbing against a settled design; every design question is already answered in `documents/ARCHITECTURE_DECISIONS.md`.

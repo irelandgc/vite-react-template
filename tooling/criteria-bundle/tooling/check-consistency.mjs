@@ -186,6 +186,29 @@ if (process.env.NZHTS_URL) {
   console.log(`Terminology: NZHTS_URL not configured - ${placeholderCodes}/${vocab.indicators.length} vocabulary codes are PLACEHOLDER (SR-11, publish-blocking once live, informational for now).`);
 }
 
+// 11. AD-01 (slice 2): every published exam/site id resolves to exactly one
+// bundle key, and every bundle key is referenced by at least one id. Checks
+// the static seed data in the D1 migration (not live D1 - this script has no
+// binding), so a future edit to the mapping that breaks the invariant is
+// caught before it ever reaches a database.
+const examSitesMigrationPath = path.join(root, "..", "..", "public", "crr-criteria", "api", "migrations", "0008_bundle_registry.sql");
+if (fs.existsSync(examSitesMigrationPath)) {
+  const migrationSrc = fs.readFileSync(examSitesMigrationPath, "utf8");
+  const rows = [...migrationSrc.matchAll(/INSERT INTO exam_sites \(id, title, bundle_key, live\) VALUES \('([^']+)', '(?:[^']|'')*', '([^']+)', \d\);/g)]
+    .map(([, id, bundleKey]) => ({ id, bundleKey }));
+  const idsSeen = new Set();
+  for (const r of rows) {
+    if (idsSeen.has(r.id)) problems.push(`exam_sites seed: duplicate id "${r.id}"`);
+    idsSeen.add(r.id);
+  }
+  const distinctKeys = new Set(rows.map(r => r.bundleKey));
+  if (rows.length !== 53) problems.push(`exam_sites seed: expected 53 published ids (AD-01), found ${rows.length}`);
+  if (distinctKeys.size !== 38) problems.push(`exam_sites seed: expected 38 distinct bundle keys (AD-01), found ${distinctKeys.size}`);
+  console.log(`AD-01 mapping: ${rows.length} published ids -> ${distinctKeys.size} bundle keys`);
+} else {
+  console.log("AD-01 mapping: migration file not found (slice 2 not yet merged) - skipped");
+}
+
 const unusedLinkIds = [...linkIds].filter(id => id.includes(".") && !usedInCql.has(id));
 console.log(`Library defines: ${defines.size}; population defines: ${popDefines.size}; Questionnaire linkIds: ${linkIds.size}; used in criteria CQL: ${usedInCql.size}; populatable: ${initialExprs.length}`);
 if (unusedLinkIds.length) console.log(`Info - Questionnaire items not used by logic (documentation only): ${unusedLinkIds.join(", ")}`);
