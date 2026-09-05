@@ -1,3 +1,12 @@
+> **[Filing note, 2026-09-05]** Archived as DONE-UNVERIFIED per DOC-AUDIT-2026-09 §3.3.
+> Location in `instructions.complete/` reflects that this work was carried out, NOT that its
+> outcome was independently verified. Specifically unverified: whether the `xlsx` dependency
+> was actually removed from `package.json`, and whether the "every tuple came back
+> fabrication:REVIEW" bug this file raised was ever fixed — a spot-checked sample
+> (`RP-000|A|1`) still showed `"fabrication":"REVIEW"` as of the July audit. Could not be
+> confirmed from static repository files alone.
+> Do not cite this file as evidence of a verified result.
+
 # TA-REG-02 — Runner change: emit JSON only, drop spreadsheet writing
 
 ## Decision
