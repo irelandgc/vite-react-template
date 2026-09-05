@@ -1,3 +1,9 @@
+> **[COMPLETE — 2026-06-21, filed 2026-09-05]** Documentation & instructions audit — produced `documents/DOC-AUDIT-2026-06.md`.
+> Verification: not independently re-verified this session — filed on the strength of the June
+> 2026 audit's own self-classification ("DONE (meta) — Report is the output"); its findings were
+> themselves re-verified and superseded in parts by the July and September audits.
+> Filed by: Claude Code
+
 # Claude Code Brief — Documentation & Instructions Audit + Tidy-Up
 
 **Status:** Read-only review. Do NOT move, delete, archive, or modify any file. The entire job is to produce one accurate report that Gary uses to decide next steps himself. No actions are taken on the filesystem at all.

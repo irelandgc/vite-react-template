@@ -197,6 +197,15 @@ Use the existing tooltip/popover pattern if one exists in the codebase. If not, 
 ---
 
 #### UX-12: Definitions under relevant urgency
+
+> **[STATUS — 2026-09-05]** Built and deployed (footnote parsing, tooltip, and slide-out
+> panel all present in `viewer/index.html`), then **deliberately switched off** —
+> `var UX12_DEFINITIONS_INLINE = false;` (line 334). Gary reviewed the live result and
+> didn't like it; this is a product decision, not an unfinished build.
+> **Action still open:** revisit the design (re-enable an improved version, or remove
+> the disabled code path entirely) — do not leave the dead `UX12_DEFINITIONS_INLINE`
+> branch in the codebase indefinitely once a direction is chosen. Filed by: Claude Code.
+
 **What:** Display definitions and sub-criteria under the criteria items they relate to, rather than lumped at the top of the page.  
 **Detail:** 
 
@@ -254,7 +263,7 @@ After all enhancements are implemented and deployed, update the release notes on
 8. [ ] UX-09: Gateway tooltip — commit
 9. [ ] UX-10: Red flag asterisk — commit
 10. [ ] UX-11: Expandable sections — commit, verify safety sections remain visible
-11. [ ] UX-12: Definitions inline — check data structure first, then commit
+11. [x] UX-12: Definitions inline — built and deployed, then switched off by product decision (2026-09-05). Open: decide re-enable-improved vs. remove dead code
 12. [ ] Release notes — update both tools
 13. [ ] Deploy
 14. [ ] Smoke test both tools end to end

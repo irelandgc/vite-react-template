@@ -1,3 +1,9 @@
+> **[COMPLETE — 2026-06-21, filed 2026-09-05]** Fixes 9 (expand arrows removed) and 10
+> (not-funded items excluded from the tickable list).
+> Verification: verified — `documents/VERIFICATION-2026-06-21.md` Part 2 cites `viewer/index.html`
+> lines 333 and 621; independently re-confirmed by the July audit's carry-forward table.
+> Filed by: Claude Code
+
 # Viewer Fixes — Urgent Follow-up
 
 ## Context

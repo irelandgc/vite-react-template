@@ -1,3 +1,10 @@
+> **[COMPLETE — 2026-09-05]** DOC-AUDIT-2026-09 four-part tidy-up (re-baseline, new-file
+> inventory, consolidated report, execute).
+> Verification: verified — `documents/DOC-AUDIT-2026-09.md` produced and reviewed by Gary;
+> Part 4 moves executed across this commit and the preceding one (`6b18dc7`), plus the
+> addendum's reconciliation, relocations, and CLAUDE.md lifecycle rule.
+> Filed by: Claude Code
+
 # Claude Code Brief — Documentation & Instructions Tidy-Up (September 2026 pass)
 
 **Status:** This is a GATE. No other system, code, prompt, or data changes should be made until this brief's Part 4 (execute) is complete and committed. Gary has explicitly asked for the tidy-up to happen before any further system changes proceed.

@@ -1,3 +1,10 @@
+> **[COMPLETE — 2026-07-07, filed 2026-09-05]** Criteria data wipe-and-reload from
+> `pdf-criteria-all.json` + viewer INDICATION_THEME_MAP rebuild.
+> Verification: verified — re-confirmed live 7 July 2026 (`documents/PROJ-AUDIT-2026-07.md`
+> Phase 4 item 1: live `/api/criteria` matched the published v4.1.0 baseline exactly, all 6
+> previously-missing sites present).
+> Filed by: Claude Code
+
 # CRR Criteria Data Load & Viewer Fix — Claude Code Instructions
 
 ## Context

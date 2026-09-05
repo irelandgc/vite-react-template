@@ -1,3 +1,9 @@
+> **[COMPLETE — 2026-09-05]** DOC-AUDIT-2026-09 §3.3 file moves, TA-REG-02 DONE-UNVERIFIED
+> annotations, `SECURITY_DECISIONS.md` SR-02 wording correction.
+> Verification: verified — executed and committed (`6b18dc7`); file counts and move list
+> checked against the report with no discrepancies.
+> Filed by: Claude Code
+
 # Claude Code Instruction — DOC-AUDIT-2026-09 Part 4 (Execute)
 
 **Authorisation:** Gary has reviewed `documents/DOC-AUDIT-2026-09.md` and approves the Part 4 moves, with the four decisions below applied. This is the file-moving step only — `git mv`, a small number of in-file annotations, and one wording correction. No code, prompt, data, or deployment changes.

@@ -4,7 +4,7 @@
 
 This instruction covers layout changes, styling harmonisation with the Triage Advisor, and polish for both tools. Implement in viewer/index.html, triage/index.html, and the shared crr-design-system.css. Also update the demo harness (crr-demo-harness.html is opened from local file, but the buildToolUrl/launchTool functions need updating — see item 18).
 
-Read instructions/crr-business-rules.md for context on data categories and display rules.
+Read documents/reference/crr-business-rules.md for context on data categories and display rules.
 
 ---
 

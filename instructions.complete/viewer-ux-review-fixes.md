@@ -1,3 +1,10 @@
+> **[COMPLETE — 2026-06-21, filed 2026-09-05]** Fixes 11 (urgency-view header de-duplication)
+> and 13 (Before-Referring items not pre-ticked). Fixes 12/14 were already confirmed done in
+> the 2026-05-18 release.
+> Verification: verified — `documents/VERIFICATION-2026-06-21.md` Part 3 cites code line
+> numbers; independently re-confirmed by the July audit's carry-forward table.
+> Filed by: Claude Code
+
 # Viewer UX Review Fixes
 
 ## Context

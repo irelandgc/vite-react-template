@@ -1,3 +1,9 @@
+> **[SUPERSEDED — 2026-09-05]** All 6 original work items completed; file predates the current
+> architecture and references `popup.html` as live, which it is not. Replaced by the current
+> codebase and by `documents/CRR_Architecture_Briefing.md`.
+> Verification: verified — per the June 2026 audit's classification, unchanged since.
+> Filed by: Claude Code
+
 # CRR Tools — Claude Code Work Items
 
 ## Context

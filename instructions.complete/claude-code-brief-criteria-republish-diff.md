@@ -1,3 +1,8 @@
+> **[COMPLETE — 2026-09-05]** Investigated the 23 July v4.1.0→v4.1.2 criteria republish.
+> Verification: verified — findings written to `documents/CRITERIA-REPUBLISH-2026-07-23-INVESTIGATION.md`,
+> based on live D1 queries, live API checks, and git history inspection performed in this pass.
+> Filed by: Claude Code
+
 # Claude Code Brief — Investigate the 23 July Criteria Republish (v4.1.0 → v4.1.2)
 
 **Status:** READ-ONLY. Investigation and report only. Do not publish, republish, edit criteria data, roll back, or modify any tool. This runs in parallel with the DOC-AUDIT-2026-09 Part 4 tidy-up and does not breach the no-system-changes gate, because it changes nothing.
