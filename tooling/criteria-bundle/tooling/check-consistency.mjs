@@ -273,28 +273,38 @@ if (fs.existsSync(nationalQPath)) {
   console.log("National Questionnaire: not found - skipped");
 }
 
-// 13. (slice 4a) The extraction prompt has two forms: prompt-v3.0.0.json is canonical and the
-// service loads it; prompt-v3.0.0.md is what a reviewer reads. They must be the same words.
-// Also: no criteria content may re-enter the prompt (invariant 3) - a prompt that starts
-// naming thresholds or lab lists has begun re-acquiring the criteria the migration removed.
-const promptJsonPath = path.join(root, "extraction", "prompt-v3.0.0.json");
-if (fs.existsSync(promptJsonPath)) {
-  const prompt = JSON.parse(fs.readFileSync(promptJsonPath, "utf8"));
+// 13. (slice 4a/4b) The extraction prompt has two forms per version: prompt-v3.x.y.json is
+// canonical and the service loads it; prompt-v3.x.y.md is what a reviewer reads. They must be
+// the same words. Also: no criteria content may re-enter the prompt or its output-tool schema
+// (invariant 3, AD-16) - a prompt that starts naming thresholds or lab lists has begun
+// re-acquiring the criteria the migration removed. Every prompt-v3.*.json is checked, so a new
+// version cannot skip the gate.
+const CRITERIA_CONTENT_PATTERNS = [
+  ["a numeric threshold", /\b(more than|greater than|less than|at least|≥|>=)\s*\d/i],
+  ["a priority code", /\bP[1-4]\b|\bAcute 48\s?hr\b/],
+  ["a named analyte list", /\b(ALP|GGT|bilirubin|ferritin|Ca-?125|D-dimer|eGFR|creatinine)\b/i],
+  ["a redirect destination", /\b(ED|111|ACC|emergency department)\b/],
+];
+const promptFiles = fs.readdirSync(path.join(root, "extraction")).filter(f => /^prompt-v3\.\d+\.\d+\.json$/.test(f)).sort();
+for (const jsonFile of promptFiles) {
+  const prompt = JSON.parse(fs.readFileSync(path.join(root, "extraction", jsonFile), "utf8"));
+  const stem = jsonFile.replace(/\.json$/, "");
   const body = prompt.parts.map(p => p.text).join("\n\n");
-  const md = fs.readFileSync(path.join(root, "extraction", "prompt-v3.0.0.md"), "utf8");
+  const mdPath = path.join(root, "extraction", stem + ".md");
+  if (!fs.existsSync(mdPath)) { problems.push(`${stem}.md does not exist (every prompt version needs its reviewer-facing rendering)`); continue; }
+  const md = fs.readFileSync(mdPath, "utf8");
   const rendered = md.match(/<!-- PROMPT-BODY-BEGIN -->\n```text\n([\s\S]*?)\n```\n<!-- PROMPT-BODY-END -->/);
-  if (!rendered) problems.push(`prompt-v3.0.0.md: no PROMPT-BODY block found`);
-  else if (rendered[1] !== body) problems.push(`prompt-v3.0.0.md has drifted from prompt-v3.0.0.json (the JSON is canonical - re-render the md)`);
+  if (!rendered) problems.push(`${stem}.md: no PROMPT-BODY block found`);
+  else if (rendered[1] !== body) problems.push(`${stem}.md has drifted from ${jsonFile} (the JSON is canonical - re-render the md)`);
   const equivPath = path.join(root, "extraction", prompt.equivalenceListVersion + ".md");
-  if (!fs.existsSync(equivPath)) problems.push(`prompt names equivalenceListVersion "${prompt.equivalenceListVersion}" but ${path.basename(equivPath)} does not exist`);
-  // Criteria content must not reappear in the prompt. These are the shapes it would take.
-  for (const [label, re] of [
-    ["a numeric threshold", /\b(more than|greater than|less than|at least|≥|>=)\s*\d/i],
-    ["a priority code", /\bP[1-4]\b|\bAcute 48\s?hr\b/],
-    ["a named analyte list", /\b(ALP|GGT|bilirubin|ferritin|Ca-?125|D-dimer|eGFR|creatinine)\b/i],
-    ["a redirect destination", /\b(ED|111|ACC|emergency department)\b/]
-  ]) if (re.test(body)) problems.push(`prompt-v3.0.0 body contains what looks like ${label} - criteria content belongs in a bundle, not the prompt (invariant 3)`);
-  console.log(`Extraction prompt v${prompt.version}: ${body.length} chars in ${prompt.parts.length} parts; md matches json; equivalence list ${prompt.equivalenceListVersion}`);
+  if (!fs.existsSync(equivPath)) problems.push(`${stem} names equivalenceListVersion "${prompt.equivalenceListVersion}" but ${path.basename(equivPath)} does not exist`);
+  // AD-16: scan the assembled body AND the output-tool schema (shape-only; must carry no criteria content).
+  const toolText = prompt.outputTool ? JSON.stringify(prompt.outputTool) : "";
+  for (const [label, re] of CRITERIA_CONTENT_PATTERNS) {
+    if (re.test(body)) problems.push(`${stem} body contains what looks like ${label} - criteria content belongs in a bundle, not the prompt (invariant 3)`);
+    if (toolText && re.test(toolText)) problems.push(`${stem} outputTool schema contains what looks like ${label} - the tool schema is shape-only (AD-16)`);
+  }
+  console.log(`Extraction prompt v${prompt.version}: ${body.length} chars in ${prompt.parts.length} parts; md matches json${prompt.outputTool ? `; outputTool ${prompt.outputTool.name}` : ""}; equivalence list ${prompt.equivalenceListVersion}`);
 }
 
 const unusedLinkIds = [...linkIds].filter(id => id.includes(".") && !usedInCql.has(id));

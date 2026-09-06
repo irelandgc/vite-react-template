@@ -912,9 +912,11 @@ app.post('/api/admin/system-prompt/versions', requireAccess, async (c) => {
 });
 
 // POST /api/admin/extraction-prompt/register — ARCH-MIG-01 slice 4b.
-// Idempotently stores the assembled extraction prompt (v3.0.0) in the
-// system_prompts table for the audit trail (KI-26). It is stored `is_active = 0`
-// and NEVER activated here — the live Triage page keeps v2.3.0 until slice 10
+// Idempotently stores the assembled extraction prompt (currently v3.0.1) in the
+// system_prompts table for the audit trail (KI-26) — version comes from
+// prompt.ts (PROMPT_VERSION), so each stored version is a separate row. It is
+// stored `is_active = 0` and NEVER activated here — the live Triage page keeps
+// v2.3.0 until slice 10
 // (Do-not list). The extraction service loads the prompt from the versioned json
 // artefact, not from this row; this row is history + `performed_by` attribution.
 app.post('/api/admin/extraction-prompt/register', requireAccess, async (c) => {
@@ -1737,8 +1739,10 @@ app.post('/api/assess/evaluate', async (c) => {
 // selection. The model EXTRACTS; it never decides (invariant 1). Flow:
 //   PII gate (server-side, before any model call — pii.ts)
 //     -> prompt assembly (prompt.ts; parts + Questionnaires items-only + exam list)
-//     -> provider (provider.ts; Anthropic live, Azure stubbed)
-//     -> parse
+//     -> provider (provider.ts; forced call to the v3.0.1 output tool)
+//     -> read the tool call: flat answers [{linkId,value,status,quote}] + examSites[]
+//     -> build the FHIR QuestionnaireResponse + answer-evidence extensions here
+//        (buildQuestionnaireResponse — the model no longer hand-writes FHIR, SR-09)
 //     -> validation gate (gate.ts; contract §gate + AD-17; rejects the WHOLE response)
 //     -> inject age/sex from context as documented answers (structured input)
 // No audit row here — the pipeline route (slice 5) writes it after merge.
@@ -1819,6 +1823,49 @@ function injectContextAnswers(qr: any, context: any): any {
   return out;
 }
 
+const ANSWER_EVIDENCE_EXT_URL = 'http://crr.health.nz/fhir/StructureDefinition/answer-evidence';
+
+// v3.0.1: the model returns a flat answer list `{ linkId, value, status, quote }`;
+// the service builds the FHIR QuestionnaireResponse and attaches the
+// answer-evidence extension to EVERY answer — so gate rule 3 (evidence present)
+// is guaranteed by construction and can only fail on a service bug, never on
+// model output (SR-09). Grouping is by linkId prefix, matching
+// injectContextAnswers and how the engine reads the QR. The value key comes from
+// the Questionnaire item type; an unknown linkId falls through as valueString and
+// the gate then rejects it (contract rule 2), which is the intended behaviour.
+export function buildQuestionnaireResponse(
+  answers: any[],
+  itemIndex: Map<string, string>,
+  typeToValueKey: Record<string, string>,
+): any {
+  const groups = new Map<string, any[]>();
+  for (const a of Array.isArray(answers) ? answers : []) {
+    if (!a || typeof a.linkId !== 'string' || !a.linkId) continue;
+    const itemType = itemIndex.get(a.linkId);
+    const valueKey = (itemType && typeToValueKey[itemType]) || 'valueString';
+    const answerObj: any = valueKey === 'valueCoding'
+      ? { valueCoding: { system: 'http://hl7.org/fhir/administrative-gender', code: String(a.value) } }
+      : { [valueKey]: a.value };
+    answerObj.extension = [{
+      url: ANSWER_EVIDENCE_EXT_URL,
+      extension: [
+        { url: 'status', valueCode: a.status },
+        { url: 'quote', valueString: a.quote },
+      ],
+    }];
+    const groupId = a.linkId.split('.')[0];
+    if (!groups.has(groupId)) groups.set(groupId, []);
+    groups.get(groupId)!.push({ linkId: a.linkId, answer: [answerObj] });
+  }
+  return {
+    resourceType: 'QuestionnaireResponse',
+    questionnaire: 'http://crr.health.nz/fhir/Questionnaire/CRR-National',
+    status: 'completed',
+    subject: { reference: 'Patient/extracted' },
+    item: [...groups.entries()].map(([linkId, item]) => ({ linkId, item })),
+  };
+}
+
 app.post('/api/assess/extract', async (c) => {
   const guard = guardInternalAssess(c);
   if (guard) return guard;
@@ -1870,7 +1917,8 @@ app.post('/api/assess/extract', async (c) => {
   const questionnaires = [promptMod.stripAttestationItems(nationalQ, attestation)];
   if (requestedQ) questionnaires.push(promptMod.stripAttestationItems(requestedQ, attestation));
 
-  // 4. Assemble and call the provider. Model params are owned in provider.ts.
+  // 4. Assemble and call the provider. The model calls the output tool (v3.0.1);
+  //    model params are owned in provider.ts.
   const system = promptMod.assembleSystemPrompt();
   const userContent = promptMod.assembleUserContent({ redactedNote: redacted, questionnaires, examSiteList, context });
   const maxTokens = Number(c.env.EXTRACTION_MAX_TOKENS ?? 8000) || 8000;
@@ -1878,16 +1926,18 @@ app.post('/api/assess/extract', async (c) => {
   let modelResult: any;
   try {
     const provider = providerMod.makeProvider(c.env);
-    modelResult = await provider.extract({ system, messages: [{ role: 'user', content: userContent }], maxTokens });
+    modelResult = await provider.extract({ system, messages: [{ role: 'user', content: userContent }], maxTokens, tool: promptMod.OUTPUT_TOOL });
   } catch (e: any) {
     if (e?.code === 'provider-not-configured') return c.json({ error: 'provider-not-configured', message: e.message }, 503);
     return c.json({ error: 'provider-call-failed', message: e.message }, 502);
   }
 
-  // 5. Parse.
-  let parsed: any = null;
-  try { parsed = JSON.parse(extractJsonObject(modelResult.text)); } catch (_) { parsed = null; }
-
+  // 5. Read the tool call: { answers: [{linkId,value,status,quote}], examSites: [{id,requested,quote}] }.
+  //    Fall back to parsing free text only if the provider returned no tool block.
+  let toolInput: any = modelResult.toolInput;
+  if (!toolInput) {
+    try { toolInput = JSON.parse(extractJsonObject(modelResult.text)); } catch (_) { toolInput = null; }
+  }
   const truncated = providerMod.isTruncated(modelResult.stopReason);
   const meta = {
     promptVersion: promptMod.PROMPT_VERSION,
@@ -1899,13 +1949,21 @@ app.post('/api/assess/extract', async (c) => {
     redaction: { patternsHit },
   };
 
-  // 6. Validation gate — rejects the WHOLE response on any failure.
+  // 6. Build the FHIR QuestionnaireResponse from the flat answers, then run the
+  //    gate on it. The evidence extension is attached to every answer here, so
+  //    gate rule 3 is satisfied by construction (SR-09); the gate still checks
+  //    quote-in-note, linkId, type, forbidden fields, retrieved and attestation.
+  const itemIndex = gateMod.buildItemIndex(questionnaires);
   let gateResult: any;
-  if (!parsed || typeof parsed !== 'object') {
-    gateResult = { passed: false, failures: ['model response was not a JSON object' + (truncated ? ' (response was truncated)' : '')] };
+  let builtQr: any = null;
+  let modelExamSites: any[] = [];
+  if (!toolInput || typeof toolInput !== 'object') {
+    gateResult = { passed: false, failures: [`model did not return a ${promptMod.OUTPUT_TOOL.name} tool call${truncated ? ' (response was truncated)' : ''}`] };
   } else {
+    builtQr = buildQuestionnaireResponse(toolInput.answers, itemIndex, gateMod.TYPE_TO_VALUE_KEY);
+    modelExamSites = Array.isArray(toolInput.examSites) ? toolInput.examSites : [];
     gateResult = gateMod.runGate({
-      response: parsed,
+      response: { examSites: modelExamSites, questionnaireResponse: builtQr },
       redactedNote: redacted,
       questionnaires,
       publishedExamSiteIds: examSiteList.map((e) => e.id),
@@ -1919,12 +1977,11 @@ app.post('/api/assess/extract', async (c) => {
   }
 
   // 7. Inject age/sex from context (structured input, not extraction).
-  const questionnaireResponse = injectContextAnswers(parsed.questionnaireResponse, context);
-  const examSites = Array.isArray(parsed.examSites) ? parsed.examSites : [];
-  const requestedEntry = examSites.find((e: any) => e?.requested === true);
+  const questionnaireResponse = injectContextAnswers(builtQr, context);
+  const requestedEntry = modelExamSites.find((e: any) => e?.requested === true);
   const examSiteSelection = {
     requestedExamSite: requestedEntry?.id ?? requestedExamSite ?? null,
-    candidateExamSites: examSites.filter((e: any) => e?.requested === false).map((e: any) => e.id),
+    candidateExamSites: modelExamSites.filter((e: any) => e?.requested === false).map((e: any) => e.id),
   };
 
   return c.json({ questionnaireResponse, examSiteSelection, ...meta, validation: gateResult });

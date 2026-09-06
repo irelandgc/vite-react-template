@@ -7,6 +7,11 @@
 // — the residency path is designed in, not built (NFR-009). A provider switch is
 // a config change plus a benchmark run (slice 9), not a code change.
 //
+// Output shape (prompt v3.0.1): the caller passes `tool` (the `outputTool` from
+// the prompt); the provider forces the model to call it and returns the tool
+// call's `input` as `toolInput`. The model emits no free text. Both Anthropic
+// tool use and Azure OpenAI function calling map onto this.
+//
 // Model parameters are owned HERE:
 //   - max_tokens: passed in by the caller (PROMPT_DECISION_RECORD proposes 8000).
 //     A truncated response (stopReason "max_tokens" / "length") is a GATE FAILURE,
@@ -26,17 +31,28 @@ export interface ExtractionMessage {
   content: string | ContentBlock[];
 }
 
+// The output tool (prompt-v3.0.1 `outputTool`). When present, the provider must
+// force the model to call it and return its `input` as `toolInput` — the model
+// no longer emits free text (SR-09).
+export interface ExtractionTool {
+  name: string;
+  description: string;
+  input_schema: any;
+}
+
 export interface ExtractionRequest {
   system: string;
   messages: ExtractionMessage[];
   maxTokens: number;
+  tool?: ExtractionTool;
 }
 
 export interface ExtractionResult {
-  text: string;
+  text: string; // stringified toolInput when a tool was used; raw assistant text otherwise
+  toolInput: any | null; // the tool call's `input` object, or null if no tool was used
   modelId: string;
   provider: string;
-  stopReason: string | null; // "end_turn" ok; "max_tokens"/"length" -> gate failure
+  stopReason: string | null; // "end_turn" / "tool_use" ok; "max_tokens"/"length" -> gate failure
   usage: {
     inputTokens: number;
     outputTokens: number;
@@ -74,6 +90,18 @@ export class AnthropicProvider implements ExtractionProvider {
   constructor(private readonly apiKey: string, private readonly model: string) {}
 
   async extract(req: ExtractionRequest): Promise<ExtractionResult> {
+    const body: any = {
+      model: this.model,
+      max_tokens: req.maxTokens,
+      // temperature deliberately omitted — see the header comment.
+      system: req.system,
+      messages: req.messages,
+    };
+    if (req.tool) {
+      body.tools = [{ name: req.tool.name, description: req.tool.description, input_schema: req.tool.input_schema }];
+      body.tool_choice = { type: "tool", name: req.tool.name };
+    }
+
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -82,13 +110,7 @@ export class AnthropicProvider implements ExtractionProvider {
         "anthropic-version": "2023-06-01",
         "anthropic-beta": "prompt-caching-2024-07-31",
       },
-      body: JSON.stringify({
-        model: this.model,
-        max_tokens: req.maxTokens,
-        // temperature deliberately omitted — see the header comment.
-        system: req.system,
-        messages: req.messages,
-      }),
+      body: JSON.stringify(body),
     });
 
     const json: any = await res.json().catch(() => ({}));
@@ -97,11 +119,15 @@ export class AnthropicProvider implements ExtractionProvider {
       throw new ProviderCallError(`Anthropic call failed: ${msg}`, res.status);
     }
 
-    const text = Array.isArray(json.content)
-      ? json.content.filter((b: any) => b?.type === "text").map((b: any) => b.text).join("")
-      : "";
+    const blocks: any[] = Array.isArray(json.content) ? json.content : [];
+    const toolBlock = req.tool ? blocks.find((b) => b?.type === "tool_use" && b?.name === req.tool!.name) : undefined;
+    const toolInput = toolBlock ? toolBlock.input ?? null : null;
+    const text = toolBlock
+      ? JSON.stringify(toolInput)
+      : blocks.filter((b) => b?.type === "text").map((b) => b.text).join("");
     return {
       text,
+      toolInput,
       modelId: json.model ?? this.model,
       provider: this.name,
       stopReason: json.stop_reason ?? null,
