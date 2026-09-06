@@ -75,7 +75,7 @@ describe("GET /api/assess/status", () => {
     expect(body.enabled).toBe(true);
     expect(body.compareExtraction).toBe(true);
     expect(body.versions.engine).toBe("1.0.0");
-    expect(body.versions.prompt).toBe("3.0.1");
+    expect(body.versions.prompt).toBe("3.0.2");
   });
   it("403 without the internal key", async () => {
     expect((await SELF.fetch("http://worker/api/assess/status")).status).toBe(403);

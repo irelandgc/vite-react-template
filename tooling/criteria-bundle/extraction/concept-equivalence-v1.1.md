@@ -1,10 +1,11 @@
 # Concept equivalence list v1.1
 
 **Status: NEEDS CLINICAL REVIEW.** No entry below has been confirmed by a clinician.
-**Owner:** clinical. **Versioned with:** extraction prompt v3.0.1 and v3.0.2 (`prompt-v3.0.1.json`
-/ `prompt-v3.0.2.json` name `equivalenceListVersion: "concept-equivalence-v1.1"`). Prompt v3.0.0
-stays on `concept-equivalence-v1`.
-**Supersedes:** `concept-equivalence-v1.md` for those prompt versions. v1's entries E-01, E-02,
+**Owner:** clinical. **Versioned with:** extraction prompt v3.0.1 (`prompt-v3.0.1.json` names
+`equivalenceListVersion: "concept-equivalence-v1.1"`). Prompt v3.0.0 stays on
+`concept-equivalence-v1`; prompt v3.0.2 moves to `concept-equivalence-v1.2` (carries E-01–E-05
+unchanged, adds E-07/E-08).
+**Supersedes:** `concept-equivalence-v1.md` for prompt v3.0.1. v1's entries E-01, E-02,
 E-03 are carried forward **unchanged** — read v1 for their full rationale and reviewer notes.
 This file records only what v1.1 adds.
 
