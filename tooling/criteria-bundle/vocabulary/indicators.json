@@ -1,9 +1,9 @@
 {
   "resourceType": "CRRIndicatorVocabulary",
   "id": "crr-national-indicators",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "status": "draft",
-  "date": "2026-09-05",
+  "date": "2026-09-07",
   "publisher": "Health New Zealand | Te Whatu Ora - Community Referred Radiology Programme",
   "title": "CRR national indicator vocabulary",
   "description": "Shared clinical indicators referenced by more than one CRR exam/site bundle, plus the national red-flag and ACC indicators consumed by CRR_RedFlags. Per-site Questionnaires reuse these linkIds rather than minting near-duplicates (KI-01). NOT CLINICALLY REVIEWED - the groupings, the `sites` attributions and the red-flag list are a first-pass transcription from the published PDF and require clinician review before any site transcription references them.",
@@ -136,6 +136,26 @@
       "code": "PLACEHOLDER",
       "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10" }],
       "notes": "Value sibling justified: CT CAP p10 states 'over 3-6 months'."
+    },
+    {
+      "linkId": "weightloss.weightBefore",
+      "text": "Earlier recorded weight in kilograms (the weight being compared from)",
+      "type": "decimal",
+      "group": "weightloss",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10" }],
+      "notes": "Owner-directed addition, v1.2 (arch-mig browser findings). Paired with weightloss.weightNow: where the referral gives two recorded weights and states no percentage, the CT CAP library computes weightloss.percent from them (CQL 'Weight Loss Percent By Recorded Weights'; revisits REVIEW Q3). Kilograms; no other unit assertion."
+    },
+    {
+      "linkId": "weightloss.weightNow",
+      "text": "Current recorded weight in kilograms (the weight being compared to)",
+      "type": "decimal",
+      "group": "weightloss",
+      "status": "active",
+      "code": "PLACEHOLDER",
+      "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10" }],
+      "notes": "Owner-directed addition, v1.2 (arch-mig browser findings). See weightloss.weightBefore. A stated weightloss.percent always takes precedence over the computed one; a single recorded weight computes nothing."
     },
 
     {

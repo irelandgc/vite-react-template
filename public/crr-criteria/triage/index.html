@@ -3539,7 +3539,7 @@ function renderAttestations() {
       const opt = (v, lbl) => `<button data-lid="${esc(q.linkId)}" data-v="${v}" class="${cur === v ? 'active' : ''}">${lbl}</button>`;
       return `<div class="attn-q">
         <div class="attn-text">${esc(w)}</div>
-        ${q.sourcePages && q.sourcePages.length ? `<div class="attn-src">Source: p${q.sourcePages.map(esc).join(', p')}</div>` : ''}
+        ${q.sourcePages && q.sourcePages.length ? `<div class="attn-src">Source: ${q.sourcePages.map(esc).join(', ')}</div>` : ''}
         <div class="attn-opts">${opt('yes', 'Yes')}${opt('no', 'No')}${opt('not-assessed', 'Not assessed')}</div>
       </div>`;
     }).join('');
@@ -3561,6 +3561,40 @@ function collectContext() {
   const sex = document.getElementById('pipeSex').value;
   if (sex) ctx.sex = sex;
   return ctx;
+}
+
+// After an assessment, pre-fill the Age / Sex fields from the merged
+// QuestionnaireResponse (patient.age / patient.sex the model extracted from the
+// note) so the referrer can confirm or correct them. A confirmed / corrected
+// value is sent as context on the next run and overrides the extracted one, with
+// the supersession recorded as a discrepancy (merge.ts). Never overwrites a
+// value the referrer already typed.
+function prefillDemographicsFromMerge(merged) {
+  if (!merged || !Array.isArray(merged.item)) return;
+  const answers = {};
+  const walk = (items) => {
+    for (const i of items || []) {
+      if (Array.isArray(i.item)) walk(i.item);
+      if (!i.linkId || !Array.isArray(i.answer) || !i.answer[0]) continue;
+      const a = i.answer[0];
+      const vk = Object.keys(a).find((k) => k.startsWith('value'));
+      let v = vk ? a[vk] : undefined;
+      if (v && typeof v === 'object' && 'code' in v) v = v.code;
+      answers[i.linkId] = v;
+    }
+  };
+  walk(merged.item);
+  const ageEl = document.getElementById('pipeAge');
+  const sexEl = document.getElementById('pipeSex');
+  let filled = false;
+  if (ageEl && !ageEl.value && answers['patient.age'] != null && answers['patient.age'] !== '') {
+    ageEl.value = String(answers['patient.age']); filled = true;
+  }
+  if (sexEl && !sexEl.value && answers['patient.sex']) {
+    const s = String(answers['patient.sex']);
+    if ([...sexEl.options].some((o) => o.value === s)) { sexEl.value = s; filled = true; }
+  }
+  if (filled) flash('Age / Sex pre-filled from the referral note — confirm or correct, then re-run to lock them in.');
 }
 
 function collectAttestations(performedBy) {
@@ -3626,6 +3660,7 @@ async function submit(body) {
   }
   renderAdvisory();
   renderCriteriaRef();
+  prefillDemographicsFromMerge(json.mergedQuestionnaireResponse);
   logUsage(json, body);
 }
 

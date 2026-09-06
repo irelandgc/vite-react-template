@@ -2,7 +2,7 @@
 //  ARCH-MIG-01 slice 4b — extraction prompt assembly
 // ══════════════════════════════════════════════════════════════
 //
-// `prompt-v3.0.1.json` is canonical (the .md is a rendering of it; `npm run
+// `prompt-v3.0.2.json` is canonical (the .md is a rendering of it; `npm run
 // check` fails if they drift). The service joins `parts[].text` with a blank
 // line and sends the result as the SYSTEM prompt, and passes `outputTool` as the
 // sole tool with a forced `tool_choice`. Everything else is supplied per request
@@ -15,15 +15,15 @@
 //   - a context block: age / sex / labs the calling application already holds
 //
 // The model returns a `submit_extraction` tool call: a flat list of answers
-// `{ linkId, value, status, quote }` plus `examSites[]` (v3.0.1). The route builds
+// `{ linkId, value, status, quote }` plus `examSites[]` (v3.0.2). The route builds
 // the FHIR QuestionnaireResponse and the answer-evidence extensions from that
-// list — the model no longer hand-writes FHIR (SR-09, prompt-v3.0.1.md).
+// list — the model no longer hand-writes FHIR (SR-09, prompt-v3.0.2.md).
 //
 // Attestation-category items (AD-17) are stripped from the Questionnaires here
 // so the model is never shown them and cannot answer them; the referrer answers
 // them directly in the Triage Advisor (slice 5). The gate rejects one anyway.
 
-import promptV3 from "../../../tooling/criteria-bundle/extraction/prompt-v3.0.1.json";
+import promptV3 from "../../../tooling/criteria-bundle/extraction/prompt-v3.0.2.json";
 import indicatorVocab from "../../../tooling/criteria-bundle/vocabulary/indicators.json";
 import type { ContentBlock } from "./provider";
 
@@ -31,20 +31,20 @@ export const PROMPT_VERSION: string = (promptV3 as any).version;
 export const EQUIVALENCE_LIST_VERSION: string = (promptV3 as any).equivalenceListVersion;
 export const CONTRACT_VERSION: string = (promptV3 as any).contractVersion;
 
-// The output tool (v3.0.1). Passed to the provider as the sole tool with a forced
+// The output tool (v3.0.2). Passed to the provider as the sole tool with a forced
 // tool_choice; its input_schema pins the shape (linkId/value/status/quote all
 // required, status enum, additionalProperties:false).
 export const OUTPUT_TOOL: { name: string; description: string; input_schema: any } = (promptV3 as any).outputTool;
 
 // Startup health check (KI-28): the prompt must load and parse, or the module —
 // and therefore every route that imports it — fails visibly. No fallback prompt
-// (`FALLBACK_INSTRUCTION_TEXT` is retired; prompt-v3.0.1.md "What is deliberately
+// (`FALLBACK_INSTRUCTION_TEXT` is retired; prompt-v3.0.2.md "What is deliberately
 // not in it").
 if (!PROMPT_VERSION || !EQUIVALENCE_LIST_VERSION || !Array.isArray((promptV3 as any).parts) || !(promptV3 as any).parts.length) {
-  throw new Error("extraction prompt failed to load — prompt-v3.0.1.json is missing version, equivalenceListVersion or parts[]");
+  throw new Error("extraction prompt failed to load — prompt-v3.0.2.json is missing version, equivalenceListVersion or parts[]");
 }
 if (!OUTPUT_TOOL || !OUTPUT_TOOL.name || !OUTPUT_TOOL.input_schema) {
-  throw new Error("extraction prompt failed to load — prompt-v3.0.1.json is missing outputTool.name / outputTool.input_schema");
+  throw new Error("extraction prompt failed to load — prompt-v3.0.2.json is missing outputTool.name / outputTool.input_schema");
 }
 
 // AD-17 — the indicators the extraction model must never answer. Read from the
@@ -90,18 +90,27 @@ export function stripAttestationItems(questionnaire: any, attestationLinkIds: Se
 
 function contextBlock(ctx: AssessmentContext): string {
   const lines: string[] = [];
-  if (ctx.age != null) lines.push(`age (years): ${ctx.age}`);
-  if (ctx.ageMonths != null) lines.push(`age (months): ${ctx.ageMonths}`);
-  if (ctx.sex) lines.push(`sex: ${ctx.sex}`);
+  // Only the demographic items the caller actually supplies are off-limits to the
+  // model (prompt v3.0.2, EVIDENCE rule 8). A supplied lab does NOT suppress
+  // age/sex — the model still extracts those so the calling application can
+  // pre-fill and the referrer can confirm them (merge.ts then lets a confirmed
+  // context value override, recording a discrepancy).
+  const suppress: string[] = [];
+  if (ctx.age != null) { lines.push(`age (years): ${ctx.age}`); suppress.push("patient.age"); }
+  if (ctx.ageMonths != null) { lines.push(`age (months): ${ctx.ageMonths}`); suppress.push("patient.ageMonths"); }
+  if (ctx.sex) { lines.push(`sex: ${ctx.sex}`); suppress.push("patient.sex"); }
   if (ctx.labs?.length) {
     for (const l of ctx.labs) {
       const v = [l.value, l.unit].filter((x) => x != null && x !== "").join(" ");
       lines.push(`lab ${l.name}: ${v || "(no value)"}${l.flag ? ` [${l.flag}]` : ""}`);
     }
   }
-  if (!lines.length) return "CONTEXT: none supplied by the calling application.";
+  if (!lines.length) return "CONTEXT: none supplied by the calling application. Answer patient.age / patient.sex from the note where it states them (documented, with a quote).";
+  const suppressLine = suppress.length
+    ? `Do NOT answer ${suppress.join(" / ")} from this — the calling application holds ${suppress.length > 1 ? "those values" : "that value"}. `
+    : "";
   return (
-    "CONTEXT — supplied by the calling application, already recorded. Do NOT answer patient.age / patient.sex / patient.ageMonths from this; use the labs only for reasoning.\n" +
+    `CONTEXT — supplied by the calling application, already recorded. ${suppressLine}Use the labs only for reasoning. Answer any demographic item NOT listed here from the note (documented, with a quote).\n` +
     lines.join("\n")
   );
 }

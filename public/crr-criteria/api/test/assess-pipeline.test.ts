@@ -104,8 +104,8 @@ describe("POST /api/assess — happy path", () => {
     expect(body.validation).toEqual({ passed: true, failures: [] });
     expect(body.versions).toMatchObject({
       engine: "1.0.0",
-      prompt: "3.0.1",
-      equivalenceList: "concept-equivalence-v1.1",
+      prompt: "3.0.2",
+      equivalenceList: "concept-equivalence-v1.2",
       model: "claude-sonnet-4-6",
       provider: "anthropic",
       bundles: { "national-redflags": "1.0.0", ct_cap: "1.0.0" },
@@ -125,8 +125,8 @@ describe("POST /api/assess — happy path", () => {
     const row = await rowById(body.assessmentId);
     expect(JSON.parse(row.bundle_versions)).toMatchObject({ ct_cap: "1.0.0", "national-redflags": "1.0.0" });
     expect(row.engine_version).toBe("1.0.0");
-    expect(row.prompt_version).toBe("3.0.1");
-    expect(row.equivalence_list_version).toBe("concept-equivalence-v1.1");
+    expect(row.prompt_version).toBe("3.0.2");
+    expect(row.equivalence_list_version).toBe("concept-equivalence-v1.2");
     expect(row.model_id).toBe("claude-sonnet-4-6");
     expect(row.model_provider).toBe("anthropic");
     expect(row.documentation_standard).toBe("strict");

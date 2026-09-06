@@ -2,11 +2,11 @@
   "resourceType": "Questionnaire",
   "id": "CRR-CT-CAP-Adult",
   "url": "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "name": "CRR_CTChestAbdomenPelvis_Adult_Indicators",
   "title": "CT Chest, Abdomen and Pelvis - Adult: referral indicators",
   "status": "draft",
-  "date": "2026-09-05",
+  "date": "2026-09-07",
   "publisher": "Health New Zealand | Te Whatu Ora - Community Referred Radiology Programme",
   "description": "Atomic clinical indicators for the CT Chest, Abdomen and Pelvis (Adult) national referral criteria (National Community Referral Criteria for Imaging Part I, v2.0, published 09/04/2026, pp.10-11). This is the single extraction contract: the LLM extraction step, structured referral forms and the Criteria Viewer tick-list all produce a QuestionnaireResponse against this Questionnaire, which the CQL library CRR_CTChestAbdomenPelvis_Adult evaluates. Each answer may carry the answer-evidence extension (status documented|inferred, quote). Items that can be populated from coded patient-record data carry an SDC initialExpression naming a define in the population library CRR_CTCAP_Population (dormant until a retrieval tier is enabled); items without one are clinical judgements that always come from the referrer or the note.",
   "extension": [
@@ -154,6 +154,16 @@
               }
             }
           ]
+        },
+        {
+          "linkId": "weightloss.weightBefore",
+          "text": "Earlier recorded weight in kilograms (the weight being compared from)",
+          "type": "decimal"
+        },
+        {
+          "linkId": "weightloss.weightNow",
+          "text": "Current recorded weight in kilograms (the weight being compared to)",
+          "type": "decimal"
         }
       ]
     },

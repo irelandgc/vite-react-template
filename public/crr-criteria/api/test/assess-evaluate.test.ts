@@ -11,7 +11,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { env, SELF } from "cloudflare:test";
 import { purgeExpiredNotes } from "../worker";
 // @ts-expect-error -- ?raw import, no type declaration
-import ctCapBundleRaw from "../../../../tooling/criteria-bundle/registry/ct-chest-abdomen-pelvis-adult/1.0.0.json?raw";
+import ctCapBundleRaw from "../../../../tooling/criteria-bundle/registry/ct-chest-abdomen-pelvis-adult/2.0.0.json?raw";
 // @ts-expect-error -- ?raw import, no type declaration
 import nationalBundleRaw from "../../../../tooling/criteria-bundle/registry/national-redflags/1.0.0.json?raw";
 import altElm from "./fixtures/CRR_TestAltSite.elm.json";
@@ -278,7 +278,7 @@ describe("POST /api/assess/evaluate — multi-bundle aggregation (gap §4, AD-20
     expect(body.alternatives).toHaveLength(1);
     expect(body.alternatives[0].id).toBe("us_abdomen");
     expect(body.alternatives[0].advisory.determination).toBe("P2_URGENT");
-    expect(body.bundleVersions).toMatchObject({ "national-redflags": "1.0.0", ct_cap: "1.0.0", us_abdomen: "1.0.0" });
+    expect(body.bundleVersions).toMatchObject({ "national-redflags": "1.0.0", ct_cap: "2.0.0", us_abdomen: "1.0.0" });
   });
 
   it("no alternative when the requested exam is itself a priority determination", async () => {
@@ -343,7 +343,7 @@ describe("POST /api/assess/evaluate — stamping, determinism, audit", () => {
     expect(body.engineVersion).toBe("1.0.0");
     expect(body.vocabularyVersion).toBe("1.0.0");
     expect(body.documentationStandard).toBe("strict");
-    expect(body.bundleVersions).toEqual({ "national-redflags": "1.0.0", ct_cap: "1.0.0" });
+    expect(body.bundleVersions).toEqual({ "national-redflags": "1.0.0", ct_cap: "2.0.0" });
   });
 
   it("is deterministic — same input, byte-identical body apart from assessmentId", async () => {
@@ -366,7 +366,7 @@ describe("POST /api/assess/evaluate — stamping, determinism, audit", () => {
     const row: any = await env.DB.prepare("SELECT * FROM assessments WHERE id = ?").bind(body.assessmentId).first();
     expect(row.engine_version).toBe("1.0.0");
     expect(row.documentation_standard).toBe("strict");
-    expect(JSON.parse(row.bundle_versions).ct_cap).toBe("1.0.0");
+    expect(JSON.parse(row.bundle_versions).ct_cap).toBe("2.0.0");
     expect(row.prompt_version).toBeNull();
     const noteRow: any = await env.DB.prepare("SELECT COUNT(*) n FROM assessment_notes WHERE assessment_id = ?").bind(body.assessmentId).first();
     expect(noteRow.n).toBe(0);
