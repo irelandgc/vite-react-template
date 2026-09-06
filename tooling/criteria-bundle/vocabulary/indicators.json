@@ -41,6 +41,12 @@
     "redflag": "One boolean per red flag in the national library CRR_RedFlags, plus the qualifying components of the compound red flags. Every entry traces to a 'Refer for acute assessment without initial imaging' row in the PDF."
   },
 
+  "_attestationCategoryNote": "AD-17 (Proposed - review pack D6). Indicators that rest on the referrer's attestation or clinical judgement rather than on a fact stated in the note. The extraction model must NEVER answer these (the validation gate rejects any answer to one, and the extraction service strips them from the Questionnaires it sends the model); the referrer answers them directly in the Triage Advisor (slice 5). `and others identified at transcription` (AD-17) - later sites add to this list. Set is not clinically confirmed until AD-17 is Accepted.",
+  "attestationIndicators": [
+    "workup.strongSuspicionMalignancy",
+    "excl.urgentAdmissionRequired"
+  ],
+
   "indicators": [
     {
       "linkId": "patient.age",

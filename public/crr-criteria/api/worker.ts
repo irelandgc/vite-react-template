@@ -18,11 +18,15 @@ type Bindings = {
   ANTHROPIC_API_KEY: string;
   ADMIN_KEY: string;  // set via: npx wrangler secret put ADMIN_KEY
   // ARCH-MIG-01 slice 3 (vars in wrangler.json; string flags, '"true"' to enable):
-  ASSESS_PIPELINE_ENABLED?: string;   // gates /api/assess/evaluate itself (default off; slice 10 flips it)
+  ASSESS_PIPELINE_ENABLED?: string;   // gates /api/assess/* itself (default off; slice 10 flips it)
   ASSESS_INTERNAL_KEY?: string;       // secret shared with the main worker; required in x-assess-internal
   ASSESS_ALLOW_SIGNED_OFF?: string;   // E4 tabletop mode — evaluate signed-off (not just published) bundles
   AUDIT_STORE_REDACTED_NOTE?: string; // write the redacted note to assessment_notes (default off)
   AUDIT_NOTE_RETENTION_DAYS?: string; // purge job cutoff for assessment_notes (default 180)
+  // ARCH-MIG-01 slice 4b — extraction service:
+  EXTRACTION_PROVIDER?: string;       // "anthropic" (default) | "azure-openai" (stub, NFR-009)
+  EXTRACTION_MODEL?: string;          // governance-controlled; default claude-sonnet-4-6 (KI-27, SR-09)
+  EXTRACTION_MAX_TOKENS?: string;     // default 8000 (PROMPT_DECISION_RECORD)
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -907,6 +911,37 @@ app.post('/api/admin/system-prompt/versions', requireAccess, async (c) => {
   }
 });
 
+// POST /api/admin/extraction-prompt/register — ARCH-MIG-01 slice 4b.
+// Idempotently stores the assembled extraction prompt (v3.0.0) in the
+// system_prompts table for the audit trail (KI-26). It is stored `is_active = 0`
+// and NEVER activated here — the live Triage page keeps v2.3.0 until slice 10
+// (Do-not list). The extraction service loads the prompt from the versioned json
+// artefact, not from this row; this row is history + `performed_by` attribution.
+app.post('/api/admin/extraction-prompt/register', requireAccess, async (c) => {
+  const db = c.env.DB;
+  const { PROMPT_VERSION, EQUIVALENCE_LIST_VERSION, CONTRACT_VERSION, assembleSystemPrompt } = await import('./prompt');
+  const version = `v${PROMPT_VERSION}`;
+  const now = new Date().toISOString();
+  const actor = actorFrom(c);
+  const instruction_text = assembleSystemPrompt();
+  const changelog = `CRR extraction prompt ${version} — replaces system prompt v2.3.0 in full (extraction only). Contract ${CONTRACT_VERSION}; equivalence list ${EQUIVALENCE_LIST_VERSION}. Stored inactive: the extraction service loads the versioned json artefact; the live Triage page keeps v2.3.0 until slice 10.`;
+  try {
+    const existing: any = await db.prepare('SELECT version, is_active FROM system_prompts WHERE version = ?').bind(version).first();
+    if (existing) {
+      return c.json({ success: true, version, alreadyRegistered: true, isActive: existing.is_active });
+    }
+    const result = await db.prepare(
+      'INSERT INTO system_prompts (version, label, instruction_text, changelog, created_at, created_by, is_active) VALUES (?, ?, ?, ?, ?, ?, 0)'
+    ).bind(version, 'CRR extraction prompt', instruction_text, changelog, now, actor).run();
+    await db.prepare(
+      'INSERT INTO system_prompt_audit (action, prompt_version, performed_at, performed_by, reason) VALUES (?, ?, ?, ?, ?)'
+    ).bind('create', version, now, actor, changelog).run();
+    return c.json({ success: true, version, id: result.meta.last_row_id, isActive: 0 }, 201);
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
 // POST /api/admin/system-prompt/activate/:version — activate a version, update KV, write audit
 app.post('/api/admin/system-prompt/activate/:version', requireAccess, async (c) => {
   const db = c.env.DB;
@@ -1571,32 +1606,43 @@ export async function purgeExpiredNotes(db: D1Database, retentionDays: number): 
   return res.meta?.changes ?? 0;
 }
 
-app.post('/api/assess/evaluate', async (c) => {
-  // This route is internal: it is reached only via the main worker's CRR_API
-  // service binding, which sets `x-assess-internal` from a shared secret. It is
-  // NOT usable from the API worker's public *.workers.dev origin. Two gates:
-  //  1. ASSESS_PIPELINE_ENABLED must be 'true' on this worker (default off — the
-  //     route reports 404 otherwise, so it is invisible until slice 10 cut-over).
-  //  2. x-assess-internal must equal ASSESS_INTERNAL_KEY (a configured secret).
-  if (c.env.ASSESS_PIPELINE_ENABLED !== 'true') {
-    return c.json({ error: 'Not found' }, 404);
-  }
-  const internalKey = c.env.ASSESS_INTERNAL_KEY;
-  if (!internalKey || c.req.header('x-assess-internal') !== internalKey) {
+// SD-11 — `/api/assess/*` is internal-only. It is reached only via the main
+// worker's CRR_API service binding, which sets `x-assess-internal` from a shared
+// secret; it is NOT usable from the API worker's public *.workers.dev origin.
+// Two gates: (1) ASSESS_PIPELINE_ENABLED must be 'true' on this worker (default
+// off — 404 otherwise, so the route is invisible until slice 10 cut-over);
+// (2) x-assess-internal must equal ASSESS_INTERNAL_KEY (a configured secret).
+// Returns a Response to send back, or null when the request may proceed.
+function guardInternalAssess(c: any): Response | null {
+  if (c.env.ASSESS_PIPELINE_ENABLED !== 'true') return c.json({ error: 'Not found' }, 404);
+  const key = c.env.ASSESS_INTERNAL_KEY;
+  if (!key || c.req.header('x-assess-internal') !== key) {
     return c.json({ error: 'This endpoint is internal — reachable only through the assessment pipeline' }, 403);
   }
+  return null;
+}
 
-  // Per-IP rate limit: 200/hour (mirrors /api/triage/usage-log). The main worker
-  // forwards CF-Connecting-IP so this is the end user's IP.
+// Per-IP rate limit: 200/hour (mirrors /api/triage/usage-log). The main worker
+// forwards CF-Connecting-IP so this is the end user's IP. Returns a 429 Response
+// when the limit is hit, else null.
+async function assessRateLimit(c: any, bucket: string): Promise<Response | null> {
   const ip = c.req.header('CF-Connecting-IP') || 'unknown';
   const hour = new Date().toISOString().slice(0, 13);
-  const rlKey = `ratelimit:assess:${ip}:${hour}`;
+  const rlKey = `ratelimit:${bucket}:${ip}:${hour}`;
   try {
     const countRaw = await c.env.KV.get(rlKey);
     const count = countRaw ? parseInt(countRaw) : 0;
     if (count >= 200) return c.json({ error: 'Rate limit exceeded' }, 429);
     await c.env.KV.put(rlKey, String(count + 1), { expirationTtl: 3600 });
   } catch (_) { /* fail-open on rate-limit KV errors */ }
+  return null;
+}
+
+app.post('/api/assess/evaluate', async (c) => {
+  const guard = guardInternalAssess(c);
+  if (guard) return guard;
+  const rl = await assessRateLimit(c, 'assess');
+  if (rl) return rl;
 
   let body: any;
   try {
@@ -1680,6 +1726,208 @@ app.post('/api/assess/evaluate', async (c) => {
   }
 
   return c.json({ assessmentId, ...result });
+});
+
+// ══════════════════════════════════════════════════════════════
+//  ARCH-MIG-01 EXTRACTION SERVICE (slice 4b)
+// ══════════════════════════════════════════════════════════════
+//
+// POST /api/assess/extract — internal (same gating as evaluate, SD-11). Turns a
+// free-text referral note into a FHIR QuestionnaireResponse + an exam/site
+// selection. The model EXTRACTS; it never decides (invariant 1). Flow:
+//   PII gate (server-side, before any model call — pii.ts)
+//     -> prompt assembly (prompt.ts; parts + Questionnaires items-only + exam list)
+//     -> provider (provider.ts; Anthropic live, Azure stubbed)
+//     -> parse
+//     -> validation gate (gate.ts; contract §gate + AD-17; rejects the WHOLE response)
+//     -> inject age/sex from context as documented answers (structured input)
+// No audit row here — the pipeline route (slice 5) writes it after merge.
+//
+// Relationship to FHIR: this is the "populate a Questionnaire from narrative"
+// step; a $extract-style operation would map onto it, but the evidence extension
+// (status + quote) and the exam/site selection are CRR-specific (AD-21).
+
+// The national Questionnaire, from the `national-redflags` bundle (fail closed —
+// AD-19). Returns the Questionnaire resource or null.
+async function loadNationalQuestionnaire(db: D1Database, kv: KVNamespace, allowSignedOff: boolean): Promise<any | null> {
+  const evaluable = allowSignedOff ? ['published', 'signed-off'] : ['published'];
+  const placeholders = evaluable.map(() => '?').join(',');
+  const row: any = await db.prepare(
+    `SELECT version FROM bundles WHERE exam_site = 'national-redflags' AND state IN (${placeholders}) ORDER BY (state = 'published') DESC, id DESC LIMIT 1`
+  ).bind(...evaluable).first();
+  if (!row) return null;
+  const bundle = await loadBundle(kv, 'national-redflags', row.version);
+  return bundle?.questionnaire ?? null;
+}
+
+// One selected exam/site's Questionnaire, by version. Null when the id is unknown
+// or its bundle is not in an evaluable state (never a fallback — invariant 3).
+async function loadExamSiteQuestionnaire(db: D1Database, kv: KVNamespace, id: string, allowSignedOff: boolean): Promise<{ version: string; questionnaire: any } | null> {
+  const siteRow: any = await db.prepare('SELECT bundle_key FROM exam_sites WHERE id = ?').bind(id).first();
+  if (!siteRow) return null;
+  const evaluable = allowSignedOff ? ['published', 'signed-off'] : ['published'];
+  const placeholders = evaluable.map(() => '?').join(',');
+  const row: any = await db.prepare(
+    `SELECT version FROM bundles WHERE exam_site = ? AND state IN (${placeholders}) ORDER BY (state = 'published') DESC, id DESC LIMIT 1`
+  ).bind(siteRow.bundle_key, ...evaluable).first();
+  if (!row) return null;
+  const bundle = await loadBundle(kv, siteRow.bundle_key, row.version);
+  if (!bundle?.questionnaire) return null;
+  return { version: row.version, questionnaire: bundle.questionnaire };
+}
+
+// The published exam/site list — ids and titles only (AD-01). All 53.
+async function loadExamSiteList(db: D1Database): Promise<{ id: string; title: string }[]> {
+  const rows = await db.prepare('SELECT id, title FROM exam_sites ORDER BY id').all();
+  return (rows.results as any[]).map((r) => ({ id: r.id, title: r.title }));
+}
+
+// Strip ```json fences / prose the model may wrap the object in.
+function extractJsonObject(text: string): string {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const candidate = (fenced ? fenced[1] : text).trim();
+  const first = candidate.indexOf('{');
+  const last = candidate.lastIndexOf('}');
+  if (first === -1 || last === -1 || last < first) return candidate;
+  return candidate.slice(first, last + 1);
+}
+
+// Adds patient.age / patient.sex / patient.ageMonths from the calling-app context
+// as `documented` answers with NO evidence extension — they are structured input,
+// not extraction (contract rule 7; the model was told not to answer them). Context
+// wins over any answer the model produced for the same linkId.
+function injectContextAnswers(qr: any, context: any): any {
+  const out = JSON.parse(JSON.stringify(qr || { resourceType: 'QuestionnaireResponse', status: 'completed', item: [] }));
+  out.item = Array.isArray(out.item) ? out.item : [];
+  const injected: { linkId: string; answer: any[] }[] = [];
+  if (typeof context?.age === 'number') injected.push({ linkId: 'patient.age', answer: [{ valueInteger: context.age }] });
+  if (typeof context?.ageMonths === 'number') injected.push({ linkId: 'patient.ageMonths', answer: [{ valueDecimal: context.ageMonths }] });
+  if (typeof context?.sex === 'string' && context.sex) injected.push({ linkId: 'patient.sex', answer: [{ valueCoding: { system: 'http://hl7.org/fhir/administrative-gender', code: context.sex } }] });
+  if (!injected.length) return out;
+  const injectedIds = new Set(injected.map((i) => i.linkId));
+  // remove any model-supplied answer for these linkIds
+  const prune = (items: any[]): any[] => (items || []).filter((i) => {
+    if (i.linkId && injectedIds.has(i.linkId)) return false;
+    if (Array.isArray(i.item)) i.item = prune(i.item);
+    return true;
+  });
+  out.item = prune(out.item);
+  let group = out.item.find((g: any) => g.linkId === 'patient');
+  if (!group) { group = { linkId: 'patient', item: [] }; out.item.unshift(group); }
+  group.item = Array.isArray(group.item) ? group.item : [];
+  group.item.push(...injected);
+  return out;
+}
+
+app.post('/api/assess/extract', async (c) => {
+  const guard = guardInternalAssess(c);
+  if (guard) return guard;
+  const rl = await assessRateLimit(c, 'extract');
+  if (rl) return rl;
+
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch (e: any) {
+    return c.json({ error: 'Body is not valid JSON', message: e.message }, 400);
+  }
+  const note = typeof body.note === 'string' ? body.note : '';
+  if (!note.trim()) return c.json({ error: 'note (the free-text referral note) is required' }, 400);
+  const context = body.context && typeof body.context === 'object' ? body.context : {};
+  const requestedExamSite: string | undefined = typeof body.requestedExamSite === 'string' && body.requestedExamSite ? body.requestedExamSite : undefined;
+  const allowSignedOff = c.env.ASSESS_ALLOW_SIGNED_OFF === 'true';
+
+  const pii = await import('./pii');
+  const promptMod = await import('./prompt');
+  const gateMod = await import('./gate');
+  const providerMod = await import('./provider');
+
+  // 1. PII gate — server-side, before prompt assembly and any model call.
+  const { redacted, patternsHit } = pii.redact(note);
+  const residual = pii.residualNhi(redacted);
+  if (residual.length) {
+    return c.json({ error: 'pii-residual', message: 'An NHI-shaped value survived redaction — the request was not sent.', redaction: { patternsHit } }, 422);
+  }
+  if (pii.isInsufficientAfterRedaction(redacted)) {
+    return c.json({ error: 'insufficient-after-redaction', message: 'After removing patient-identifiable information there is not enough clinical detail to extract.', redaction: { patternsHit } }, 422);
+  }
+
+  // 2. Questionnaires — national (fail closed, AD-19) + the requested exam/site.
+  const nationalQ = await loadNationalQuestionnaire(c.env.DB, c.env.KV, allowSignedOff);
+  if (!nationalQ) {
+    return c.json({ error: 'national-redflags-unavailable', message: 'The national Questionnaire has no published bundle; extraction cannot proceed (AD-19 / SR-13).' }, 503);
+  }
+  let requestedQ: any = null;
+  let requestedQVersion: string | null = null;
+  if (requestedExamSite) {
+    const r = await loadExamSiteQuestionnaire(c.env.DB, c.env.KV, requestedExamSite, allowSignedOff);
+    if (r) { requestedQ = r.questionnaire; requestedQVersion = r.version; }
+  }
+  const examSiteList = await loadExamSiteList(c.env.DB);
+
+  // 3. Strip attestation-category items (AD-17) so the model never sees them.
+  const attestation = new Set<string>(promptMod.ATTESTATION_LINK_IDS);
+  const questionnaires = [promptMod.stripAttestationItems(nationalQ, attestation)];
+  if (requestedQ) questionnaires.push(promptMod.stripAttestationItems(requestedQ, attestation));
+
+  // 4. Assemble and call the provider. Model params are owned in provider.ts.
+  const system = promptMod.assembleSystemPrompt();
+  const userContent = promptMod.assembleUserContent({ redactedNote: redacted, questionnaires, examSiteList, context });
+  const maxTokens = Number(c.env.EXTRACTION_MAX_TOKENS ?? 8000) || 8000;
+
+  let modelResult: any;
+  try {
+    const provider = providerMod.makeProvider(c.env);
+    modelResult = await provider.extract({ system, messages: [{ role: 'user', content: userContent }], maxTokens });
+  } catch (e: any) {
+    if (e?.code === 'provider-not-configured') return c.json({ error: 'provider-not-configured', message: e.message }, 503);
+    return c.json({ error: 'provider-call-failed', message: e.message }, 502);
+  }
+
+  // 5. Parse.
+  let parsed: any = null;
+  try { parsed = JSON.parse(extractJsonObject(modelResult.text)); } catch (_) { parsed = null; }
+
+  const truncated = providerMod.isTruncated(modelResult.stopReason);
+  const meta = {
+    promptVersion: promptMod.PROMPT_VERSION,
+    equivalenceListVersion: promptMod.EQUIVALENCE_LIST_VERSION,
+    contractVersion: promptMod.CONTRACT_VERSION,
+    requestedExamSiteQuestionnaireVersion: requestedQVersion,
+    modelId: modelResult.modelId,
+    provider: modelResult.provider,
+    redaction: { patternsHit },
+  };
+
+  // 6. Validation gate — rejects the WHOLE response on any failure.
+  let gateResult: any;
+  if (!parsed || typeof parsed !== 'object') {
+    gateResult = { passed: false, failures: ['model response was not a JSON object' + (truncated ? ' (response was truncated)' : '')] };
+  } else {
+    gateResult = gateMod.runGate({
+      response: parsed,
+      redactedNote: redacted,
+      questionnaires,
+      publishedExamSiteIds: examSiteList.map((e) => e.id),
+      attestationLinkIds: attestation,
+      truncated,
+    });
+  }
+
+  if (!gateResult.passed) {
+    return c.json({ ...meta, validation: gateResult }, 422);
+  }
+
+  // 7. Inject age/sex from context (structured input, not extraction).
+  const questionnaireResponse = injectContextAnswers(parsed.questionnaireResponse, context);
+  const examSites = Array.isArray(parsed.examSites) ? parsed.examSites : [];
+  const requestedEntry = examSites.find((e: any) => e?.requested === true);
+  const examSiteSelection = {
+    requestedExamSite: requestedEntry?.id ?? requestedExamSite ?? null,
+    candidateExamSites: examSites.filter((e: any) => e?.requested === false).map((e: any) => e.id),
+  };
+
+  return c.json({ questionnaireResponse, examSiteSelection, ...meta, validation: gateResult });
 });
 
 export default {

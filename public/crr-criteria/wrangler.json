@@ -20,7 +20,10 @@
     "ASSESS_PIPELINE_ENABLED": "false",
     "ASSESS_ALLOW_SIGNED_OFF": "false",
     "AUDIT_STORE_REDACTED_NOTE": "false",
-    "AUDIT_NOTE_RETENTION_DAYS": "180"
+    "AUDIT_NOTE_RETENTION_DAYS": "180",
+    "EXTRACTION_PROVIDER": "anthropic",
+    "EXTRACTION_MODEL": "claude-sonnet-4-6",
+    "EXTRACTION_MAX_TOKENS": "8000"
   },
   "triggers": {
     "crons": ["0 3 * * *"]
