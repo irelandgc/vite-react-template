@@ -4,6 +4,58 @@ Changes are listed newest-first. Each entry covers one deployment cycle.
 
 ---
 
+## [DRAFT — not deployed] 2026-09-07 — ARCH-MIG-01 slice 5: assessment pipeline + thin Triage page (flag off)
+
+**Status:** DRAFT. Merged to `main` behind `ASSESS_PIPELINE_ENABLED` (off in both
+workers' production config). Nothing user-facing changes until the slice 10
+cut-over flips the flag; this entry is written at the time of the change per the
+lifecycle, not retrospectively.
+
+**Workers:** `crr-criteria-api` (`POST /api/assess`, `GET /api/assess/status`,
+`POST /api/assess/compare-extract`), `vite-react-template` (`/api/assess/*`
+forward already in place from slice 3).
+
+- `POST /api/assess` — one call runs PII gate → extract → merge → evaluate →
+  Advisory and writes **one** `assessments` row (bundle/engine/prompt/equivalence/
+  model/provider versions, documentation standard, merged QuestionnaireResponse,
+  Advisory, discrepancies, `validation_failures`, redaction pattern types,
+  attestations, exam/site selection). A gate rejection or a fail-closed national
+  bundle is a typed error **and** still writes a row with `validation_failures`
+  and no Advisory.
+- `merge.ts` — one QuestionnaireResponse from up to four sources
+  (`retrieved › attested › context › documented › inferred`); every override
+  recorded in `discrepancies[]`. Population source is interface-only
+  (`POPULATION_ENABLED` off — slice 8).
+- Referrer attestation questions (AD-17 / AD-23) — `GET /api/assess/attestation-questions`
+  serves the category indicators on the selected Questionnaire in two role
+  wordings; the merged answer carries `status: documented` + an
+  `{ source, attestedBy }` sub-extension; no new evidence status, engine
+  unchanged.
+- `shared/advisory-render.js` — one engine Advisory, referrer and triager views,
+  presentation-only (SD-01 rebased). Referrer view: no priority codes (GEN-004),
+  "what to add" = published Questionnaire item text, cross-exam recommendations,
+  page references, the attestation questions. Triager view adds priority codes,
+  rule trace, per-indicator evidence + quote, discrepancies, version stamps.
+- `triage/index.html` — a `<script type="module">` that, when
+  `GET /api/assess/status` returns 200, runs the page as a **thin client**
+  (collects note + context + attestation answers, calls `/api/assess`, renders
+  the Advisory). It does not assemble a prompt, load `EMBEDDED_MATCH_DATA`, run
+  synonym auto-detect, run post-processing, or call the model. **Flag off ⇒ the
+  page is byte-identical to today** — the legacy code paths are retained for
+  slice 10, so the flag can be flipped both ways during tabletop. Usage/QA
+  submissions carry `assessmentId`.
+- `POST /api/assess/compare-extract` — compare-extraction mode (TA-022–024):
+  two providers/models, same contract, per-indicator diff + engine determination
+  each; the Azure provider is a visible `NotConfigured` error.
+- Migration `0010_assess_pipeline_audit.sql` — five nullable columns on
+  `assessments`. Applied to the remote D1 at the slice 10 cut-over, with 0009.
+- End-to-end proof: `benchmark/results/2026-09-07-pipeline-e2e-claude-sonnet-4-6.md`
+  (two-worker `wrangler dev`, real model). 3/4 CT CAP ground-truth determinations
+  match; MW-009 diverges on `workup.localisingFeatures` extraction (FINDINGS #6,
+  open). One complete `assessments` row per call.
+
+---
+
 ## 2026-06-20 — Triage Advisor v1.1.0: default model updated to claude-sonnet-4-6
 
 **Deployed:** `vite-react-template` worker
