@@ -23,7 +23,29 @@ const root = path.join(here, "..");
 // which predates the tooling/criteria-bundle/sites/<examSite>/ convention slice 7's
 // transcription protocol establishes for every site after it). Future sites are
 // expected under sites/<examSite>/ - add their manifests here as they're transcribed.
+//
+// `national-redflags` is not a site: it is the national red-flag / ACC layer that
+// runs before every exam library (AD-03). Its bundle carries the CRR_RedFlags
+// Library ELM and the national Questionnaire, no PlanDefinition, no population, no
+// overlays; `kind: 'national'`. The engine loads it from KV by version like any
+// other bundle and fails closed if no published version exists (AD-19, SR-13).
 const MANIFESTS = {
+  "national-redflags": {
+    kind: "national",
+    cql: "cql/CRR_RedFlags.cql",
+    elm: "elm/CRR_RedFlags.json",
+    questionnaire: "fhir/Questionnaire-CRR-National.json",
+    // Same source document as every site. Page coverage is the set of
+    // "Refer for acute assessment without initial imaging" rows plus the ACC
+    // referral text; the CRR_RedFlags.cql header lists them define by define.
+    source: {
+      type: "pdf",
+      title: "National Community Referral Criteria for Imaging (Part I)",
+      identifier: "National ID 15372, Version 2.0",
+      date: "2026-04-09",
+      pages: "acute-assessment rows across all exam/sites; Overview p3; X-ray Spine - Adult p73",
+    },
+  },
   "ct-chest-abdomen-pelvis-adult": {
     cql: "cql/CRR_CTChestAbdomenPelvis_Adult.cql",
     elm: "elm/CRR_CTChestAbdomenPelvis_Adult.json",
@@ -102,15 +124,19 @@ const resolvedState = state || "transcribed";
 function readJson(rel) { return JSON.parse(fs.readFileSync(path.join(root, rel), "utf8")); }
 function readText(rel) { return fs.readFileSync(path.join(root, rel), "utf8"); }
 
+const isNational = manifest.kind === "national";
+
 const elm = readJson(manifest.elm);
 const populationElm = manifest.populationElm ? readJson(manifest.populationElm) : null;
-const planDefinition = readJson(manifest.planDefinition);
+const planDefinition = manifest.planDefinition ? readJson(manifest.planDefinition) : null;
 const questionnaire = readJson(manifest.questionnaire);
 const vocabulary = readJson("vocabulary/indicators.json");
 
-const overlays = fs.readdirSync(path.join(root, "fhir"))
-  .filter((f) => f.startsWith(path.basename(manifest.overlayGlobPrefix)))
-  .map((f) => readJson(path.join("fhir", f)));
+const overlays = manifest.overlayGlobPrefix
+  ? fs.readdirSync(path.join(root, "fhir"))
+      .filter((f) => f.startsWith(path.basename(manifest.overlayGlobPrefix)))
+      .map((f) => readJson(path.join("fhir", f)))
+  : [];
 
 // Content hash covers only the compiled logic (site ELM + population ELM), not
 // metadata (source/state/publishedAt) - so re-provenancing a bundle (e.g. an
@@ -131,10 +157,12 @@ function summariseResults(rel) {
   const pass = rows.filter((l) => / PASS \|$/.test(l)).length;
   return { file: rel, summary: rows.length ? `${pass}/${rows.length} passed` : "see file" };
 }
-const testResults = {
-  ctCap: summariseResults("tests/results.md"),
-  redFlags: summariseResults("tests/results-redflags.md"),
-};
+const testResults = isNational
+  ? { redFlags: summariseResults("tests/results-redflags.md") }
+  : {
+      ctCap: summariseResults("tests/results.md"),
+      redFlags: summariseResults("tests/results-redflags.md"),
+    };
 
 // Bundle version is a publish-history concept, independent of the FHIR resource's own
 // `version` field (PlanDefinition.version tracks the *template's* iteration, not how
@@ -175,16 +203,19 @@ const bundle = {
   examSite,
   version: bundleVersion,
   state: resolvedState,
+  ...(isNational ? { kind: "national" } : {}),
   vocabularyVersion: vocabulary.version,
   source: manifest.source,
   logicHash: `sha256:${logicHash}`,
   publishedAt: new Date().toISOString(),
-  library: {
-    site: elm,
-    population: populationElm,
-    redFlags: { name: "CRR_RedFlags", version: readText("cql/CRR_RedFlags.cql").match(/^library CRR_RedFlags version '([^']+)'/m)?.[1] ?? null, byReference: true },
-  },
-  planDefinition,
+  library: isNational
+    ? { site: elm, population: null }
+    : {
+        site: elm,
+        population: populationElm,
+        redFlags: { name: "CRR_RedFlags", version: readText("cql/CRR_RedFlags.cql").match(/^library CRR_RedFlags version '([^']+)'/m)?.[1] ?? null, byReference: true },
+      },
+  ...(planDefinition ? { planDefinition } : {}),
   questionnaire,
   overlays,
   testResults,
@@ -208,4 +239,4 @@ fs.writeFileSync(indexPath, JSON.stringify(index, null, 2));
 console.log(`Published ${examSite} v${bundle.version} (state: ${bundle.state}) -> ${path.relative(root, bundlePath)}`);
 console.log(`  vocabularyVersion ${bundle.vocabularyVersion} · logicHash ${bundle.logicHash.slice(0, 15)}... · source ${bundle.source.type} ${bundle.source.pages ? "p" + bundle.source.pages : bundle.source.draftRef ?? ""}`);
 console.log(`  dependencies: ${bundle.dependencies.length ? bundle.dependencies.map((d) => d.name).join(", ") : "none"}`);
-console.log(`  test results: CT CAP ${bundle.testResults.ctCap.summary}; red-flags ${bundle.testResults.redFlags.summary}`);
+console.log(`  test results: ${bundle.testResults.ctCap ? `CT CAP ${bundle.testResults.ctCap.summary}; ` : ""}red-flags ${bundle.testResults.redFlags.summary}`);

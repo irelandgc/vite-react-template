@@ -12,6 +12,8 @@ import { env, SELF } from "cloudflare:test";
 import { purgeExpiredNotes } from "../worker";
 // @ts-expect-error -- ?raw import, no type declaration
 import ctCapBundleRaw from "../../../../tooling/criteria-bundle/registry/ct-chest-abdomen-pelvis-adult/1.0.0.json?raw";
+// @ts-expect-error -- ?raw import, no type declaration
+import nationalBundleRaw from "../../../../tooling/criteria-bundle/registry/national-redflags/1.0.0.json?raw";
 import altElm from "./fixtures/CRR_TestAltSite.elm.json";
 // @ts-expect-error -- plain .mjs, no type declarations
 import { scenarios, toQuestionnaireResponse } from "../../../../tooling/criteria-bundle/tests/scenarios.mjs";
@@ -20,6 +22,7 @@ import { scenarios as redflagScenarios, toQuestionnaireResponse as toRedflagQr }
 
 const INTERNAL_KEY = "test-internal-key";
 const ctCapBundle = () => JSON.parse(ctCapBundleRaw);
+const nationalBundle = () => JSON.parse(nationalBundleRaw);
 
 // This plugin config does not isolate D1/KV per test (state accumulates within a
 // file — the slice-2 suite is written the same way), so every seed here is
@@ -38,6 +41,17 @@ async function publishCtCap(state = "published") {
   await env.KV.put(`bundle:${b.examSite}:${b.version}`, JSON.stringify(b));
   if (state === "published") await env.KV.put(`bundle:${b.examSite}:latest-published`, b.version);
   await seedBundleRow(b.examSite, b.version, state);
+}
+
+// The real national red-flag / ACC bundle (AD-19). The engine fails closed if it
+// has no published version — most tests need it published; the fail-closed test
+// flips its state.
+async function publishNationalRedFlags(state = "published", version?: string) {
+  const b = nationalBundle();
+  if (version) b.version = version;
+  await env.KV.put(`bundle:national-redflags:${b.version}`, JSON.stringify(b));
+  if (state === "published") await env.KV.put(`bundle:national-redflags:latest-published`, b.version);
+  await seedBundleRow("national-redflags", b.version, state);
 }
 
 // The throwaway alt-site fixture (different rule from CT CAP) under us_abdomen.
@@ -103,8 +117,50 @@ const sorted = (a: any) => JSON.stringify([...(a || [])].sort());
 beforeAll(async () => {
   (env as any).ASSESS_PIPELINE_ENABLED = "true";
   (env as any).ASSESS_INTERNAL_KEY = INTERNAL_KEY;
+  await publishNationalRedFlags("published");
   await publishCtCap("published");
   await publishAltSite("published");
+});
+
+describe("POST /api/assess/evaluate — national red-flag layer is a published bundle (AD-19, SR-13)", () => {
+  it("bundleVersions['national-redflags'] is the KV bundle version", async () => {
+    const s01 = scenarios.find((s: any) => s.id === "S01-b1-p2");
+    const res = await evaluate({ questionnaireResponse: toQuestionnaireResponse(s01), requestedExamSite: "ct_cap" });
+    const body: any = await res.json();
+    expect(body.bundleVersions["national-redflags"]).toBe(nationalBundle().version);
+  });
+
+  it("503 fail-closed when national-redflags has no published version — no audit row", async () => {
+    const before: any = await env.DB.prepare("SELECT COUNT(*) n FROM assessments").first();
+    await env.DB.prepare("UPDATE bundles SET state = 'transcribed' WHERE exam_site = 'national-redflags'").run();
+    await env.KV.delete("bundle:national-redflags:latest-published");
+    try {
+      const s01 = scenarios.find((s: any) => s.id === "S01-b1-p2");
+      const res = await evaluate({ questionnaireResponse: toQuestionnaireResponse(s01), requestedExamSite: "ct_cap" });
+      expect(res.status).toBe(503);
+      const body: any = await res.json();
+      expect(body.error).toBe("national-redflags-unavailable");
+      const after: any = await env.DB.prepare("SELECT COUNT(*) n FROM assessments").first();
+      expect(after.n).toBe(before.n);
+    } finally {
+      await env.DB.prepare("UPDATE bundles SET state = 'published' WHERE exam_site = 'national-redflags'").run();
+      await env.KV.put("bundle:national-redflags:latest-published", nationalBundle().version);
+    }
+  });
+
+  it("a different published national-redflags version is reflected in bundleVersions", async () => {
+    await publishNationalRedFlags("published", "1.1.0");
+    try {
+      const s01 = scenarios.find((s: any) => s.id === "S01-b1-p2");
+      const res = await evaluate({ questionnaireResponse: toQuestionnaireResponse(s01), requestedExamSite: "ct_cap" });
+      const body: any = await res.json();
+      expect(body.bundleVersions["national-redflags"]).toBe("1.1.0");
+    } finally {
+      await env.DB.prepare("DELETE FROM bundles WHERE exam_site = 'national-redflags' AND version = '1.1.0'").run();
+      await env.KV.delete("bundle:national-redflags:1.1.0");
+      await env.KV.put("bundle:national-redflags:latest-published", nationalBundle().version);
+    }
+  });
 });
 
 describe("POST /api/assess/evaluate — internal-only gating", () => {

@@ -1,0 +1,13 @@
+{
+  "examSite": "national-redflags",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "state": "transcribed",
+      "publishedAt": "2026-09-06T05:06:47.670Z",
+      "logicHash": "sha256:f1292bf6de3537cb1d392ad2216b3fb9a9c043b2dee5d750d6b2bb5c29f65117",
+      "dependencies": []
+    }
+  ],
+  "latestPublished": "1.0.0"
+}

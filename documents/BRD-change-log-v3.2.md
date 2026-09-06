@@ -89,6 +89,8 @@
 
 Replaced "FHIR/CQL serialisation" (now delivered) with platform consumption of the published bundles; replaced "deep referral platform integration" with the tiered enabling of the dormant retrieval path; added the structured editor with roles/approval/Entra ID, and NZHTS terminology binding.
 
+- **Referral outcome reporting (AD-22, Proposed — decider Gary / programme).** The slice 3 assessment audit record is the reporting source for per-assessment outcomes (determination, priority, failed defines, missing indicators, redirects) by exam/site, region and bundle version, with no note text. Reporting questions to be defined as FHIR `Measure` resources with CQL populations over that record — versioned, governed like the criteria. The high-value dataset is the join of tool determination to the actual triage decision from RIS/ERMS/BPAC: it becomes the live benchmark replacing hand-labelled cases (slice 9), feeds criteria performance back to the authors, and enables criterion-level equity and access analysis. Prerequisites (not built): a coded decline-reason list on the RIS side; a referral identifier for linkage — makes the record linkable data, requiring PTA / IPP 3A assessment; ethnicity in the calling-app context (a slice 5 design choice, TA-005).
+
 ## Not changed and worth a decision
 
 - §11 Review and Approval table left as v2 (names, roles, dates blank). The review list should be revisited for v3.2: NAIAEAG engagement (Robyn Whittaker, CK Jin) and the privacy office (audit record, retention) are new reviewers this revision implies.
