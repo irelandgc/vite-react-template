@@ -17,6 +17,17 @@ type Bindings = {
   DB: D1Database;
   ANTHROPIC_API_KEY: string;
   ADMIN_KEY: string;  // set via: npx wrangler secret put ADMIN_KEY
+  // SR-14 — dev/prod isolation for mutating /api/admin/* routes. A mutating
+  // admin request is refused unless it either (a) carries `x-admin-proxy`
+  // matching ADMIN_PROXY_KEY — the shared secret the main worker's admin proxy
+  // injects, proving the request arrived via the CRR_API service binding — or
+  // (b) carries a valid x-admin-key AND finds ADMIN_WRITES_ENABLED === 'true'
+  // (the scripted-publish path). ADMIN_WRITES_ENABLED is a var: '"true"' only in
+  // production config, absent everywhere else. ADMIN_PROXY_KEY is a secret on
+  // both workers (`npx wrangler secret put ADMIN_PROXY_KEY`). Reads are never
+  // gated by this.
+  ADMIN_WRITES_ENABLED?: string;
+  ADMIN_PROXY_KEY?: string;
   // ARCH-MIG-01 slice 3 (vars in wrangler.json; string flags, '"true"' to enable):
   ASSESS_PIPELINE_ENABLED?: string;   // gates /api/assess/* itself (default off; slice 10 flips it)
   ASSESS_INTERNAL_KEY?: string;       // secret shared with the main worker; required in x-assess-internal
@@ -261,6 +272,26 @@ async function requireAccess(c: any, next: any) {
   if (adminKey && c.env.ADMIN_KEY && adminKey !== c.env.ADMIN_KEY) {
     return c.json({ error: 'Unauthorized — invalid admin key' }, 401);
   }
+
+  // SR-14 — dev/prod isolation. A MUTATING admin request must either have
+  // reached this worker through the main worker's admin proxy (proven by the
+  // shared ADMIN_PROXY_KEY, which that proxy injects and strips from client
+  // requests), or carry a valid x-admin-key AND find ADMIN_WRITES_ENABLED
+  // === 'true' on this deployment (the production scripted-publish path). A
+  // request to the API worker's public origin with only an x-admin-email header
+  // — the shape of the recorded near miss — is refused. Reads are never gated.
+  const isMutating = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(c.req.method);
+  if (isMutating) {
+    const viaProxy = !!c.env.ADMIN_PROXY_KEY && c.req.header('x-admin-proxy') === c.env.ADMIN_PROXY_KEY;
+    const scriptedWrite = !!adminKey && !!c.env.ADMIN_KEY && adminKey === c.env.ADMIN_KEY && c.env.ADMIN_WRITES_ENABLED === 'true';
+    if (!viaProxy && !scriptedWrite) {
+      return c.json({
+        error: 'Admin writes are not enabled on this deployment (SR-14).',
+        detail: 'A mutating /api/admin request must arrive via the main-worker service binding, or carry a valid x-admin-key with ADMIN_WRITES_ENABLED=true.',
+      }, 403);
+    }
+  }
+
   await next();
 }
 

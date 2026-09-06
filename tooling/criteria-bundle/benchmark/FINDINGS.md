@@ -266,9 +266,14 @@ is no weight loss. Runs 1–2 answered `inferred` (strict excludes, as in item 7
 reason (item 5); `weightloss.present = false` does not change it. But a `documented` answer
 **counts under `strict`**, unlike the `inferred` answers item 7 describes.
 
-**What could change.** `concept-equivalence-v1.2` records this as non-entry **E-09** (two stated
-weights read straight into `weightloss.weightBefore` / `weightloss.weightNow`; a single weight
-computes nothing and is not weight loss). A prompt evidence-rule clause scoping E-08 to a *pair*
-of weights is the candidate fix if a later run shows this rising.
+**Why it is wrong.** A single recorded weight supports **neither `weightloss.present = true` nor
+`= false`** — one measurement carries no information about change in either direction. The only
+correct move is to omit the item.
 
-**Status.** **Open (low).** Watch the next run; contract rule 4 and E-09 name the case.
+**What changed.** `extraction-contract.md` **rule 4** is tightened: it now says explicitly that
+one weight answers `weightloss.present` neither way, that a `false` here is rule 1's forbidden
+"not established" move, and that a `false / documented` is worse — and cites this item.
+`concept-equivalence-v1.2` already records the same as non-entry **E-09**. A prompt evidence-rule
+clause scoping E-08 to a *pair* of weights is the candidate fix if a later run shows this rising.
+
+**Status.** **Open (low).** Contract rule 4 and E-09 name the case; watch the next run.

@@ -38,6 +38,12 @@ export default defineConfig({
   plugins: [
     cloudflareTest({
       wrangler: { configPath: path.join(here, "..", "wrangler.json") },
+      // Test-only bindings. `ADMIN_PROXY_KEY` lets the suite exercise the SR-14
+      // admin-write gate's "arrived via the main-worker service binding" path
+      // (production sets this as a secret on both workers; dev in .dev.vars).
+      // `ADMIN_WRITES_ENABLED` is deliberately left UNSET so the test env
+      // behaves like a dev deployment — the SR-14 refusal test depends on it.
+      miniflare: { bindings: { ADMIN_PROXY_KEY: "test-admin-proxy-key" } },
     }),
   ],
   test: {

@@ -7,7 +7,11 @@ import { SELF } from "cloudflare:test";
 // @ts-expect-error -- ?raw import, no type declaration
 import realBundleJson from "../../../../tooling/criteria-bundle/registry/ct-chest-abdomen-pelvis-adult/1.0.0.json?raw";
 
-const AUTH = { "x-admin-email": "test@example.com" };
+// x-admin-email = the CF Access identity the main-worker proxy forwards;
+// x-admin-proxy = the SR-14 shared secret that proxy injects (test-only value
+// from vitest.config.ts) — together they model an admin write arriving via the
+// service binding.
+const AUTH = { "x-admin-email": "test@example.com", "x-admin-proxy": "test-admin-proxy-key" };
 const realBundle = () => JSON.parse(realBundleJson);
 
 async function publish(bundle: unknown) {
@@ -45,6 +49,22 @@ describe("publish validation", () => {
   it("4. rejects publish with no admin identity", async () => {
     const res = await SELF.fetch("http://worker/api/admin/bundles/publish", { method: "POST", body: "{}" });
     expect(res.status).toBe(401);
+  });
+
+  it("4b. SR-14 — a mutating admin request with only x-admin-email (no proxy secret, ADMIN_WRITES_ENABLED unset) is refused before any side effect", async () => {
+    const before = await (await SELF.fetch("http://worker/api/bundles")).json();
+    const res = await SELF.fetch("http://worker/api/admin/bundles/publish", {
+      method: "POST",
+      // the near-miss shape: a bare CF-Access-style identity, no x-admin-proxy, no x-admin-key
+      headers: { "content-type": "application/json", "x-admin-email": "someone@example.com" },
+      body: JSON.stringify(realBundle()),
+    });
+    expect(res.status).toBe(403);
+    const body: any = await res.json();
+    expect(body.error).toMatch(/SR-14|not enabled/i);
+    // nothing was written — the registry is exactly as it was
+    const after = await (await SELF.fetch("http://worker/api/bundles")).json();
+    expect((after as any).bundles).toEqual((before as any).bundles);
   });
 
   it("5. rejects a bundle missing required keys", async () => {

@@ -5,6 +5,22 @@ type Bindings = {
   // when forwarding admin requests to crr-criteria-api. Set with:
   //   npx wrangler secret put ADMIN_KEY
   ADMIN_KEY: string;
+  // SR-14 — shared secret with the API worker. The admin proxy injects it as
+  // `x-admin-proxy` on every forwarded request (and strips any client-supplied
+  // copy); the API worker treats a matching value as proof the request arrived
+  // through this proxy over the CRR_API service binding, and lets a mutating
+  // /api/admin request through on that basis alone. Same value on both workers;
+  // set with `npx wrangler secret put ADMIN_PROXY_KEY` on each. Absent in dev is
+  // fine — a two-worker `wrangler dev` still reaches the LOCAL API worker via
+  // the binding; the value only matters for distinguishing proxy from direct
+  // traffic on a publicly reachable API worker.
+  ADMIN_PROXY_KEY?: string;
+  // SR-14 — escape hatch ONLY. When set, the proxy/forward targets this base URL
+  // instead of the CRR_API service binding. MUST be unset in every dev and
+  // production config we control: the binding resolves to the local API worker
+  // under two-worker `wrangler dev` and to the bound worker in production, so a
+  // hard-coded URL here is exactly the dev→prod cross-wiring SR-14 records.
+  API_BASE?: string;
   ASSETS: Fetcher;
   // ARCH-MIG-01 slice 3: service binding to the crr-criteria-api worker (no
   // public HTTP hop), the flag that gates the /api/assess/* forward, and the
@@ -17,7 +33,22 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-const API_BASE = "https://crr-criteria-api.fk4dsrmq5r.workers.dev";
+// Dispatch a proxied / forwarded request to the crr-criteria-api worker.
+// Default and only sanctioned path: the CRR_API service binding — the LOCAL API
+// worker under two-worker `wrangler dev`, the bound worker in production, never a
+// public HTTP hop (SD-11). `env.API_BASE` is an unsanctioned escape hatch for a
+// split deployment where the binding is unavailable; it must not be set in any
+// dev or production config (SR-14).
+export function dispatchToApi(
+  env: Pick<Bindings, "API_BASE" | "CRR_API">,
+  pathAndQuery: string,
+  init: RequestInit,
+): Promise<Response> {
+  if (env.API_BASE) {
+    return fetch(env.API_BASE.replace(/\/+$/, "") + pathAndQuery, init);
+  }
+  return env.CRR_API.fetch(new Request("https://crr-criteria-api" + pathAndQuery, init));
+}
 
 app.get("/api/", (c) => c.json({ name: "Cloudflare" }));
 
@@ -65,9 +96,7 @@ async function forwardAssess(c: any): Promise<Response> {
     // @ts-expect-error — Cloudflare Workers requires duplex for streaming bodies
     init.duplex = "half";
   }
-  return c.env.CRR_API.fetch(
-    new Request("https://crr-criteria-api" + inUrl.pathname + inUrl.search, init),
-  );
+  return dispatchToApi(c.env, inUrl.pathname + inUrl.search, init);
 }
 
 app.all("/api/assess", forwardAssess);
@@ -84,7 +113,6 @@ app.all("/api/assess/*", forwardAssess);
 async function proxy(c: any, requireAdmin: boolean): Promise<Response> {
   const inUrl = new URL(c.req.url);
   const downstreamPath = inUrl.pathname.replace(/^\/crr-api/, "");
-  const target = API_BASE + downstreamPath + inUrl.search;
 
   const email =
     c.req.header("cf-access-authenticated-user-email") ||
@@ -107,7 +135,8 @@ async function proxy(c: any, requireAdmin: boolean): Promise<Response> {
       lk === "host" ||
       lk === "connection" ||
       lk === "content-length" ||
-      lk === "x-admin-key" // never trust an x-admin-key from the browser
+      lk === "x-admin-key" || // never trust an x-admin-key from the browser
+      lk === "x-admin-proxy" // nor a forged "came via the proxy" marker (SR-14)
     )
       return;
     fwdHeaders.set(k, v);
@@ -115,6 +144,12 @@ async function proxy(c: any, requireAdmin: boolean): Promise<Response> {
   if (email) fwdHeaders.set("x-admin-email", email);
   if (requireAdmin && c.env.ADMIN_KEY) {
     fwdHeaders.set("x-admin-key", c.env.ADMIN_KEY);
+  }
+  // SR-14 — mark every admin-proxied request as having arrived through this
+  // proxy over the CRR_API binding. The API worker lets a mutating /api/admin
+  // request through on a matching value without needing ADMIN_WRITES_ENABLED.
+  if (requireAdmin && c.env.ADMIN_PROXY_KEY) {
+    fwdHeaders.set("x-admin-proxy", c.env.ADMIN_PROXY_KEY);
   }
 
   const method = c.req.method;
@@ -125,11 +160,7 @@ async function proxy(c: any, requireAdmin: boolean): Promise<Response> {
     init.duplex = "half";
   }
 
-  const upstream = await fetch(target, init);
-  return new Response(upstream.body, {
-    status: upstream.status,
-    headers: upstream.headers,
-  });
+  return dispatchToApi(c.env, downstreamPath + inUrl.search, init);
 }
 
 app.all("/crr-api/api/admin/*", (c) => proxy(c, true));

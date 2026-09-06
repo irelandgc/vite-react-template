@@ -15,3 +15,19 @@
 
 ASSESS_INTERNAL_KEY=
 ASSESS_PIPELINE_ENABLED=true
+
+# ── SR-14 · dev/prod isolation for mutating /api/admin/* routes ───────────────
+# A mutating /api/admin request is refused (403) unless it EITHER carries
+# `x-admin-proxy` matching ADMIN_PROXY_KEY (the shared secret the main worker's
+# admin proxy injects — proof the request arrived via the CRR_API service
+# binding), OR carries a valid x-admin-key AND finds ADMIN_WRITES_ENABLED=true.
+#
+# ADMIN_WRITES_ENABLED — set to "true" ONLY in production (wrangler.json vars or
+#   a secret). Absent here so a dev API worker refuses scripted admin writes;
+#   seed a local D1/KV with `wrangler d1 execute --local` / `wrangler kv key put
+#   --local` instead.
+# ADMIN_PROXY_KEY — SAME value as the root .dev.vars. Set it if you want the
+#   local admin tool's writes (via the local proxy) to work. Production:
+#   `npx wrangler secret put ADMIN_PROXY_KEY --config public/crr-criteria/wrangler.json`.
+ADMIN_PROXY_KEY=
+# ADMIN_KEY=

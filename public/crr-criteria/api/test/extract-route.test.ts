@@ -260,7 +260,7 @@ describe("POST /api/admin/extraction-prompt/register", () => {
   it("stores the current prompt version inactive, idempotently", async () => {
     const res = await SELF.fetch("http://worker/api/admin/extraction-prompt/register", {
       method: "POST",
-      headers: { "content-type": "application/json", "x-admin-email": "test@example.com" },
+      headers: { "content-type": "application/json", "x-admin-email": "test@example.com", "x-admin-proxy": "test-admin-proxy-key" },
     });
     expect([200, 201]).toContain(res.status);
     const row: any = await env.DB.prepare("SELECT version, is_active, instruction_text FROM system_prompts WHERE version = 'v3.0.2'").first();
@@ -268,7 +268,7 @@ describe("POST /api/admin/extraction-prompt/register", () => {
     expect(row.instruction_text).toContain("You extract. You do not assess.");
     const again = await SELF.fetch("http://worker/api/admin/extraction-prompt/register", {
       method: "POST",
-      headers: { "content-type": "application/json", "x-admin-email": "test@example.com" },
+      headers: { "content-type": "application/json", "x-admin-email": "test@example.com", "x-admin-proxy": "test-admin-proxy-key" },
     });
     const body: any = await again.json();
     expect(body.alreadyRegistered).toBe(true);
