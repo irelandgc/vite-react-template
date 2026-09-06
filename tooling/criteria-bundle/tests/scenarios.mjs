@@ -320,6 +320,86 @@ export const scenarios = [
     ],
     expect: { determination: "P2_URGENT", discrepancies: ["lab.hb.low"] }
   },
+  {
+    id: "S21-weights-both-documented",
+    title: "Weights: 84kg -> 77kg documented, no percentage stated -> CT CAP computes 8.3%, B1 met, P2 (arch-mig browser findings, weightBefore/weightNow)",
+    note: "62M. 4/12 unintentional weight loss, 84kg then 77kg on the practice scales. Bloods, urinalysis, CXR all done and normal. Exam NAD. Strong suspicion of occult malignancy.",
+    answers: {
+      "patient.age": 62, "patient.sex": "male",
+      "workup.bloods": true, "workup.urinalysis": true, "workup.cxr": true,
+      "workup.strongSuspicionMalignancy": true, "workup.localisingFeatures": false,
+      "weightloss.present": { v: true, status: "documented", quote: "unintentional weight loss" },
+      "weightloss.measured": { v: true, status: "documented", quote: "on the practice scales" },
+      "weightloss.weightBefore": { v: 84, status: "documented", quote: "84kg then 77kg" },
+      "weightloss.weightNow": { v: 77, status: "documented", quote: "84kg then 77kg" },
+      "weightloss.periodMonths": { v: 4, status: "documented", quote: "4/12" },
+      "lab.crp.raised": false, "lab.hb.low": false, "lab.calcium.raised": false, "lab.platelets.high": false, "lab.alp.high": false, "lab.albumin.low": false,
+      "excl.currentCancerFollowUp": false, "excl.secondaryCareInvestigated12m": false, "excl.urgentAdmissionRequired": false, "excl.recentUSAbdoPelvis3m": false, "excl.recentCTCAP12m": false,
+      "funding.unfitOrUnwilling": false
+    },
+    expect: { determination: "P2_URGENT", priorityCode: "P2", missing: [] }
+  },
+  {
+    id: "S22-weights-one-only",
+    title: "Weights: only the current weight recorded, no earlier weight and no percentage -> not computable, INSUFFICIENT, asks for percent",
+    note: "62M. Unintentional weight loss over 4 months, now 77kg on the scales. Bloods, urinalysis, CXR done and normal. Exam NAD. Suspect malignancy.",
+    answers: {
+      "patient.age": 62, "patient.sex": "male",
+      "workup.bloods": true, "workup.urinalysis": true, "workup.cxr": true,
+      "workup.strongSuspicionMalignancy": true, "workup.localisingFeatures": false,
+      "weightloss.present": { v: true, status: "documented", quote: "Unintentional weight loss" },
+      "weightloss.measured": { v: true, status: "documented", quote: "on the scales" },
+      "weightloss.weightNow": { v: 77, status: "documented", quote: "now 77kg on the scales" },
+      "weightloss.periodMonths": { v: 4, status: "documented", quote: "over 4 months" },
+      "excl.currentCancerFollowUp": false, "excl.secondaryCareInvestigated12m": false, "excl.urgentAdmissionRequired": false, "excl.recentUSAbdoPelvis3m": false, "excl.recentCTCAP12m": false,
+      "funding.unfitOrUnwilling": false
+    },
+    expect: {
+      determination: "INSUFFICIENT_INFORMATION",
+      missing: ["weightloss.percent", "advice.urgentCTRecommended", "lab.crp.raised", "lab.hb.low", "lab.calcium.raised", "lab.platelets.high", "lab.alp.high", "lab.albumin.low", "lab.repeatConfirmed", "lab.unexplained"]
+    }
+  },
+  {
+    id: "S23-weights-stated-percent-wins",
+    title: "Weights imply ~8% but the referral states 5% -> the stated percentage is used (not 'more than 5%'), CRITERIA_NOT_MET",
+    note: "62M. 4/12 unintentional weight loss, 84kg to 77kg, GP has recorded this as 5%. Bloods, urinalysis, CXR done and normal. Exam NAD. Suspect malignancy. No specialist advice.",
+    answers: {
+      "patient.age": 62, "patient.sex": "male",
+      "workup.bloods": true, "workup.urinalysis": true, "workup.cxr": true,
+      "workup.strongSuspicionMalignancy": true, "workup.localisingFeatures": false,
+      "weightloss.present": { v: true, status: "documented", quote: "unintentional weight loss" },
+      "weightloss.measured": { v: true, status: "documented", quote: "84kg to 77kg" },
+      "weightloss.weightBefore": { v: 84, status: "documented", quote: "84kg to 77kg" },
+      "weightloss.weightNow": { v: 77, status: "documented", quote: "84kg to 77kg" },
+      "weightloss.percent": { v: 5, status: "documented", quote: "recorded this as 5%" },
+      "weightloss.periodMonths": { v: 4, status: "documented", quote: "4/12" },
+      "lab.crp.raised": false, "lab.hb.low": false, "lab.calcium.raised": false, "lab.platelets.high": false, "lab.alp.high": false, "lab.albumin.low": false,
+      "advice.urgentCTRecommended": false,
+      "excl.currentCancerFollowUp": false, "excl.secondaryCareInvestigated12m": false, "excl.urgentAdmissionRequired": false, "excl.recentUSAbdoPelvis3m": false, "excl.recentCTCAP12m": false,
+      "funding.unfitOrUnwilling": false
+    },
+    expect: { determination: "CRITERIA_NOT_MET", missing: [] }
+  },
+  {
+    id: "S24-browser-001",
+    title: "Ground-truth GT-BROWSER-001: full B1 setup from recorded weights, but strong suspicion of malignancy is attestation-only (AD-17) -> INSUFFICIENT until attested",
+    note: "62M, 4/12 unintentional weight loss 84->77kg (8%) on scales, bloods/urinalysis/CXR done and normal, exam NAD. Requesting CT chest abdomen pelvis.",
+    answers: {
+      "patient.age": { v: 62, status: "documented", quote: "62M" },
+      "patient.sex": { v: "male", status: "documented", quote: "62M" },
+      "weightloss.present": { v: true, status: "documented", quote: "unintentional weight loss" },
+      "weightloss.measured": { v: true, status: "documented", quote: "on scales" },
+      "weightloss.weightBefore": { v: 84, status: "documented", quote: "84->77kg" },
+      "weightloss.weightNow": { v: 77, status: "documented", quote: "84->77kg" },
+      "weightloss.percent": { v: 8, status: "documented", quote: "(8%)" },
+      "weightloss.periodMonths": { v: 4, status: "documented", quote: "4/12" },
+      "workup.bloods": { v: true, status: "documented", quote: "bloods/urinalysis/CXR done and normal" },
+      "workup.urinalysis": { v: true, status: "documented", quote: "bloods/urinalysis/CXR done and normal" },
+      "workup.cxr": { v: true, status: "documented", quote: "bloods/urinalysis/CXR done and normal" },
+      "workup.localisingFeatures": { v: false, status: "documented", quote: "exam NAD" }
+    },
+    expect: { determination: "INSUFFICIENT_INFORMATION", missing: ["workup.strongSuspicionMalignancy", "advice.urgentCTRecommended"] }
+  },
   // ---- Cases from CRR_Test_Case_Results_Matrix_v2.xlsx (the cases the current tool was measured on) ----
   {
     id: "RM-RP-001-ctcap",

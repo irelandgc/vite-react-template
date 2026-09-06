@@ -188,5 +188,87 @@ prompt change** — the follow-up instruction added the prompt sentence (as v3.0
 status was `documented`; it was `inferred`.
 
 **Status.** **Open (low) — mitigated.** `strict` excludes it; the contract now names the case.
-A prompt evidence-rule example is the next step if a later run shows it rising or turning
-`documented`.
+**Update (v3.0.2 / v1.2 run):** with E-08 in force, one of three runs answered
+`weightloss.present = false / documented` from "wt 58" — a `documented` answer that `strict`
+would count. Tracked separately as **item 10**.
+
+---
+
+## 8. Browser findings — E-04 / E-07 / E-08 and weights-based weight loss (`GT-BROWSER-001`) · **pending review**
+
+**What happened.** An arch-mig browser-testing session against the thin Triage pipeline page
+surfaced three same-fact rephrasings the extraction model was not reading, and one engine gap
+(demographic items suppressed whenever the context block carried anything — item 9). Ground-truth
+case **`GT-BROWSER-001`** was added to measure them: *"62M, 4/12 unintentional weight loss
+84->77kg (8%) on scales, bloods/urinalysis/CXR done and normal, exam NAD."*
+
+**What changed.**
+- `concept-equivalence-v1.2` (NEEDS CLINICAL REVIEW): **E-07** ("NAD" / "SNT" / "unremarkable" /
+  "O/E normal" on an examination ⇒ an examination-findings item such as
+  `workup.localisingFeatures`, `false`, `documented`) and **E-08** ("on scales" / two recorded
+  weights ⇒ `weightloss.measured`, `documented`). Prompt **v3.0.2** wires the equivalence part
+  to v1.2 and adds the E-07 example to the EVIDENCE rules.
+- Vocabulary v1.2: `weightloss.weightBefore` / `weightloss.weightNow` (decimal, kg). CT CAP
+  library republished **v2.0.0** (logic change, AD-02): `"Weight Loss Percent By Recorded
+  Weights"` computes `weightloss.percent` from the two weights when both are documented and no
+  percentage is stated; a stated percentage still wins (REVIEW Q3 revisited).
+
+**Re-run result (v3.0.2 + v1.2, `--runs 3`).** `GT-BROWSER-001` **clean 3/3 on every one of its
+12 indicators** (value, status, quote), all three `expectedAbsent` clean including
+`workup.strongSuspicionMalignancy` (AD-17 — the model never answered it). Engine
+`INSUFFICIENT_INFORMATION` 3/3, which is the **expected** result: the CT CAP P2 pathway needs
+the attested strong suspicion of malignancy, which the extraction model may not supply. E-07 did
+**not** misfire on RP-007's positive "15cm epigastric mass" (`workup.localisingFeatures` `true`
+3/3). E-04 / E-05 unchanged from the v1.1 run — no regression.
+
+**Open reviewer questions.** E-07: does a documented normal examination answer
+`workup.localisingFeatures = false` blanket, or only for the system examined? E-08: does one
+recorded weight (no comparison) earn `weightloss.measured`, or is a pair required? (v1.2's
+review checklist; E-09 is the non-entry recording the single-weight case.)
+
+**Status.** **Pending review** — E-07 / E-08 are NEEDS CLINICAL REVIEW; the run measured their
+effect and shows no regression.
+
+---
+
+## 9. Demographic items suppressed whenever the context block carried anything · **closed**
+
+**What happened.** Prompt v3.0.1's EVIDENCE rule 8 ("Do not answer age or sex if the context
+block supplies them") plus `prompt.ts` `contextBlock()` emitted "Do NOT answer patient.age /
+patient.sex / patient.ageMonths" whenever the context block carried **any** field — so a request
+that supplied only labs also suppressed age and sex, and the pipeline then had no extracted
+age/sex to pre-fill for the referrer to confirm.
+
+**What changed.** Prompt **v3.0.2** rule 8: the model answers a demographic item from the note
+(`documented`, with a quote) **unless the context block supplies that specific item**.
+`contextBlock()` now names only the demographic fields actually supplied. The thin Triage
+pipeline page pre-fills the Age / Sex fields from the merged `QuestionnaireResponse`; a confirmed
+or corrected value goes back as context and **overrides** the extracted one, recorded as a
+discrepancy (`merge.ts`, unchanged).
+
+**Re-run result.** The benchmark runs with `context: {}`; `patient.age` / `patient.sex` answered
+`documented` 3/3 on `GT-BROWSER-001` and every RM case (unchanged — the benchmark never supplied
+context, so this was never the failing path there; the fix is for the mixed-context pipeline
+call the browser session hit).
+
+**Status.** **Closed** — behaviour corrected; pipeline pre-fill browser-tested.
+
+---
+
+## 10. "wt 58" answered `false / documented` under E-08 · **open (low)**
+
+**What happened.** With E-08 in force ("on scales" / recorded weights ⇒ `weightloss.measured`),
+one of three `GT-BROWSER-001`-run probes of `GT-RM-MW-009` answered `weightloss.present = false /
+documented` from "wt 58" — reading a single recorded weight as a documented statement that there
+is no weight loss. Runs 1–2 answered `inferred` (strict excludes, as in item 7).
+
+**Impact.** Low. MW-009's determination already diverges for the `workup.localisingFeatures`
+reason (item 5); `weightloss.present = false` does not change it. But a `documented` answer
+**counts under `strict`**, unlike the `inferred` answers item 7 describes.
+
+**What could change.** `concept-equivalence-v1.2` records this as non-entry **E-09** (two stated
+weights read straight into `weightloss.weightBefore` / `weightloss.weightNow`; a single weight
+computes nothing and is not weight loss). A prompt evidence-rule clause scoping E-08 to a *pair*
+of weights is the candidate fix if a later run shows this rising.
+
+**Status.** **Open (low).** Watch the next run; contract rule 4 and E-09 name the case.

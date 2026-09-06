@@ -1,0 +1,96 @@
+{
+  "id": "GT-BROWSER-001",
+  "scenarioId": "S24-browser-001",
+  "matrixId": "GT-BROWSER-001",
+  "title": "Browser findings: 62M, 8% weight loss by recorded weights, full work-up, exam NAD - the note supports P2 once malignancy suspicion is attested",
+  "note": "62M, 4/12 unintentional weight loss 84->77kg (8%) on scales, bloods/urinalysis/CXR done and normal, exam NAD. Requesting CT chest abdomen pelvis.",
+  "questionnaires": [
+    "http://crr.health.nz/fhir/Questionnaire/CRR-National",
+    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult"
+  ],
+  "examSites": [
+    {
+      "id": "ct_cap",
+      "requested": true,
+      "quote": "CT chest abdomen pelvis"
+    }
+  ],
+  "expected": {
+    "patient.age": {
+      "value": 62,
+      "status": "documented",
+      "quote": "62M"
+    },
+    "patient.sex": {
+      "value": "male",
+      "status": "documented",
+      "quote": "62M"
+    },
+    "weightloss.present": {
+      "value": true,
+      "status": "documented",
+      "quote": "unintentional weight loss"
+    },
+    "weightloss.measured": {
+      "value": true,
+      "status": "documented",
+      "quote": "on scales"
+    },
+    "weightloss.weightBefore": {
+      "value": 84,
+      "status": "documented",
+      "quote": "84->77kg"
+    },
+    "weightloss.weightNow": {
+      "value": 77,
+      "status": "documented",
+      "quote": "84->77kg"
+    },
+    "weightloss.percent": {
+      "value": 8,
+      "status": "documented",
+      "quote": "(8%)"
+    },
+    "weightloss.periodMonths": {
+      "value": 4,
+      "status": "documented",
+      "quote": "4/12"
+    },
+    "workup.bloods": {
+      "value": true,
+      "status": "documented",
+      "quote": "bloods/urinalysis/CXR done and normal"
+    },
+    "workup.urinalysis": {
+      "value": true,
+      "status": "documented",
+      "quote": "bloods/urinalysis/CXR done and normal"
+    },
+    "workup.cxr": {
+      "value": true,
+      "status": "documented",
+      "quote": "bloods/urinalysis/CXR done and normal"
+    },
+    "workup.localisingFeatures": {
+      "value": false,
+      "status": "documented",
+      "quote": "exam NAD"
+    }
+  },
+  "expectedAbsent": {
+    "workup.strongSuspicionMalignancy": "Attestation-category indicator (AD-17). The extraction model must never answer it - the referrer attests it in the Triage Advisor. 'Requesting CT chest abdomen pelvis' is a request, not a stated strong suspicion of malignancy.",
+    "advice.urgentCTRecommended": "No secondary-care / PCRL / radiologist advice is mentioned.",
+    "symptom.abdominalPain": "No symptom is stated. 'exam NAD' is a normal examination, not a symptom."
+  },
+  "engineExpectation": {
+    "determination": "INSUFFICIENT_INFORMATION"
+  },
+  "provenance": {
+    "source": "arch-mig browser-testing session against the thin Triage pipeline page (chore/arch-mig-browser-findings-1)",
+    "matrixId": "GT-BROWSER-001",
+    "caseType": "browser-findings",
+    "noteProvenance": "constructed for this session from the browser finding; no patient-identifiable data.",
+    "evaluatorExpectation": "P2_URGENT. The note gives everything the CT CAP P2 pathway B1 needs - male over 50, 8% documented weight loss over 4 months by recorded weights, full initial work-up, no localising features - EXCEPT the practitioner's attested strong suspicion of malignancy.",
+    "divergence": "The extraction-only benchmark path (`/api/assess/extract` -> `/api/assess/evaluate`) cannot supply `workup.strongSuspicionMalignancy` (AD-17: attestation-only), so the engine returns INSUFFICIENT_INFORMATION. `engineExpectation` records that. The full pipeline reaches P2_URGENT only when the referrer attests it - the same mechanism `tests/scenarios.mjs` S01 and the pipeline-e2e demonstration case cover. This case's value is the EXTRACTION score: it exercises E-04 (`4/12` -> 4 months), E-07 (`exam NAD` -> `workup.localisingFeatures` false), E-08 (`on scales` -> `weightloss.measured`), the new `weightloss.weightBefore` / `weightloss.weightNow` indicators, a stated percentage alongside recorded weights, and the attestation indicator staying unanswered."
+  }
+}

@@ -182,7 +182,30 @@ define "Criterion A: Assessed, Strong Suspicion, No Localising Features":
   Yellow flag symptoms are "+/-" and therefore do not affect the logic; they
   are captured for context only.
 */
-define "Weight Loss Percent": "Dec"('weightloss.percent')
+/*
+  SOURCE (p10, B1 and p11, B2): "unintentional, unexplained, documented weight
+   loss of more than 5 % of usual body weight over 3-6 months"
+
+  REVIEW Q3 (revisited): "documented weight loss" is read as "documented by
+  recorded weights". Where the referral gives two recorded weights (earlier and
+  current) and states no percentage, the percentage is computed from them. A
+  computed percentage is only as sound as the evidence the two weights were
+  accepted on - under 'strict', both must be 'documented' or 'retrieved'. A
+  percentage the referral states explicitly always wins over a computed one.
+  Confirm: (a) computing % from two recorded weights when none is stated is
+  acceptable; (b) a stated % takes precedence even where it disagrees with the
+  recorded weights.
+*/
+define "Weight Loss Percent By Recorded Weights":
+  if "Dec"('weightloss.weightBefore') is not null
+    and "Dec"('weightloss.weightNow') is not null
+    and "Dec"('weightloss.weightBefore') > 0.0
+  then ("Dec"('weightloss.weightBefore') - "Dec"('weightloss.weightNow'))
+       / "Dec"('weightloss.weightBefore') * 100.0
+  else null
+
+define "Weight Loss Percent":
+  Coalesce("Dec"('weightloss.percent'), "Weight Loss Percent By Recorded Weights")
 define "Weight Loss Period Months": "Dec"('weightloss.periodMonths')
 
 define "Weight Loss Criterion":
@@ -475,6 +498,7 @@ define "All Indicator LinkIds":
     'patient.age', 'patient.sex',
     'workup.bloods', 'workup.urinalysis', 'workup.cxr', 'workup.strongSuspicionMalignancy', 'workup.localisingFeatures',
     'weightloss.present', 'weightloss.measured', 'weightloss.percent', 'weightloss.periodMonths',
+    'weightloss.weightBefore', 'weightloss.weightNow',
     'symptom.abdominalPain', 'symptom.fatigue', 'symptom.nausea',
     'lab.crp.raised', 'lab.hb.low', 'lab.calcium.raised', 'lab.platelets.high', 'lab.alp.high', 'lab.albumin.low',
     'lab.repeatConfirmed', 'lab.unexplained',
@@ -506,6 +530,7 @@ define "Rule Trace":
     localisingFeatures: "Localising Features Identified",
     weightLossCriterion: "Weight Loss Criterion",
     weightLossPercent: "Weight Loss Percent",
+    weightLossPercentByRecordedWeights: "Weight Loss Percent By Recorded Weights",
     weightLossPeriodMonths: "Weight Loss Period Months",
     b1AgeSexThreshold: "B1 Age Sex Threshold",
     pathwayB1: "Pathway B1: Age Threshold With Weight Loss",

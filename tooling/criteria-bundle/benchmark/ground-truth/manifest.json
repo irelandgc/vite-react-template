@@ -1,10 +1,10 @@
 {
   "name": "CRR extraction benchmark - ground truth manifest",
   "version": "1.0.0",
-  "date": "2026-09-06",
+  "date": "2026-09-07",
   "slice": "ARCH-MIG-01 4a",
   "status": "NOT CLINICALLY REVIEWED",
-  "description": "Indicator-level ground truth for the extraction benchmark (gap analysis §7). Each case names, per linkId, the expected value, evidence status and verbatim quote - plus the linkIds a correct extraction must NOT answer, which is where the fabrication failures actually show. This manifest is the start of the record that replaces the unreconstructable '138' figure (KI-30): every case here has named provenance, and a case with no provenance does not belong in it.",
+  "description": "Indicator-level ground truth for the extraction benchmark (gap analysis \u00a77). Each case names, per linkId, the expected value, evidence status and verbatim quote - plus the linkIds a correct extraction must NOT answer, which is where the fabrication failures actually show. This manifest is the start of the record that replaces the unreconstructable '138' figure (KI-30): every case here has named provenance, and a case with no provenance does not belong in it.",
   "howItIsUsed": {
     "now": "run-ground-truth.mjs builds each expected response, checks every quote against the note (validation-gate rule 1), and runs it through the CT CAP engine. This proves the ground truth is internally consistent and consistent with the rules BEFORE any model is involved - a benchmark whose ground truth disagrees with the engine measures nothing.",
     "slice9": "The same cases are the extraction benchmark: a model's response is scored per linkId against `expected` (value, status, quote validity) and per case against `examSites`, and the engine result is checked separately. That separation is CK Jin's recommendation and the reason a single-verdict comparison cannot replace it."
@@ -16,9 +16,10 @@
     "GT-RM-RP-001-ctcap-5.5pct is SYNTHETIC and must be reported separately from the three evaluator cases; including it in an aggregate extraction score would overstate coverage of real referrals."
   ],
   "coverage": {
-    "cases": 4,
+    "cases": 5,
     "evaluatorSubmitted": 3,
     "synthetic": 1,
+    "browserFindings": 1,
     "examSites": [
       "ct_cap"
     ],
@@ -27,13 +28,18 @@
       "patient.age",
       "patient.sex",
       "symptom.abdominalPain",
+      "weightloss.measured",
       "weightloss.percent",
       "weightloss.periodMonths",
       "weightloss.present",
+      "weightloss.weightBefore",
+      "weightloss.weightNow",
       "workup.bloods",
-      "workup.localisingFeatures"
+      "workup.cxr",
+      "workup.localisingFeatures",
+      "workup.urinalysis"
     ],
-    "gaps": "One exam/site (CT CAP), four cases, 10 distinct linkIds. Nothing here exercises a red flag, the ACC redirect, a paediatric case, a compound flag, or exam/site selection with a real second bundle. The 46 red-flag scenarios in tests/scenarios-redflags.mjs cover the red-flag LOGIC but are not extraction ground truth - they start from answers, not from notes. Extending this seed to red flags needs notes with named provenance, which this session did not have."
+    "gaps": "One exam/site (CT CAP), five cases, 14 distinct linkIds. Nothing here exercises a red flag, the ACC redirect, a paediatric case, a compound flag, or exam/site selection with a real second bundle. GT-BROWSER-001 adds the weights-based weight-loss path and the E-07/E-08 equivalences but is still CT CAP only."
   },
   "findings": [
     {
@@ -106,6 +112,20 @@
       "source": "documents/CRR_Test_Case_Results_Matrix_v2.xlsx",
       "expectedDetermination": "ALTERNATIVE_MANAGEMENT",
       "indicatorsExpected": 4,
+      "indicatorsExpectedAbsent": 3
+    },
+    {
+      "id": "GT-BROWSER-001",
+      "scenarioId": "S24-browser-001",
+      "matrixId": "GT-BROWSER-001",
+      "title": "62M, 8% weight loss by recorded weights, full work-up, exam NAD - extraction test for E-04 / E-07 / E-08 and the weightBefore/weightNow indicators; note supports P2 once malignancy suspicion is attested",
+      "examSite": "ct_cap",
+      "caseType": "browser-findings",
+      "evaluator": null,
+      "source": "arch-mig browser-testing session (chore/arch-mig-browser-findings-1); no patient-identifiable data",
+      "expectedDetermination": "INSUFFICIENT_INFORMATION",
+      "evaluatorExpectation": "P2_URGENT once workup.strongSuspicionMalignancy is attested (AD-17)",
+      "indicatorsExpected": 12,
       "indicatorsExpectedAbsent": 3
     }
   ]

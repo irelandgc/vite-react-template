@@ -24,6 +24,10 @@
 | S18-record-weights | strict/literal | P2_URGENT (P2) | - | 8 | PASS |
 | S19-record-prior-ct | strict/literal | ALTERNATIVE_MANAGEMENT | - | 2 | PASS |
 | S20-record-discrepancy | strict/literal | P2_URGENT (P2) | - | 9 | PASS |
+| S21-weights-both-documented | strict/literal | P2_URGENT (P2) | - | - | PASS |
+| S22-weights-one-only | strict/literal | INSUFFICIENT_INFORMATION | weightloss.percent, advice.urgentCTRecommended, lab.crp.raised, lab.hb.low, lab.calcium.raised, lab.platelets.high, lab.alp.high, lab.albumin.low, lab.repeatConfirmed, lab.unexplained | - | PASS |
+| S23-weights-stated-percent-wins | strict/literal | CRITERIA_NOT_MET | - | - | PASS |
+| S24-browser-001 | strict/literal | INSUFFICIENT_INFORMATION | workup.strongSuspicionMalignancy, advice.urgentCTRecommended | - | PASS |
 | RM-RP-001-ctcap | strict/literal | INSUFFICIENT_INFORMATION | workup.bloods, workup.urinalysis, workup.cxr, workup.strongSuspicionMalignancy, weightloss.measured, advice.urgentCTRecommended, lab.crp.raised, lab.calcium.raised, lab.platelets.high, lab.alp.high, lab.albumin.low, lab.repeatConfirmed, lab.unexplained | - | PASS |
 | RM-RP-001-ctcap-5.5pct | strict/literal | INSUFFICIENT_INFORMATION | workup.bloods, workup.urinalysis, workup.cxr, workup.strongSuspicionMalignancy, weightloss.measured, advice.urgentCTRecommended, lab.crp.raised, lab.calcium.raised, lab.platelets.high, lab.alp.high, lab.albumin.low, lab.repeatConfirmed, lab.unexplained | - | PASS |
 | RM-RP-007-INT-002-ctcap | strict/literal | ALTERNATIVE_MANAGEMENT | - | - | PASS |
@@ -57,6 +61,7 @@ Pathway B1: male 62, documented 8% loss over 4 months, full work-up, no localisi
     "localisingFeatures": false,
     "weightLossCriterion": true,
     "weightLossPercent": 8.3,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 4,
     "b1AgeSexThreshold": true,
     "pathwayB1": true,
@@ -103,6 +108,7 @@ Pathway B2: female 55, 6% loss over 5 months, CRP raised + Hb low persistent on 
     "localisingFeatures": false,
     "weightLossCriterion": true,
     "weightLossPercent": 6,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 5,
     "b1AgeSexThreshold": false,
     "pathwayB1": false,
@@ -159,6 +165,7 @@ Female 55 (below B1 age threshold), weight loss met, labs not documented -> insu
     "localisingFeatures": false,
     "weightLossCriterion": true,
     "weightLossPercent": 7,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 4,
     "b1AgeSexThreshold": false,
     "pathwayB1": false,
@@ -205,6 +212,7 @@ Female 55, weight loss met, all labs documented normal -> criteria not met (neit
     "localisingFeatures": false,
     "weightLossCriterion": true,
     "weightLossPercent": 7,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 4,
     "b1AgeSexThreshold": false,
     "pathwayB1": false,
@@ -256,6 +264,7 @@ Male 62, 'losing weight' but no figure and no period -> insufficient; asks for p
     "localisingFeatures": false,
     "weightLossCriterion": null,
     "weightLossPercent": null,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": null,
     "b1AgeSexThreshold": true,
     "pathwayB1": null,
@@ -312,6 +321,7 @@ The fabrication case: LLM computes 7.5% from '80kg -> 74kg' and labels it INFERR
     "localisingFeatures": false,
     "weightLossCriterion": null,
     "weightLossPercent": null,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": null,
     "b1AgeSexThreshold": true,
     "pathwayB1": null,
@@ -361,6 +371,7 @@ The fabrication case: LLM computes 7.5% from '80kg -> 74kg' and labels it INFERR
     "localisingFeatures": false,
     "weightLossCriterion": true,
     "weightLossPercent": 7.5,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 4,
     "b1AgeSexThreshold": true,
     "pathwayB1": true,
@@ -409,6 +420,7 @@ Redirect: 4cm palpable left iliac fossa mass -> localising features -> alternati
     "localisingFeatures": true,
     "weightLossCriterion": true,
     "weightLossPercent": 9,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 3,
     "b1AgeSexThreshold": true,
     "pathwayB1": true,
@@ -457,6 +469,7 @@ Redirect: otherwise meets B1 but had CT CAP 8 months ago -> seek radiologist adv
     "localisingFeatures": false,
     "weightLossCriterion": true,
     "weightLossPercent": 6,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 4,
     "b1AgeSexThreshold": true,
     "pathwayB1": true,
@@ -515,6 +528,7 @@ REVIEW Q1: PCRL advised urgent CT CAP, but CXR not done and no weight loss. Lite
     "localisingFeatures": false,
     "weightLossCriterion": false,
     "weightLossPercent": null,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": null,
     "b1AgeSexThreshold": true,
     "pathwayB1": false,
@@ -561,6 +575,7 @@ REVIEW Q1: PCRL advised urgent CT CAP, but CXR not done and no weight loss. Lite
     "localisingFeatures": false,
     "weightLossCriterion": false,
     "weightLossPercent": null,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": null,
     "b1AgeSexThreshold": true,
     "pathwayB1": false,
@@ -609,6 +624,7 @@ Specialist advice pathway met (alt reading) but adviser name/role not documented
     "localisingFeatures": false,
     "weightLossCriterion": false,
     "weightLossPercent": null,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": null,
     "b1AgeSexThreshold": true,
     "pathwayB1": false,
@@ -661,6 +677,7 @@ Not routinely funded: patient declines further investigation/treatment (takes pr
     "localisingFeatures": false,
     "weightLossCriterion": true,
     "weightLossPercent": 10,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 4,
     "b1AgeSexThreshold": true,
     "pathwayB1": true,
@@ -717,6 +734,7 @@ Age 14 -> adult criteria do not apply; paediatric set applies
     "localisingFeatures": false,
     "weightLossCriterion": true,
     "weightLossPercent": 10,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 4,
     "b1AgeSexThreshold": false,
     "pathwayB1": false,
@@ -773,6 +791,7 @@ REVIEW Q4 boundary: male exactly 50 with weight loss -> B1 'over 50' read as >50
     "localisingFeatures": false,
     "weightLossCriterion": true,
     "weightLossPercent": 6,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 4,
     "b1AgeSexThreshold": false,
     "pathwayB1": false,
@@ -825,6 +844,7 @@ B1 met but exclusions not addressed in note -> P2 with unconfirmed exclusions li
     "localisingFeatures": false,
     "weightLossCriterion": true,
     "weightLossPercent": 8,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 4,
     "b1AgeSexThreshold": true,
     "pathwayB1": true,
@@ -884,6 +904,7 @@ Retrieval: note has work-up + weight loss only; PMS record supplies Hb low and C
     "localisingFeatures": false,
     "weightLossCriterion": true,
     "weightLossPercent": 6.9,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 4,
     "b1AgeSexThreshold": false,
     "pathwayB1": false,
@@ -940,6 +961,7 @@ Retrieval: as S15 but the note states the abnormal results are unexplained -> P2
     "localisingFeatures": false,
     "weightLossCriterion": true,
     "weightLossPercent": 6.9,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 4,
     "b1AgeSexThreshold": false,
     "pathwayB1": false,
@@ -996,6 +1018,7 @@ Retrieval: Hb and CRP abnormal twice but only 10 days apart -> repeat NOT confir
     "localisingFeatures": false,
     "weightLossCriterion": true,
     "weightLossPercent": 6.9,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 4,
     "b1AgeSexThreshold": false,
     "pathwayB1": false,
@@ -1051,6 +1074,7 @@ Retrieval: the fabrication case resolved at source - weights 80kg (4 months ago)
     "localisingFeatures": false,
     "weightLossCriterion": true,
     "weightLossPercent": 7.5,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 3.9,
     "b1AgeSexThreshold": true,
     "pathwayB1": true,
@@ -1106,6 +1130,7 @@ Retrieval: note says nothing about prior imaging; record holds a CT CAP report f
     "localisingFeatures": false,
     "weightLossCriterion": true,
     "weightLossPercent": 6,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 4,
     "b1AgeSexThreshold": true,
     "pathwayB1": true,
@@ -1162,6 +1187,7 @@ Retrieval: note says 'Hb normal' but the record shows Hb low twice -> retrieved 
     "localisingFeatures": false,
     "weightLossCriterion": true,
     "weightLossPercent": 6.9,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 4,
     "b1AgeSexThreshold": false,
     "pathwayB1": false,
@@ -1189,6 +1215,214 @@ Retrieval: note says 'Hb normal' but the record shows Hb low twice -> retrieved 
       ]
     }
   ]
+}
+```
+
+### S21-weights-both-documented (strict/literal)
+
+Weights: 84kg -> 77kg documented, no percentage stated -> CT CAP computes 8.3%, B1 met, P2 (arch-mig browser findings, weightBefore/weightNow)
+
+```json
+{
+  "exam": "CT Chest, Abdomen and Pelvis - Adult",
+  "criteriaVersion": "2.0 (published 09/04/2026)",
+  "determination": "P2_URGENT",
+  "priorityCode": "P2",
+  "priorityTimeframe": "Complete within 2 weeks of receiving referral",
+  "activeRedirects": [],
+  "unconfirmedExclusions": [],
+  "missingInformation": [],
+  "inferredIndicators": [],
+  "inferredExcludedByStrictStandard": [],
+  "retrievedIndicators": [],
+  "yellowFlagSymptoms": false,
+  "ruleTrace": {
+    "isAdult": true,
+    "criterionA": true,
+    "initialInvestigationsComplete": true,
+    "strongSuspicion": true,
+    "localisingFeatures": false,
+    "weightLossCriterion": true,
+    "weightLossPercent": 8.333333333333332,
+    "weightLossPercentByRecordedWeights": 8.333333333333332,
+    "weightLossPeriodMonths": 4,
+    "b1AgeSexThreshold": true,
+    "pathwayB1": true,
+    "b2AgeSexThreshold": true,
+    "abnormalLabCount": 0,
+    "unknownLabCount": 0,
+    "twoOrMorePersistentUnexplainedAbnormalLabs": false,
+    "pathwayB2": false,
+    "pathwayB3": null,
+    "meetsP2Literal": true,
+    "meetsP2Alternative": true,
+    "alternativeManagement": false,
+    "notRoutinelyFunded": false,
+    "documentationStandard": "strict",
+    "p2StructureReading": "literal"
+  },
+  "discrepancies": []
+}
+```
+
+### S22-weights-one-only (strict/literal)
+
+Weights: only the current weight recorded, no earlier weight and no percentage -> not computable, INSUFFICIENT, asks for percent
+
+```json
+{
+  "exam": "CT Chest, Abdomen and Pelvis - Adult",
+  "criteriaVersion": "2.0 (published 09/04/2026)",
+  "determination": "INSUFFICIENT_INFORMATION",
+  "priorityCode": null,
+  "priorityTimeframe": null,
+  "activeRedirects": [],
+  "unconfirmedExclusions": [],
+  "missingInformation": [
+    "weightloss.percent",
+    "advice.urgentCTRecommended",
+    "lab.crp.raised",
+    "lab.hb.low",
+    "lab.calcium.raised",
+    "lab.platelets.high",
+    "lab.alp.high",
+    "lab.albumin.low",
+    "lab.repeatConfirmed",
+    "lab.unexplained"
+  ],
+  "inferredIndicators": [],
+  "inferredExcludedByStrictStandard": [],
+  "retrievedIndicators": [],
+  "yellowFlagSymptoms": false,
+  "ruleTrace": {
+    "isAdult": true,
+    "criterionA": true,
+    "initialInvestigationsComplete": true,
+    "strongSuspicion": true,
+    "localisingFeatures": false,
+    "weightLossCriterion": null,
+    "weightLossPercent": null,
+    "weightLossPercentByRecordedWeights": null,
+    "weightLossPeriodMonths": 4,
+    "b1AgeSexThreshold": true,
+    "pathwayB1": null,
+    "b2AgeSexThreshold": true,
+    "abnormalLabCount": 0,
+    "unknownLabCount": 6,
+    "twoOrMorePersistentUnexplainedAbnormalLabs": null,
+    "pathwayB2": null,
+    "pathwayB3": null,
+    "meetsP2Literal": null,
+    "meetsP2Alternative": null,
+    "alternativeManagement": false,
+    "notRoutinelyFunded": false,
+    "documentationStandard": "strict",
+    "p2StructureReading": "literal"
+  },
+  "discrepancies": []
+}
+```
+
+### S23-weights-stated-percent-wins (strict/literal)
+
+Weights imply ~8% but the referral states 5% -> the stated percentage is used (not 'more than 5%'), CRITERIA_NOT_MET
+
+```json
+{
+  "exam": "CT Chest, Abdomen and Pelvis - Adult",
+  "criteriaVersion": "2.0 (published 09/04/2026)",
+  "determination": "CRITERIA_NOT_MET",
+  "priorityCode": null,
+  "priorityTimeframe": null,
+  "activeRedirects": [],
+  "unconfirmedExclusions": [],
+  "missingInformation": [],
+  "inferredIndicators": [],
+  "inferredExcludedByStrictStandard": [],
+  "retrievedIndicators": [],
+  "yellowFlagSymptoms": false,
+  "ruleTrace": {
+    "isAdult": true,
+    "criterionA": true,
+    "initialInvestigationsComplete": true,
+    "strongSuspicion": true,
+    "localisingFeatures": false,
+    "weightLossCriterion": false,
+    "weightLossPercent": 5,
+    "weightLossPercentByRecordedWeights": 8.333333333333332,
+    "weightLossPeriodMonths": 4,
+    "b1AgeSexThreshold": true,
+    "pathwayB1": false,
+    "b2AgeSexThreshold": true,
+    "abnormalLabCount": 0,
+    "unknownLabCount": 0,
+    "twoOrMorePersistentUnexplainedAbnormalLabs": false,
+    "pathwayB2": false,
+    "pathwayB3": false,
+    "meetsP2Literal": false,
+    "meetsP2Alternative": false,
+    "alternativeManagement": false,
+    "notRoutinelyFunded": false,
+    "documentationStandard": "strict",
+    "p2StructureReading": "literal"
+  },
+  "discrepancies": []
+}
+```
+
+### S24-browser-001 (strict/literal)
+
+Ground-truth GT-BROWSER-001: full B1 setup from recorded weights, but strong suspicion of malignancy is attestation-only (AD-17) -> INSUFFICIENT until attested
+
+```json
+{
+  "exam": "CT Chest, Abdomen and Pelvis - Adult",
+  "criteriaVersion": "2.0 (published 09/04/2026)",
+  "determination": "INSUFFICIENT_INFORMATION",
+  "priorityCode": null,
+  "priorityTimeframe": null,
+  "activeRedirects": [],
+  "unconfirmedExclusions": [
+    "excl.currentCancerFollowUp",
+    "excl.secondaryCareInvestigated12m",
+    "excl.urgentAdmissionRequired",
+    "excl.recentUSAbdoPelvis3m",
+    "excl.recentCTCAP12m"
+  ],
+  "missingInformation": [
+    "workup.strongSuspicionMalignancy",
+    "advice.urgentCTRecommended"
+  ],
+  "inferredIndicators": [],
+  "inferredExcludedByStrictStandard": [],
+  "retrievedIndicators": [],
+  "yellowFlagSymptoms": false,
+  "ruleTrace": {
+    "isAdult": true,
+    "criterionA": null,
+    "initialInvestigationsComplete": true,
+    "strongSuspicion": null,
+    "localisingFeatures": false,
+    "weightLossCriterion": true,
+    "weightLossPercent": 8,
+    "weightLossPercentByRecordedWeights": 8.333333333333332,
+    "weightLossPeriodMonths": 4,
+    "b1AgeSexThreshold": true,
+    "pathwayB1": true,
+    "b2AgeSexThreshold": true,
+    "abnormalLabCount": 0,
+    "unknownLabCount": 6,
+    "twoOrMorePersistentUnexplainedAbnormalLabs": null,
+    "pathwayB2": null,
+    "pathwayB3": null,
+    "meetsP2Literal": null,
+    "meetsP2Alternative": null,
+    "alternativeManagement": false,
+    "notRoutinelyFunded": false,
+    "documentationStandard": "strict",
+    "p2StructureReading": "literal"
+  },
+  "discrepancies": []
 }
 ```
 
@@ -1242,6 +1476,7 @@ Results matrix RP-001 (Rhys Parry): 65M, 5% loss over 6/12, no localising signs,
     "localisingFeatures": false,
     "weightLossCriterion": false,
     "weightLossPercent": 5,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 6,
     "b1AgeSexThreshold": true,
     "pathwayB1": false,
@@ -1312,6 +1547,7 @@ RP-001 variant: same note but 5.5% -> weight loss met; B1 age met; work-up not d
     "localisingFeatures": false,
     "weightLossCriterion": null,
     "weightLossPercent": 5.5,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": 6,
     "b1AgeSexThreshold": true,
     "pathwayB1": null,
@@ -1370,6 +1606,7 @@ Results matrix RP-007 / INT-002 — THE fabrication case: 76F, 3kg loss, 15cm ep
     "localisingFeatures": true,
     "weightLossCriterion": null,
     "weightLossPercent": null,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": null,
     "b1AgeSexThreshold": true,
     "pathwayB1": null,
@@ -1424,6 +1661,7 @@ Results matrix MW-009 (Michaela Wood): 68M painless jaundice, hepatomegaly -> lo
     "localisingFeatures": true,
     "weightLossCriterion": null,
     "weightLossPercent": null,
+    "weightLossPercentByRecordedWeights": null,
     "weightLossPeriodMonths": null,
     "b1AgeSexThreshold": true,
     "pathwayB1": null,

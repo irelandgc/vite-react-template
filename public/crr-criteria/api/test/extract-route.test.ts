@@ -195,8 +195,8 @@ describe("POST /api/assess/extract — extraction + gate (v3.0.1)", () => {
     expect(res.status).toBe(200);
     const body: any = await res.json();
     expect(body.validation.passed).toBe(true);
-    expect(body.promptVersion).toBe("3.0.1");
-    expect(body.equivalenceListVersion).toBe("concept-equivalence-v1.1");
+    expect(body.promptVersion).toBe("3.0.2");
+    expect(body.equivalenceListVersion).toBe("concept-equivalence-v1.2");
     expect(body.modelId).toBe("claude-sonnet-4-6");
     expect(body.provider).toBe("anthropic");
     expect(body.examSiteSelection.requestedExamSite).toBe("ct_cap");
@@ -263,7 +263,7 @@ describe("POST /api/admin/extraction-prompt/register", () => {
       headers: { "content-type": "application/json", "x-admin-email": "test@example.com" },
     });
     expect([200, 201]).toContain(res.status);
-    const row: any = await env.DB.prepare("SELECT version, is_active, instruction_text FROM system_prompts WHERE version = 'v3.0.1'").first();
+    const row: any = await env.DB.prepare("SELECT version, is_active, instruction_text FROM system_prompts WHERE version = 'v3.0.2'").first();
     expect(row.is_active).toBe(0);
     expect(row.instruction_text).toContain("You extract. You do not assess.");
     const again = await SELF.fetch("http://worker/api/admin/extraction-prompt/register", {

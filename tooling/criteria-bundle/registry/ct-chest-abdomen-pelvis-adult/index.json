@@ -7,7 +7,14 @@
       "publishedAt": "2026-09-05T09:50:33.327Z",
       "logicHash": "sha256:9292cde0e334a40b843427aeb58de1223596ced11b0ae1c1fc404c3ffa99c96f",
       "dependencies": []
+    },
+    {
+      "version": "2.0.0",
+      "state": "transcribed",
+      "publishedAt": "2026-09-06T20:34:38.317Z",
+      "logicHash": "sha256:1fd6c2bb85459619cd0d202a6c6347e1a74153cd25f48c695445f3dbe9424261",
+      "dependencies": []
     }
   ],
-  "latestPublished": "1.0.0"
+  "latestPublished": "2.0.0"
 }

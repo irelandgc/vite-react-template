@@ -912,7 +912,7 @@ app.post('/api/admin/system-prompt/versions', requireAccess, async (c) => {
 });
 
 // POST /api/admin/extraction-prompt/register — ARCH-MIG-01 slice 4b.
-// Idempotently stores the assembled extraction prompt (currently v3.0.1) in the
+// Idempotently stores the assembled extraction prompt (currently v3.0.2) in the
 // system_prompts table for the audit trail (KI-26) — version comes from
 // prompt.ts (PROMPT_VERSION), so each stored version is a separate row. It is
 // stored `is_active = 0` and NEVER activated here — the live Triage page keeps
