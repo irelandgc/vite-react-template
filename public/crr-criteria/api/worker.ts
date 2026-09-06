@@ -17,6 +17,12 @@ type Bindings = {
   DB: D1Database;
   ANTHROPIC_API_KEY: string;
   ADMIN_KEY: string;  // set via: npx wrangler secret put ADMIN_KEY
+  // ARCH-MIG-01 slice 3 (vars in wrangler.json; string flags, '"true"' to enable):
+  ASSESS_PIPELINE_ENABLED?: string;   // gates /api/assess/evaluate itself (default off; slice 10 flips it)
+  ASSESS_INTERNAL_KEY?: string;       // secret shared with the main worker; required in x-assess-internal
+  ASSESS_ALLOW_SIGNED_OFF?: string;   // E4 tabletop mode — evaluate signed-off (not just published) bundles
+  AUDIT_STORE_REDACTED_NOTE?: string; // write the redacted note to assessment_notes (default off)
+  AUDIT_NOTE_RETENTION_DAYS?: string; // purge job cutoff for assessment_notes (default 180)
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -1465,4 +1471,161 @@ app.post('/api/admin/bundles/:examSite/state', requireAccess, async (c) => {
   return c.json({ success: true, examSite, version: row.version, state: toState });
 });
 
-export default app;
+// ══════════════════════════════════════════════════════════════
+//  ARCH-MIG-01 RULES ENGINE (slice 3)
+// ══════════════════════════════════════════════════════════════
+//
+// POST /api/assess/evaluate — internal. Deterministic rule evaluation of one
+// QuestionnaireResponse against the national red-flag library and each selected
+// exam/site bundle. No model, no PII handling, no extraction — those are slices
+// 4b and 5. The heavy CQL runtime (cql-execution + ELM) is in ./engine.ts and
+// imported lazily so it is off the cold-start path of every other route.
+//
+// Reachability: this route is exposed on the API worker but the user-facing
+// path to it — the main worker's /api/assess/* forward — is gated by
+// ASSESS_PIPELINE_ENABLED (default off, closes at slice 10 along with the
+// public workers.dev origin). Rate-limited like the other public routes.
+
+// Resolves a published exam/site id to the ELM the engine evaluates. Returns a
+// `not-available` marker (never a fallback — invariant 3) when the id is unknown,
+// has no bundle, or its bundle is not in an evaluable state.
+async function resolveExamForEngine(
+  db: D1Database,
+  kv: KVNamespace,
+  id: string,
+  allowSignedOff: boolean,
+): Promise<any> {
+  const row: any = await db.prepare('SELECT bundle_key FROM exam_sites WHERE id = ?').bind(id).first();
+  if (!row) return { id, state: 'not-available' };
+  const evaluable = allowSignedOff ? ['published', 'signed-off'] : ['published'];
+  const placeholders = evaluable.map(() => '?').join(',');
+  const bundleRow: any = await db.prepare(
+    `SELECT version, state, vocabulary_version FROM bundles WHERE exam_site = ? AND state IN (${placeholders}) ORDER BY (state = 'published') DESC, id DESC LIMIT 1`
+  ).bind(row.bundle_key, ...evaluable).first();
+  if (!bundleRow) return { id, state: 'not-available' };
+  const bundle = await loadBundle(kv, row.bundle_key, bundleRow.version);
+  if (!bundle || !bundle.library?.site) return { id, state: 'not-available' };
+  return {
+    id,
+    state: bundleRow.state,
+    version: bundleRow.version,
+    vocabularyVersion: bundleRow.vocabulary_version ?? bundle.vocabularyVersion ?? null,
+    siteElm: bundle.library.site,
+  };
+}
+
+// Purge job for assessment_notes (Cron Trigger, see the default export's
+// scheduled handler). Deletes rows older than `retentionDays`. This table only —
+// `assessments` (structured, no note text) is never purged here.
+export async function purgeExpiredNotes(db: D1Database, retentionDays: number): Promise<number> {
+  const days = Number.isFinite(retentionDays) && retentionDays > 0 ? retentionDays : 180;
+  const cutoff = new Date(Date.now() - days * 86400000).toISOString();
+  const res = await db.prepare('DELETE FROM assessment_notes WHERE created_at < ?').bind(cutoff).run();
+  return res.meta?.changes ?? 0;
+}
+
+app.post('/api/assess/evaluate', async (c) => {
+  // This route is internal: it is reached only via the main worker's CRR_API
+  // service binding, which sets `x-assess-internal` from a shared secret. It is
+  // NOT usable from the API worker's public *.workers.dev origin. Two gates:
+  //  1. ASSESS_PIPELINE_ENABLED must be 'true' on this worker (default off — the
+  //     route reports 404 otherwise, so it is invisible until slice 10 cut-over).
+  //  2. x-assess-internal must equal ASSESS_INTERNAL_KEY (a configured secret).
+  if (c.env.ASSESS_PIPELINE_ENABLED !== 'true') {
+    return c.json({ error: 'Not found' }, 404);
+  }
+  const internalKey = c.env.ASSESS_INTERNAL_KEY;
+  if (!internalKey || c.req.header('x-assess-internal') !== internalKey) {
+    return c.json({ error: 'This endpoint is internal — reachable only through the assessment pipeline' }, 403);
+  }
+
+  // Per-IP rate limit: 200/hour (mirrors /api/triage/usage-log). The main worker
+  // forwards CF-Connecting-IP so this is the end user's IP.
+  const ip = c.req.header('CF-Connecting-IP') || 'unknown';
+  const hour = new Date().toISOString().slice(0, 13);
+  const rlKey = `ratelimit:assess:${ip}:${hour}`;
+  try {
+    const countRaw = await c.env.KV.get(rlKey);
+    const count = countRaw ? parseInt(countRaw) : 0;
+    if (count >= 200) return c.json({ error: 'Rate limit exceeded' }, 429);
+    await c.env.KV.put(rlKey, String(count + 1), { expirationTtl: 3600 });
+  } catch (_) { /* fail-open on rate-limit KV errors */ }
+
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch (e: any) {
+    return c.json({ error: 'Body is not valid JSON', message: e.message }, 400);
+  }
+
+  const qr = body.questionnaireResponse;
+  if (!qr || typeof qr !== 'object' || qr.resourceType !== 'QuestionnaireResponse') {
+    return c.json({ error: 'questionnaireResponse (a FHIR QuestionnaireResponse) is required' }, 400);
+  }
+  // AD-20: the requested exam/site is explicit; candidateExamSites[] carries any
+  // other exam the note indicated (gap §4). No positional convention.
+  const requestedExamSite: string | undefined = typeof body.requestedExamSite === 'string' && body.requestedExamSite.length ? body.requestedExamSite : undefined;
+  if (!requestedExamSite) {
+    return c.json({ error: 'requestedExamSite (a published exam/site id) is required' }, 400);
+  }
+  const candidateExamSites: string[] = Array.isArray(body.candidateExamSites)
+    ? body.candidateExamSites.filter((x: any) => typeof x === 'string' && x.length && x !== requestedExamSite)
+    : [];
+
+  const engine = await import('./engine');
+  const docStd = engine.isDocumentationStandard(body.parameters?.documentationStandard)
+    ? body.parameters.documentationStandard
+    : 'strict';
+  const allowSignedOff = c.env.ASSESS_ALLOW_SIGNED_OFF === 'true';
+
+  let result: any;
+  try {
+    const requested = await resolveExamForEngine(c.env.DB, c.env.KV, requestedExamSite, allowSignedOff);
+    const candidates = [];
+    for (const id of candidateExamSites) candidates.push(await resolveExamForEngine(c.env.DB, c.env.KV, id, allowSignedOff));
+    result = await engine.runAssessment({ questionnaireResponse: qr, requested, candidates, documentationStandard: docStd });
+  } catch (e: any) {
+    return c.json({ error: 'Engine evaluation failed', message: e.message }, 500);
+  }
+
+  // Audit row (SD-12, gap §6). Structured; no note text. The id and created_at
+  // are the only non-deterministic parts of what leaves this route.
+  const assessmentId = crypto.randomUUID();
+  const now = new Date().toISOString();
+  const performedBy = c.req.header('x-assess-identity') || c.req.header('cf-access-authenticated-user-email') || (typeof body.performedBy === 'string' ? body.performedBy : null);
+  try {
+    await c.env.DB.prepare(
+      `INSERT INTO assessments (id, created_at, bundle_versions, engine_version, vocabulary_version, prompt_version, model_id, documentation_standard, questionnaire_response, advisory, discrepancies, validation_failures, performed_by, regression_run_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      assessmentId, now,
+      JSON.stringify(result.bundleVersions), result.engineVersion, result.vocabularyVersion ?? null,
+      typeof body.promptVersion === 'string' ? body.promptVersion : null,
+      typeof body.modelId === 'string' ? body.modelId : null,
+      docStd,
+      JSON.stringify(qr), JSON.stringify(result),
+      body.discrepancies != null ? JSON.stringify(body.discrepancies) : null,
+      body.validationFailures != null ? JSON.stringify(body.validationFailures) : null,
+      performedBy,
+      typeof body.regressionRunId === 'string' ? body.regressionRunId : null,
+    ).run();
+
+    if (c.env.AUDIT_STORE_REDACTED_NOTE === 'true' && typeof body.noteRedacted === 'string' && body.noteRedacted.trim().length) {
+      await c.env.DB.prepare(
+        'INSERT INTO assessment_notes (assessment_id, note_redacted, created_at) VALUES (?, ?, ?)'
+      ).bind(assessmentId, body.noteRedacted, now).run();
+    }
+  } catch (e: any) {
+    return c.json({ error: 'Assessment evaluated but the audit write failed', message: e.message }, 500);
+  }
+
+  return c.json({ assessmentId, ...result });
+});
+
+export default {
+  fetch: (req: Request, env: Bindings, ctx: any) => app.fetch(req, env as any, ctx),
+  // Cron Trigger (wrangler.json triggers.crons): purge expired assessment_notes.
+  scheduled: async (_event: any, env: Bindings, ctx: any) => {
+    ctx.waitUntil(purgeExpiredNotes(env.DB, Number(env.AUDIT_NOTE_RETENTION_DAYS ?? 180)));
+  },
+};

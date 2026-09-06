@@ -25,6 +25,16 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 // applies it directly.
 export default defineConfig({
   root: here,
+  resolve: {
+    alias: {
+      // slice 3: cql-execution's CJS does `require("immutable")`; `immutable`
+      // 5.x has no `exports` field and a dual main/module, and the plugin's
+      // bundler resolves that to the ESM build whose interop leaves
+      // `require("immutable")` undefined (-> "Cannot read properties of
+      // undefined (reading 'Seq')"). Pin the CJS entry so the require resolves.
+      immutable: "immutable/dist/immutable.js",
+    },
+  },
   plugins: [
     cloudflareTest({
       wrangler: { configPath: path.join(here, "..", "wrangler.json") },

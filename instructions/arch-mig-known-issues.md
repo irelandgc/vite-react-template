@@ -89,4 +89,4 @@ Sources: `documents/SECURITY_DECISIONS.md` (SD/SR), `SECURITY-AUDIT-REPORT.md` (
 
 ---
 
-**Counts:** 44 issues — 24 resolved by design, 8 mitigated, 6 open, 5 carry, 1 out of scope. Every OPEN row names an owner. No recorded fix is scheduled for implementation; TA-SRC-01, CC-DESIGN-01's `logic` key and the prompt grounding constraint are retired unbuilt under D1.
+**Counts:** 52 issues — 24 resolved by design, 7 mitigated, 13 open, 7 carry, 1 out of scope. Every OPEN row names an owner. No recorded fix is scheduled for implementation; TA-SRC-01, CC-DESIGN-01's `logic` key and the prompt grounding constraint are retired unbuilt under D1.

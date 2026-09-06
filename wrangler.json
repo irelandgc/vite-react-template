@@ -7,6 +7,12 @@
 	"observability": {
 		"enabled": true
 	},
+	"vars": {
+		"ASSESS_PIPELINE_ENABLED": "false"
+	},
+	"services": [
+		{ "binding": "CRR_API", "service": "crr-criteria-api" }
+	],
 	"upload_source_maps": true,
 	"assets": {
 		"directory": "./dist/client",

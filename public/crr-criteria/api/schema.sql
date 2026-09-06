@@ -219,3 +219,34 @@ CREATE TABLE IF NOT EXISTS exam_sites (
 );
 
 CREATE INDEX IF NOT EXISTS idx_exam_sites_bundle_key ON exam_sites(bundle_key);
+
+-- ARCH-MIG-01 assessment audit record (migration 0009, slice 3; gap analysis §6,
+-- SD-12). Structured record — no note text. `assessment_notes` is a separate
+-- retention class, off by default, with a Cron purge job.
+CREATE TABLE IF NOT EXISTS assessments (
+  id TEXT PRIMARY KEY,
+  created_at TEXT NOT NULL,
+  bundle_versions TEXT NOT NULL,
+  engine_version TEXT NOT NULL,
+  vocabulary_version TEXT,
+  prompt_version TEXT,
+  model_id TEXT,
+  documentation_standard TEXT NOT NULL,
+  questionnaire_response TEXT NOT NULL,
+  advisory TEXT NOT NULL,
+  discrepancies TEXT,
+  validation_failures TEXT,
+  performed_by TEXT,
+  regression_run_id TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_assessments_created ON assessments(created_at);
+CREATE INDEX IF NOT EXISTS idx_assessments_regression ON assessments(regression_run_id);
+
+CREATE TABLE IF NOT EXISTS assessment_notes (
+  assessment_id TEXT PRIMARY KEY,
+  note_redacted TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_assessment_notes_created ON assessment_notes(created_at);

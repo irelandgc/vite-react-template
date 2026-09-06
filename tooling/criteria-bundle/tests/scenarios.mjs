@@ -424,23 +424,30 @@ const ANALYTE = {
   platelets: ["777-3", "Platelets"], alp: ["6768-6", "Alkaline phosphatase"], albumin: ["1751-7", "Albumin"], weight: ["29463-7", "Body weight"]
 };
 const PROCEDURE = { "ct-cap": "CT-CAP", "us-abdo-pelvis": "US-ABDO-PELVIS" };
-const isoDaysAgo = d => new Date(Date.now() - d * 86400000).toISOString().slice(0, 19) + "+12:00";
 
-export function toRecordResources(s) {
+// Record fixtures are dated relative to a reference instant. The live test path
+// (populate/merge, which compares against CQL `Now()`) uses the default —
+// the real current time — so "240 days ago" is genuinely 240 days ago. The
+// serialized `scenarios-bundle.json` snapshot passes a fixed reference so that
+// committed file only changes when scenario content changes, not on every run.
+export const REFERENCE_INSTANT_MS = Date.parse("2026-09-06T00:00:00Z");
+const isoDaysAgo = (d, refMs) => new Date(refMs - d * 86400000).toISOString().slice(0, 19) + "+12:00";
+
+export function toRecordResources(s, refMs = Date.now()) {
   const out = [];
   (s.record || []).forEach((r, i) => {
     if (r.obs) {
       const [code, display] = ANALYTE[r.obs];
       const o = { resourceType: "Observation", id: `${s.id}-${r.obs}-${i}`, status: "final",
         code: { coding: [{ system: "http://loinc.org", code, display }] },
-        subject: { reference: "Patient/" + s.id }, effectiveDateTime: isoDaysAgo(r.daysAgo),
+        subject: { reference: "Patient/" + s.id }, effectiveDateTime: isoDaysAgo(r.daysAgo, refMs),
         valueQuantity: { value: r.value, unit: r.unit, system: "http://unitsofmeasure.org", code: r.unit } };
       if (r.interp) o.interpretation = [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation", code: r.interp }] }];
       out.push(o);
     } else if (r.report) {
       out.push({ resourceType: "DiagnosticReport", id: `${s.id}-${r.report}-${i}`, status: "final",
         code: { coding: [{ system: "http://crr.health.nz/fhir/CodeSystem/procedure-placeholder", code: PROCEDURE[r.report] }] },
-        subject: { reference: "Patient/" + s.id }, effectiveDateTime: isoDaysAgo(r.daysAgo) });
+        subject: { reference: "Patient/" + s.id }, effectiveDateTime: isoDaysAgo(r.daysAgo, refMs) });
     }
   });
   return out;

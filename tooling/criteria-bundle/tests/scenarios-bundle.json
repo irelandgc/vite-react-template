@@ -3377,7 +3377,7 @@
         "subject": {
           "reference": "Patient/S15-record-labs-repeat"
         },
-        "effectiveDateTime": "2026-08-06T04:16:35+12:00",
+        "effectiveDateTime": "2026-08-07T00:00:00+12:00",
         "valueQuantity": {
           "value": 98,
           "unit": "g/L",
@@ -3413,7 +3413,7 @@
         "subject": {
           "reference": "Patient/S15-record-labs-repeat"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 95,
           "unit": "g/L",
@@ -3449,7 +3449,7 @@
         "subject": {
           "reference": "Patient/S15-record-labs-repeat"
         },
-        "effectiveDateTime": "2026-08-06T04:16:35+12:00",
+        "effectiveDateTime": "2026-08-07T00:00:00+12:00",
         "valueQuantity": {
           "value": 41,
           "unit": "mg/L",
@@ -3485,7 +3485,7 @@
         "subject": {
           "reference": "Patient/S15-record-labs-repeat"
         },
-        "effectiveDateTime": "2026-09-04T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-05T00:00:00+12:00",
         "valueQuantity": {
           "value": 38,
           "unit": "mg/L",
@@ -3521,7 +3521,7 @@
         "subject": {
           "reference": "Patient/S15-record-labs-repeat"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 2.3,
           "unit": "mmol/L",
@@ -3557,7 +3557,7 @@
         "subject": {
           "reference": "Patient/S15-record-labs-repeat"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 250,
           "unit": "10*9/L",
@@ -3593,7 +3593,7 @@
         "subject": {
           "reference": "Patient/S15-record-labs-repeat"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 80,
           "unit": "U/L",
@@ -3629,7 +3629,7 @@
         "subject": {
           "reference": "Patient/S15-record-labs-repeat"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 40,
           "unit": "g/L",
@@ -4229,7 +4229,7 @@
         "subject": {
           "reference": "Patient/S16-record-labs-unexplained-stated"
         },
-        "effectiveDateTime": "2026-08-06T04:16:35+12:00",
+        "effectiveDateTime": "2026-08-07T00:00:00+12:00",
         "valueQuantity": {
           "value": 98,
           "unit": "g/L",
@@ -4265,7 +4265,7 @@
         "subject": {
           "reference": "Patient/S16-record-labs-unexplained-stated"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 95,
           "unit": "g/L",
@@ -4301,7 +4301,7 @@
         "subject": {
           "reference": "Patient/S16-record-labs-unexplained-stated"
         },
-        "effectiveDateTime": "2026-08-06T04:16:35+12:00",
+        "effectiveDateTime": "2026-08-07T00:00:00+12:00",
         "valueQuantity": {
           "value": 41,
           "unit": "mg/L",
@@ -4337,7 +4337,7 @@
         "subject": {
           "reference": "Patient/S16-record-labs-unexplained-stated"
         },
-        "effectiveDateTime": "2026-09-04T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-05T00:00:00+12:00",
         "valueQuantity": {
           "value": 38,
           "unit": "mg/L",
@@ -4373,7 +4373,7 @@
         "subject": {
           "reference": "Patient/S16-record-labs-unexplained-stated"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 2.3,
           "unit": "mmol/L",
@@ -4409,7 +4409,7 @@
         "subject": {
           "reference": "Patient/S16-record-labs-unexplained-stated"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 250,
           "unit": "10*9/L",
@@ -4445,7 +4445,7 @@
         "subject": {
           "reference": "Patient/S16-record-labs-unexplained-stated"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 80,
           "unit": "U/L",
@@ -4481,7 +4481,7 @@
         "subject": {
           "reference": "Patient/S16-record-labs-unexplained-stated"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 40,
           "unit": "g/L",
@@ -5079,7 +5079,7 @@
         "subject": {
           "reference": "Patient/S17-record-repeat-too-soon"
         },
-        "effectiveDateTime": "2026-08-24T04:16:35+12:00",
+        "effectiveDateTime": "2026-08-25T00:00:00+12:00",
         "valueQuantity": {
           "value": 98,
           "unit": "g/L",
@@ -5115,7 +5115,7 @@
         "subject": {
           "reference": "Patient/S17-record-repeat-too-soon"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 95,
           "unit": "g/L",
@@ -5151,7 +5151,7 @@
         "subject": {
           "reference": "Patient/S17-record-repeat-too-soon"
         },
-        "effectiveDateTime": "2026-08-24T04:16:35+12:00",
+        "effectiveDateTime": "2026-08-25T00:00:00+12:00",
         "valueQuantity": {
           "value": 41,
           "unit": "mg/L",
@@ -5187,7 +5187,7 @@
         "subject": {
           "reference": "Patient/S17-record-repeat-too-soon"
         },
-        "effectiveDateTime": "2026-09-04T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-05T00:00:00+12:00",
         "valueQuantity": {
           "value": 38,
           "unit": "mg/L",
@@ -5223,7 +5223,7 @@
         "subject": {
           "reference": "Patient/S17-record-repeat-too-soon"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 2.3,
           "unit": "mmol/L",
@@ -5259,7 +5259,7 @@
         "subject": {
           "reference": "Patient/S17-record-repeat-too-soon"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 250,
           "unit": "10*9/L",
@@ -5295,7 +5295,7 @@
         "subject": {
           "reference": "Patient/S17-record-repeat-too-soon"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 80,
           "unit": "U/L",
@@ -5331,7 +5331,7 @@
         "subject": {
           "reference": "Patient/S17-record-repeat-too-soon"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 40,
           "unit": "g/L",
@@ -5763,7 +5763,7 @@
         "subject": {
           "reference": "Patient/S18-record-weights"
         },
-        "effectiveDateTime": "2026-05-06T04:16:35+12:00",
+        "effectiveDateTime": "2026-05-07T00:00:00+12:00",
         "valueQuantity": {
           "value": 80,
           "unit": "kg",
@@ -5789,7 +5789,7 @@
         "subject": {
           "reference": "Patient/S18-record-weights"
         },
-        "effectiveDateTime": "2026-09-02T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-03T00:00:00+12:00",
         "valueQuantity": {
           "value": 74,
           "unit": "kg",
@@ -5815,7 +5815,7 @@
         "subject": {
           "reference": "Patient/S18-record-weights"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 140,
           "unit": "g/L",
@@ -5851,7 +5851,7 @@
         "subject": {
           "reference": "Patient/S18-record-weights"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 3,
           "unit": "mg/L",
@@ -6061,7 +6061,7 @@
         "subject": {
           "reference": "Patient/S19-record-prior-ct"
         },
-        "effectiveDateTime": "2026-01-08T04:16:35+12:00"
+        "effectiveDateTime": "2026-01-09T00:00:00+12:00"
       }
     },
     {
@@ -6630,7 +6630,7 @@
         "subject": {
           "reference": "Patient/S20-record-discrepancy"
         },
-        "effectiveDateTime": "2026-08-06T04:16:35+12:00",
+        "effectiveDateTime": "2026-08-07T00:00:00+12:00",
         "valueQuantity": {
           "value": 98,
           "unit": "g/L",
@@ -6666,7 +6666,7 @@
         "subject": {
           "reference": "Patient/S20-record-discrepancy"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 95,
           "unit": "g/L",
@@ -6702,7 +6702,7 @@
         "subject": {
           "reference": "Patient/S20-record-discrepancy"
         },
-        "effectiveDateTime": "2026-08-06T04:16:35+12:00",
+        "effectiveDateTime": "2026-08-07T00:00:00+12:00",
         "valueQuantity": {
           "value": 41,
           "unit": "mg/L",
@@ -6738,7 +6738,7 @@
         "subject": {
           "reference": "Patient/S20-record-discrepancy"
         },
-        "effectiveDateTime": "2026-09-04T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-05T00:00:00+12:00",
         "valueQuantity": {
           "value": 38,
           "unit": "mg/L",
@@ -6774,7 +6774,7 @@
         "subject": {
           "reference": "Patient/S20-record-discrepancy"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 2.3,
           "unit": "mmol/L",
@@ -6810,7 +6810,7 @@
         "subject": {
           "reference": "Patient/S20-record-discrepancy"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 250,
           "unit": "10*9/L",
@@ -6846,7 +6846,7 @@
         "subject": {
           "reference": "Patient/S20-record-discrepancy"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 80,
           "unit": "U/L",
@@ -6882,7 +6882,7 @@
         "subject": {
           "reference": "Patient/S20-record-discrepancy"
         },
-        "effectiveDateTime": "2026-09-03T04:16:35+12:00",
+        "effectiveDateTime": "2026-09-04T00:00:00+12:00",
         "valueQuantity": {
           "value": 40,
           "unit": "g/L",

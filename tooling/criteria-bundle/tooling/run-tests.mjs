@@ -9,7 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import cql from "cql-execution";
 import cqlfhir from "cql-exec-fhir";
-import { scenarios, toQuestionnaireResponse, toRecordBundle, toRecordResources } from "../tests/scenarios.mjs";
+import { scenarios, toQuestionnaireResponse, toRecordBundle, toRecordResources, REFERENCE_INSTANT_MS } from "../tests/scenarios.mjs";
 import { populate, merge } from "./populate.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -68,9 +68,12 @@ for (const r of results) {
 md += "\n## Full advisory output per scenario\n\n";
 for (const r of results) md += `### ${r.id} (${r.label})\n\n${scenarios.find(s => s.id === r.id).title}\n\n\`\`\`json\n${JSON.stringify(r.adv, null, 2)}\n\`\`\`\n\n`;
 fs.writeFileSync(path.join(testsDir, "results.md"), md);
+// The record fixtures are frozen to a fixed reference instant here (not the live
+// path's real `Date.now()`) so this committed snapshot changes only when scenario
+// content changes, not on every run.
 fs.writeFileSync(path.join(testsDir, "scenarios-bundle.json"), JSON.stringify({
   resourceType: "Bundle", type: "collection",
-  entry: scenarios.flatMap((s, i) => [{ resource: { resourceType: "Patient", id: s.id } }, { resource: mergedQRs[i] }, ...toRecordResources(s).map(r => ({ resource: r }))])
+  entry: scenarios.flatMap((s, i) => [{ resource: { resourceType: "Patient", id: s.id } }, { resource: mergedQRs[i] }, ...toRecordResources(s, REFERENCE_INSTANT_MS).map(r => ({ resource: r }))])
 }, null, 2));
 
 for (const r of results) console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.id.padEnd(36)} ${r.label.padEnd(22)} -> ${r.adv.determination}${r.fails.length ? "  [" + r.fails.join("; ") + "]" : ""}`);
