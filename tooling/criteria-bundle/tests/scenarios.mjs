@@ -96,7 +96,7 @@ export const scenarios = [
       "weightloss.present": { v: true, status: "documented", quote: "Was 80kg in March, 74kg today (July). Unintentional." },
       "weightloss.measured": { v: true, status: "documented", quote: "Was 80kg in March, 74kg today" },
       "weightloss.percent": { v: 7.5, status: "inferred", quote: "Was 80kg in March, 74kg today" },
-      "weightloss.periodMonths": { v: 4, status: "inferred", quote: "in March ... today (July)" },
+      "weightloss.periodMonths": { v: 4, status: "inferred", quote: "in March, 74kg today (July)" },
       "lab.crp.raised": false, "lab.hb.low": false, "lab.calcium.raised": false, "lab.platelets.high": false, "lab.alp.high": false, "lab.albumin.low": false,
       "excl.currentCancerFollowUp": false, "excl.secondaryCareInvestigated12m": false, "excl.urgentAdmissionRequired": false, "excl.recentUSAbdoPelvis3m": false, "excl.recentCTCAP12m": false,
       "funding.unfitOrUnwilling": false
@@ -369,7 +369,7 @@ export const scenarios = [
     note: "CT chest abdo pelvis. 68 yo man. Sudden onset painless jaundice. Diabetes on metformin. Occasional discomfort R side, some pallor and jaundice. Liver ~2 cm below costal margin. wt 58",
     answers: {
       "patient.age": 68, "patient.sex": "male",
-      "workup.localisingFeatures": { v: true, status: "documented", quote: "painless jaundice ... Liver ~2 cm below costal margin" },
+      "workup.localisingFeatures": { v: true, status: "documented", quote: "Liver ~2 cm below costal margin" },
       "symptom.abdominalPain": { v: true, status: "documented", quote: "occasional discomfort R side" }
     },
     expect: { determination: "ALTERNATIVE_MANAGEMENT" }

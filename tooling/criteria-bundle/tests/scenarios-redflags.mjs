@@ -492,7 +492,7 @@ export function toQuestionnaireResponse(s) {
   return {
     resourceType: "QuestionnaireResponse",
     id: "qr-" + s.id,
-    questionnaire: "http://crr.health.nz/fhir/Questionnaire/CRR-RedFlags",
+    questionnaire: "http://crr.health.nz/fhir/Questionnaire/CRR-National",
     status: "completed",
     subject: { reference: "Patient/" + s.id },
     authored: "2026-09-05",

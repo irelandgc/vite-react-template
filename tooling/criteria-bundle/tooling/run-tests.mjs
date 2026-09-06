@@ -76,4 +76,23 @@ fs.writeFileSync(path.join(testsDir, "scenarios-bundle.json"), JSON.stringify({
 for (const r of results) console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.id.padEnd(36)} ${r.label.padEnd(22)} -> ${r.adv.determination}${r.fails.length ? "  [" + r.fails.join("; ") + "]" : ""}`);
 const failed = results.filter(r => !r.ok).length;
 console.log(`\n${results.length - failed}/${results.length} passed`);
-process.exit(failed ? 1 : 0);
+
+// Extraction-contract rule 1: every quote a scenario asserts must be a verbatim span
+// of that scenario's note (whitespace-normalised, case-insensitive) - the same check
+// the validation gate and run-ground-truth.mjs apply, so scenario quotes are held to
+// the standard extraction output must meet. Scenarios with no note carry structured
+// answers (Criteria Viewer ticks, form input) and are not checked here.
+const normalise = str => str.replace(/\s+/g, " ").trim().toLowerCase();
+const quoteFailures = [];
+for (const s of scenarios) {
+  if (!s.note) continue;
+  const note = normalise(s.note);
+  for (const [linkId, a] of Object.entries(s.answers)) {
+    const quote = a && typeof a === "object" && "quote" in a ? a.quote : null;
+    if (quote && !note.includes(normalise(quote))) quoteFailures.push(`${s.id}  ${linkId}: quote ${JSON.stringify(quote)} is not a verbatim span of the note`);
+  }
+}
+for (const q of quoteFailures) console.log(`FAIL  quote  ${q}`);
+console.log(`Quote check: ${quoteFailures.length ? quoteFailures.length + " failure(s)" : "all scenario quotes are verbatim note spans"}`);
+
+process.exit(failed || quoteFailures.length ? 1 : 0);
