@@ -1922,7 +1922,7 @@ type ExtractionCore =
 
 async function runExtractionCore(
   c: any,
-  opts: { note: string; context: any; requestedExamSite?: string },
+  opts: { note: string; context: any; requestedExamSite?: string; providerEnv?: Record<string, string | undefined> },
 ): Promise<ExtractionCore> {
   const allowSignedOff = c.env.ASSESS_ALLOW_SIGNED_OFF === 'true';
   const pii = await import('./pii');
@@ -1963,7 +1963,7 @@ async function runExtractionCore(
   const maxTokens = Number(c.env.EXTRACTION_MAX_TOKENS ?? 8000) || 8000;
   let modelResult: any;
   try {
-    const provider = providerMod.makeProvider(c.env);
+    const provider = providerMod.makeProvider(opts.providerEnv ? { ...c.env, ...opts.providerEnv } : c.env);
     modelResult = await provider.extract({ system, messages: [{ role: 'user', content: userContent }], maxTokens, tool: promptMod.OUTPUT_TOOL });
   } catch (e: any) {
     if (e?.code === 'provider-not-configured') return { ok: false, kind: 'error', status: 503, body: { error: 'provider-not-configured', message: e.message } };
@@ -2213,6 +2213,11 @@ app.post('/api/assess', async (c) => {
     versions,
     examSiteSelection,
     bundleArtefacts,
+    // The merged QuestionnaireResponse (AD-15) — the triager view's evidence
+    // table reads it (status + quote + attestation source per indicator). It is
+    // the same object written to the audit row; adding it here removes or
+    // reshapes nothing (AD-20).
+    mergedQuestionnaireResponse: mergeRes.questionnaireResponse,
     discrepancies: mergeRes.discrepancies,
     attestationsApplied: mergeRes.attestationsApplied,
     unmappedContext: mergeRes.unmappedContext,
@@ -2262,6 +2267,165 @@ app.get('/api/assess/attestation-questions', async (c) => {
     questions: att.attestationQuestionsFor(questionnaires, bundleKeys.length ? bundleKeys : undefined),
   });
 });
+
+// GET /api/assess/status — internal (SD-11). The thin Triage page probes this at
+// load: a 200 means the pipeline is on and the page runs as a thin client (note +
+// context + attestations in, Advisory out — no prompt assembly, no model call
+// from the browser); a 404 (flag off) or 403 means the page keeps its legacy
+// behaviour unchanged. `compareExtraction` gates the compare-extraction panel
+// (D6), on the same flag.
+app.get('/api/assess/status', async (c) => {
+  const guard = guardInternalAssess(c);
+  if (guard) return guard;
+  const engine = await import('./engine');
+  const att = await import('./attestation');
+  const promptMod = await import('./prompt');
+  return c.json({
+    enabled: true,
+    compareExtraction: true,
+    allowSignedOff: c.env.ASSESS_ALLOW_SIGNED_OFF === 'true',
+    versions: {
+      engine: engine.ENGINE_VERSION,
+      vocabulary: att.VOCABULARY_VERSION,
+      prompt: promptMod.PROMPT_VERSION,
+      equivalenceList: promptMod.EQUIVALENCE_LIST_VERSION,
+      contract: promptMod.CONTRACT_VERSION,
+    },
+  });
+});
+
+// POST /api/assess/compare-extract — internal (SD-11). Compare-extraction mode
+// (TA-022–024). Runs the SAME extraction contract through two providers/models,
+// merges each with the same context + attestations, evaluates each against the
+// same bundles, and reports:
+//   - per-indicator differences (value, status, quote) between the two extracted
+//     QuestionnaireResponses;
+//   - the engine determination for each run — identical when the merged
+//     QuestionnaireResponses are identical; the diff explains it when not.
+// No verdict comparison (the model produces no verdict — invariant 1), no
+// free-text field, no audit row (this is a tooling view, not an assessment).
+// Anthropic is live; the Azure provider is a stub that returns NotConfigured —
+// that run is reported as `error`, visibly, and does not fail the request.
+app.post('/api/assess/compare-extract', async (c) => {
+  const guard = guardInternalAssess(c);
+  if (guard) return guard;
+  const rl = await assessRateLimit(c, 'extract');
+  if (rl) return rl;
+
+  let body: any;
+  try { body = await c.req.json(); } catch (e: any) { return c.json({ error: 'Body is not valid JSON', message: e.message }, 400); }
+  const note = typeof body.note === 'string' ? body.note : '';
+  if (!note.trim()) return c.json({ error: 'note (the free-text referral note) is required' }, 400);
+  const requestedExamSite: string | undefined = typeof body.requestedExamSite === 'string' && body.requestedExamSite ? body.requestedExamSite : undefined;
+  if (!requestedExamSite) return c.json({ error: 'requestedExamSite (a published exam/site id) is required' }, 400);
+  const context = body.context && typeof body.context === 'object' ? body.context : {};
+  const attestations = body.attestations && typeof body.attestations === 'object' ? body.attestations : {};
+
+  const engine = await import('./engine');
+  const mergeMod = await import('./merge');
+  const docStd = engine.isDocumentationStandard(body.documentationStandard) ? body.documentationStandard : 'strict';
+  const allowSignedOff = c.env.ASSESS_ALLOW_SIGNED_OFF === 'true';
+
+  const providerSpecs: Array<{ provider: string; model?: string }> = Array.isArray(body.providers) && body.providers.length === 2
+    ? body.providers.map((p: any) => ({ provider: String(p?.provider ?? ''), model: typeof p?.model === 'string' ? p.model : undefined }))
+    : [
+        { provider: 'anthropic', model: typeof body.model === 'string' ? body.model : undefined },
+        { provider: 'azure-openai' },
+      ];
+
+  const nationalLibrary = await resolveNationalRedFlags(c.env.DB, c.env.KV, allowSignedOff);
+
+  async function oneRun(spec: { provider: string; model?: string }) {
+    const providerEnv: Record<string, string | undefined> = { EXTRACTION_PROVIDER: spec.provider };
+    if (spec.model) providerEnv.EXTRACTION_MODEL = spec.model;
+    const core = await runExtractionCore(c, { note, context, requestedExamSite, providerEnv });
+    if (!core.ok) {
+      const err = core.kind === 'gate'
+        ? { error: 'extract-gate', failures: core.failures }
+        : { error: core.body?.error ?? 'extract-failed', message: core.body?.message };
+      return { provider: spec.provider, model: spec.model ?? null, ok: false, ...err, answers: [], determination: null, priorityCode: null, examSites: [] };
+    }
+    const answers = flatAnswersFromQr(core.builtQr);
+    let determination: string | null = null;
+    let priorityCode: string | null = null;
+    let mergedResponse: any = null;
+    if (nationalLibrary) {
+      const mergeRes = mergeMod.merge({
+        extractedResponse: core.builtQr, context, attestations,
+        attestationLinkIds: core.attestationLinkIds, itemIndex: core.itemIndex,
+      });
+      mergedResponse = mergeRes.questionnaireResponse;
+      try {
+        const requested = await resolveExamForEngine(c.env.DB, c.env.KV, requestedExamSite, allowSignedOff);
+        const engineResult = await engine.runAssessment({ questionnaireResponse: mergedResponse, nationalLibrary, requested, candidates: [], documentationStandard: docStd });
+        determination = engineResult.determination ?? null;
+        priorityCode = engineResult.priorityCode ?? null;
+      } catch (_) { /* leave determination null; the diff still stands */ }
+    }
+    return {
+      provider: core.meta.provider, model: core.meta.modelId, ok: true,
+      answers, determination, priorityCode,
+      mergedResponse,
+      examSites: core.modelExamSites,
+    };
+  }
+
+  const [a, b] = await Promise.all([oneRun(providerSpecs[0]), oneRun(providerSpecs[1])]);
+
+  // Per-indicator diff over the union of linkIds the two runs answered.
+  const byLink = (run: any) => new Map((run.answers || []).map((x: any) => [x.linkId, x]));
+  const ma = byLink(a); const mb = byLink(b);
+  const linkIds = [...new Set([...ma.keys(), ...mb.keys()])].sort();
+  const diff = linkIds.map((linkId) => {
+    const ea: any = ma.get(linkId) ?? null;
+    const eb: any = mb.get(linkId) ?? null;
+    const agree = !!ea && !!eb && String(ea.value) === String(eb.value) && ea.status === eb.status;
+    return { linkId, a: ea, b: eb, agree };
+  });
+  const answersIdentical = diff.every((d) => d.agree) && (a.answers || []).length === (b.answers || []).length;
+  const mergedIdentical = a.ok && b.ok && JSON.stringify(a.mergedResponse) === JSON.stringify(b.mergedResponse);
+  const engineResultsIdentical = a.ok && b.ok && a.determination === b.determination && a.priorityCode === b.priorityCode;
+
+  return c.json({
+    requestedExamSite,
+    documentationStandard: docStd,
+    runs: [stripInternal(a), stripInternal(b)],
+    diff,
+    answersIdentical,
+    mergedIdentical,
+    engineResultsIdentical,
+  });
+});
+
+function stripInternal(run: any) {
+  const { mergedResponse, ...rest } = run;
+  return rest;
+}
+
+// Flatten a built QuestionnaireResponse to [{ linkId, value, status, quote }] for
+// the compare-extraction diff.
+function flatAnswersFromQr(qr: any): Array<{ linkId: string; value: unknown; status: string | null; quote: string | null }> {
+  const out: Array<{ linkId: string; value: unknown; status: string | null; quote: string | null }> = [];
+  const walk = (items: any[]) => {
+    for (const i of items || []) {
+      if (Array.isArray(i?.item)) walk(i.item);
+      if (!Array.isArray(i?.answer) || !i.linkId) continue;
+      const ans = i.answer[0] || {};
+      const vk = Object.keys(ans).find((k) => k.startsWith('value'));
+      let value: any = vk ? ans[vk] : undefined;
+      if (value && typeof value === 'object' && 'code' in value) value = value.code;
+      const ev = (ans.extension || []).find((e: any) => e.url === ANSWER_EVIDENCE_EXT_URL);
+      let status: string | null = null; let quote: string | null = null;
+      for (const s of ev?.extension || []) {
+        if (s.url === 'status') status = s.valueCode ?? null;
+        if (s.url === 'quote') quote = s.valueString ?? null;
+      }
+      out.push({ linkId: i.linkId, value, status, quote });
+    }
+  };
+  walk(qr?.item ?? []);
+  return out.sort((x, y) => x.linkId.localeCompare(y.linkId));
+}
 
 export default {
   fetch: (req: Request, env: Bindings, ctx: any) => app.fetch(req, env as any, ctx),

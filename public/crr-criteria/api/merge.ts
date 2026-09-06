@@ -205,7 +205,13 @@ function candidatesFromAttestations(
 
 // ── emit one answer object for the merged QR ──────────────────────────────────
 function answerObject(c: Candidate, itemType: string | undefined): any {
-  const valueKey = (itemType && TYPE_TO_VALUE_KEY[itemType]) || "valueString";
+  // Attestation-category items are stripped from the Questionnaires the extractor
+  // sees (AD-17), so the pipeline's `itemIndex` — built over those stripped
+  // Questionnaires — carries no type for them. An attestation answer is always a
+  // yes/no (`Attestation.value` is a boolean), so emit `valueBoolean` regardless.
+  const valueKey = c.provenance === "attested"
+    ? "valueBoolean"
+    : (itemType && TYPE_TO_VALUE_KEY[itemType]) || "valueString";
   const obj: any =
     valueKey === "valueCoding"
       ? { valueCoding: { system: ADMIN_GENDER_SYSTEM, code: String(c.value) } }

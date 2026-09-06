@@ -142,6 +142,25 @@ describe("merge — attestation category (AD-17)", () => {
     expect(r.attestationsApplied).toEqual([{ linkId: "workup.strongSuspicionMalignancy", value: true, attestedBy: "Dr Smith", mode: "referrer" }]);
   });
 
+  it("emits a category answer as valueBoolean even when itemIndex has no type for it (the pipeline strips attestation items before building itemIndex — AD-17)", () => {
+    // Reproduce the pipeline: itemIndex built over Questionnaires with the
+    // attestation items removed, so it carries no type for the linkId. The
+    // attestation value is a boolean; a valueString would make the CQL `Bool()`
+    // retrieve null and the pathway unreachable.
+    const strippedIndex = new Map(itemIndex);
+    strippedIndex.delete("workup.strongSuspicionMalignancy");
+    const r = merge({
+      attestationLinkIds: ATTESTATION,
+      itemIndex: strippedIndex,
+      extractedResponse: extractedQr({}),
+      attestations: { "workup.strongSuspicionMalignancy": { value: true, attestedBy: "Dr Smith" } },
+    });
+    const workup = r.questionnaireResponse.item.find((g: any) => g.linkId === "workup");
+    const ans = workup.item.find((i: any) => i.linkId === "workup.strongSuspicionMalignancy").answer[0];
+    expect(ans.valueBoolean).toBe(true);
+    expect("valueString" in ans).toBe(false);
+  });
+
   it("triager mode records source 'triager-from-referral'", () => {
     const r = run({
       extractedResponse: extractedQr({}),
