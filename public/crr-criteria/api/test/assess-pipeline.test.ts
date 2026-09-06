@@ -112,6 +112,13 @@ describe("POST /api/assess — happy path", () => {
     });
     expect(body.examSiteSelection.requestedExamSite).toBe("ct_cap");
 
+    // bundleArtefacts for the renderer (D4): the requested exam's Questionnaire +
+    // PlanDefinition, plus the national Questionnaire.
+    expect(body.bundleArtefacts.ct_cap.questionnaire.resourceType).toBe("Questionnaire");
+    expect(body.bundleArtefacts.ct_cap.planDefinition.resourceType).toBe("PlanDefinition");
+    expect(body.bundleArtefacts["national-redflags"].questionnaire.resourceType).toBe("Questionnaire");
+    expect(body.bundleArtefacts["national-redflags"].planDefinition).toBeNull();
+
     const after = await env.DB.prepare("SELECT COUNT(*) n FROM assessments").first<any>();
     expect(after.n).toBe(before.n + 1);
 

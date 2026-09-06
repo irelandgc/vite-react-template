@@ -1764,6 +1764,28 @@ async function loadNationalQuestionnaire(db: D1Database, kv: KVNamespace, allowS
   return bundle?.questionnaire ?? null;
 }
 
+// The Questionnaire + PlanDefinition for each evaluated exam/site (keyed by
+// published id) plus the national Questionnaire — the render artefacts the
+// Advisory renderer needs to resolve determination wording, "what to add" item
+// text and page references (invariant 3: the renderer takes text from the
+// bundle, never page code). `bundleVersions` is engineResult.bundleVersions
+// (published id / 'national-redflags' -> version).
+async function loadBundleArtefacts(db: D1Database, kv: KVNamespace, bundleVersions: Record<string, string>): Promise<Record<string, { questionnaire: any; planDefinition: any | null }>> {
+  const out: Record<string, { questionnaire: any; planDefinition: any | null }> = {};
+  for (const [id, version] of Object.entries(bundleVersions || {})) {
+    let key = id;
+    if (id !== 'national-redflags') {
+      const row: any = await db.prepare('SELECT bundle_key FROM exam_sites WHERE id = ?').bind(id).first();
+      if (!row?.bundle_key) continue;
+      key = row.bundle_key;
+    }
+    const bundle = await loadBundle(kv, key, version);
+    if (!bundle?.questionnaire) continue;
+    out[id] = { questionnaire: bundle.questionnaire, planDefinition: bundle.planDefinition ?? null };
+  }
+  return out;
+}
+
 // One selected exam/site's Questionnaire, by version. Null when the id is unknown
 // or its bundle is not in an evaluable state (never a fallback — invariant 3).
 async function loadExamSiteQuestionnaire(db: D1Database, kv: KVNamespace, id: string, allowSignedOff: boolean): Promise<{ version: string; questionnaire: any } | null> {
@@ -2174,6 +2196,7 @@ app.post('/api/assess', async (c) => {
 
   const examSiteSelection = examSiteSelectionOf(core.modelExamSites, requestedExamSite);
   const versions = versionsBlock(core.meta, engineResult.engineVersion, engineResult.vocabularyVersion ?? null, engineResult.bundleVersions);
+  const bundleArtefacts = await loadBundleArtefacts(c.env.DB, c.env.KV, engineResult.bundleVersions);
 
   const assessmentId = await writeAssessmentRow(c.env.DB, c.env, {
     bundleVersions: engineResult.bundleVersions, engineVersion: engineResult.engineVersion, vocabularyVersion: engineResult.vocabularyVersion ?? null,
@@ -2189,6 +2212,7 @@ app.post('/api/assess', async (c) => {
     advisory: engineResult,
     versions,
     examSiteSelection,
+    bundleArtefacts,
     discrepancies: mergeRes.discrepancies,
     attestationsApplied: mergeRes.attestationsApplied,
     unmappedContext: mergeRes.unmappedContext,
