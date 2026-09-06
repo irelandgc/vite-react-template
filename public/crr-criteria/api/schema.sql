@@ -237,7 +237,12 @@ CREATE TABLE IF NOT EXISTS assessments (
   discrepancies TEXT,
   validation_failures TEXT,
   performed_by TEXT,
-  regression_run_id TEXT
+  regression_run_id TEXT,
+  equivalence_list_version TEXT,  -- migration 0010 (slice 5 pipeline)
+  model_provider TEXT,            -- migration 0010
+  redaction_patterns TEXT,        -- migration 0010 — JSON array of PII pattern types
+  attestations TEXT,              -- migration 0010 — JSON [{ linkId, value, attestedBy }]
+  exam_site_selection TEXT        -- migration 0010 — JSON { requestedExamSite, candidateExamSites[] }
 );
 
 CREATE INDEX IF NOT EXISTS idx_assessments_created ON assessments(created_at);

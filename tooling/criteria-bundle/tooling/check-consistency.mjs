@@ -142,10 +142,19 @@ const vocabByLinkId = new Map(vocab.indicators.map(i => [i.linkId, i]));
 // indicator (a mistyped one would silently do nothing in the gate). The
 // extraction service reads this list to strip these items from the Questionnaires
 // it sends the model, and the gate rejects any answer to one.
+// Slice 5 (AD-23): each attestation indicator carries `attestationWording` with a
+// `referrer` and a `triager` question — the two mode wordings the thin Triage
+// page renders. The renderer takes these from the bundle, never page code
+// (invariant 3), so `check` requires both to exist and to be non-empty.
 for (const linkId of vocab.attestationIndicators || []) {
-  if (!vocabByLinkId.has(linkId)) problems.push(`attestationIndicators names "${linkId}", which is not an indicator in the vocabulary (AD-17)`);
+  const ind = vocabByLinkId.get(linkId);
+  if (!ind) { problems.push(`attestationIndicators names "${linkId}", which is not an indicator in the vocabulary (AD-17)`); continue; }
+  const w = ind.attestationWording;
+  if (!w || typeof w.referrer !== "string" || !w.referrer.trim() || typeof w.triager !== "string" || !w.triager.trim()) {
+    problems.push(`attestation indicator "${linkId}" is missing attestationWording.referrer / attestationWording.triager (AD-23) — the two mode questions the Triage page renders`);
+  }
 }
-if (Array.isArray(vocab.attestationIndicators)) console.log(`AD-17 attestation category: ${vocab.attestationIndicators.length} indicator(s) the extraction model must not answer`);
+if (Array.isArray(vocab.attestationIndicators)) console.log(`AD-17 attestation category: ${vocab.attestationIndicators.length} indicator(s) the extraction model must not answer (AD-23: 2 mode wordings each)`);
 const SITE_LOCAL_EXT = "http://crr.health.nz/fhir/StructureDefinition/site-local";
 const siteLocalItems = [];
 (function walkQ(items) { for (const i of items || []) {

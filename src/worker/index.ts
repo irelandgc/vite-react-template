@@ -21,13 +21,16 @@ const API_BASE = "https://crr-criteria-api.fk4dsrmq5r.workers.dev";
 
 app.get("/api/", (c) => c.json({ name: "Cloudflare" }));
 
-// ── ARCH-MIG-01 assessment pipeline (slice 3) ────────────────────────────────
-// Forwards /api/assess/* to the crr-criteria-api worker over the CRR_API service
-// binding — same-origin, no public HTTP hop (SD-11). Gated by
+// ── ARCH-MIG-01 assessment pipeline (slice 3, extended slice 5) ──────────────
+// Forwards /api/assess and /api/assess/* to the crr-criteria-api worker over the
+// CRR_API service binding — same-origin, no public HTTP hop (SD-11). Gated by
 // ASSESS_PIPELINE_ENABLED: off in production config until cut-over (slice 10), so
 // the pipeline is not reachable by users yet. Identity and client IP travel;
-// admin credentials never do.
-app.all("/api/assess/*", async (c) => {
+// admin credentials and any browser-supplied x-assess-internal never do.
+// `/api/assess` (slice 5) is the full pipeline; `/api/assess/extract` and
+// `/api/assess/evaluate` are its internal stages, callable directly for the
+// benchmark and tabletop.
+async function forwardAssess(c: any): Promise<Response> {
   if (c.env.ASSESS_PIPELINE_ENABLED !== "true") {
     return c.json({ error: "assessment pipeline not enabled" }, 404);
   }
@@ -65,7 +68,10 @@ app.all("/api/assess/*", async (c) => {
   return c.env.CRR_API.fetch(
     new Request("https://crr-criteria-api" + inUrl.pathname + inUrl.search, init),
   );
-});
+}
+
+app.all("/api/assess", forwardAssess);
+app.all("/api/assess/*", forwardAssess);
 
 // ── Same-origin proxy to the CRR API worker ───────────────────────────────────
 // The Admin tool calls /crr-api/... rather than crossing origins, so the

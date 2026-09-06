@@ -1,7 +1,7 @@
 {
   "resourceType": "CRRIndicatorVocabulary",
   "id": "crr-national-indicators",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "status": "draft",
   "date": "2026-09-05",
   "publisher": "Health New Zealand | Te Whatu Ora - Community Referred Radiology Programme",
@@ -292,6 +292,10 @@
       "group": "workup",
       "status": "active",
       "code": "PLACEHOLDER",
+      "attestationWording": {
+        "referrer": "Does this referral follow full clinical assessment, with a strong suspicion of malignancy?",
+        "triager": "Does the referral state a strong suspicion of malignancy following full clinical assessment?"
+      },
       "sites": [
         { "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p10" },
         { "examSite": "ct-other-adult", "page": "p27" },
@@ -797,6 +801,10 @@
       "group": "excl",
       "status": "active",
       "code": "PLACEHOLDER",
+      "attestationWording": {
+        "referrer": "Does this presentation require urgent admission or urgent secondary care assessment?",
+        "triager": "Does the referral indicate the presentation requires urgent admission or urgent secondary care assessment?"
+      },
       "sites": [{ "examSite": "ct-chest-abdomen-pelvis-adult", "page": "p11" }],
       "notes": "This is the ONLY published statement of the retired 'wrong pathway' judgement (prompt clause 4). It is a site criterion at CT CAP, not a national red flag, and is deliberately not lifted into CRR_RedFlags. See REVIEW Q5."
     },

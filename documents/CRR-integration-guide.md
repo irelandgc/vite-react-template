@@ -251,6 +251,57 @@ Accepts an Anthropic Messages API payload and returns the model response. The AP
 
 ---
 
+## Pipeline mode (ARCH-MIG-01 — not yet enabled)
+
+> **Status:** the rules-bundle assessment pipeline is built but gated behind
+> `ASSESS_PIPELINE_ENABLED`, **off in production**. The `POST /api/triage/assess`
+> contract above stays the supported one until the slice 10 cut-over. This
+> section documents the new contract so calling applications can prepare; it is
+> not live.
+
+When the flag is on, the Triage Advisor becomes a thin client and a single
+same-origin call replaces the browser-side prompt assembly and model call:
+
+`POST /api/assess` (same origin — the main worker forwards it internally; not
+reachable from the `*.workers.dev` origin)
+
+```json
+{
+  "note": "<free-text referral note>",
+  "requestedExamSite": "ct_cap",
+  "context": { "age": 65, "sex": "male", "labs": [] },
+  "attestations": {
+    "workup.strongSuspicionMalignancy": { "value": true, "attestedBy": "Dr A (GP)", "mode": "referrer" }
+  },
+  "documentationStandard": "strict",
+  "performedBy": "Dr A (GP)"
+}
+```
+
+- `note` and `requestedExamSite` (a published exam/site id) are required. The
+  model **extracts only** — it never produces a verdict, priority or advice.
+- `context` carries structured values the calling application already holds
+  (`age`, `sex`, and `labs[]` entries **already mapped to vocabulary linkIds** —
+  the lab-name → linkId table is a governed artefact, not inferred here).
+- `attestations` — yes/no answers to the AD-17 attestation-category indicators
+  (fetch the questions with `GET /api/assess/attestation-questions?requestedExamSite=<id>`;
+  each carries a `referrer` and a `triager` wording). `mode` is `referrer`
+  (default) or `triager`. Omitted ⇒ not sent ⇒ `null` downstream; never defaulted.
+- No free-text field anywhere in the request or the response.
+
+Response: `{ assessmentId, advisory, versions, examSiteSelection, bundleArtefacts,
+mergedQuestionnaireResponse, discrepancies, validation }`. `versions` stamps the
+engine, prompt, equivalence-list, model, provider and every bundle version on the
+assessment (invariant 8). A gate rejection or a fail-closed national bundle
+returns a typed error with `validation.passed = false` and still writes an audit
+record.
+
+`GET /api/assess/status` returns `200` with a `versions` block when the pipeline
+is enabled, `404` when it is not — the page uses this to choose thin-client vs
+legacy behaviour.
+
+---
+
 ## `?mode=` behaviour reference
 
 | Value | Effect |
