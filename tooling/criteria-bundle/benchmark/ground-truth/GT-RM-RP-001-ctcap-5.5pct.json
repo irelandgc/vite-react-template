@@ -1,0 +1,92 @@
+{
+  "id": "GT-RM-RP-001-ctcap-5.5pct",
+  "scenarioId": "RM-RP-001-ctcap-5.5pct",
+  "matrixId": "RP-001 (derived boundary variant)",
+  "title": "RP-001 with 5.5% instead of 5%: weight loss threshold now met, work-up still undocumented",
+  "note": "65yo male w/ unexplained wt loss 5.5% over past 6/12 with no localising symptoms or signs. Hb mildly low. Ex-smoker.",
+  "questionnaires": [
+    "http://crr.health.nz/fhir/Questionnaire/CRR-National",
+    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult"
+  ],
+  "examSites": [
+    {
+      "id": "ct_cap",
+      "requested": true,
+      "quote": null
+    }
+  ],
+  "expected": {
+    "patient.age": {
+      "value": 65,
+      "status": "documented",
+      "quote": "65yo"
+    },
+    "patient.sex": {
+      "value": "male",
+      "status": "documented",
+      "quote": "65yo male"
+    },
+    "workup.bloods": {
+      "value": true,
+      "status": "inferred",
+      "quote": "Hb mildly low"
+    },
+    "workup.localisingFeatures": {
+      "value": false,
+      "status": "documented",
+      "quote": "no localising symptoms or signs"
+    },
+    "weightloss.present": {
+      "value": true,
+      "status": "documented",
+      "quote": "unexplained wt loss 5.5% over past 6/12"
+    },
+    "weightloss.percent": {
+      "value": 5.5,
+      "status": "documented",
+      "quote": "wt loss 5.5%"
+    },
+    "weightloss.periodMonths": {
+      "value": 6,
+      "status": "documented",
+      "quote": "over past 6/12"
+    },
+    "lab.hb.low": {
+      "value": true,
+      "status": "documented",
+      "quote": "Hb mildly low"
+    }
+  },
+  "expectedAbsent": {
+    "weightloss.measured": "As GT-RM-RP-001: a stated percentage is not a recorded-weights claim.",
+    "workup.strongSuspicionMalignancy": "Not stated.",
+    "lab.hb.value": "Qualitative statement, no number."
+  },
+  "engineExpectation": {
+    "determination": "INSUFFICIENT_INFORMATION",
+    "missing": [
+      "workup.bloods",
+      "workup.urinalysis",
+      "workup.cxr",
+      "workup.strongSuspicionMalignancy",
+      "weightloss.measured",
+      "advice.urgentCTRecommended",
+      "lab.crp.raised",
+      "lab.calcium.raised",
+      "lab.platelets.high",
+      "lab.alp.high",
+      "lab.albumin.low",
+      "lab.repeatConfirmed",
+      "lab.unexplained"
+    ]
+  },
+  "provenance": {
+    "source": "derived from RP-001 by this session; NOT an evaluator submission",
+    "matrixId": "RP-001 (variant)",
+    "evaluator": null,
+    "caseType": "synthetic boundary variant",
+    "noteProvenance": "RECONSTRUCTED. tests/scenarios.mjs carries this scenario with no `note` field, but its quotes ('unexplained wt loss 5.5% over past 6/12', 'wt loss 5.5%') can only come from RP-001's note with 5% replaced by 5.5%. That substitution is the note recorded here. It is the only case in this seed whose note text was not taken from the matrix, and it must be labelled as synthetic in any benchmark score - it measures the engine's threshold boundary, not a model's reading of a real referral.",
+    "evaluatorExpectation": null,
+    "divergence": "None: this variant exists to show what changes when the weight-loss threshold is crossed. workup.bloods is answered `inferred`, so under the strict standard it does not establish criterion A and still appears in missingInformation - the visible mechanism of AD-04 / KI-04."
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "id": "GT-RM-RP-007-INT-002-ctcap",
+  "scenarioId": "RM-RP-007-INT-002-ctcap",
+  "matrixId": "RP-007 / INT-002",
+  "title": "THE fabrication case: 76F, 3kg weight loss, 15cm epigastric mass",
+  "note": "76yo f w/ 2/12 h/o mid/upper abdo discomfort, anorexia, 3kg wt loss. No change in bowel habit. O/E: 15cm epigastric mass. Request CT A/P to further elucidate.",
+  "questionnaires": [
+    "http://crr.health.nz/fhir/Questionnaire/CRR-National",
+    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult"
+  ],
+  "examSites": [
+    {
+      "id": "ct_cap",
+      "requested": true,
+      "quote": null
+    }
+  ],
+  "examSitesNote": "FINDING: the note requests 'CT A/P' - CT Abdomen/Pelvis - and there is no `ct_ap` id in the published exam/site list (53 ids, migration 0008). CT AP exists only as an approved draft dated 27/08/26. The matrix assessed this case as CT CAP and the scenario is keyed to CT CAP, so ct_cap is recorded as requested with a null quote. A model given the published list cannot return the exam the referrer actually asked for. See manifest.json findings F-GT-02.",
+  "expected": {
+    "patient.age": {
+      "value": 76,
+      "status": "documented",
+      "quote": "76yo"
+    },
+    "patient.sex": {
+      "value": "female",
+      "status": "documented",
+      "quote": "76yo f"
+    },
+    "workup.localisingFeatures": {
+      "value": true,
+      "status": "documented",
+      "quote": "O/E: 15cm epigastric mass"
+    },
+    "weightloss.present": {
+      "value": true,
+      "status": "documented",
+      "quote": "3kg wt loss"
+    },
+    "weightloss.periodMonths": {
+      "value": 2,
+      "status": "inferred",
+      "quote": "2/12 h/o"
+    },
+    "symptom.abdominalPain": {
+      "value": true,
+      "status": "documented",
+      "quote": "mid/upper abdo discomfort"
+    }
+  },
+  "expectedAbsent": {
+    "weightloss.percent": "THE POINT OF THIS CASE. '3kg' is an absolute loss with no usual body weight anywhere in the note, so no percentage is computable. Any percentage here is fabricated (contract rule 3: a calculation needs both numbers).",
+    "workup.bloods": "Not mentioned.",
+    "workup.urinalysis": "Not mentioned.",
+    "workup.cxr": "Not mentioned.",
+    "workup.strongSuspicionMalignancy": "Not stated as a suspicion. The mass is a finding; concluding malignancy from it is a clinical step.",
+    "weightloss.measured": "Not stated."
+  },
+  "engineExpectation": {
+    "determination": "ALTERNATIVE_MANAGEMENT",
+    "redirects": [
+      "Localising clinical features or preliminary results suggest cancer in a specific system"
+    ]
+  },
+  "provenance": {
+    "source": "documents/CRR_Test_Case_Results_Matrix_v2.xlsx",
+    "matrixId": "RP-007 / INT-002",
+    "evaluator": "Rhys Parry (RP-007); second evaluator (INT-002)",
+    "caseType": "evaluator-submitted",
+    "noteProvenance": "verbatim from the results matrix, as already encoded in tests/scenarios.mjs",
+    "evaluatorExpectation": "The evaluated tool listed 'no focal pathology' as a MET criterion while the note states a 15cm epigastric mass. Persisted on Sonnet 4.6 (REG02-B, 3/3).",
+    "divergence": "Resolved by construction. `workup.localisingFeatures` is ONE indicator (KI-01), answered true from the mass; 'no focal pathology' is that same indicator being false, and one indicator cannot hold both values. The engine redirects to alternative management. This is the case the whole architecture was justified by, and it is the reason this ground-truth file names an expectedAbsent for weightloss.percent."
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "name": "CRR extraction benchmark - ground truth manifest",
+  "version": "1.0.0",
+  "date": "2026-09-06",
+  "slice": "ARCH-MIG-01 4a",
+  "status": "NOT CLINICALLY REVIEWED",
+  "description": "Indicator-level ground truth for the extraction benchmark (gap analysis §7). Each case names, per linkId, the expected value, evidence status and verbatim quote - plus the linkIds a correct extraction must NOT answer, which is where the fabrication failures actually show. This manifest is the start of the record that replaces the unreconstructable '138' figure (KI-30): every case here has named provenance, and a case with no provenance does not belong in it.",
+  "howItIsUsed": {
+    "now": "run-ground-truth.mjs builds each expected response, checks every quote against the note (validation-gate rule 1), and runs it through the CT CAP engine. This proves the ground truth is internally consistent and consistent with the rules BEFORE any model is involved - a benchmark whose ground truth disagrees with the engine measures nothing.",
+    "slice9": "The same cases are the extraction benchmark: a model's response is scored per linkId against `expected` (value, status, quote validity) and per case against `examSites`, and the engine result is checked separately. That separation is CK Jin's recommendation and the reason a single-verdict comparison cannot replace it."
+  },
+  "scoringNotes": [
+    "`expectedAbsent` is scored, not decorative: answering one of those linkIds is a false positive, and it is the failure mode KI-01 and KI-10 describe. Weight the absent set at least as heavily as the present set.",
+    "Status is scored separately from value. `weightloss.periodMonths = 2` labelled `documented` rather than `inferred` in GT-RM-RP-007 is a wrong answer even though the number is right - that mislabelling is exactly clause 14's failure.",
+    "Quote validity is scored mechanically (does the span appear in the note) and is independent of whether the value is correct.",
+    "GT-RM-RP-001-ctcap-5.5pct is SYNTHETIC and must be reported separately from the three evaluator cases; including it in an aggregate extraction score would overstate coverage of real referrals."
+  ],
+  "coverage": {
+    "cases": 4,
+    "evaluatorSubmitted": 3,
+    "synthetic": 1,
+    "examSites": [
+      "ct_cap"
+    ],
+    "distinctLinkIdsExpected": [
+      "lab.hb.low",
+      "patient.age",
+      "patient.sex",
+      "symptom.abdominalPain",
+      "weightloss.percent",
+      "weightloss.periodMonths",
+      "weightloss.present",
+      "workup.bloods",
+      "workup.localisingFeatures"
+    ],
+    "gaps": "One exam/site (CT CAP), four cases, 10 distinct linkIds. Nothing here exercises a red flag, the ACC redirect, a paediatric case, a compound flag, or exam/site selection with a real second bundle. The 46 red-flag scenarios in tests/scenarios-redflags.mjs cover the red-flag LOGIC but are not extraction ground truth - they start from answers, not from notes. Extending this seed to red flags needs notes with named provenance, which this session did not have."
+  },
+  "findings": [
+    {
+      "id": "F-GT-01",
+      "severity": "low",
+      "finding": "tests/scenarios.mjs RM-MW-009-ctcap records the quote 'painless jaundice ... Liver ~2 cm below costal margin' for workup.localisingFeatures. That is two spans joined by an ellipsis and is not a verbatim span of the note, so the validation gate (rule 1) would reject it. The scenario passes today only because run-tests.mjs does not check quotes.",
+      "action": "The ground truth uses 'Liver ~2 cm below costal margin'. tests/scenarios.mjs is NOT changed - outside this brief's scope. Recommend either correcting the scenario's quote or adding a quote check to run-tests.mjs so scenario quotes are held to the same standard as extraction output. Owner: Gary."
+    },
+    {
+      "id": "F-GT-02",
+      "severity": "medium",
+      "finding": "RP-007/INT-002's note requests 'CT A/P' (CT Abdomen/Pelvis). There is no ct_ap id in the published exam/site list - CT AP exists only as an approved draft dated 27/08/26. A model given the published list cannot return the exam the referrer actually asked for; the closest published id is ct_cap, which is a different exam.",
+      "action": "Record only. Affects exam/site selection accuracy scoring (slice 9) and the CT AP transcription (slice 7). Owner: Gary."
+    },
+    {
+      "id": "F-GT-03",
+      "severity": "low",
+      "finding": "tests/scenarios.mjs RM-RP-001-ctcap-5.5pct has no `note` field, so it could not be used as extraction ground truth as it stood. Its note has been reconstructed by substituting 5.5% for 5% in RP-001's note - the only reading consistent with the quotes the scenario already asserts.",
+      "action": "Recorded in that case's provenance and flagged as synthetic in scoringNotes. Owner: Gary - confirm the reconstruction is what was intended."
+    }
+  ],
+  "cases": [
+    {
+      "id": "GT-RM-RP-001-ctcap",
+      "scenarioId": "RM-RP-001-ctcap",
+      "matrixId": "RP-001",
+      "title": "65M, 5% unintentional weight loss over 6 months, no localising signs, Hb mildly low",
+      "examSite": "ct_cap",
+      "caseType": "evaluator-submitted",
+      "evaluator": "Rhys Parry",
+      "source": "documents/CRR_Test_Case_Results_Matrix_v2.xlsx",
+      "expectedDetermination": "INSUFFICIENT_INFORMATION",
+      "indicatorsExpected": 8,
+      "indicatorsExpectedAbsent": 6
+    },
+    {
+      "id": "GT-RM-RP-001-ctcap-5.5pct",
+      "scenarioId": "RM-RP-001-ctcap-5.5pct",
+      "matrixId": "RP-001 (derived boundary variant)",
+      "title": "RP-001 with 5.5% instead of 5%: weight loss threshold now met, work-up still undocumented",
+      "examSite": "ct_cap",
+      "caseType": "synthetic boundary variant",
+      "evaluator": null,
+      "source": "derived from RP-001 by this session; NOT an evaluator submission",
+      "expectedDetermination": "INSUFFICIENT_INFORMATION",
+      "indicatorsExpected": 8,
+      "indicatorsExpectedAbsent": 3
+    },
+    {
+      "id": "GT-RM-RP-007-INT-002-ctcap",
+      "scenarioId": "RM-RP-007-INT-002-ctcap",
+      "matrixId": "RP-007 / INT-002",
+      "title": "THE fabrication case: 76F, 3kg weight loss, 15cm epigastric mass",
+      "examSite": "ct_cap",
+      "caseType": "evaluator-submitted",
+      "evaluator": "Rhys Parry (RP-007); second evaluator (INT-002)",
+      "source": "documents/CRR_Test_Case_Results_Matrix_v2.xlsx",
+      "expectedDetermination": "ALTERNATIVE_MANAGEMENT",
+      "indicatorsExpected": 6,
+      "indicatorsExpectedAbsent": 6
+    },
+    {
+      "id": "GT-RM-MW-009-ctcap",
+      "scenarioId": "RM-MW-009-ctcap",
+      "matrixId": "MW-009",
+      "title": "68M painless jaundice with hepatomegaly: CT CAP redirected, US Abdomen is the cross-exam candidate",
+      "examSite": "ct_cap",
+      "caseType": "evaluator-submitted",
+      "evaluator": "Michaela Wood",
+      "source": "documents/CRR_Test_Case_Results_Matrix_v2.xlsx",
+      "expectedDetermination": "ALTERNATIVE_MANAGEMENT",
+      "indicatorsExpected": 4,
+      "indicatorsExpectedAbsent": 3
+    }
+  ]
+}

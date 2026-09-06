@@ -1,0 +1,556 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "CRR-National",
+  "url": "http://crr.health.nz/fhir/Questionnaire/CRR-National",
+  "version": "1.0.0",
+  "name": "CRR_National_Indicators",
+  "title": "CRR national indicators: red flags, ACC redirect and demographics",
+  "status": "draft",
+  "date": "2026-09-06",
+  "publisher": "Health New Zealand | Te Whatu Ora - Community Referred Radiology Programme",
+  "description": "The national Questionnaire. Every assessment answers this alongside the Questionnaire(s) of the selected exam/site bundle(s); the national library CRR_RedFlags evaluates it before any exam library (AD-03). It carries every redflag.* and funding.acc* indicator in the national vocabulary, the patient.* demographics, and the seven symptom.*/lab.* indicators that CRR_RedFlags composes as qualifiers of a compound flag (AD-14) - without those seven, RF-03, RF-12, RF-19, RF-20, RF-23 and RF-24 could never fire from a note. Item text and type are reproduced from vocabulary/indicators.json v1.0.0 and are not authored here. A compound red flag nests its redflag.* qualifiers under its stem; a qualifier belonging to another vocabulary group stays in that group so no linkId appears twice, and the authoritative composition is always the CQL, not this nesting. `prefix` is the RF id from the vocabulary. NOT CLINICALLY REVIEWED - inherits the review state of the vocabulary and of CRR_RedFlags.cql.",
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/cqf-library",
+      "valueCanonical": "http://crr.health.nz/fhir/Library/CRR_RedFlags"
+    }
+  ],
+  "item": [
+    {
+      "linkId": "patient",
+      "text": "Patient",
+      "type": "group",
+      "item": [
+        {
+          "linkId": "patient.age",
+          "text": "Age in years at referral",
+          "type": "integer"
+        },
+        {
+          "linkId": "patient.ageMonths",
+          "text": "Age in months at referral (used where a criterion states an infant age threshold)",
+          "type": "decimal"
+        },
+        {
+          "linkId": "patient.sex",
+          "text": "Sex",
+          "type": "choice",
+          "answerOption": [
+            {
+              "valueCoding": {
+                "system": "http://hl7.org/fhir/administrative-gender",
+                "code": "male",
+                "display": "Male"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "http://hl7.org/fhir/administrative-gender",
+                "code": "female",
+                "display": "Female"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "http://hl7.org/fhir/administrative-gender",
+                "code": "other",
+                "display": "Other"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "symptom",
+      "text": "Symptoms composed by the national red-flag library (a stem here carries its own red-flag qualifiers)",
+      "type": "group",
+      "item": [
+        {
+          "linkId": "symptom.backPain",
+          "text": "Back pain",
+          "type": "boolean",
+          "item": [
+            {
+              "linkId": "redflag.backPainAcuteOnset",
+              "prefix": "RF-20",
+              "text": "The back pain is of acute onset",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.sphincterDisturbance",
+              "prefix": "RF-20",
+              "text": "Sphincter disturbance",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.gaitDisturbance",
+              "prefix": "RF-20",
+              "text": "Gait disturbance",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.saddleAnaesthesia",
+              "prefix": "RF-20",
+              "text": "Saddle anaesthesia",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.bowelOrBladderIncontinence",
+              "prefix": "RF-20",
+              "text": "Loss of bowel or bladder control",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.abnormalReflexesOrLegWeakness",
+              "prefix": "RF-20",
+              "text": "Abnormal reflexes, or loss of muscle power or feeling in the legs",
+              "type": "boolean"
+            }
+          ]
+        },
+        {
+          "linkId": "symptom.fever",
+          "text": "Fever (documented, no threshold stated)",
+          "type": "boolean"
+        },
+        {
+          "linkId": "symptom.haematuria",
+          "text": "Haematuria",
+          "type": "boolean",
+          "item": [
+            {
+              "linkId": "redflag.hypertension",
+              "prefix": "RF-24",
+              "text": "Hypertension",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.heavyProteinuria",
+              "prefix": "RF-24",
+              "text": "Heavy proteinuria",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.oedema",
+              "prefix": "RF-24",
+              "text": "Oedema",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.impairedRenalFunction",
+              "prefix": "RF-24",
+              "text": "Impaired renal function",
+              "type": "boolean"
+            }
+          ]
+        },
+        {
+          "linkId": "symptom.temperatureCelsius",
+          "text": "Recorded temperature in degrees Celsius",
+          "type": "decimal"
+        }
+      ]
+    },
+    {
+      "linkId": "lab",
+      "text": "Laboratory results composed by the national red-flag library",
+      "type": "group",
+      "item": [
+        {
+          "linkId": "lab.creatinine.value",
+          "text": "Creatinine value, in the units reported by the laboratory",
+          "type": "quantity"
+        },
+        {
+          "linkId": "lab.egfr.value",
+          "text": "eGFR value (mL/min)",
+          "type": "quantity"
+        },
+        {
+          "linkId": "lab.pyuriaOnMicroscopy",
+          "text": "Pyuria on microscopy",
+          "type": "boolean"
+        }
+      ]
+    },
+    {
+      "linkId": "funding",
+      "text": "Funding-stream redirect",
+      "type": "group",
+      "item": [
+        {
+          "linkId": "funding.accTrauma",
+          "text": "A recent trauma mechanism (fall, accident, injury) is the primary cause of the presentation, so the imaging is covered by ACC",
+          "type": "boolean"
+        },
+        {
+          "linkId": "funding.accCovered",
+          "text": "The imaging is covered by ACC or another funding stream outside these criteria, for a reason other than a recent trauma mechanism",
+          "type": "boolean"
+        }
+      ]
+    },
+    {
+      "linkId": "redflag",
+      "text": "Refer for acute assessment without initial imaging",
+      "type": "group",
+      "item": [
+        {
+          "linkId": "redflag.haemoptysisMassive",
+          "prefix": "RF-01",
+          "text": "Life threatening, massive haemoptysis - the patient is at high risk of asphyxiation or exsanguination",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.stridorOrSvcObstruction",
+          "prefix": "RF-02",
+          "text": "Stridor or suspected superior vena cava (SVC) obstruction",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.renalColicAcuteEpisode",
+          "prefix": "RF-03",
+          "text": "Acute episode of suspected renal colic",
+          "type": "boolean",
+          "item": [
+            {
+              "linkId": "redflag.solitaryKidney",
+              "prefix": "RF-03",
+              "text": "Solitary kidney",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.peritonitisOrSepsisSigns",
+              "prefix": "RF-03",
+              "text": "Peritonitis or signs of sepsis",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.knownBilateralUretericStones",
+              "prefix": "RF-03",
+              "text": "Known bilateral ureteric stones",
+              "type": "boolean"
+            }
+          ]
+        },
+        {
+          "linkId": "redflag.rhinosinusitisSymptoms",
+          "prefix": "RF-04",
+          "text": "Rhinosinusitis symptoms",
+          "type": "boolean",
+          "item": [
+            {
+              "linkId": "redflag.severeFrontalHeadache",
+              "prefix": "RF-04",
+              "text": "Severe frontal headache",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.severeSystemicSymptoms",
+              "prefix": "RF-04",
+              "text": "Severe systemic symptoms",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.alteredVisualAcuityOrDiplopia",
+              "prefix": "RF-04",
+              "text": "Altered visual acuity or diplopia",
+              "type": "boolean"
+            }
+          ]
+        },
+        {
+          "linkId": "redflag.cholecystitisOrCholangitis",
+          "prefix": "RF-05",
+          "text": "Suspected acute cholecystitis or cholangitis (intractable biliary colic not relieved by simple analgesia)",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.acuteAbdomen",
+          "prefix": "RF-06",
+          "text": "Acute abdomen (including possible appendicitis or suspected obstruction)",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.rupturedAAA",
+          "prefix": "RF-07",
+          "text": "Suspicion of ruptured abdominal aortic aneurysm",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.testicularTorsion",
+          "prefix": "RF-08",
+          "text": "Suspected testicular torsion",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.painfulJaundice",
+          "prefix": "RF-09",
+          "text": "Painful jaundice",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.suspectedTIA",
+          "prefix": "RF-10",
+          "text": "Suspected transient ischaemic attack (TIA)",
+          "type": "boolean",
+          "item": [
+            {
+              "linkId": "redflag.highSevenDayStrokeRisk",
+              "prefix": "RF-10",
+              "text": "A high seven day stroke risk",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.tiaWithNeckPainOrHeadache",
+              "prefix": "RF-10",
+              "text": "Suspected TIA with associated neck pain or headache (may indicate an underlying arterial dissection)",
+              "type": "boolean"
+            }
+          ]
+        },
+        {
+          "linkId": "redflag.clinicallyUnstableGynaePelvicCause",
+          "prefix": "RF-11",
+          "text": "Clinically unstable patient with a suspected gynaecologic or pelvic cause",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.pyelonephritisSuspected",
+          "prefix": "RF-12",
+          "text": "Pyelonephritis suspected",
+          "type": "boolean",
+          "item": [
+            {
+              "linkId": "redflag.loinPainOrTenderness",
+              "prefix": "RF-12",
+              "text": "Loin pain or tenderness",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.notRespondingToAntibiotics72h",
+              "prefix": "RF-12",
+              "text": "Not responding to antibiotics after 72 hours and abscess development is a consideration",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.flankPainPersistingOnAntibiotics",
+              "prefix": "RF-12",
+              "text": "Flank pain that does not improve within 24 hours of intravenous or 48 hours of oral antibiotics",
+              "type": "boolean"
+            }
+          ]
+        },
+        {
+          "linkId": "redflag.strangulatedOrIncarceratedInguinalHernia",
+          "prefix": "RF-13",
+          "text": "Strangulated or incarcerated inguinal hernia",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.haemoptysisPresent",
+          "prefix": "RF-14",
+          "text": "Haemoptysis",
+          "type": "boolean",
+          "item": [
+            {
+              "linkId": "redflag.haemoptysisSignificantVolume",
+              "prefix": "RF-14",
+              "text": "Significant or life threatening volume of haemoptysis (published examples: more than 20 ml in a single episode; more than 100 ml/hour)",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.haemodynamicallyUnstable",
+              "prefix": "RF-14",
+              "text": "Haemodynamically unstable",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.hoarsenessOrStridorWithHaemoptysis",
+              "prefix": "RF-14",
+              "text": "Haemoptysis with hoarseness or stridor",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.acuteDyspnoeaOrChestPain",
+              "prefix": "RF-14",
+              "text": "Acute dyspnoea and/or chest pain",
+              "type": "boolean"
+            }
+          ]
+        },
+        {
+          "linkId": "redflag.severeRespiratoryDistress",
+          "prefix": "RF-15",
+          "text": "Severe respiratory distress",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.pneumothoraxLarge",
+          "prefix": "RF-16",
+          "text": "Suspected large pneumothorax with significant pain, breathlessness, tachycardia",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.activeTbAcutelyUnwell",
+          "prefix": "RF-17",
+          "text": "Suspected active tuberculosis and the patient is acutely unwell",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.septicArthritis",
+          "prefix": "RF-18",
+          "text": "Suspected septic arthritis",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.osteomyelitis",
+          "prefix": "RF-29",
+          "text": "Suspected osteomyelitis",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.sufe",
+          "prefix": "RF-30",
+          "text": "Suspected Slipped Upper Femoral Epiphysis (SUFE)",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.spinalInfectionSuspected",
+          "prefix": "RF-19",
+          "text": "Suspected spinal infection",
+          "type": "boolean",
+          "item": [
+            {
+              "linkId": "redflag.recentInfectionHistory",
+              "prefix": "RF-19",
+              "text": "History of recent infection",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.ivDrugUse",
+              "prefix": "RF-19",
+              "text": "Intravenous drug use",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.immunosuppression",
+              "prefix": "RF-19",
+              "text": "Immunosuppression",
+              "type": "boolean"
+            }
+          ]
+        },
+        {
+          "linkId": "redflag.paedAcuteAbdominalPainOrPyloricStenosis",
+          "prefix": "RF-21",
+          "text": "Acute abdominal pain or pyloric stenosis including possible appendicitis (child)",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.paedAcutelyUnwellGynaeCause",
+          "prefix": "RF-22",
+          "text": "Child who is acutely unwell from a suspected gynaecological cause (e.g. possible acute ovarian cyst accident or torsion)",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.paedUti",
+          "prefix": "RF-23",
+          "text": "Urinary tract infection in a child",
+          "type": "boolean",
+          "item": [
+            {
+              "linkId": "redflag.paedKnownUrinaryTractAnatomicalAbnormality",
+              "prefix": "RF-23",
+              "text": "Known urinary tract anatomical abnormality (child)",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.paedSeriouslyUnwell",
+              "prefix": "RF-23",
+              "text": "Child is seriously unwell (e.g. with sepsis)",
+              "type": "boolean"
+            }
+          ]
+        },
+        {
+          "linkId": "redflag.paedAbscessSuspected",
+          "prefix": "RF-25",
+          "text": "Suspected abscess (child)",
+          "type": "boolean",
+          "item": [
+            {
+              "linkId": "redflag.paedHospitalManagementConsideredNecessary",
+              "prefix": "RF-25",
+              "text": "Hospital management is considered necessary (child)",
+              "type": "boolean"
+            }
+          ]
+        },
+        {
+          "linkId": "redflag.paedSoftTissueMassSuspiciousFeatures",
+          "prefix": "RF-26",
+          "text": "Soft tissue mass with suspicious features including hard, irregular, fixed/deep to fascia, rapidly growing and/or more than 5 cm in diameter (child)",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.paedForeignBodyIngestionHistory",
+          "prefix": "RF-27",
+          "text": "History of foreign body ingestion (child)",
+          "type": "boolean",
+          "item": [
+            {
+              "linkId": "redflag.paedFbOesophagealObstruction",
+              "prefix": "RF-27",
+              "text": "Suspected oesophageal obstruction (e.g. drooling or reluctance to swallow)",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.paedFbButtonBattery",
+              "prefix": "RF-27",
+              "text": "Known or suspected disc / button battery ingestion",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.paedFbMultipleMagnets",
+              "prefix": "RF-27",
+              "text": "Multiple magnets ingested",
+              "type": "boolean"
+            },
+            {
+              "linkId": "redflag.paedFbLargeObject",
+              "prefix": "RF-27",
+              "text": "Large object ingested (more than 5 cm long and / or 2 cm wide)",
+              "type": "boolean"
+            }
+          ]
+        },
+        {
+          "linkId": "redflag.paedRespiratoryDistress",
+          "prefix": "RF-28",
+          "text": "Respiratory distress - tachycardia, tachypnoea, stridor (child)",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.paedBreathingDifficultyWithHypoxia",
+          "prefix": "RF-28",
+          "text": "Breathing difficulties and SpO2 92% or lower (child)",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.paedAcuteSevereAsthma",
+          "prefix": "RF-28",
+          "text": "Acute severe asthma (child)",
+          "type": "boolean"
+        },
+        {
+          "linkId": "redflag.paedInhaledForeignBody",
+          "prefix": "RF-28",
+          "text": "Suspected inhaled foreign body (child)",
+          "type": "boolean"
+        }
+      ]
+    }
+  ]
+}
