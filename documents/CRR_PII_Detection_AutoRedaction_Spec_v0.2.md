@@ -1,6 +1,13 @@
 # CRR Triage Advisor — PII Detection and Auto-Redaction Specification
 ## Version 0.2 · April 2026 · Reflects implemented system (v2.1.1)
 
+> **[SUPERSEDED — 2026-09-06 by `CRR_PII_Detection_AutoRedaction_Spec_v1.0.md`]**
+> ARCH-MIG-01 slice 4b ports the client pipeline to the server (`public/crr-criteria/api/pii.ts`).
+> In the two-stage architecture the server **redacts** (it no longer only rejects), because the
+> internal `/api/assess/extract` route may receive a note that never went through the client
+> courtesy pipeline. Section 6 ("Layer 3 — Server-Side Gate") and §8's "Server-Side ... Pending"
+> checklist are the parts v1.0 replaces; the pattern rules (§3, §4) are carried forward verbatim.
+
 ---
 
 ## 1. Purpose and Security Rationale

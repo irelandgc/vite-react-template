@@ -137,6 +137,15 @@ for (const f of fs.readdirSync(path.join(root, "fhir")).filter(f => f.startsWith
 // 8. Vocabulary resolution (ARCH-MIG-01 slice 1 session 2, plan §2 slice 1 item 1).
 const vocab = JSON.parse(fs.readFileSync(path.join(root, "vocabulary", "indicators.json"), "utf8"));
 const vocabByLinkId = new Map(vocab.indicators.map(i => [i.linkId, i]));
+
+// AD-17: the attestation-indicator category. Every listed linkId must be a real
+// indicator (a mistyped one would silently do nothing in the gate). The
+// extraction service reads this list to strip these items from the Questionnaires
+// it sends the model, and the gate rejects any answer to one.
+for (const linkId of vocab.attestationIndicators || []) {
+  if (!vocabByLinkId.has(linkId)) problems.push(`attestationIndicators names "${linkId}", which is not an indicator in the vocabulary (AD-17)`);
+}
+if (Array.isArray(vocab.attestationIndicators)) console.log(`AD-17 attestation category: ${vocab.attestationIndicators.length} indicator(s) the extraction model must not answer`);
 const SITE_LOCAL_EXT = "http://crr.health.nz/fhir/StructureDefinition/site-local";
 const siteLocalItems = [];
 (function walkQ(items) { for (const i of items || []) {
