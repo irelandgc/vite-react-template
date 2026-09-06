@@ -1,6 +1,7 @@
 {
   "name": "crr-criteria-api",
   "compatibility_date": "2026-04-01",
+  "compatibility_flags": ["nodejs_compat"],
   "main": "api/worker.ts",
   "d1_databases": [
     {
@@ -14,5 +15,14 @@
       "binding": "KV",
       "id": "d8e1a512828d4dd7981d7b241213f396"
     }
-  ]
+  ],
+  "vars": {
+    "ASSESS_PIPELINE_ENABLED": "false",
+    "ASSESS_ALLOW_SIGNED_OFF": "false",
+    "AUDIT_STORE_REDACTED_NOTE": "false",
+    "AUDIT_NOTE_RETENTION_DAYS": "180"
+  },
+  "triggers": {
+    "crons": ["0 3 * * *"]
+  }
 }
