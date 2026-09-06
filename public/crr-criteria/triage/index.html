@@ -3487,10 +3487,10 @@ function injectSettings() {
   const box = document.createElement('div');
   box.className = 'pipe-settings';
   const opts = EXAM_SITES.length
-    ? `<select id="pipeExam"><option value="">Select exam / site…</option>${EXAM_SITES.map((e) => `<option value="${esc(e.id)}">${esc(e.title)} (${esc(e.id)})</option>`).join('')}</select>`
-    : `<input type="text" id="pipeExam" placeholder="published exam/site id, e.g. ct_cap">`;
+    ? `<select id="pipeExam"><option value="">— none: propose the exam from the note —</option>${EXAM_SITES.map((e) => `<option value="${esc(e.id)}">${esc(e.title)} (${esc(e.id)})</option>`).join('')}</select>`
+    : `<input type="text" id="pipeExam" placeholder="published exam/site id, e.g. ct_cap — or leave blank">`;
   box.innerHTML = `
-    <label>Requested exam / site</label>
+    <label>Requested exam / site <span style="font-weight:400;color:var(--mid)">(optional)</span></label>
     ${opts}
     <div class="pipe-row">
       <div><label>Age (years)</label><input type="number" id="pipeAge" min="0" max="120"></div>
@@ -3511,6 +3511,7 @@ function injectSettings() {
     currentView = b.dataset.view;
     document.querySelectorAll('#pipeRoleToggle button').forEach((x) => x.classList.toggle('active', x === b));
     renderAttestations();
+    renderProposalAttestations();
     if (lastAssess) renderAdvisory();
   }));
 }
@@ -3608,26 +3609,117 @@ function collectAttestations(performedBy) {
   return out;
 }
 
+let lastPropose = null;               // last /api/assess/propose response body
+
 function pipelineRunCheck() {
   const note = (document.getElementById('noteInput').value || '').trim();
   if (!note) return;
-  const examEl = document.getElementById('pipeExam');
-  const requestedExamSite = examEl.value.trim();
-  if (!requestedExamSite) { flash('Select a requested exam / site first.'); return; }
+  const requestedExamSite = document.getElementById('pipeExam').value.trim();
+  const docStd = document.getElementById('pipeDocStd').value || 'strict';
 
   window.getOrPromptUserIdentity(function (name, role) {
     const performedBy = role ? `${name} (${role})` : name;
-    const body = {
-      note,
-      requestedExamSite,
-      context: collectContext(),
-      attestations: collectAttestations(performedBy),
-      documentationStandard: document.getElementById('pipeDocStd').value || 'strict',
-      performedBy,
-    };
-    submit(body);
+    if (requestedExamSite) {
+      // Exam supplied — the one-call wrapper, unchanged.
+      submit({
+        note, requestedExamSite,
+        context: collectContext(),
+        attestations: collectAttestations(performedBy),
+        documentationStandard: docStd,
+        performedBy,
+      });
+    } else {
+      // No exam — two-phase: propose the exam from the note, then complete.
+      proposeFlow({ note, context: collectContext(), documentationStandard: docStd, performedBy });
+    }
   });
 }
+
+async function proposeFlow(body) {
+  loading('Reading the note…');
+  let res, json;
+  try {
+    res = await fetch('/api/assess/propose', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    json = await res.json();
+  } catch (e) {
+    document.getElementById('aiPanel').innerHTML = `<div class="panel"><div style="padding:12px 14px;color:var(--fail);font-size:12px"><strong>Network error:</strong> ${esc(e.message)}</div></div>`;
+    return;
+  }
+  if (!res.ok || (json.validation && json.validation.passed === false)) { renderTypedError(res.status, json); return; }
+
+  lastPropose = { ...json, note: body.note, context: body.context, documentationStandard: body.documentationStandard, performedBy: body.performedBy };
+  attestationQuestions = json.attestationQuestions || [];
+  Object.keys(attestationAnswers).forEach((k) => delete attestationAnswers[k]);
+  const sel = json.examSiteSelection || {};
+  const cands = sel.candidates || [];
+  const leadId = (cands.find((x) => x.leading) || cands[0] || {}).id || sel.requestedExamSite || '';
+  renderProposal(leadId, cands);
+}
+
+function renderProposal(confirmedId, cands) {
+  const optList = EXAM_SITES.length ? EXAM_SITES : cands.map((c) => ({ id: c.id, title: c.id }));
+  const p = document.getElementById('aiPanel');
+  p.innerHTML =
+    `<div class="panel"><div style="padding:12px 14px">
+      <div style="font-size:11px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Proposed exam / site<span class="pipe-badge">pipeline</span></div>
+      ${cands.length ? `<ul style="margin:0 0 10px;padding-left:16px;font-size:12px;line-height:1.6;color:var(--ink)">${cands.map((c) => `<li>${esc((optList.find((o) => o.id === c.id) || {}).title || c.id)}${c.leading ? ' <strong>(most likely)</strong>' : ''}${c.quote ? ` — <span style="color:var(--mid)">&ldquo;${esc(c.quote)}&rdquo;</span>` : ''}</li>`).join('')}</ul>`
+        : `<div style="font-size:12px;color:var(--mid);margin-bottom:10px">The note did not point clearly at an exam — choose one.</div>`}
+      <label style="font-size:11px;font-weight:600;color:var(--navy);display:block;margin-bottom:3px">Confirm exam / site</label>
+      <select id="pipeConfirmExam" style="width:100%;margin-bottom:10px">${optList.map((o) => `<option value="${esc(o.id)}"${o.id === confirmedId ? ' selected' : ''}>${esc(o.title)} (${esc(o.id)})</option>`).join('')}</select>
+      <div id="pipeProposalAttn"></div>
+      <button class="btn-run-ai" style="margin-top:8px;width:100%" onclick="window.pipelineComplete()">Confirm &amp; assess &rsaquo;</button>
+    </div></div>`;
+  renderProposalAttestations();
+  document.getElementById('pipeConfirmExam').addEventListener('change', onProposalExamChange);
+}
+
+async function onProposalExamChange() {
+  const id = document.getElementById('pipeConfirmExam').value.trim();
+  attestationQuestions = [];
+  Object.keys(attestationAnswers).forEach((k) => delete attestationAnswers[k]);
+  if (id) {
+    try {
+      const r = await fetch('/api/assess/attestation-questions?requestedExamSite=' + encodeURIComponent(id));
+      if (r.ok) { const j = await r.json(); attestationQuestions = j.questions || []; }
+    } catch { /* leave empty — the Advisory's missing-info list still names the indicator */ }
+  }
+  renderProposalAttestations();
+}
+
+function renderProposalAttestations() {
+  const host = document.getElementById('pipeProposalAttn');
+  if (!host) return;
+  if (!attestationQuestions.length) { host.innerHTML = ''; return; }
+  host.innerHTML = `<label style="font-size:11px;font-weight:600;color:var(--navy);display:block;margin:4px 0 3px">Referrer attestation — answered by ${esc(currentView === 'triager' ? 'the triager, from the letter' : 'the named referrer')}, never pre-ticked (AD-17)</label>` +
+    attestationQuestions.map((q) => {
+      const w = q.wording ? (currentView === 'triager' ? q.wording.triager : q.wording.referrer) : q.text;
+      const cur = attestationAnswers[q.linkId] || '';
+      const opt = (v, lbl) => `<button type="button" data-lid="${esc(q.linkId)}" data-v="${v}" class="${cur === v ? 'active' : ''}">${lbl}</button>`;
+      return `<div class="attn-q">
+        <div class="attn-text">${esc(w)}</div>
+        ${q.sourcePages && q.sourcePages.length ? `<div class="attn-src">Source: ${q.sourcePages.map(esc).join(', ')}</div>` : ''}
+        <div class="attn-opts">${opt('yes', 'Yes')}${opt('no', 'No')}${opt('not-assessed', 'Not assessed')}</div>
+      </div>`;
+    }).join('');
+  host.querySelectorAll('.attn-opts button').forEach((b) => b.addEventListener('click', () => {
+    attestationAnswers[b.dataset.lid] = b.dataset.v;
+    renderProposalAttestations();
+  }));
+}
+
+window.pipelineComplete = function () {
+  if (!lastPropose) return;
+  const confirmedExamSite = document.getElementById('pipeConfirmExam').value.trim();
+  if (!confirmedExamSite) { flash('Confirm an exam / site first.'); return; }
+  submit({
+    note: lastPropose.note,
+    confirmedExamSite,
+    assessmentId: lastPropose.assessmentId,
+    attestations: collectAttestations(lastPropose.performedBy),
+    context: lastPropose.context,
+    documentationStandard: lastPropose.documentationStandard,
+  }, '/api/assess/complete');
+};
 
 function loading(msg) {
   document.getElementById('aiPanel').innerHTML =
@@ -3643,11 +3735,11 @@ function flash(msg) {
   setTimeout(() => b.remove(), 4000);
 }
 
-async function submit(body) {
+async function submit(body, path) {
   loading('Running assessment…');
   let res, json;
   try {
-    res = await fetch('/api/assess', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    res = await fetch(path || '/api/assess', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     json = await res.json();
   } catch (e) {
     document.getElementById('aiPanel').innerHTML = `<div class="panel"><div style="padding:12px 14px;color:var(--fail);font-size:12px"><strong>Network error:</strong> ${esc(e.message)}</div></div>`;
@@ -3716,7 +3808,7 @@ function logUsage(json, body) {
         timestamp: new Date().toISOString(),
         assessment_id: json.assessmentId || null,
         user_name: name, user_role: role,
-        exam_identified: body.requestedExamSite,
+        exam_identified: body.requestedExamSite || body.confirmedExamSite || null,
         verdict: (json.advisory && json.advisory.determination) || null,
         model_used: v.model || null,
         documentation_standard: body.documentationStandard,

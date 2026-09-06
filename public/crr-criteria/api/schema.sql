@@ -242,7 +242,9 @@ CREATE TABLE IF NOT EXISTS assessments (
   model_provider TEXT,            -- migration 0010
   redaction_patterns TEXT,        -- migration 0010 — JSON array of PII pattern types
   attestations TEXT,              -- migration 0010 — JSON [{ linkId, value, attestedBy }]
-  exam_site_selection TEXT        -- migration 0010 — JSON { requestedExamSite, candidateExamSites[] }
+  exam_site_selection TEXT,       -- migration 0010 — JSON { requestedExamSite, candidateExamSites[] }
+  status TEXT,                    -- migration 0011 — NULL | 'proposed' | 'completed' (two-phase assess)
+  proposal TEXT                   -- migration 0011 — JSON { context, meta, modelExamSites, questionnaireResponse } from phase 1; stale 'proposed' rows purged
 );
 
 CREATE INDEX IF NOT EXISTS idx_assessments_created ON assessments(created_at);
