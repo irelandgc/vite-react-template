@@ -1,10 +1,12 @@
 // ARCH-MIG-01 slice 3 — rules-engine route tests (AD-13 harness, workers-vitest).
 //
-// Exercises POST /api/assess/evaluate against real D1 + KV: the national red-flag
-// precedence (AD-03), per-exam bundle evaluation reproducing tests/scenarios.mjs
-// over HTTP, multi-bundle aggregation (gap §4), version stamping (invariant 8),
-// determinism (NFR-014), and the assessment audit record (SD-12) incl. the
-// off-by-default redacted-note store and its purge job.
+// Exercises POST /api/assess/evaluate against real D1 + KV: the internal-only
+// gating (ASSESS_PIPELINE_ENABLED + the x-assess-internal shared secret), the
+// national red-flag precedence (AD-03), per-exam bundle evaluation reproducing
+// tests/scenarios.mjs over HTTP, multi-bundle aggregation (gap §4, AD-20),
+// version stamping (invariant 8), determinism (NFR-014), and the assessment
+// audit record (SD-12) incl. the off-by-default redacted-note store and its
+// purge job.
 import { beforeAll, describe, expect, it } from "vitest";
 import { env, SELF } from "cloudflare:test";
 import { purgeExpiredNotes } from "../worker";
@@ -16,6 +18,7 @@ import { scenarios, toQuestionnaireResponse } from "../../../../tooling/criteria
 // @ts-expect-error -- plain .mjs, no type declarations
 import { scenarios as redflagScenarios, toQuestionnaireResponse as toRedflagQr } from "../../../../tooling/criteria-bundle/tests/scenarios-redflags.mjs";
 
+const INTERNAL_KEY = "test-internal-key";
 const ctCapBundle = () => JSON.parse(ctCapBundleRaw);
 
 // This plugin config does not isolate D1/KV per test (state accumulates within a
@@ -60,10 +63,16 @@ async function publishAltSite(state = "published", version = "1.0.0") {
   await seedBundleRow(key, version, state);
 }
 
-function evaluate(body: unknown) {
+// Calls the route the way the main worker's service binding does: with the
+// x-assess-internal shared secret. Pass `{ internal: false }` to omit it, or an
+// explicit string to send a wrong one.
+function evaluate(body: unknown, opts: { internal?: string | false } = {}) {
+  const headers: Record<string, string> = { "content-type": "application/json" };
+  const internal = opts.internal === undefined ? INTERNAL_KEY : opts.internal;
+  if (internal !== false) headers["x-assess-internal"] = internal;
   return SELF.fetch("http://worker/api/assess/evaluate", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers,
     body: JSON.stringify(body),
   });
 }
@@ -92,17 +101,44 @@ function makeQr(answers: Record<string, any>, id = "p1") {
 const sorted = (a: any) => JSON.stringify([...(a || [])].sort());
 
 beforeAll(async () => {
+  (env as any).ASSESS_PIPELINE_ENABLED = "true";
+  (env as any).ASSESS_INTERNAL_KEY = INTERNAL_KEY;
   await publishCtCap("published");
   await publishAltSite("published");
 });
 
+describe("POST /api/assess/evaluate — internal-only gating", () => {
+  const qr = () => makeQr({ "patient.age": 60 });
+
+  it("403s a call with no x-assess-internal header (not usable from the public origin)", async () => {
+    const res = await evaluate({ questionnaireResponse: qr(), requestedExamSite: "ct_cap" }, { internal: false });
+    expect(res.status).toBe(403);
+  });
+
+  it("403s a call with the wrong internal key", async () => {
+    const res = await evaluate({ questionnaireResponse: qr(), requestedExamSite: "ct_cap" }, { internal: "nope" });
+    expect(res.status).toBe(403);
+  });
+
+  it("404s when ASSESS_PIPELINE_ENABLED is not 'true', even with the header", async () => {
+    const prev = env.ASSESS_PIPELINE_ENABLED;
+    try {
+      (env as any).ASSESS_PIPELINE_ENABLED = "false";
+      const res = await evaluate({ questionnaireResponse: qr(), requestedExamSite: "ct_cap" });
+      expect(res.status).toBe(404);
+    } finally {
+      (env as any).ASSESS_PIPELINE_ENABLED = prev;
+    }
+  });
+});
+
 describe("POST /api/assess/evaluate — validation", () => {
   it("400s on a missing questionnaireResponse", async () => {
-    const res = await evaluate({ examSites: ["ct_cap"] });
+    const res = await evaluate({ requestedExamSite: "ct_cap" });
     expect(res.status).toBe(400);
   });
-  it("400s on an empty examSites list", async () => {
-    const res = await evaluate({ questionnaireResponse: makeQr({ "patient.age": 60 }), examSites: [] });
+  it("400s on a missing requestedExamSite", async () => {
+    const res = await evaluate({ questionnaireResponse: makeQr({ "patient.age": 60 }) });
     expect(res.status).toBe(400);
   });
 });
@@ -114,7 +150,7 @@ describe("POST /api/assess/evaluate — CT CAP scenarios reproduced over HTTP", 
     it(`${s.id} -> ${s.expect.determination}`, async () => {
       const res = await evaluate({
         questionnaireResponse: toQuestionnaireResponse(s),
-        examSites: ["ct_cap"],
+        requestedExamSite: "ct_cap",
         parameters: { documentationStandard: "strict" },
       });
       expect(res.status).toBe(200);
@@ -132,7 +168,7 @@ describe("POST /api/assess/evaluate — CT CAP scenarios reproduced over HTTP", 
       it(`${s.id} (inferred) -> ${s.expectInferredMode.determination}`, async () => {
         const res = await evaluate({
           questionnaireResponse: toQuestionnaireResponse(s),
-          examSites: ["ct_cap"],
+          requestedExamSite: "ct_cap",
           parameters: { documentationStandard: "inferred" },
         });
         const body: any = await res.json();
@@ -143,10 +179,9 @@ describe("POST /api/assess/evaluate — CT CAP scenarios reproduced over HTTP", 
 });
 
 describe("POST /api/assess/evaluate — national red-flag precedence (AD-03)", () => {
-
   it("a fired red flag stops the pipeline — no exam library runs", async () => {
     const rf = redflagScenarios.find((s: any) => s.id === "RF-S01-massive-haemoptysis");
-    const res = await evaluate({ questionnaireResponse: toRedflagQr(rf), examSites: ["ct_cap"] });
+    const res = await evaluate({ questionnaireResponse: toRedflagQr(rf), requestedExamSite: "ct_cap" });
     expect(res.status).toBe(200);
     const body: any = await res.json();
     expect(body.stoppedAtNational).toBe(true);
@@ -160,7 +195,7 @@ describe("POST /api/assess/evaluate — national red-flag precedence (AD-03)", (
 
   it("the ACC redirect stops the pipeline", async () => {
     const rf = redflagScenarios.find((s: any) => s.id === "RF-S31-acc-trauma");
-    const res = await evaluate({ questionnaireResponse: toRedflagQr(rf), examSites: ["ct_cap"] });
+    const res = await evaluate({ questionnaireResponse: toRedflagQr(rf), requestedExamSite: "ct_cap" });
     const body: any = await res.json();
     expect(body.determination).toBe("ACC_PATHWAY");
     expect(body.stoppedAtNational).toBe(true);
@@ -168,7 +203,7 @@ describe("POST /api/assess/evaluate — national red-flag precedence (AD-03)", (
 
   it("no national redirect -> the exam library is evaluated", async () => {
     const rf = redflagScenarios.find((s: any) => s.id === "RF-S32-fall-through");
-    const res = await evaluate({ questionnaireResponse: toRedflagQr(rf), examSites: ["ct_cap"] });
+    const res = await evaluate({ questionnaireResponse: toRedflagQr(rf), requestedExamSite: "ct_cap" });
     const body: any = await res.json();
     expect(body.national.determination).toBe("NO_NATIONAL_REDIRECT");
     expect(body.stoppedAtNational).toBe(false);
@@ -177,12 +212,11 @@ describe("POST /api/assess/evaluate — national red-flag precedence (AD-03)", (
   });
 });
 
-describe("POST /api/assess/evaluate — multi-bundle aggregation (gap §4)", () => {
-
+describe("POST /api/assess/evaluate — multi-bundle aggregation (gap §4, AD-20)", () => {
   it("a candidate that reaches a priority determination while the requested exam does not -> alternatives[]", async () => {
     // workup.bloods=true meets the alt fixture but not CT CAP (needs weight loss etc.)
     const qr = makeQr({ "patient.age": 60, "patient.sex": "male", "workup.bloods": true });
-    const res = await evaluate({ questionnaireResponse: qr, examSites: ["ct_cap", "us_abdomen"] });
+    const res = await evaluate({ questionnaireResponse: qr, requestedExamSite: "ct_cap", candidateExamSites: ["us_abdomen"] });
     const body: any = await res.json();
     expect(body.requestedExam.advisory.determination).toBe("INSUFFICIENT_INFORMATION");
     expect(body.alternatives).toHaveLength(1);
@@ -193,19 +227,24 @@ describe("POST /api/assess/evaluate — multi-bundle aggregation (gap §4)", () 
 
   it("no alternative when the requested exam is itself a priority determination", async () => {
     const s01 = scenarios.find((s: any) => s.id === "S01-b1-p2");
-    const res = await evaluate({ questionnaireResponse: toQuestionnaireResponse(s01), examSites: ["ct_cap", "us_abdomen"] });
+    const res = await evaluate({ questionnaireResponse: toQuestionnaireResponse(s01), requestedExamSite: "ct_cap", candidateExamSites: ["us_abdomen"] });
     const body: any = await res.json();
     expect(body.requestedExam.advisory.determination).toBe("P2_URGENT");
     expect(body.alternatives).toHaveLength(0);
     expect(body.candidatesEvaluated.find((c: any) => c.id === "us_abdomen").evaluated).toBe(true);
   });
+
+  it("a candidate id equal to the requested id is ignored", async () => {
+    const s01 = scenarios.find((s: any) => s.id === "S01-b1-p2");
+    const res = await evaluate({ questionnaireResponse: toQuestionnaireResponse(s01), requestedExamSite: "ct_cap", candidateExamSites: ["ct_cap"] });
+    const body: any = await res.json();
+    expect(body.candidatesEvaluated).toHaveLength(0);
+  });
 });
 
 describe("POST /api/assess/evaluate — unavailable bundles", () => {
-
-  it("an id with no published bundle -> not-available, never a fallback", async () => {
-    const qr = makeQr({ "patient.age": 60 });
-    const res = await evaluate({ questionnaireResponse: qr, examSites: ["ct_head", "ct_cap"] });
+  it("a requested id with no published bundle -> not-available, never a fallback", async () => {
+    const res = await evaluate({ questionnaireResponse: makeQr({ "patient.age": 60 }), requestedExamSite: "ct_head" });
     const body: any = await res.json();
     expect(body.requestedExam.id).toBe("ct_head");
     expect(body.requestedExam.state).toBe("not-available");
@@ -214,7 +253,7 @@ describe("POST /api/assess/evaluate — unavailable bundles", () => {
   });
 
   it("an unknown id -> not-available", async () => {
-    const res = await evaluate({ questionnaireResponse: makeQr({ "patient.age": 60 }), examSites: ["not_a_real_exam"] });
+    const res = await evaluate({ questionnaireResponse: makeQr({ "patient.age": 60 }), requestedExamSite: "not_a_real_exam" });
     const body: any = await res.json();
     expect(body.requestedExam.state).toBe("not-available");
   });
@@ -223,14 +262,14 @@ describe("POST /api/assess/evaluate — unavailable bundles", () => {
     await seedBundleRow("ct-head-adult", "1.0.0", "signed-off");
     await env.KV.put("bundle:ct-head-adult:1.0.0", JSON.stringify({ ...ctCapBundle(), examSite: "ct-head-adult" }));
 
-    let res = await evaluate({ questionnaireResponse: makeQr({ "patient.age": 60 }), examSites: ["ct_head"] });
+    let res = await evaluate({ questionnaireResponse: makeQr({ "patient.age": 60 }), requestedExamSite: "ct_head" });
     let body: any = await res.json();
     expect(body.requestedExam.state).toBe("not-available");
 
     const prev = env.ASSESS_ALLOW_SIGNED_OFF;
     try {
       (env as any).ASSESS_ALLOW_SIGNED_OFF = "true";
-      res = await evaluate({ questionnaireResponse: makeQr({ "patient.age": 60 }), examSites: ["ct_head"] });
+      res = await evaluate({ questionnaireResponse: makeQr({ "patient.age": 60 }), requestedExamSite: "ct_head" });
       body = await res.json();
       expect(body.requestedExam.state).toBe("signed-off");
       expect(body.requestedExam.evaluated).toBe(true);
@@ -241,10 +280,9 @@ describe("POST /api/assess/evaluate — unavailable bundles", () => {
 });
 
 describe("POST /api/assess/evaluate — stamping, determinism, audit", () => {
-
   it("stamps engine, vocabulary and bundle versions", async () => {
     const s01 = scenarios.find((s: any) => s.id === "S01-b1-p2");
-    const res = await evaluate({ questionnaireResponse: toQuestionnaireResponse(s01), examSites: ["ct_cap"] });
+    const res = await evaluate({ questionnaireResponse: toQuestionnaireResponse(s01), requestedExamSite: "ct_cap" });
     const body: any = await res.json();
     expect(body.engineVersion).toBe("1.0.0");
     expect(body.vocabularyVersion).toBe("1.0.0");
@@ -254,7 +292,7 @@ describe("POST /api/assess/evaluate — stamping, determinism, audit", () => {
 
   it("is deterministic — same input, byte-identical body apart from assessmentId", async () => {
     const s01 = scenarios.find((s: any) => s.id === "S01-b1-p2");
-    const payload = { questionnaireResponse: toQuestionnaireResponse(s01), examSites: ["ct_cap"] };
+    const payload = { questionnaireResponse: toQuestionnaireResponse(s01), requestedExamSite: "ct_cap" };
     const a: any = await (await evaluate(payload)).json();
     const b: any = await (await evaluate(payload)).json();
     delete a.assessmentId;
@@ -265,7 +303,7 @@ describe("POST /api/assess/evaluate — stamping, determinism, audit", () => {
   it("writes one assessments row per call; no note by default", async () => {
     const before: any = await env.DB.prepare("SELECT COUNT(*) n FROM assessments").first();
     const s01 = scenarios.find((s: any) => s.id === "S01-b1-p2");
-    const res = await evaluate({ questionnaireResponse: toQuestionnaireResponse(s01), examSites: ["ct_cap"], noteRedacted: "62M weight loss" });
+    const res = await evaluate({ questionnaireResponse: toQuestionnaireResponse(s01), requestedExamSite: "ct_cap", noteRedacted: "62M weight loss" });
     const body: any = await res.json();
     const after: any = await env.DB.prepare("SELECT COUNT(*) n FROM assessments").first();
     expect(after.n).toBe(before.n + 1);
@@ -283,7 +321,7 @@ describe("POST /api/assess/evaluate — stamping, determinism, audit", () => {
     try {
       (env as any).AUDIT_STORE_REDACTED_NOTE = "true";
       const s01 = scenarios.find((s: any) => s.id === "S01-b1-p2");
-      const res = await evaluate({ questionnaireResponse: toQuestionnaireResponse(s01), examSites: ["ct_cap"], noteRedacted: "62M unintentional weight loss" });
+      const res = await evaluate({ questionnaireResponse: toQuestionnaireResponse(s01), requestedExamSite: "ct_cap", noteRedacted: "62M unintentional weight loss" });
       const body: any = await res.json();
       const noteRow: any = await env.DB.prepare("SELECT note_redacted FROM assessment_notes WHERE assessment_id = ?").bind(body.assessmentId).first();
       expect(noteRow.note_redacted).toBe("62M unintentional weight loss");

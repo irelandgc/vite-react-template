@@ -107,8 +107,9 @@ export type ExamResolution =
 
 export interface AssessmentInput {
   questionnaireResponse: any;
-  // First entry is the requested exam; the rest are candidates (gap §4).
-  resolutions: ExamResolution[];
+  // The requested exam/site (AD-20) and any candidates the note also indicated.
+  requested: ExamResolution;
+  candidates: ExamResolution[];
   documentationStandard: DocumentationStandard;
 }
 
@@ -116,7 +117,8 @@ export interface AssessmentInput {
 // values — the same input produces a byte-identical body (NFR-014). The caller
 // (worker.ts) adds the audit row (which does carry an id and timestamp).
 export async function runAssessment(input: AssessmentInput) {
-  const { questionnaireResponse: qr, resolutions, documentationStandard } = input;
+  const { questionnaireResponse: qr, requested, candidates, documentationStandard } = input;
+  const resolutions = [requested, ...candidates];
 
   const national = await evaluateNational(qr, documentationStandard);
   const bundleVersions: Record<string, string> = { "national-redflags": RED_FLAGS_LIBRARY_VERSION };
@@ -124,9 +126,6 @@ export async function runAssessment(input: AssessmentInput) {
   const nationalStops =
     national.determination === "ACUTE_ASSESSMENT_REQUIRED" ||
     national.determination === "ACC_PATHWAY";
-
-  const requested = resolutions[0] ?? null;
-  const candidates = resolutions.slice(1);
 
   let vocabularyVersion: string | null = null;
 
@@ -141,7 +140,7 @@ export async function runAssessment(input: AssessmentInput) {
       priorityCode: null,
       stoppedAtNational: true,
       national,
-      requestedExam: requested ? { id: requested.id, state: requested.state, evaluated: false, advisory: null } : null,
+      requestedExam: { id: requested.id, state: requested.state, evaluated: false, advisory: null },
       alternatives: [],
       candidatesEvaluated: candidates.map((c) => ({ id: c.id, state: c.state, evaluated: false, advisory: null })),
       notAvailable: resolutions.filter((r) => r.state === "not-available").map((r) => ({ id: r.id })),
@@ -158,7 +157,7 @@ export async function runAssessment(input: AssessmentInput) {
     return { id: r.id, state: r.state, evaluated: true, advisory };
   }
 
-  const requestedResult = requested ? await evalResolution(requested) : null;
+  const requestedResult = await evalResolution(requested);
   const candidateResults = [];
   for (const c of candidates) candidateResults.push(await evalResolution(c));
 

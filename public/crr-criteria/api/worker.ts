@@ -18,6 +18,8 @@ type Bindings = {
   ANTHROPIC_API_KEY: string;
   ADMIN_KEY: string;  // set via: npx wrangler secret put ADMIN_KEY
   // ARCH-MIG-01 slice 3 (vars in wrangler.json; string flags, '"true"' to enable):
+  ASSESS_PIPELINE_ENABLED?: string;   // gates /api/assess/evaluate itself (default off; slice 10 flips it)
+  ASSESS_INTERNAL_KEY?: string;       // secret shared with the main worker; required in x-assess-internal
   ASSESS_ALLOW_SIGNED_OFF?: string;   // E4 tabletop mode — evaluate signed-off (not just published) bundles
   AUDIT_STORE_REDACTED_NOTE?: string; // write the redacted note to assessment_notes (default off)
   AUDIT_NOTE_RETENTION_DAYS?: string; // purge job cutoff for assessment_notes (default 180)
@@ -1523,7 +1525,22 @@ export async function purgeExpiredNotes(db: D1Database, retentionDays: number): 
 }
 
 app.post('/api/assess/evaluate', async (c) => {
-  // Per-IP rate limit: 200/hour (mirrors /api/triage/usage-log).
+  // This route is internal: it is reached only via the main worker's CRR_API
+  // service binding, which sets `x-assess-internal` from a shared secret. It is
+  // NOT usable from the API worker's public *.workers.dev origin. Two gates:
+  //  1. ASSESS_PIPELINE_ENABLED must be 'true' on this worker (default off — the
+  //     route reports 404 otherwise, so it is invisible until slice 10 cut-over).
+  //  2. x-assess-internal must equal ASSESS_INTERNAL_KEY (a configured secret).
+  if (c.env.ASSESS_PIPELINE_ENABLED !== 'true') {
+    return c.json({ error: 'Not found' }, 404);
+  }
+  const internalKey = c.env.ASSESS_INTERNAL_KEY;
+  if (!internalKey || c.req.header('x-assess-internal') !== internalKey) {
+    return c.json({ error: 'This endpoint is internal — reachable only through the assessment pipeline' }, 403);
+  }
+
+  // Per-IP rate limit: 200/hour (mirrors /api/triage/usage-log). The main worker
+  // forwards CF-Connecting-IP so this is the end user's IP.
   const ip = c.req.header('CF-Connecting-IP') || 'unknown';
   const hour = new Date().toISOString().slice(0, 13);
   const rlKey = `ratelimit:assess:${ip}:${hour}`;
@@ -1545,10 +1562,15 @@ app.post('/api/assess/evaluate', async (c) => {
   if (!qr || typeof qr !== 'object' || qr.resourceType !== 'QuestionnaireResponse') {
     return c.json({ error: 'questionnaireResponse (a FHIR QuestionnaireResponse) is required' }, 400);
   }
-  const examSites: string[] = Array.isArray(body.examSites) ? body.examSites.filter((x: any) => typeof x === 'string' && x.length) : [];
-  if (!examSites.length) {
-    return c.json({ error: 'examSites must be a non-empty array of published exam/site ids (first = requested)' }, 400);
+  // AD-20: the requested exam/site is explicit; candidateExamSites[] carries any
+  // other exam the note indicated (gap §4). No positional convention.
+  const requestedExamSite: string | undefined = typeof body.requestedExamSite === 'string' && body.requestedExamSite.length ? body.requestedExamSite : undefined;
+  if (!requestedExamSite) {
+    return c.json({ error: 'requestedExamSite (a published exam/site id) is required' }, 400);
   }
+  const candidateExamSites: string[] = Array.isArray(body.candidateExamSites)
+    ? body.candidateExamSites.filter((x: any) => typeof x === 'string' && x.length && x !== requestedExamSite)
+    : [];
 
   const engine = await import('./engine');
   const docStd = engine.isDocumentationStandard(body.parameters?.documentationStandard)
@@ -1558,9 +1580,10 @@ app.post('/api/assess/evaluate', async (c) => {
 
   let result: any;
   try {
-    const resolutions = [];
-    for (const id of examSites) resolutions.push(await resolveExamForEngine(c.env.DB, c.env.KV, id, allowSignedOff));
-    result = await engine.runAssessment({ questionnaireResponse: qr, resolutions, documentationStandard: docStd });
+    const requested = await resolveExamForEngine(c.env.DB, c.env.KV, requestedExamSite, allowSignedOff);
+    const candidates = [];
+    for (const id of candidateExamSites) candidates.push(await resolveExamForEngine(c.env.DB, c.env.KV, id, allowSignedOff));
+    result = await engine.runAssessment({ questionnaireResponse: qr, requested, candidates, documentationStandard: docStd });
   } catch (e: any) {
     return c.json({ error: 'Engine evaluation failed', message: e.message }, 500);
   }

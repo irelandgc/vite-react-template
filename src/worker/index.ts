@@ -7,9 +7,12 @@ type Bindings = {
   ADMIN_KEY: string;
   ASSETS: Fetcher;
   // ARCH-MIG-01 slice 3: service binding to the crr-criteria-api worker (no
-  // public HTTP hop), and the flag that gates the /api/assess/* forward.
+  // public HTTP hop), the flag that gates the /api/assess/* forward, and the
+  // shared secret the API worker's evaluate route requires (mirror of that
+  // worker's ASSESS_INTERNAL_KEY — set with `npx wrangler secret put`).
   CRR_API: Fetcher;
   ASSESS_PIPELINE_ENABLED?: string;
+  ASSESS_INTERNAL_KEY?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -38,6 +41,7 @@ app.all("/api/assess/*", async (c) => {
       lk === "content-length" ||
       lk === "x-admin-key" ||
       lk === "x-admin-email" ||
+      lk === "x-assess-internal" || // never trust an internal key from the browser
       lk === "cf-access-jwt-assertion" ||
       lk === "cookie"
     )
@@ -48,6 +52,8 @@ app.all("/api/assess/*", async (c) => {
   if (cfip) fwd.set("cf-connecting-ip", cfip);
   const email = c.req.header("cf-access-authenticated-user-email");
   if (email) fwd.set("x-assess-identity", email);
+  // The API worker's evaluate route is internal — it requires this shared secret.
+  if (c.env.ASSESS_INTERNAL_KEY) fwd.set("x-assess-internal", c.env.ASSESS_INTERNAL_KEY);
 
   const method = c.req.method;
   const init: RequestInit = { method, headers: fwd };
