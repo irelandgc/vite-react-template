@@ -212,6 +212,19 @@ describe("POST /api/assess/extract — extraction + gate (v3.0.1)", () => {
     expect(age.answer[0].extension).toBeUndefined();
   });
 
+  it("no requestedExamSite is allowed (AD-25) — national-only extraction, selection has no requested id", async () => {
+    stubAnthropic({
+      answers: [],
+      examSites: [{ id: "ct_cap", requested: false, quote: "wt loss" }],
+    });
+    const res = await extract({ note: GT_NOTE });
+    expect(res.status).toBe(200);
+    const body: any = await res.json();
+    expect(body.validation.passed).toBe(true);
+    expect(body.examSiteSelection.requestedExamSite).toBeNull();
+    expect(body.examSiteSelection.candidateExamSites).toContain("ct_cap");
+  });
+
   it("a bad quote fails the gate -> 422 with the failure and no QR", async () => {
     stubAnthropic({
       answers: [{ linkId: "weightloss.percent", value: 5, status: "documented", quote: "a quote that is definitely not in the note" }],

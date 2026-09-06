@@ -58,9 +58,10 @@ app.get("/api/", (c) => c.json({ name: "Cloudflare" }));
 // ASSESS_PIPELINE_ENABLED: off in production config until cut-over (slice 10), so
 // the pipeline is not reachable by users yet. Identity and client IP travel;
 // admin credentials and any browser-supplied x-assess-internal never do.
-// `/api/assess` (slice 5) is the full pipeline; `/api/assess/extract` and
-// `/api/assess/evaluate` are its internal stages, callable directly for the
-// benchmark and tabletop.
+// `/api/assess` (slice 5) is the one-call pipeline; `/api/assess/propose` +
+// `/api/assess/complete` are the two-phase split (AD-25 — extract, confirm the
+// exam, then evaluate); `/api/assess/extract` and `/api/assess/evaluate` are the
+// internal stages, callable directly for the benchmark and tabletop.
 async function forwardAssess(c: any): Promise<Response> {
   if (c.env.ASSESS_PIPELINE_ENABLED !== "true") {
     return c.json({ error: "assessment pipeline not enabled" }, 404);

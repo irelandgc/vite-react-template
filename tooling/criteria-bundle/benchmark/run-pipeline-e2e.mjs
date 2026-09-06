@@ -3,9 +3,11 @@
 // MANUAL. Never in CI (it makes real model calls). Runs the four CT CAP
 // ground-truth notes through POST /api/assess in the TWO-WORKER `wrangler dev`
 // (main worker forwards to the API worker over the CRR_API service binding,
-// SD-11), plus one demonstration case that proves the AD-17 attestation
-// mechanism: S01's note reaches P2_URGENT ONLY when the referrer attests
-// `workup.strongSuspicionMalignancy` (the extraction model may never answer it).
+// SD-11); then re-runs the same four through the AD-25 two-phase pair
+// (`/api/assess/propose` with NO exam → `/api/assess/complete` with the
+// ground-truth exam); plus one demonstration case that proves the AD-17
+// attestation mechanism: S01's note reaches P2_URGENT ONLY when the referrer
+// attests `workup.strongSuspicionMalignancy` (the model may never answer it).
 //
 // For each call it checks: the engine determination against the scenario
 // expectation, that one `assessments` row was written with every field the gap
@@ -63,14 +65,24 @@ const DEMO = {
   ],
 };
 
-async function assess(body) {
-  const res = await fetch(BASE + "/api/assess", {
+async function post(path, body) {
+  const res = await fetch(BASE + path, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
   const json = await res.json().catch(() => ({}));
   return { status: res.status, json };
+}
+const assess = (body) => post("/api/assess", body);
+
+// AD-25 two-phase, with NO exam supplied: propose the exam from the note, then
+// complete against the ground-truth exam.
+async function assessTwoPhase(note, confirmedExamSite) {
+  const p = await post("/api/assess/propose", { note, context: {}, performedBy: "Dr E2E (GP)" });
+  if (p.status !== 200) return { phase: "propose", status: p.status, json: p.json };
+  const c = await post("/api/assess/complete", { assessmentId: p.json.assessmentId, confirmedExamSite, note, attestations: {} });
+  return { phase: "complete", status: c.status, json: c.json, proposeJson: p.json, assessmentId: p.json.assessmentId };
 }
 
 function rowById(id) {
@@ -131,6 +143,25 @@ for (const file of gtFiles) {
   });
 }
 
+// AD-25 two-phase pass — the same four notes, NO exam supplied to propose.
+const twoPhaseCases = [];
+for (const file of gtFiles) {
+  const gt = JSON.parse(fs.readFileSync(path.join(gtDir, file), "utf8"));
+  const confirmedExamSite = gt.examSites?.[0]?.id;
+  const { status, json, proposeJson, assessmentId } = await assessTwoPhase(gt.note, confirmedExamSite);
+  const determination = json.advisory?.determination ?? null;
+  const row = assessmentId ? rowById(assessmentId) : null;
+  twoPhaseCases.push({
+    id: gt.id, matrixId: gt.matrixId, confirmedExamSite,
+    proposedCandidates: (proposeJson?.examSiteSelection?.candidates || []).map((c) => c.id),
+    status, assessmentId: assessmentId ?? null,
+    determination, expected: gt.engineExpectation?.determination ?? null,
+    match: determination === (gt.engineExpectation?.determination ?? null),
+    rowStatus: row?.status ?? null,
+    row: checkRow(row),
+  });
+}
+
 // Demonstration case
 const demoRuns = [];
 for (const r of DEMO.runs) {
@@ -170,7 +201,11 @@ md += `## Result\n\n`;
 md += `| check | outcome |\n|---|---|\n`;
 md += `| 4 ground-truth notes: engine determination == scenario expectation | ${allMatch ? "MATCH (all 4)" : "DIVERGES — see below"} |\n`;
 md += `| one complete \`assessments\` row per call (all §6 fields populated) | ${allRowsOk ? "yes" : "NO — see below"} |\n`;
-md += `| AD-17: S01 reaches P2_URGENT only with the attestation, recorded with source + attestedBy | ${demoProves ? "proven" : "NOT proven — see below"} |\n\n`;
+md += `| AD-17: S01 reaches P2_URGENT only with the attestation, recorded with source + attestedBy | ${demoProves ? "proven" : "NOT proven — see below"} |\n`;
+const tpAllMatch = twoPhaseCases.every((c) => c.match);
+const tpAllRowsOk = twoPhaseCases.every((c) => c.row.ok && c.rowStatus === "completed");
+md += `| AD-25 two-phase (NO exam supplied): propose → complete, determination == expectation | ${tpAllMatch ? "MATCH (all 4)" : "DIVERGES — see below"} |\n`;
+md += `| AD-25 two-phase: one \`completed\` row per assessmentId, §6 fields populated | ${tpAllRowsOk ? "yes" : "NO — see below"} |\n\n`;
 
 md += `## Ground-truth notes\n\n`;
 for (const c of cases) {
@@ -180,6 +215,16 @@ for (const c of cases) {
   md += `- engine determination: **${c.determination ?? "—"}** · expected **${c.expected ?? "—"}** — ${c.match ? "MATCH" : "**DIVERGES**"}\n`;
   md += `- validation: ${c.validation ? JSON.stringify(c.validation) : "—"}\n`;
   md += `- discrepancies recorded: ${c.discrepancies}\n`;
+  md += `- audit row: ${c.row.ok ? "complete" : "**incomplete — missing " + c.row.missing.join(", ") + "**"}\n\n`;
+}
+
+md += `## AD-25 two-phase (no exam supplied) — propose → complete\n\n`;
+md += `\`POST /api/assess/propose\` with no \`requestedExamSite\` (national-only extraction, exam proposal), then \`POST /api/assess/complete\` with \`confirmedExamSite\` = the ground-truth exam. Two model calls; one \`assessments\` row, updated in place.\n\n`;
+for (const c of twoPhaseCases) {
+  md += `### ${c.id} — ${c.matrixId}\n\n`;
+  md += `- proposed candidates: \`${JSON.stringify(c.proposedCandidates)}\` · confirmed: \`${c.confirmedExamSite}\`\n`;
+  md += `- HTTP ${c.status} · assessmentId \`${c.assessmentId ?? "—"}\` · row status \`${c.rowStatus ?? "—"}\`\n`;
+  md += `- engine determination: **${c.determination ?? "—"}** · expected **${c.expected ?? "—"}** — ${c.match ? "MATCH" : "**DIVERGES**"}\n`;
   md += `- audit row: ${c.row.ok ? "complete" : "**incomplete — missing " + c.row.missing.join(", ") + "**"}\n\n`;
 }
 
@@ -201,3 +246,4 @@ const outPath = path.join(resultsDir, `${date}-pipeline-e2e-${modelId}.md`.repla
 fs.writeFileSync(outPath, md);
 console.log(`Wrote ${path.relative(repoRoot, outPath)}`);
 console.log(`  determinations: ${allMatch ? "all match" : "DIVERGES"} · rows: ${allRowsOk ? "all complete" : "INCOMPLETE"} · AD-17 demo: ${demoProves ? "proven" : "NOT proven"}`);
+console.log(`  two-phase (no exam): ${tpAllMatch ? "all match" : "DIVERGES"} · rows: ${tpAllRowsOk ? "all completed" : "INCOMPLETE"}`);

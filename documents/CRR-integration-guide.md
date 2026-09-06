@@ -296,6 +296,69 @@ assessment (invariant 8). A gate rejection or a fail-closed national bundle
 returns a typed error with `validation.passed = false` and still writes an audit
 record.
 
+### Two-phase: propose then complete (no exam up front) — AD-25
+
+When the calling application does **not** hold the exam (a referrer pastes a
+note), the assessment runs in two calls so the exam the note points at can be
+shown and confirmed before evaluation.
+
+`POST /api/assess/propose`
+
+```json
+{ "note": "<free-text referral note>", "context": { "age": 65, "sex": "male" }, "performedBy": "Dr A (GP)" }
+```
+
+Runs the PII gate and a national-only extraction. Response:
+
+```json
+{
+  "assessmentId": "…",
+  "examSiteSelection": {
+    "requestedExamSite": null,
+    "candidateExamSites": ["ct_cap", "xr_knee"],
+    "candidates": [
+      { "id": "ct_cap", "requested": false, "quote": "abdominal pain and weight loss", "leading": true },
+      { "id": "xr_knee", "requested": false, "quote": "knee",                          "leading": false }
+    ]
+  },
+  "attestationQuestions": [ { "linkId": "workup.strongSuspicionMalignancy", "wording": { "referrer": "…", "triager": "…" }, "sourcePages": ["p12"] } ],
+  "redaction": { "patternsHit": ["name"] },
+  "validation": { "passed": true, "failures": [] }
+}
+```
+
+`attestationQuestions` are for the **leading** candidate; re-fetch them with
+`GET /api/assess/attestation-questions?requestedExamSite=<id>` if the user picks a
+different exam.
+
+`POST /api/assess/complete`
+
+```json
+{
+  "assessmentId": "…",
+  "confirmedExamSite": "ct_cap",
+  "attestations": { "workup.strongSuspicionMalignancy": { "value": true, "attestedBy": "Dr A (GP)", "mode": "referrer" } },
+  "note": "<the same referral note>"
+}
+```
+
+Runs the full extraction once, scoped to the confirmed exam, then merge → evaluate
+→ Advisory, and returns the **same body as `POST /api/assess`** for the same
+`assessmentId`. Notes:
+
+- `note` is required unless the deployment stores the redacted note
+  (`AUDIT_STORE_REDACTED_NOTE`); resend the note the user still has on screen.
+- An attestation `linkId` that is not an attestation-category item on the
+  confirmed exam's Questionnaire (+ national) is **rejected** (`422`), not merged.
+- A `confirmedExamSite` the propose step did not surface is accepted and appears
+  as a `discrepancies[]` entry with `source: "referrer-exam-override"`.
+- `complete` is single-use: a second call for the same `assessmentId` returns
+  `409`; an unknown or expired id returns `404`.
+- A proposal never completed is discarded at the redacted-note retention.
+
+The one-call `POST /api/assess` above is unchanged and still requires
+`requestedExamSite` — use it whenever the exam is already known.
+
 `GET /api/assess/status` returns `200` with a `versions` block when the pipeline
 is enabled, `404` when it is not — the page uses this to choose thin-client vs
 legacy behaviour.

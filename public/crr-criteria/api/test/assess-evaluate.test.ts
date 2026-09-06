@@ -193,9 +193,19 @@ describe("POST /api/assess/evaluate — validation", () => {
     const res = await evaluate({ requestedExamSite: "ct_cap" });
     expect(res.status).toBe(400);
   });
-  it("400s on a missing requestedExamSite", async () => {
+  it("400s when neither requestedExamSite nor candidateExamSites is given (AD-25)", async () => {
     const res = await evaluate({ questionnaireResponse: makeQr({ "patient.age": 60 }) });
     expect(res.status).toBe(400);
+  });
+  it("candidateExamSites without a requestedExamSite is allowed (AD-25) — requestedExam is null", async () => {
+    await publishNationalRedFlags();
+    await publishCtCap();
+    const s01 = scenarios.find((s: any) => s.id === "S01-b1-p2");
+    const res = await evaluate({ questionnaireResponse: toQuestionnaireResponse(s01), candidateExamSites: ["ct_cap"] });
+    expect(res.status).toBe(200);
+    const body: any = await res.json();
+    expect(body.requestedExam.id).toBeNull();
+    expect(body.candidatesEvaluated.map((x: any) => x.id)).toContain("ct_cap");
   });
 });
 

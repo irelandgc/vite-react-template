@@ -1631,11 +1631,25 @@ async function resolveNationalRedFlags(
 
 // Purge job for assessment_notes (Cron Trigger, see the default export's
 // scheduled handler). Deletes rows older than `retentionDays`. This table only —
-// `assessments` (structured, no note text) is never purged here.
+// a COMPLETED `assessments` row (structured, no note text) is never purged here.
 export async function purgeExpiredNotes(db: D1Database, retentionDays: number): Promise<number> {
   const days = Number.isFinite(retentionDays) && retentionDays > 0 ? retentionDays : 180;
   const cutoff = new Date(Date.now() - days * 86400000).toISOString();
   const res = await db.prepare('DELETE FROM assessment_notes WHERE created_at < ?').bind(cutoff).run();
+  return res.meta?.changes ?? 0;
+}
+
+// AD-25 — a two-phase assessment proposed (`/api/assess/propose`) but never
+// completed (`/api/assess/complete`) is not a record of anything. Purge it, and
+// any redacted note stored with it, at the SAME retention as `assessment_notes`
+// (AUDIT_NOTE_RETENTION_DAYS). A 'completed' row is never touched.
+export async function purgeExpiredProposals(db: D1Database, retentionDays: number): Promise<number> {
+  const days = Number.isFinite(retentionDays) && retentionDays > 0 ? retentionDays : 180;
+  const cutoff = new Date(Date.now() - days * 86400000).toISOString();
+  await db.prepare(
+    "DELETE FROM assessment_notes WHERE assessment_id IN (SELECT id FROM assessments WHERE status = 'proposed' AND created_at < ?)"
+  ).bind(cutoff).run();
+  const res = await db.prepare("DELETE FROM assessments WHERE status = 'proposed' AND created_at < ?").bind(cutoff).run();
   return res.meta?.changes ?? 0;
 }
 
@@ -1689,14 +1703,17 @@ app.post('/api/assess/evaluate', async (c) => {
     return c.json({ error: 'questionnaireResponse (a FHIR QuestionnaireResponse) is required' }, 400);
   }
   // AD-20: the requested exam/site is explicit; candidateExamSites[] carries any
-  // other exam the note indicated (gap §4). No positional convention.
+  // other exam the note indicated (gap §4). No positional convention. AD-25:
+  // `requestedExamSite` is optional (the two-phase flow evaluates candidates
+  // before an exam is confirmed) — but a call with NEITHER a requested exam nor
+  // any candidate has nothing to evaluate against.
   const requestedExamSite: string | undefined = typeof body.requestedExamSite === 'string' && body.requestedExamSite.length ? body.requestedExamSite : undefined;
-  if (!requestedExamSite) {
-    return c.json({ error: 'requestedExamSite (a published exam/site id) is required' }, 400);
-  }
   const candidateExamSites: string[] = Array.isArray(body.candidateExamSites)
     ? body.candidateExamSites.filter((x: any) => typeof x === 'string' && x.length && x !== requestedExamSite)
     : [];
+  if (!requestedExamSite && !candidateExamSites.length) {
+    return c.json({ error: 'requestedExamSite or candidateExamSites[] (published exam/site ids) — at least one is required' }, 400);
+  }
 
   const engine = await import('./engine');
   const docStd = engine.isDocumentationStandard(body.parameters?.documentationStandard)
@@ -1716,7 +1733,9 @@ app.post('/api/assess/evaluate', async (c) => {
 
   let result: any;
   try {
-    const requested = await resolveExamForEngine(c.env.DB, c.env.KV, requestedExamSite, allowSignedOff);
+    const requested = requestedExamSite
+      ? await resolveExamForEngine(c.env.DB, c.env.KV, requestedExamSite, allowSignedOff)
+      : { id: null, state: 'not-available' };
     const candidates = [];
     for (const id of candidateExamSites) candidates.push(await resolveExamForEngine(c.env.DB, c.env.KV, id, allowSignedOff));
     result = await engine.runAssessment({ questionnaireResponse: qr, nationalLibrary, requested, candidates, documentationStandard: docStd });
@@ -2081,33 +2100,54 @@ app.post('/api/assess/extract', async (c) => {
 //  ARCH-MIG-01 ASSESSMENT PIPELINE (slice 5)
 // ══════════════════════════════════════════════════════════════
 //
-// POST /api/assess — internal (same gating as evaluate/extract, SD-11), forwarded
-// same-origin by the main worker's CRR_API binding behind ASSESS_PIPELINE_ENABLED.
-// One call, one assessment, one audit row. Flow:
-//   PII gate -> extract (runExtractionCore) -> merge (merge.ts; context + referrer
-//   attestations + [population, slice 8]) -> evaluate (engine.ts; requested +
-//   candidateExamSites[]) -> Advisory -> write ONE `assessments` row -> respond.
+// Three internal entry points (same gating as evaluate/extract, SD-11), forwarded
+// same-origin by the main worker's CRR_API binding behind ASSESS_PIPELINE_ENABLED:
+//
+//   POST /api/assess           — one call, exam supplied. PII gate -> extract
+//                                (runExtractionCore) -> merge (merge.ts; context +
+//                                referrer attestations + [population, slice 8]) ->
+//                                evaluate (engine.ts; requested + candidateExamSites[])
+//                                -> Advisory -> write ONE `assessments` row.
+//   POST /api/assess/propose   — phase 1, no exam needed. PII gate -> national-
+//                                only extract -> write one 'proposed' row ->
+//                                return the exam proposal (candidates with
+//                                quotes) + attestation questions for the leading
+//                                candidate.
+//   POST /api/assess/complete  — phase 2. Full site-scoped extract (confirmed
+//                                exam) -> merge -> evaluate -> Advisory -> UPDATE
+//                                the same row to 'completed'. `finishAssessment`
+//                                is the shared merge->evaluate->Advisory->persist
+//                                tail, shared with the one-call wrapper (AD-25).
+//
 // The model EXTRACTS only (invariant 1); the engine decides. No free-text field
 // anywhere in the request or the response. A gate rejection or a fail-closed
 // national bundle is a typed error AND still writes an `assessments` row with
 // `validation_failures` populated and no Advisory (the failure is part of the
 // record).
 
-// The one INSERT. `fields` is already JSON-ready (objects, not strings).
-async function writeAssessmentRow(db: D1Database, env: Bindings, f: {
+interface AssessmentRowFields {
   bundleVersions: any; engineVersion: string | null; vocabularyVersion: string | null;
   promptVersion: string | null; equivalenceListVersion: string | null;
   modelId: string | null; modelProvider: string | null; documentationStandard: string;
   questionnaireResponse: any; advisory: any; discrepancies: any; validationFailures: any;
   redactionPatterns: string[] | null; attestations: any; examSiteSelection: any;
   performedBy: string | null; regressionRunId: string | null; noteRedacted?: string | null;
-}): Promise<string> {
+  // migration 0011 — two-phase assess. `status` is 'proposed' after
+  // `/api/assess/propose`, 'completed' after `/api/assess/complete`, null for the
+  // one-call `/api/assess` and slice-3 evaluate rows. `proposal` carries what
+  // `complete` needs to finish without re-running the model.
+  status?: 'proposed' | 'completed' | null;
+  proposal?: any;
+}
+
+// The one INSERT. `fields` is already JSON-ready (objects, not strings).
+async function writeAssessmentRow(db: D1Database, env: Bindings, f: AssessmentRowFields): Promise<string> {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const J = (v: any) => (v == null ? null : JSON.stringify(v));
   await db.prepare(
-    `INSERT INTO assessments (id, created_at, bundle_versions, engine_version, vocabulary_version, prompt_version, model_id, documentation_standard, questionnaire_response, advisory, discrepancies, validation_failures, performed_by, regression_run_id, equivalence_list_version, model_provider, redaction_patterns, attestations, exam_site_selection)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO assessments (id, created_at, bundle_versions, engine_version, vocabulary_version, prompt_version, model_id, documentation_standard, questionnaire_response, advisory, discrepancies, validation_failures, performed_by, regression_run_id, equivalence_list_version, model_provider, redaction_patterns, attestations, exam_site_selection, status, proposal)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     id, now,
     JSON.stringify(f.bundleVersions ?? {}), f.engineVersion, f.vocabularyVersion,
@@ -2115,6 +2155,7 @@ async function writeAssessmentRow(db: D1Database, env: Bindings, f: {
     JSON.stringify(f.questionnaireResponse ?? {}), JSON.stringify(f.advisory ?? null),
     J(f.discrepancies), J(f.validationFailures), f.performedBy, f.regressionRunId,
     f.equivalenceListVersion, f.modelProvider, J(f.redactionPatterns), J(f.attestations), J(f.examSiteSelection),
+    f.status ?? null, J(f.proposal),
   ).run();
   if (env.AUDIT_STORE_REDACTED_NOTE === 'true' && typeof f.noteRedacted === 'string' && f.noteRedacted.trim().length) {
     await db.prepare('INSERT INTO assessment_notes (assessment_id, note_redacted, created_at) VALUES (?, ?, ?)')
@@ -2123,6 +2164,147 @@ async function writeAssessmentRow(db: D1Database, env: Bindings, f: {
   return id;
 }
 
+// `/api/assess/complete` — UPDATE the existing 'proposed' row in place (same
+// assessmentId, one row per assessment). Only fires on a row still 'proposed';
+// returns the number of rows changed so the caller can 409 on a double-complete.
+// `proposal` is left in place — it holds phase-1's QuestionnaireResponse and exam
+// candidates (the audit record and the AD-25 override discrepancy).
+async function updateCompletedRow(db: D1Database, assessmentId: string, f: AssessmentRowFields): Promise<number> {
+  const J = (v: any) => (v == null ? null : JSON.stringify(v));
+  const res = await db.prepare(
+    `UPDATE assessments SET status = 'completed', bundle_versions = ?, engine_version = ?, vocabulary_version = ?,
+       prompt_version = ?, model_id = ?, documentation_standard = ?, questionnaire_response = ?, advisory = ?,
+       discrepancies = ?, validation_failures = ?, equivalence_list_version = ?, model_provider = ?,
+       redaction_patterns = ?, attestations = ?, exam_site_selection = ?
+     WHERE id = ? AND status = 'proposed'`
+  ).bind(
+    JSON.stringify(f.bundleVersions ?? {}), f.engineVersion, f.vocabularyVersion,
+    f.promptVersion, f.modelId, f.documentationStandard,
+    JSON.stringify(f.questionnaireResponse ?? {}), JSON.stringify(f.advisory ?? null),
+    J(f.discrepancies), J(f.validationFailures), f.equivalenceListVersion, f.modelProvider,
+    J(f.redactionPatterns), J(f.attestations), J(f.examSiteSelection),
+    assessmentId,
+  ).run();
+  return res.meta?.changes ?? 0;
+}
+
+function tryParseJson(s: unknown): any {
+  if (typeof s !== 'string') return null;
+  try { return JSON.parse(s); } catch { return null; }
+}
+
+// Shared tail for `/api/assess` (one call) and `/api/assess/complete` (phase 2):
+// merge -> national fail-closed check -> evaluate -> Advisory -> persist -> the
+// assessment response body. `persist` is injected: an INSERT of a fresh row for
+// the one-call wrapper, an in-place UPDATE of the 'proposed' row for complete.
+// `extraDiscrepancies` carries the AD-25 referrer-exam-override entry when the
+// confirmed exam is not one the extractor surfaced.
+async function finishAssessment(c: any, engine: any, opts: {
+  builtQr: any; modelExamSites: any[]; itemIndex: Map<string, string>;
+  attestationLinkIds: Iterable<string>; context: any; attestations: any;
+  meta: ExtractionMeta; requestedExamSite: string; docStd: string;
+  extraDiscrepancies: any[]; noteRedacted: string | null;
+  persist: (f: AssessmentRowFields) => Promise<string>;
+}): Promise<Response> {
+  const allowSignedOff = c.env.ASSESS_ALLOW_SIGNED_OFF === 'true';
+  const mergeMod = await import('./merge');
+  let mergeRes;
+  try {
+    mergeRes = mergeMod.merge({
+      extractedResponse: opts.builtQr,
+      context: opts.context,
+      attestations: opts.attestations,
+      attestationLinkIds: opts.attestationLinkIds,
+      itemIndex: opts.itemIndex,
+    });
+  } catch (e: any) {
+    return c.json({ error: 'merge-failed', message: e.message }, 500);
+  }
+  const discrepancies = [...mergeRes.discrepancies, ...opts.extraDiscrepancies];
+  const examSiteSelection = examSiteSelectionOf(opts.modelExamSites, opts.requestedExamSite);
+  const candidateIds: string[] = opts.modelExamSites
+    .filter((e: any) => e?.requested === false && typeof e?.id === 'string' && e.id !== opts.requestedExamSite)
+    .map((e: any) => e.id);
+
+  // Evaluate: national layer first (fail closed, AD-19), then the requested/
+  // confirmed exam and the extractor's candidate exam/sites (AD-20).
+  const nationalLibrary = await resolveNationalRedFlags(c.env.DB, c.env.KV, allowSignedOff);
+  if (!nationalLibrary) {
+    const assessmentId = await opts.persist({
+      bundleVersions: {}, engineVersion: engine.ENGINE_VERSION, vocabularyVersion: null,
+      promptVersion: opts.meta.promptVersion, equivalenceListVersion: opts.meta.equivalenceListVersion,
+      modelId: opts.meta.modelId, modelProvider: opts.meta.provider, documentationStandard: opts.docStd,
+      questionnaireResponse: mergeRes.questionnaireResponse, advisory: null, discrepancies,
+      validationFailures: { stage: 'evaluate', error: 'national-redflags-unavailable' },
+      redactionPatterns: opts.meta.redaction.patternsHit, attestations: mergeRes.attestationsApplied,
+      examSiteSelection, performedBy: null, regressionRunId: null, noteRedacted: opts.noteRedacted,
+    });
+    return c.json({ assessmentId, error: 'national-redflags-unavailable', message: 'The national red-flag / ACC safety library has no published bundle; assessment cannot proceed (AD-19 / SR-13).', advisory: null, discrepancies, validation: { passed: false, failures: ['national-redflags-unavailable'] } }, 503);
+  }
+
+  let engineResult: any;
+  try {
+    const requested = await resolveExamForEngine(c.env.DB, c.env.KV, opts.requestedExamSite, allowSignedOff);
+    const candidates = [];
+    for (const id of candidateIds) candidates.push(await resolveExamForEngine(c.env.DB, c.env.KV, id, allowSignedOff));
+    engineResult = await engine.runAssessment({ questionnaireResponse: mergeRes.questionnaireResponse, nationalLibrary, requested, candidates, documentationStandard: opts.docStd });
+  } catch (e: any) {
+    if (e?.code === 'national-redflags-unavailable') return c.json({ error: 'national-redflags-unavailable', message: e.message }, 503);
+    return c.json({ error: 'Engine evaluation failed', message: e.message }, 500);
+  }
+
+  const versions = versionsBlock(opts.meta, engineResult.engineVersion, engineResult.vocabularyVersion ?? null, engineResult.bundleVersions);
+  const bundleArtefacts = await loadBundleArtefacts(c.env.DB, c.env.KV, engineResult.bundleVersions);
+
+  const assessmentId = await opts.persist({
+    bundleVersions: engineResult.bundleVersions, engineVersion: engineResult.engineVersion, vocabularyVersion: engineResult.vocabularyVersion ?? null,
+    promptVersion: opts.meta.promptVersion, equivalenceListVersion: opts.meta.equivalenceListVersion,
+    modelId: opts.meta.modelId, modelProvider: opts.meta.provider, documentationStandard: opts.docStd,
+    questionnaireResponse: mergeRes.questionnaireResponse, advisory: engineResult, discrepancies,
+    validationFailures: null, redactionPatterns: opts.meta.redaction.patternsHit, attestations: mergeRes.attestationsApplied,
+    examSiteSelection, performedBy: null, regressionRunId: null, noteRedacted: opts.noteRedacted,
+  });
+
+  return c.json({
+    assessmentId,
+    advisory: engineResult,
+    versions,
+    examSiteSelection,
+    bundleArtefacts,
+    // The merged QuestionnaireResponse (AD-15) — the triager view's evidence
+    // table reads it (status + quote + attestation source per indicator). It is
+    // the same object written to the audit row; adding it here removes or
+    // reshapes nothing (AD-20).
+    mergedQuestionnaireResponse: mergeRes.questionnaireResponse,
+    discrepancies,
+    attestationsApplied: mergeRes.attestationsApplied,
+    unmappedContext: mergeRes.unmappedContext,
+    validation: { passed: true, failures: [] },
+  });
+}
+
+// The national + one exam/site Questionnaire pair that AD-17's attestation
+// questions are collected from (un-stripped — attestationQuestionsFor needs the
+// category items present). Shared by `/api/assess/attestation-questions` and the
+// `/api/assess/propose` response. `nationalQ` is passed in to avoid a second KV
+// read; returns [] when the exam has no evaluable Questionnaire.
+async function attestationQuestionsForExam(c: any, examId: string, allowSignedOff: boolean, nationalQ: any): Promise<any[]> {
+  if (!nationalQ) return [];
+  const questionnaires: any[] = [nationalQ];
+  const bundleKeys: string[] = [];
+  const r = await loadExamSiteQuestionnaire(c.env.DB, c.env.KV, examId, allowSignedOff);
+  if (r) questionnaires.push(r.questionnaire);
+  const siteRow: any = await c.env.DB.prepare('SELECT bundle_key FROM exam_sites WHERE id = ?').bind(examId).first();
+  if (siteRow?.bundle_key) bundleKeys.push(siteRow.bundle_key);
+  const att = await import('./attestation');
+  return att.attestationQuestionsFor(questionnaires, bundleKeys.length ? bundleKeys : undefined);
+}
+
+// POST /api/assess — one-call wrapper (unchanged contract). For callers that
+// already hold the exam: PMS embed, `?exam=` deep link, regression runner. Runs
+// the whole pipeline (PII gate -> extract -> merge -> evaluate -> Advisory) and
+// writes ONE `assessments` row (`status` null). Still requires `requestedExamSite`
+// — a caller with no exam uses `/api/assess/propose` + `/api/assess/complete`.
 app.post('/api/assess', async (c) => {
   const guard = guardInternalAssess(c);
   if (guard) return guard;
@@ -2144,7 +2326,6 @@ app.post('/api/assess', async (c) => {
 
   const engine = await import('./engine');
   const docStd = engine.isDocumentationStandard(body.documentationStandard) ? body.documentationStandard : 'strict';
-  const allowSignedOff = c.env.ASSESS_ALLOW_SIGNED_OFF === 'true';
   const performedBy = c.req.header('x-assess-identity') || c.req.header('cf-access-authenticated-user-email') || (typeof body.performedBy === 'string' ? body.performedBy : null);
   const regressionRunId = typeof body.regressionRunId === 'string' ? body.regressionRunId : null;
 
@@ -2181,78 +2362,226 @@ app.post('/api/assess', async (c) => {
     return c.json(core.body, core.status as any);
   }
 
-  // Merge: extracted QR + context + referrer attestations (+ population, slice 8).
-  const mergeMod = await import('./merge');
-  let mergeRes;
-  try {
-    mergeRes = mergeMod.merge({
-      extractedResponse: core.builtQr,
-      context,
-      attestations,
-      attestationLinkIds: core.attestationLinkIds,
-      itemIndex: core.itemIndex,
-    });
-  } catch (e: any) {
-    return c.json({ error: 'merge-failed', message: e.message }, 500);
-  }
+  return finishAssessment(c, engine, {
+    builtQr: core.builtQr, modelExamSites: core.modelExamSites, itemIndex: core.itemIndex,
+    attestationLinkIds: core.attestationLinkIds, context, attestations, meta: core.meta,
+    requestedExamSite, docStd, extraDiscrepancies: [], noteRedacted: core.redacted,
+    persist: (f) => writeAssessmentRow(c.env.DB, c.env, { ...f, performedBy, regressionRunId }),
+  });
+});
 
-  // Evaluate: national layer first (fail closed, AD-19), then the requested exam
-  // and the extractor's candidate exam/sites (AD-20).
-  const nationalLibrary = await resolveNationalRedFlags(c.env.DB, c.env.KV, allowSignedOff);
-  const candidateIds: string[] = core.modelExamSites.filter((e: any) => e?.requested === false && typeof e?.id === 'string' && e.id !== requestedExamSite).map((e: any) => e.id);
-  if (!nationalLibrary) {
-    const assessmentId = await writeAssessmentRow(c.env.DB, c.env, {
-      bundleVersions: {}, engineVersion: engine.ENGINE_VERSION, vocabularyVersion: null,
-      promptVersion: core.meta.promptVersion, equivalenceListVersion: core.meta.equivalenceListVersion,
-      modelId: core.meta.modelId, modelProvider: core.meta.provider, documentationStandard: docStd,
-      questionnaireResponse: mergeRes.questionnaireResponse, advisory: null, discrepancies: mergeRes.discrepancies,
-      validationFailures: { stage: 'evaluate', error: 'national-redflags-unavailable' },
-      redactionPatterns: core.meta.redaction.patternsHit, attestations: mergeRes.attestationsApplied,
-      examSiteSelection: examSiteSelectionOf(core.modelExamSites, requestedExamSite),
-      performedBy, regressionRunId, noteRedacted: core.redacted,
-    });
-    return c.json({ assessmentId, error: 'national-redflags-unavailable', message: 'The national red-flag / ACC safety library has no published bundle; assessment cannot proceed (AD-19 / SR-13).', advisory: null, discrepancies: mergeRes.discrepancies, validation: { passed: false, failures: ['national-redflags-unavailable'] } }, 503);
-  }
+// ══════════════════════════════════════════════════════════════
+//  ARCH-MIG-01 — TWO-PHASE ASSESSMENT (propose / complete, AD-25)
+// ══════════════════════════════════════════════════════════════
+//
+// One assessmentId, one row. `propose` runs a national-only extraction (national
+// Questionnaire + the exam list): it gets the exam candidates (with quotes), the
+// attestation questions for the leading candidate, and the national red-flag
+// answers — one cheap call. It writes the row at `status = 'proposed'` and keeps
+// pass-1's QuestionnaireResponse in `proposal` for the audit record and the
+// exam-override check. The user confirms the exam and answers the attestations;
+// `complete` runs the FULL extraction once, scoped to the confirmed exam (the
+// same `runExtractionCore` the one-call wrapper uses), then merge -> evaluate ->
+// Advisory, and UPDATEs the SAME row to `status = 'completed'`. So the no-exam
+// flow is two model calls, but the site-scoped pass always matches the confirmed
+// exam. A `proposed` row never completed is purged with the note retention
+// (purgeExpiredProposals).
 
-  let engineResult: any;
+// POST /api/assess/propose — phase 1. Body: { note, context?, requestedExamSite?,
+// performedBy?, documentationStandard? }. `note` is the only required field.
+app.post('/api/assess/propose', async (c) => {
+  const guard = guardInternalAssess(c);
+  if (guard) return guard;
+  const rl = await assessRateLimit(c, 'assess');
+  if (rl) return rl;
+
+  let body: any;
   try {
-    const requested = await resolveExamForEngine(c.env.DB, c.env.KV, requestedExamSite, allowSignedOff);
-    const candidates = [];
-    for (const id of candidateIds) candidates.push(await resolveExamForEngine(c.env.DB, c.env.KV, id, allowSignedOff));
-    engineResult = await engine.runAssessment({ questionnaireResponse: mergeRes.questionnaireResponse, nationalLibrary, requested, candidates, documentationStandard: docStd });
+    body = await c.req.json();
   } catch (e: any) {
-    if (e?.code === 'national-redflags-unavailable') return c.json({ error: 'national-redflags-unavailable', message: e.message }, 503);
-    return c.json({ error: 'Engine evaluation failed', message: e.message }, 500);
+    return c.json({ error: 'Body is not valid JSON', message: e.message }, 400);
+  }
+  const note = typeof body.note === 'string' ? body.note : '';
+  if (!note.trim()) return c.json({ error: 'note (the free-text referral note) is required' }, 400);
+  const context = body.context && typeof body.context === 'object' ? body.context : {};
+  const requestedExamSite: string | undefined = typeof body.requestedExamSite === 'string' && body.requestedExamSite ? body.requestedExamSite : undefined;
+
+  const engine = await import('./engine');
+  const docStd = engine.isDocumentationStandard(body.documentationStandard) ? body.documentationStandard : 'strict';
+  const allowSignedOff = c.env.ASSESS_ALLOW_SIGNED_OFF === 'true';
+  const performedBy = c.req.header('x-assess-identity') || c.req.header('cf-access-authenticated-user-email') || (typeof body.performedBy === 'string' ? body.performedBy : null);
+
+  const core = await runExtractionCore(c, { note, context, requestedExamSite });
+  if (!core.ok) {
+    if (core.kind === 'gate') {
+      const assessmentId = await writeAssessmentRow(c.env.DB, c.env, {
+        bundleVersions: {}, engineVersion: engine.ENGINE_VERSION, vocabularyVersion: null,
+        promptVersion: core.meta.promptVersion, equivalenceListVersion: core.meta.equivalenceListVersion,
+        modelId: core.meta.modelId, modelProvider: core.meta.provider, documentationStandard: docStd,
+        questionnaireResponse: null, advisory: null, discrepancies: null,
+        validationFailures: { stage: 'extract-gate', failures: core.failures },
+        redactionPatterns: core.meta.redaction.patternsHit, attestations: null, examSiteSelection: null,
+        performedBy, regressionRunId: null, noteRedacted: core.redacted,
+        status: 'proposed', proposal: { context, meta: core.meta, modelExamSites: [] },
+      });
+      return c.json({ assessmentId, examSiteSelection: null, attestationQuestions: [], redaction: core.meta.redaction, validation: { passed: false, failures: core.failures } }, 422);
+    }
+    return c.json(core.body, core.status as any);
   }
 
   const examSiteSelection = examSiteSelectionOf(core.modelExamSites, requestedExamSite);
-  const versions = versionsBlock(core.meta, engineResult.engineVersion, engineResult.vocabularyVersion ?? null, engineResult.bundleVersions);
-  const bundleArtefacts = await loadBundleArtefacts(c.env.DB, c.env.KV, engineResult.bundleVersions);
+  const leading = core.modelExamSites.find((e: any) => e?.requested === true) ?? core.modelExamSites[0] ?? null;
+  const nationalQ = await loadNationalQuestionnaire(c.env.DB, c.env.KV, allowSignedOff);
+  const attestationQuestions = leading?.id
+    ? await attestationQuestionsForExam(c, leading.id, allowSignedOff, nationalQ)
+    : [];
 
   const assessmentId = await writeAssessmentRow(c.env.DB, c.env, {
-    bundleVersions: engineResult.bundleVersions, engineVersion: engineResult.engineVersion, vocabularyVersion: engineResult.vocabularyVersion ?? null,
+    bundleVersions: {}, engineVersion: engine.ENGINE_VERSION, vocabularyVersion: null,
     promptVersion: core.meta.promptVersion, equivalenceListVersion: core.meta.equivalenceListVersion,
     modelId: core.meta.modelId, modelProvider: core.meta.provider, documentationStandard: docStd,
-    questionnaireResponse: mergeRes.questionnaireResponse, advisory: engineResult, discrepancies: mergeRes.discrepancies,
-    validationFailures: null, redactionPatterns: core.meta.redaction.patternsHit, attestations: mergeRes.attestationsApplied,
-    examSiteSelection, performedBy, regressionRunId, noteRedacted: core.redacted,
+    questionnaireResponse: core.builtQr, advisory: null, discrepancies: null,
+    validationFailures: null, redactionPatterns: core.meta.redaction.patternsHit,
+    attestations: null, examSiteSelection,
+    performedBy, regressionRunId: null, noteRedacted: core.redacted,
+    status: 'proposed',
+    proposal: { context, meta: core.meta, modelExamSites: core.modelExamSites, questionnaireResponse: core.builtQr },
   });
 
   return c.json({
     assessmentId,
-    advisory: engineResult,
-    versions,
-    examSiteSelection,
-    bundleArtefacts,
-    // The merged QuestionnaireResponse (AD-15) — the triager view's evidence
-    // table reads it (status + quote + attestation source per indicator). It is
-    // the same object written to the audit row; adding it here removes or
-    // reshapes nothing (AD-20).
-    mergedQuestionnaireResponse: mergeRes.questionnaireResponse,
-    discrepancies: mergeRes.discrepancies,
-    attestationsApplied: mergeRes.attestationsApplied,
-    unmappedContext: mergeRes.unmappedContext,
+    examSiteSelection: {
+      ...examSiteSelection,
+      // Each candidate carries the verbatim span the extractor read it from.
+      candidates: core.modelExamSites.map((e: any) => ({
+        id: e.id,
+        requested: e.requested === true,
+        quote: e.quote ?? null,
+        leading: !!(leading && e.id === leading.id),
+      })),
+    },
+    // Attestation questions for the leading candidate (both wordings). The page
+    // refetches for the exam the user confirms; `complete` validates against it.
+    attestationQuestions,
+    redaction: core.meta.redaction,
     validation: { passed: true, failures: [] },
+  });
+});
+
+// POST /api/assess/complete — phase 2. Body: { assessmentId, confirmedExamSite,
+// attestations?, note?, context?, documentationStandard? }. Runs the FULL
+// extraction once, scoped to the confirmed exam, then merge -> evaluate ->
+// Advisory, and UPDATEs the proposed row to 'completed'. Response body is the
+// `/api/assess` success shape. `note` is required unless the redacted note was
+// stored for this assessment (AUDIT_STORE_REDACTED_NOTE).
+app.post('/api/assess/complete', async (c) => {
+  const guard = guardInternalAssess(c);
+  if (guard) return guard;
+  const rl = await assessRateLimit(c, 'assess');
+  if (rl) return rl;
+
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch (e: any) {
+    return c.json({ error: 'Body is not valid JSON', message: e.message }, 400);
+  }
+  const assessmentId = typeof body.assessmentId === 'string' ? body.assessmentId : '';
+  const confirmedExamSite = typeof body.confirmedExamSite === 'string' && body.confirmedExamSite ? body.confirmedExamSite : '';
+  if (!assessmentId || !confirmedExamSite) return c.json({ error: 'assessmentId and confirmedExamSite are required' }, 400);
+  const attestations = body.attestations && typeof body.attestations === 'object' ? body.attestations : {};
+
+  const row: any = await c.env.DB.prepare(
+    'SELECT id, status, proposal, documentation_standard FROM assessments WHERE id = ?'
+  ).bind(assessmentId).first();
+  if (!row) return c.json({ error: 'assessment-not-found', message: 'No proposed assessment with that id — it may have expired.' }, 404);
+  if (row.status !== 'proposed') return c.json({ error: 'assessment-not-proposed', message: `Assessment ${assessmentId} is ${row.status ?? 'not a two-phase proposal'} and cannot be completed.` }, 409);
+
+  const engine = await import('./engine');
+  const proposal = tryParseJson(row.proposal) || {};
+  const proposalExamSites: any[] = Array.isArray(proposal.modelExamSites) ? proposal.modelExamSites : [];
+  const context = { ...(proposal.context && typeof proposal.context === 'object' ? proposal.context : {}),
+                    ...(body.context && typeof body.context === 'object' ? body.context : {}) };
+  const docStd = engine.isDocumentationStandard(body.documentationStandard)
+    ? body.documentationStandard
+    : (engine.isDocumentationStandard(row.documentation_standard) ? row.documentation_standard : 'strict');
+  const allowSignedOff = c.env.ASSESS_ALLOW_SIGNED_OFF === 'true';
+
+  // The note for the site-scoped extraction: the caller's `note`, else the
+  // redacted note stored with the proposal (AUDIT_STORE_REDACTED_NOTE), else 400.
+  let note = typeof body.note === 'string' && body.note.trim() ? body.note : '';
+  if (!note) {
+    const stored: any = await c.env.DB.prepare('SELECT note_redacted FROM assessment_notes WHERE assessment_id = ?').bind(assessmentId).first();
+    if (stored?.note_redacted) note = stored.note_redacted;
+  }
+  if (!note) return c.json({ error: 'note-required', message: 'The proposal did not store a redacted note; resend `note` with complete.' }, 400);
+
+  // Attestations must belong to the CONFIRMED exam's Questionnaire (+ national) —
+  // reject, never merge silently (AD-17 / AD-25). Uses the un-stripped
+  // Questionnaires; fail closed if the national bundle is unavailable (AD-19).
+  const nationalQ = await loadNationalQuestionnaire(c.env.DB, c.env.KV, allowSignedOff);
+  if (!nationalQ) {
+    return c.json({ assessmentId, error: 'national-redflags-unavailable', message: 'The national Questionnaire has no published bundle; assessment cannot proceed (AD-19 / SR-13).', advisory: null, validation: { passed: false, failures: ['national-redflags-unavailable'] } }, 503);
+  }
+  const att = await import('./attestation');
+  const confirmedQ = await loadExamSiteQuestionnaire(c.env.DB, c.env.KV, confirmedExamSite, allowSignedOff);
+  const siteRow: any = await c.env.DB.prepare('SELECT bundle_key FROM exam_sites WHERE id = ?').bind(confirmedExamSite).first();
+  const validAttestationIds = new Set(
+    att.attestationQuestionsFor([nationalQ, ...(confirmedQ ? [confirmedQ.questionnaire] : [])], siteRow?.bundle_key ? [siteRow.bundle_key] : undefined).map((q: any) => q.linkId)
+  );
+  const badAttestations = Object.keys(attestations).filter((lid) => !validAttestationIds.has(lid));
+  if (badAttestations.length) {
+    return c.json({
+      assessmentId,
+      advisory: null,
+      validation: { passed: false, failures: badAttestations.map((lid) => `attestation ${lid} is not an attestation-category item on the confirmed exam's Questionnaire`) },
+    }, 422);
+  }
+
+  // Phase-2 extraction: the same runExtractionCore the one-call wrapper uses,
+  // scoped to the confirmed exam. A gate rejection is a terminal record — the row
+  // becomes 'completed' with `validation_failures` and no Advisory.
+  const core = await runExtractionCore(c, { note, context, requestedExamSite: confirmedExamSite });
+  if (!core.ok) {
+    if (core.kind === 'gate') {
+      await c.env.DB.prepare(
+        `UPDATE assessments SET status = 'completed', validation_failures = ?, prompt_version = ?, equivalence_list_version = ?, model_id = ?, model_provider = ?, redaction_patterns = ?, documentation_standard = ?, advisory = 'null' WHERE id = ? AND status = 'proposed'`
+      ).bind(
+        JSON.stringify({ stage: 'extract-gate', failures: core.failures }),
+        core.meta.promptVersion, core.meta.equivalenceListVersion, core.meta.modelId, core.meta.provider,
+        JSON.stringify(core.meta.redaction.patternsHit), docStd, assessmentId,
+      ).run();
+      return c.json({ assessmentId, advisory: null, versions: versionsBlock(core.meta, engine.ENGINE_VERSION, null, {}), examSiteSelection: null, discrepancies: [], validation: { passed: false, failures: core.failures } }, 422);
+    }
+    // PII / provider / national errors — the row stays 'proposed' (retryable; it
+    // purges if abandoned). Same typed error the wrapper returns.
+    return c.json(core.body, core.status as any);
+  }
+
+  // AD-25 — the referrer confirmed an exam the phase-1 extractor did not surface.
+  // Accept it, but record the override so the triager sees it.
+  const extraDiscrepancies: any[] = [];
+  const proposalIds = proposalExamSites.map((e: any) => e?.id).filter((x: any) => typeof x === 'string');
+  if (!proposalIds.includes(confirmedExamSite)) {
+    extraDiscrepancies.push({
+      linkId: 'exam.site',
+      source: 'referrer-exam-override',
+      kept: { value: confirmedExamSite, status: 'documented', provenance: 'referrer-exam-override' },
+      superseded: { value: proposalIds, status: 'documented', provenance: 'extracted' },
+      valuesMatch: false,
+    });
+  }
+
+  return finishAssessment(c, engine, {
+    builtQr: core.builtQr, modelExamSites: core.modelExamSites, itemIndex: core.itemIndex,
+    attestationLinkIds: core.attestationLinkIds, context, attestations, meta: core.meta,
+    requestedExamSite: confirmedExamSite, docStd,
+    extraDiscrepancies, noteRedacted: core.redacted,
+    persist: async (f) => {
+      const changed = await updateCompletedRow(c.env.DB, assessmentId, f);
+      if (!changed) throw Object.assign(new Error('the proposed assessment was completed or purged concurrently'), { code: 'complete-race' });
+      return assessmentId;
+    },
   });
 });
 
@@ -2284,18 +2613,12 @@ app.get('/api/assess/attestation-questions', async (c) => {
 
   const nationalQ = await loadNationalQuestionnaire(c.env.DB, c.env.KV, allowSignedOff);
   if (!nationalQ) return c.json({ error: 'national-redflags-unavailable', message: 'The national Questionnaire has no published bundle (AD-19 / SR-13).' }, 503);
-  const questionnaires: any[] = [nationalQ];
-  const bundleKeys: string[] = [];
-  const r = await loadExamSiteQuestionnaire(c.env.DB, c.env.KV, requestedExamSite, allowSignedOff);
-  if (r) questionnaires.push(r.questionnaire);
-  const siteRow: any = await c.env.DB.prepare('SELECT bundle_key FROM exam_sites WHERE id = ?').bind(requestedExamSite).first();
-  if (siteRow?.bundle_key) bundleKeys.push(siteRow.bundle_key);
 
   const att = await import('./attestation');
   return c.json({
     requestedExamSite,
     vocabularyVersion: att.VOCABULARY_VERSION,
-    questions: att.attestationQuestionsFor(questionnaires, bundleKeys.length ? bundleKeys : undefined),
+    questions: await attestationQuestionsForExam(c, requestedExamSite, allowSignedOff, nationalQ),
   });
 });
 
@@ -2460,8 +2783,11 @@ function flatAnswersFromQr(qr: any): Array<{ linkId: string; value: unknown; sta
 
 export default {
   fetch: (req: Request, env: Bindings, ctx: any) => app.fetch(req, env as any, ctx),
-  // Cron Trigger (wrangler.json triggers.crons): purge expired assessment_notes.
+  // Cron Trigger (wrangler.json triggers.crons): purge expired redacted notes and
+  // abandoned two-phase proposals (AD-25), both at AUDIT_NOTE_RETENTION_DAYS.
   scheduled: async (_event: any, env: Bindings, ctx: any) => {
-    ctx.waitUntil(purgeExpiredNotes(env.DB, Number(env.AUDIT_NOTE_RETENTION_DAYS ?? 180)));
+    const retention = Number(env.AUDIT_NOTE_RETENTION_DAYS ?? 180);
+    ctx.waitUntil(purgeExpiredNotes(env.DB, retention));
+    ctx.waitUntil(purgeExpiredProposals(env.DB, retention));
   },
 };

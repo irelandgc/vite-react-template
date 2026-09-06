@@ -36,7 +36,11 @@
 export const ANSWER_EVIDENCE_EXT_URL = "http://crr.health.nz/fhir/StructureDefinition/answer-evidence";
 export const ADMIN_GENDER_SYSTEM = "http://hl7.org/fhir/administrative-gender";
 
-export type Provenance = "extracted" | "context" | "attested" | "retrieved";
+// `referrer-exam-override` is not a merge source — it is only ever used in a
+// discrepancy the pipeline appends when the user confirms an exam the extractor
+// did not surface (two-phase `/api/assess/complete`). The merge itself never
+// emits it.
+export type Provenance = "extracted" | "context" | "attested" | "retrieved" | "referrer-exam-override";
 
 // Higher wins. `inferred` extracted answers rank below `documented` extracted
 // answers, but the extraction QR only ever carries one answer per linkId, so the
