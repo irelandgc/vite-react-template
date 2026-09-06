@@ -3,8 +3,8 @@
   "date": "2026-09-06",
   "title": "CRR extraction prompt",
   "status": "draft",
-  "description": "Wire-format revision of v3.0.0. The evidence rules (parts role/evidence/equivalence/examsite/redflags) are byte-identical to v3.0.0. Only the OUTPUT part changes: the model no longer writes a FHIR QuestionnaireResponse. It calls one tool, `submit_extraction`, whose input is a flat list of answers `{ linkId, value, status, quote }` plus `examSites[]`. The extraction service builds the FHIR QuestionnaireResponse and the answer-evidence extensions from that list. Reason: the first benchmark run (benchmark/results/2026-09-06-anthropic-claude-sonnet-4-6.md) rejected 2 of 4 cases because the model intermittently omitted the answer-evidence extension when hand-writing FHIR (SR-09). The tool `input_schema` in `outputTool` makes linkId, value, status and quote all required and forbids extra properties. Contains no criteria text, no thresholds, no red-flag meanings and no lab lists (invariant 3). NOT CLINICALLY REVIEWED.",
-  "equivalenceListVersion": "concept-equivalence-v1",
+  "description": "Wire-format revision of v3.0.0. The OUTPUT part is rewritten: the model no longer writes a FHIR QuestionnaireResponse — it calls one tool, `submit_extraction`, whose input is a flat list of answers `{ linkId, value, status, quote }` plus `examSites[]`, and the extraction service builds the FHIR and the answer-evidence extensions from that list (fixes the SR-09 missing-extension finding). The EQUIVALENCE part is wired to `concept-equivalence-v1.1` (adds E-04 NZ duration shorthand and E-05 reported-blood-result => workup.bloods; both NEEDS CLINICAL REVIEW). Parts role/evidence/examsite/redflags are byte-identical to v3.0.0. The tool `input_schema` in `outputTool` makes linkId, value, status and quote all required and forbids extra properties. Contains no criteria text, no thresholds, no red-flag meanings and no lab lists (invariant 3). NOT CLINICALLY REVIEWED.",
+  "equivalenceListVersion": "concept-equivalence-v1.1",
   "contractVersion": "extraction-contract v2",
   "supersedes": "3.0.0",
   "questionnaireUrls": [
@@ -25,7 +25,7 @@
     {
       "id": "equivalence",
       "name": "Concept equivalence",
-      "text": "EQUIVALENCE (concept-equivalence-v1, the whole list)\n\"tired all the time\"/\"TATT\" -> a fatigue item, documented.\n\"worsening\"/\"progressive\" -> an item worded \"progressive\" or \"increasing\" for the same symptom, documented.\n\"clothes loose\"/\"hanging off\" -> an unintentional-weight-loss item, documented; never a percentage or period.\nOther rephrasings needing a clinical step are inferred."
+      "text": "EQUIVALENCE (concept-equivalence-v1.1, the whole list)\n\"tired all the time\"/\"TATT\" -> a fatigue item, documented.\n\"worsening\"/\"progressive\" -> an item worded \"progressive\" or \"increasing\" for the same symptom, documented.\n\"clothes loose\"/\"hanging off\" -> an unintentional-weight-loss item, documented; never a percentage or period.\n\"n/12\" is n months, \"n/52\" is n weeks, \"n/7\" is n days -> a duration item, the number in the item's unit, documented; still omit if the note does not attach the period to that concept.\na reported blood result (\"Hb 120\", \"bloods normal\", \"FBC done\") -> workup.bloods, documented; the result value or flag, if any, is a separate answer.\nOther rephrasings needing a clinical step are inferred."
     },
     {
       "id": "examsite",

@@ -196,7 +196,7 @@ describe("POST /api/assess/extract — extraction + gate (v3.0.1)", () => {
     const body: any = await res.json();
     expect(body.validation.passed).toBe(true);
     expect(body.promptVersion).toBe("3.0.1");
-    expect(body.equivalenceListVersion).toBe("concept-equivalence-v1");
+    expect(body.equivalenceListVersion).toBe("concept-equivalence-v1.1");
     expect(body.modelId).toBe("claude-sonnet-4-6");
     expect(body.provider).toBe("anthropic");
     expect(body.examSiteSelection.requestedExamSite).toBe("ct_cap");

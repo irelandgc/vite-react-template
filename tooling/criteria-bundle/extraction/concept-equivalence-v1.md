@@ -1,7 +1,7 @@
 # Concept equivalence list v1
 
 **Status: NEEDS CLINICAL REVIEW.** No entry below has been confirmed by a clinician.
-**Owner:** clinical. **Versioned with:** extraction prompt v3.0.0 (`prompt-v3.0.0.json` names `equivalenceListVersion`).
+**Owner:** clinical. **Versioned with:** extraction prompt **v3.0.0 only** (`prompt-v3.0.0.json` names `equivalenceListVersion`). Prompt v3.0.1 and later use `concept-equivalence-v1.1.md`, which carries E-01–E-03 unchanged and adds E-04/E-05.
 **Replaces:** system prompt v2.3.0 STEP 2 "CLINICAL SHORTHAND EQUIVALENCE" (decomposition clause 14) — the clause that caused the fabrication finding (KI-01, KI-04).
 
 ---

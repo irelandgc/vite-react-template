@@ -1,22 +1,30 @@
 # Extraction prompt v3.0.1
 
-**Supersedes:** v3.0.0 — **wire format only.** Parts `role`, `evidence`, `equivalence`, `examsite`
-and `redflags` are byte-identical to v3.0.0. The `output` part is rewritten and a machine-readable
-`outputTool` (a tool `input_schema`) is added.
+**Supersedes:** v3.0.0. Two changes: (a) **wire format** — parts `role`, `evidence`, `examsite`
+and `redflags` are byte-identical to v3.0.0, the `output` part is rewritten, and a
+machine-readable `outputTool` (a tool `input_schema`) is added; (b) the **`equivalence` part is
+wired to `concept-equivalence-v1.1`** (adds E-04 NZ duration shorthand, E-05 reported blood
+result ⇒ `workup.bloods`; both NEEDS CLINICAL REVIEW).
 **Machine-readable form:** `prompt-v3.0.1.json` — **that file is canonical.** This document is a
 rendering of it; `npm run check` fails if the two drift.
-**Contract:** `extraction-contract.md` v2 · **Equivalence list:** `concept-equivalence-v1.md`
+**Contract:** `extraction-contract.md` v2 · **Equivalence list:** `concept-equivalence-v1.1.md`
 **Decision record:** `PROMPT_DECISION_RECORD.md`
 **Status: NOT CLINICALLY REVIEWED.**
 
 ## Why v3.0.1
 
-The first benchmark run (`../benchmark/results/2026-09-06-anthropic-claude-sonnet-4-6.md`)
-rejected 2 of the 4 cases at the validation gate. Not for a bad quote or a wrong value — for a
-missing `answer-evidence` extension on some answers (contract rule 3). The model was hand-writing
-a nested FHIR `QuestionnaireResponse` with the evidence extension repeated on every answer, and
-it did not always repeat it. That is a wire-format failure, not a rule failure: the evidence
-rules are unchanged.
+**(a) Wire format.** The first benchmark run
+(`../benchmark/results/` — the v3.0.0 single-pass run) rejected 2 of the 4 cases at the
+validation gate. Not for a bad quote or a wrong value — for a missing `answer-evidence`
+extension on some answers (contract rule 3). The model was hand-writing a nested FHIR
+`QuestionnaireResponse` with the evidence extension repeated on every answer, and it did not
+always repeat it. That is a wire-format failure, not a rule failure: the evidence rules are
+unchanged.
+
+**(b) Equivalence list.** The v3.0.1 `--runs 3` run then surfaced two same-fact rephrasings the
+model was not reading — NZ duration shorthand (`2/12` etc.) and "a reported blood result means
+bloods were done". Both are added to `concept-equivalence-v1.1` as E-04 and E-05 (`benchmark/FINDINGS.md`
+items 2, 3). Neither is clinically confirmed; the next benchmark measures their effect.
 
 v3.0.1 removes the FHIR-authoring burden from the model:
 
@@ -67,10 +75,12 @@ EVIDENCE
 8. Do not answer age or sex if the context block supplies them. Age in years as written; ageMonths only if the note gives months.
 9. A linkId shared by several Questionnaires is answered once.
 
-EQUIVALENCE (concept-equivalence-v1, the whole list)
+EQUIVALENCE (concept-equivalence-v1.1, the whole list)
 "tired all the time"/"TATT" -> a fatigue item, documented.
 "worsening"/"progressive" -> an item worded "progressive" or "increasing" for the same symptom, documented.
 "clothes loose"/"hanging off" -> an unintentional-weight-loss item, documented; never a percentage or period.
+"n/12" is n months, "n/52" is n weeks, "n/7" is n days -> a duration item, the number in the item's unit, documented; still omit if the note does not attach the period to that concept.
+a reported blood result ("Hb 120", "bloods normal", "FBC done") -> workup.bloods, documented; the result value or flag, if any, is a separate answer.
 Other rephrasings needing a clinical step are inferred.
 
 EXAM/SITE
@@ -105,5 +115,7 @@ on the built `QuestionnaireResponse`.
 Unchanged from v3.0.0: no criteria block, no thresholds, no lab lists, no red-flag meanings, no
 priority ordering, no documentation-standard prose, no `suggested_wording` / `interpreted_note`
 / `notes`, no fallback prompt. The `outputTool` schema describes **shape only** — value types
-and the four required keys — never criteria content. `npm run check` runs the AD-16
-no-criteria-content scan over the assembled body and the tool schema.
+and the four required keys — never criteria content. The E-04 / E-05 equivalences are notation
+and same-fact rephrasings ("`2/12` is two months"; "a result means the test was done"), not
+criteria content — no threshold, analyte list or pathway rule. `npm run check` runs the AD-16
+no-criteria-content scan over the assembled body and the tool schema, for every `prompt-v3.*.json`.
