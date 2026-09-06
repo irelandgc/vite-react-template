@@ -7,6 +7,28 @@
 
 ---
 
+> ## ⚠️ Status — describes the pre-migration architecture
+>
+> This document describes the CRR tools **as built for the May–August 2026 pilot**:
+> the Triage Advisor's system-prompt assessment path, the client-side PII
+> pipeline as the sole control, criteria held as a single published JSON dataset,
+> and the model producing a verdict. It remains accurate for **what is in
+> production today**.
+>
+> The tools are migrating to the rules-bundle architecture (**ARCH-MIG-01**),
+> under which the model only extracts a structured response and compiled criteria
+> logic decides. For the **target** architecture and the decisions behind it, see:
+> - `CLAUDE.md` → *Target architecture (ARCH-MIG-01)* — the eight invariants
+> - `documents/ARCHITECTURE_DECISIONS.md` (AD register) and `documents/CHANGE-LOG.md`
+> - `instructions/arch-mig-plan.md` — slice-by-slice status
+>
+> Per `documents/DOCUMENTATION-PLAN.md`, this briefing is either regenerated from
+> those sources or moved to `documents/archive/` at the slice 10/11 cut-over. The
+> §3 architecture diagram and §5.2 assessment description are the parts most
+> changed by the migration.
+
+---
+
 ## 1. Executive Summary
 
 The CRR programme has developed two standalone clinical decision support tools to help primary care clinicians make better-informed radiology referral decisions and to support CRR Hub triagers in applying the National Radiology Access Criteria consistently.
@@ -339,18 +361,22 @@ The Cloudflare Workers API and D1/KV database that power the standalone tools to
 
 **Users:** Programme team (clinical content editors) and programme evaluators.
 
-**Eight tabs:**
+**Tabs:**
 
 | Tab | Function |
 |-----|----------|
-| **Criteria Editor** | Add/edit/remove criteria by modality and exam; working copy saved locally until published |
-| **PDF Import** | Bulk criteria updates from national documents; diff mode (change detection) and replace mode (full reimport) |
+| **Criteria Editor** | Add/edit/remove criteria by modality and exam; working copy saved locally until published. *(Disabled for the pilot per the ARCH-MIG-01 governed change process — AD-18.)* |
 | **Regions** | 8 NZ regions with HealthPathways URL override configuration per exam |
-| **Versions** | Version control with publish workflow; rollback to prior versions |
+| **Versions** | Version control; rollback to prior versions |
+| **Releases** | Publish a version snapshot to live (KV) and the history of past publishes |
 | **Triage QA** | Review structured QA feedback from Triage Advisor evaluators; filter by reviewer/date/scenario; CSV export |
 | **Viewer QA** | Review structured feedback from Criteria Viewer users; filter by reviewer/date/exam; CSV export |
-| **Usage Log** | Per-assessment usage log from Triage Advisor pilot: user, exam, verdict, note, AI summary, tokens, NZD cost |
+| **Bundles** | Read-only view of rules-bundle states (`transcribed`/`signed-off`/`published`), versions, logic hashes and the exam/site → bundle mapping (ARCH-MIG-01, AD-12) |
+| **Usage Log** | Per-assessment usage log from the Triage Advisor pilot: user, exam, verdict, note, AI summary, tokens, NZD cost |
 | **Audit Log** | Every create/update/delete/publish/rollback action with actor and timestamp |
+| **System Prompts** | View, activate and fork Triage Advisor system-prompt versions; activation is an admin-API action recorded in the Audit Log |
+
+*(The pre-migration "PDF Import" tab has been removed — past bulk imports corrupted criteria data; criteria updates go through the Editor or the governed repo change process.)*
 
 **Data:** Criteria content and configuration. QA reviews and usage logs (de-identified clinical content). No patient-identifiable data.
 
