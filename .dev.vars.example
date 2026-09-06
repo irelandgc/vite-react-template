@@ -12,3 +12,24 @@
 
 ASSESS_INTERNAL_KEY=
 ASSESS_PIPELINE_ENABLED=true
+
+# ── SR-14 · dev/prod isolation for the /crr-api/* admin proxy ─────────────────
+# The admin proxy in src/worker/index.ts reaches the crr-criteria-api worker over
+# the CRR_API service binding — the LOCAL API worker under two-worker `wrangler
+# dev`, the bound worker in production. It is NOT a public HTTP hop.
+#
+# API_BASE — LEAVE UNSET. It is an escape hatch that points the proxy at a URL
+#   instead of the binding; setting it in a dev config re-creates the near miss
+#   SR-14 records (a dev worker forwarding admin writes to production).
+#
+# ADMIN_PROXY_KEY — shared secret with the API worker (SAME value here and in
+#   public/crr-criteria/.dev.vars). The proxy injects it as `x-admin-proxy`;
+#   the API worker treats a match as proof the request came via the binding and
+#   lets a mutating /api/admin request through without ADMIN_WRITES_ENABLED.
+#   Optional in dev (a two-worker `wrangler dev` still reaches the local API
+#   worker); needed if you want the local admin tool's writes to work. In
+#   production: `npx wrangler secret put ADMIN_PROXY_KEY` on BOTH workers.
+ADMIN_PROXY_KEY=
+# ADMIN_KEY — mirror of the API worker's ADMIN_KEY; the proxy forwards it. In
+#   production: `npx wrangler secret put ADMIN_KEY`.
+ADMIN_KEY=
