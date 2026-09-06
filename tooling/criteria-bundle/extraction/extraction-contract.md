@@ -152,8 +152,19 @@ The model outputs the envelope in §"Output shape" and nothing else.
 
 ## Output shape
 
-The extraction service returns an envelope; the QuestionnaireResponse inside it is what the
-engine consumes (slice 3's `POST /api/assess/evaluate` takes `{ questionnaireResponse, examSites[], parameters }`).
+**Model-facing shape (prompt v3.0.1).** The model does not write FHIR. It calls one tool,
+`submit_extraction`, whose input is `{ answers: [{ linkId, value, status, quote }], examSites: [{ id, requested, quote }] }`.
+The tool `input_schema` (prompt `outputTool`) makes `linkId`, `value`, `status` and `quote` all
+required, pins `status` to `documented | inferred`, and forbids extra properties. The extraction
+**service** then builds the `QuestionnaireResponse` below — grouping answers by linkId prefix,
+setting the FHIR value type from the Questionnaire item type, and attaching the `answer-evidence`
+extension (`status` + `quote`) to every answer. Rules 1–14 are unchanged; only who serialises the
+FHIR changes. v3.0.0 had the model emit the envelope directly and the first benchmark run showed
+it dropping the evidence extension intermittently (SR-09) — hence v3.0.1.
+
+**Service-facing envelope (unchanged).** The extraction service returns an envelope; the
+QuestionnaireResponse inside it is what the engine consumes (slice 3's
+`POST /api/assess/evaluate` takes `{ questionnaireResponse, examSites[], parameters }`).
 
 ```json
 {

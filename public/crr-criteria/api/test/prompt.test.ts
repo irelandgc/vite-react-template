@@ -4,20 +4,31 @@ import {
   PROMPT_VERSION,
   EQUIVALENCE_LIST_VERSION,
   ATTESTATION_LINK_IDS,
+  OUTPUT_TOOL,
   assembleSystemPrompt,
   assembleUserContent,
   stripAttestationItems,
   findCriteriaLeaks,
 } from "../prompt";
-import promptV3 from "../../../../tooling/criteria-bundle/extraction/prompt-v3.0.0.json";
+import promptV3 from "../../../../tooling/criteria-bundle/extraction/prompt-v3.0.1.json";
 import nationalQ from "../../../../tooling/criteria-bundle/fhir/Questionnaire-CRR-National.json";
 import ctCapQ from "../../../../tooling/criteria-bundle/fhir/Questionnaire-CRR-CT-CAP-Adult.json";
 import ctCapPd from "../../../../tooling/criteria-bundle/fhir/PlanDefinition-CRR-CT-CAP-Adult.json";
 
 describe("prompt — versions and assembly", () => {
-  it("version constants come from prompt-v3.0.0.json", () => {
+  it("version constants come from prompt-v3.0.1.json", () => {
+    expect(PROMPT_VERSION).toBe("3.0.1");
     expect(PROMPT_VERSION).toBe((promptV3 as any).version);
     expect(EQUIVALENCE_LIST_VERSION).toBe((promptV3 as any).equivalenceListVersion);
+  });
+
+  it("OUTPUT_TOOL is the versioned output tool with the shape schema", () => {
+    expect(OUTPUT_TOOL.name).toBe("submit_extraction");
+    expect(OUTPUT_TOOL.input_schema.additionalProperties).toBe(false);
+    const ans = OUTPUT_TOOL.input_schema.properties.answers.items;
+    expect(ans.required.sort()).toEqual(["linkId", "quote", "status", "value"]);
+    expect(ans.additionalProperties).toBe(false);
+    expect(ans.properties.status.enum).toEqual(["documented", "inferred"]);
   });
 
   it("assembleSystemPrompt joins parts[].text with a blank line, deterministically", () => {
@@ -28,7 +39,8 @@ describe("prompt — versions and assembly", () => {
     expect(a).toBe(parts.map((p) => p.text).join("\n\n"));
     // sanity: it contains the role line and the output rule
     expect(a).toContain("You extract. You do not assess.");
-    expect(a).toContain("Never output: verdict");
+    expect(a).toContain("Call the submit_extraction tool");
+    expect(a).toContain("Never submit: a verdict");
   });
 });
 

@@ -39,7 +39,10 @@ const FORBIDDEN_FIELDS = new Set([
   "redirect",
 ]);
 
-const TYPE_TO_VALUE_KEY: Record<string, string> = {
+// Exported: the route's QuestionnaireResponse builder (v3.0.1) uses the same
+// item-type → value-key mapping and the same linkId index the gate validates
+// against, so the built response and the gate cannot disagree on shape.
+export const TYPE_TO_VALUE_KEY: Record<string, string> = {
   boolean: "valueBoolean",
   integer: "valueInteger",
   decimal: "valueDecimal",
@@ -69,7 +72,7 @@ export interface GateResult {
 const normalise = (s: string) => String(s ?? "").replace(/\s+/g, " ").trim().toLowerCase();
 
 // linkId -> item type, over every supplied Questionnaire (union — AD-15).
-function buildItemIndex(questionnaires: any[]): Map<string, string> {
+export function buildItemIndex(questionnaires: any[]): Map<string, string> {
   const idx = new Map<string, string>();
   const walk = (items: any[]) => {
     for (const i of items || []) {
