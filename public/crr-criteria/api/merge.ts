@@ -17,10 +17,12 @@
 //                   mapped to linkIds — gap analysis §3). `status: documented`,
 //                   NO evidence extension. Context overrides extracted for the
 //                   same linkId (contract / TA-005).
-//   3. attested   — referrer attestations for attestation-category indicators
-//                   (AD-17). `status: documented` plus an evidence sub-extension
-//                   { source: 'referrer-attestation', attestedBy } — no new
-//                   status value, the engine is unchanged (AD-slice5-attestation).
+//   3. attested   — attestations for attestation-category indicators (AD-17).
+//                   `status: documented` plus an evidence sub-extension
+//                   { source, attestedBy }. Two modes, distinguished in `source`:
+//                     'referrer-attestation'  — the referrer attests (referrer view)
+//                     'triager-from-referral' — the triager answers from the letter
+//                   No new status value; the engine is unchanged.
 //   4. retrieved  — the population stage (slice 8). INTERFACE ONLY here:
 //                   `POPULATION_ENABLED` is off, so `population` is a typed no-op.
 //
@@ -57,10 +59,22 @@ export interface MergeContext {
   labs?: Array<{ linkId?: string; name?: string; value?: unknown; unit?: string; flag?: string }>;
 }
 
+export type AttestationMode = "referrer" | "triager";
+
 export interface Attestation {
   value: boolean;
   attestedBy: string;
+  // 'referrer' (default) — the referrer attests; 'triager' — the triager answers
+  // from the referral letter. Recorded in the evidence sub-extension `source` as
+  // 'referrer-attestation' / 'triager-from-referral'. The extraction model never
+  // answers these items in either mode (AD-17).
+  mode?: AttestationMode;
 }
+
+export const ATTESTATION_SOURCE: Record<AttestationMode, string> = {
+  referrer: "referrer-attestation",
+  triager: "triager-from-referral",
+};
 
 // Slice 8. Declared so the pipeline route's signature is stable; the field is a
 // no-op until `POPULATION_ENABLED` and the population stage land.
@@ -100,7 +114,7 @@ export interface Discrepancy {
 export interface MergeResult {
   questionnaireResponse: any;
   discrepancies: Discrepancy[];
-  attestationsApplied: Array<{ linkId: string; value: unknown; attestedBy: string }>;
+  attestationsApplied: Array<{ linkId: string; value: unknown; attestedBy: string; mode: AttestationMode }>;
   unmappedContext: Array<{ name?: string; reason: string }>;
 }
 
@@ -124,6 +138,7 @@ interface Candidate {
   provenance: Provenance;
   quote?: string;
   attestedBy?: string;
+  attestationMode?: AttestationMode;
 }
 
 // ── read the extracted QuestionnaireResponse into flat candidates ──────────────
@@ -181,8 +196,9 @@ function candidatesFromAttestations(
       // referrer tick set an arbitrary indicator.
       continue;
     }
-    out.push({ linkId, value: att.value, status: "documented", provenance: "attested", attestedBy: att.attestedBy });
-    applied.push({ linkId, value: att.value, attestedBy: att.attestedBy });
+    const mode: AttestationMode = att.mode === "triager" ? "triager" : "referrer";
+    out.push({ linkId, value: att.value, status: "documented", provenance: "attested", attestedBy: att.attestedBy, attestationMode: mode });
+    applied.push({ linkId, value: att.value, attestedBy: att.attestedBy, mode });
   }
   return out;
 }
@@ -199,7 +215,7 @@ function answerObject(c: Candidate, itemType: string | undefined): any {
 
   const sub: any[] = [{ url: "status", valueCode: c.status }];
   if (c.provenance === "attested") {
-    sub.push({ url: "source", valueCode: "referrer-attestation" });
+    sub.push({ url: "source", valueCode: ATTESTATION_SOURCE[c.attestationMode ?? "referrer"] });
     if (c.attestedBy) sub.push({ url: "attestedBy", valueString: c.attestedBy });
   } else if (c.provenance === "extracted" && typeof c.quote === "string") {
     sub.push({ url: "quote", valueString: c.quote });

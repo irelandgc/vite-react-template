@@ -1866,6 +1866,135 @@ export function buildQuestionnaireResponse(
   };
 }
 
+// The shared extraction core: PII gate -> Questionnaires -> prompt -> provider ->
+// build QR -> validation gate. Used by BOTH `/api/assess/extract` (which then
+// injects context for its standalone response) and the `/api/assess` pipeline
+// (which passes the pre-injection QR to merge). It writes no audit row and sends
+// no response — the caller does. `context` is only forwarded to the prompt's
+// context block here; it is not merged into the QR (that is merge.ts / the
+// pipeline, or `injectContextAnswers` for the standalone route).
+type ExtractionMeta = {
+  promptVersion: string;
+  equivalenceListVersion: string;
+  contractVersion: string;
+  requestedExamSiteQuestionnaireVersion: string | null;
+  modelId: string | null;
+  provider: string | null;
+  redaction: { patternsHit: string[] };
+};
+
+type ExtractionCore =
+  | {
+      ok: true;
+      redacted: string;
+      builtQr: any;
+      modelExamSites: any[];
+      questionnaires: any[];
+      attestationLinkIds: Set<string>;
+      itemIndex: Map<string, string>;
+      examSiteList: { id: string; title: string }[];
+      meta: ExtractionMeta;
+    }
+  | { ok: false; kind: 'gate'; status: 422; meta: ExtractionMeta; failures: string[]; redacted: string }
+  | { ok: false; kind: 'error'; status: number; body: any };
+
+async function runExtractionCore(
+  c: any,
+  opts: { note: string; context: any; requestedExamSite?: string },
+): Promise<ExtractionCore> {
+  const allowSignedOff = c.env.ASSESS_ALLOW_SIGNED_OFF === 'true';
+  const pii = await import('./pii');
+  const promptMod = await import('./prompt');
+  const gateMod = await import('./gate');
+  const providerMod = await import('./provider');
+
+  // 1. PII gate — before prompt assembly and any model call.
+  const { redacted, patternsHit } = pii.redact(opts.note);
+  if (pii.residualNhi(redacted).length) {
+    return { ok: false, kind: 'error', status: 422, body: { error: 'pii-residual', message: 'An NHI-shaped value survived redaction — the request was not sent.', redaction: { patternsHit } } };
+  }
+  if (pii.isInsufficientAfterRedaction(redacted)) {
+    return { ok: false, kind: 'error', status: 422, body: { error: 'insufficient-after-redaction', message: 'After removing patient-identifiable information there is not enough clinical detail to extract.', redaction: { patternsHit } } };
+  }
+
+  // 2. Questionnaires — national (fail closed, AD-19) + the requested exam/site.
+  const nationalQ = await loadNationalQuestionnaire(c.env.DB, c.env.KV, allowSignedOff);
+  if (!nationalQ) {
+    return { ok: false, kind: 'error', status: 503, body: { error: 'national-redflags-unavailable', message: 'The national Questionnaire has no published bundle; extraction cannot proceed (AD-19 / SR-13).' } };
+  }
+  let requestedQ: any = null;
+  let requestedQVersion: string | null = null;
+  if (opts.requestedExamSite) {
+    const r = await loadExamSiteQuestionnaire(c.env.DB, c.env.KV, opts.requestedExamSite, allowSignedOff);
+    if (r) { requestedQ = r.questionnaire; requestedQVersion = r.version; }
+  }
+  const examSiteList = await loadExamSiteList(c.env.DB);
+
+  // 3. Strip attestation-category items (AD-17) so the model never sees them.
+  const attestationLinkIds = new Set<string>(promptMod.ATTESTATION_LINK_IDS);
+  const questionnaires = [promptMod.stripAttestationItems(nationalQ, attestationLinkIds)];
+  if (requestedQ) questionnaires.push(promptMod.stripAttestationItems(requestedQ, attestationLinkIds));
+
+  // 4. Assemble and call the provider (forced call to the output tool).
+  const system = promptMod.assembleSystemPrompt();
+  const userContent = promptMod.assembleUserContent({ redactedNote: redacted, questionnaires, examSiteList, context: opts.context });
+  const maxTokens = Number(c.env.EXTRACTION_MAX_TOKENS ?? 8000) || 8000;
+  let modelResult: any;
+  try {
+    const provider = providerMod.makeProvider(c.env);
+    modelResult = await provider.extract({ system, messages: [{ role: 'user', content: userContent }], maxTokens, tool: promptMod.OUTPUT_TOOL });
+  } catch (e: any) {
+    if (e?.code === 'provider-not-configured') return { ok: false, kind: 'error', status: 503, body: { error: 'provider-not-configured', message: e.message } };
+    return { ok: false, kind: 'error', status: 502, body: { error: 'provider-call-failed', message: e.message } };
+  }
+
+  // 5. Read the tool call.
+  let toolInput: any = modelResult.toolInput;
+  if (!toolInput) {
+    try { toolInput = JSON.parse(extractJsonObject(modelResult.text)); } catch (_) { toolInput = null; }
+  }
+  const truncated = providerMod.isTruncated(modelResult.stopReason);
+  const meta: ExtractionMeta = {
+    promptVersion: promptMod.PROMPT_VERSION,
+    equivalenceListVersion: promptMod.EQUIVALENCE_LIST_VERSION,
+    contractVersion: promptMod.CONTRACT_VERSION,
+    requestedExamSiteQuestionnaireVersion: requestedQVersion,
+    modelId: modelResult.modelId,
+    provider: modelResult.provider,
+    redaction: { patternsHit },
+  };
+
+  // 6. Build the FHIR QR, then run the gate on it (evidence extension by
+  //    construction — SR-09).
+  const itemIndex = gateMod.buildItemIndex(questionnaires);
+  if (!toolInput || typeof toolInput !== 'object') {
+    return { ok: false, kind: 'gate', status: 422, meta, redacted, failures: [`model did not return a ${promptMod.OUTPUT_TOOL.name} tool call${truncated ? ' (response was truncated)' : ''}`] };
+  }
+  const builtQr = buildQuestionnaireResponse(toolInput.answers, itemIndex, gateMod.TYPE_TO_VALUE_KEY);
+  const modelExamSites = Array.isArray(toolInput.examSites) ? toolInput.examSites : [];
+  const gateResult = gateMod.runGate({
+    response: { examSites: modelExamSites, questionnaireResponse: builtQr },
+    redactedNote: redacted,
+    questionnaires,
+    publishedExamSiteIds: examSiteList.map((e) => e.id),
+    attestationLinkIds,
+    truncated,
+  });
+  if (!gateResult.passed) {
+    return { ok: false, kind: 'gate', status: 422, meta, redacted, failures: gateResult.failures };
+  }
+
+  return { ok: true, redacted, builtQr, modelExamSites, questionnaires, attestationLinkIds, itemIndex, examSiteList, meta };
+}
+
+function examSiteSelectionOf(modelExamSites: any[], requestedExamSite?: string) {
+  const requestedEntry = modelExamSites.find((e: any) => e?.requested === true);
+  return {
+    requestedExamSite: requestedEntry?.id ?? requestedExamSite ?? null,
+    candidateExamSites: modelExamSites.filter((e: any) => e?.requested === false).map((e: any) => e.id),
+  };
+}
+
 app.post('/api/assess/extract', async (c) => {
   const guard = guardInternalAssess(c);
   if (guard) return guard;
@@ -1882,110 +2011,203 @@ app.post('/api/assess/extract', async (c) => {
   if (!note.trim()) return c.json({ error: 'note (the free-text referral note) is required' }, 400);
   const context = body.context && typeof body.context === 'object' ? body.context : {};
   const requestedExamSite: string | undefined = typeof body.requestedExamSite === 'string' && body.requestedExamSite ? body.requestedExamSite : undefined;
-  const allowSignedOff = c.env.ASSESS_ALLOW_SIGNED_OFF === 'true';
 
-  const pii = await import('./pii');
-  const promptMod = await import('./prompt');
-  const gateMod = await import('./gate');
-  const providerMod = await import('./provider');
-
-  // 1. PII gate — server-side, before prompt assembly and any model call.
-  const { redacted, patternsHit } = pii.redact(note);
-  const residual = pii.residualNhi(redacted);
-  if (residual.length) {
-    return c.json({ error: 'pii-residual', message: 'An NHI-shaped value survived redaction — the request was not sent.', redaction: { patternsHit } }, 422);
-  }
-  if (pii.isInsufficientAfterRedaction(redacted)) {
-    return c.json({ error: 'insufficient-after-redaction', message: 'After removing patient-identifiable information there is not enough clinical detail to extract.', redaction: { patternsHit } }, 422);
+  const core = await runExtractionCore(c, { note, context, requestedExamSite });
+  if (!core.ok) {
+    if (core.kind === 'gate') return c.json({ ...core.meta, validation: { passed: false, failures: core.failures } }, 422);
+    return c.json(core.body, core.status as any);
   }
 
-  // 2. Questionnaires — national (fail closed, AD-19) + the requested exam/site.
-  const nationalQ = await loadNationalQuestionnaire(c.env.DB, c.env.KV, allowSignedOff);
-  if (!nationalQ) {
-    return c.json({ error: 'national-redflags-unavailable', message: 'The national Questionnaire has no published bundle; extraction cannot proceed (AD-19 / SR-13).' }, 503);
-  }
-  let requestedQ: any = null;
-  let requestedQVersion: string | null = null;
-  if (requestedExamSite) {
-    const r = await loadExamSiteQuestionnaire(c.env.DB, c.env.KV, requestedExamSite, allowSignedOff);
-    if (r) { requestedQ = r.questionnaire; requestedQVersion = r.version; }
-  }
-  const examSiteList = await loadExamSiteList(c.env.DB);
-
-  // 3. Strip attestation-category items (AD-17) so the model never sees them.
-  const attestation = new Set<string>(promptMod.ATTESTATION_LINK_IDS);
-  const questionnaires = [promptMod.stripAttestationItems(nationalQ, attestation)];
-  if (requestedQ) questionnaires.push(promptMod.stripAttestationItems(requestedQ, attestation));
-
-  // 4. Assemble and call the provider. The model calls the output tool (v3.0.1);
-  //    model params are owned in provider.ts.
-  const system = promptMod.assembleSystemPrompt();
-  const userContent = promptMod.assembleUserContent({ redactedNote: redacted, questionnaires, examSiteList, context });
-  const maxTokens = Number(c.env.EXTRACTION_MAX_TOKENS ?? 8000) || 8000;
-
-  let modelResult: any;
-  try {
-    const provider = providerMod.makeProvider(c.env);
-    modelResult = await provider.extract({ system, messages: [{ role: 'user', content: userContent }], maxTokens, tool: promptMod.OUTPUT_TOOL });
-  } catch (e: any) {
-    if (e?.code === 'provider-not-configured') return c.json({ error: 'provider-not-configured', message: e.message }, 503);
-    return c.json({ error: 'provider-call-failed', message: e.message }, 502);
-  }
-
-  // 5. Read the tool call: { answers: [{linkId,value,status,quote}], examSites: [{id,requested,quote}] }.
-  //    Fall back to parsing free text only if the provider returned no tool block.
-  let toolInput: any = modelResult.toolInput;
-  if (!toolInput) {
-    try { toolInput = JSON.parse(extractJsonObject(modelResult.text)); } catch (_) { toolInput = null; }
-  }
-  const truncated = providerMod.isTruncated(modelResult.stopReason);
-  const meta = {
-    promptVersion: promptMod.PROMPT_VERSION,
-    equivalenceListVersion: promptMod.EQUIVALENCE_LIST_VERSION,
-    contractVersion: promptMod.CONTRACT_VERSION,
-    requestedExamSiteQuestionnaireVersion: requestedQVersion,
-    modelId: modelResult.modelId,
-    provider: modelResult.provider,
-    redaction: { patternsHit },
-  };
-
-  // 6. Build the FHIR QuestionnaireResponse from the flat answers, then run the
-  //    gate on it. The evidence extension is attached to every answer here, so
-  //    gate rule 3 is satisfied by construction (SR-09); the gate still checks
-  //    quote-in-note, linkId, type, forbidden fields, retrieved and attestation.
-  const itemIndex = gateMod.buildItemIndex(questionnaires);
-  let gateResult: any;
-  let builtQr: any = null;
-  let modelExamSites: any[] = [];
-  if (!toolInput || typeof toolInput !== 'object') {
-    gateResult = { passed: false, failures: [`model did not return a ${promptMod.OUTPUT_TOOL.name} tool call${truncated ? ' (response was truncated)' : ''}`] };
-  } else {
-    builtQr = buildQuestionnaireResponse(toolInput.answers, itemIndex, gateMod.TYPE_TO_VALUE_KEY);
-    modelExamSites = Array.isArray(toolInput.examSites) ? toolInput.examSites : [];
-    gateResult = gateMod.runGate({
-      response: { examSites: modelExamSites, questionnaireResponse: builtQr },
-      redactedNote: redacted,
-      questionnaires,
-      publishedExamSiteIds: examSiteList.map((e) => e.id),
-      attestationLinkIds: attestation,
-      truncated,
-    });
-  }
-
-  if (!gateResult.passed) {
-    return c.json({ ...meta, validation: gateResult }, 422);
-  }
-
-  // 7. Inject age/sex from context (structured input, not extraction).
-  const questionnaireResponse = injectContextAnswers(builtQr, context);
-  const requestedEntry = modelExamSites.find((e: any) => e?.requested === true);
-  const examSiteSelection = {
-    requestedExamSite: requestedEntry?.id ?? requestedExamSite ?? null,
-    candidateExamSites: modelExamSites.filter((e: any) => e?.requested === false).map((e: any) => e.id),
-  };
-
-  return c.json({ questionnaireResponse, examSiteSelection, ...meta, validation: gateResult });
+  // Standalone route: inject age/sex from context as documented answers.
+  const questionnaireResponse = injectContextAnswers(core.builtQr, context);
+  const examSiteSelection = examSiteSelectionOf(core.modelExamSites, requestedExamSite);
+  return c.json({ questionnaireResponse, examSiteSelection, ...core.meta, validation: { passed: true, failures: [] } });
 });
+
+// ══════════════════════════════════════════════════════════════
+//  ARCH-MIG-01 ASSESSMENT PIPELINE (slice 5)
+// ══════════════════════════════════════════════════════════════
+//
+// POST /api/assess — internal (same gating as evaluate/extract, SD-11), forwarded
+// same-origin by the main worker's CRR_API binding behind ASSESS_PIPELINE_ENABLED.
+// One call, one assessment, one audit row. Flow:
+//   PII gate -> extract (runExtractionCore) -> merge (merge.ts; context + referrer
+//   attestations + [population, slice 8]) -> evaluate (engine.ts; requested +
+//   candidateExamSites[]) -> Advisory -> write ONE `assessments` row -> respond.
+// The model EXTRACTS only (invariant 1); the engine decides. No free-text field
+// anywhere in the request or the response. A gate rejection or a fail-closed
+// national bundle is a typed error AND still writes an `assessments` row with
+// `validation_failures` populated and no Advisory (the failure is part of the
+// record).
+
+// The one INSERT. `fields` is already JSON-ready (objects, not strings).
+async function writeAssessmentRow(db: D1Database, env: Bindings, f: {
+  bundleVersions: any; engineVersion: string | null; vocabularyVersion: string | null;
+  promptVersion: string | null; equivalenceListVersion: string | null;
+  modelId: string | null; modelProvider: string | null; documentationStandard: string;
+  questionnaireResponse: any; advisory: any; discrepancies: any; validationFailures: any;
+  redactionPatterns: string[] | null; attestations: any; examSiteSelection: any;
+  performedBy: string | null; regressionRunId: string | null; noteRedacted?: string | null;
+}): Promise<string> {
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+  const J = (v: any) => (v == null ? null : JSON.stringify(v));
+  await db.prepare(
+    `INSERT INTO assessments (id, created_at, bundle_versions, engine_version, vocabulary_version, prompt_version, model_id, documentation_standard, questionnaire_response, advisory, discrepancies, validation_failures, performed_by, regression_run_id, equivalence_list_version, model_provider, redaction_patterns, attestations, exam_site_selection)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    id, now,
+    JSON.stringify(f.bundleVersions ?? {}), f.engineVersion, f.vocabularyVersion,
+    f.promptVersion, f.modelId, f.documentationStandard,
+    JSON.stringify(f.questionnaireResponse ?? {}), JSON.stringify(f.advisory ?? null),
+    J(f.discrepancies), J(f.validationFailures), f.performedBy, f.regressionRunId,
+    f.equivalenceListVersion, f.modelProvider, J(f.redactionPatterns), J(f.attestations), J(f.examSiteSelection),
+  ).run();
+  if (env.AUDIT_STORE_REDACTED_NOTE === 'true' && typeof f.noteRedacted === 'string' && f.noteRedacted.trim().length) {
+    await db.prepare('INSERT INTO assessment_notes (assessment_id, note_redacted, created_at) VALUES (?, ?, ?)')
+      .bind(id, f.noteRedacted, now).run();
+  }
+  return id;
+}
+
+app.post('/api/assess', async (c) => {
+  const guard = guardInternalAssess(c);
+  if (guard) return guard;
+  const rl = await assessRateLimit(c, 'assess');
+  if (rl) return rl;
+
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch (e: any) {
+    return c.json({ error: 'Body is not valid JSON', message: e.message }, 400);
+  }
+  const note = typeof body.note === 'string' ? body.note : '';
+  if (!note.trim()) return c.json({ error: 'note (the free-text referral note) is required' }, 400);
+  const requestedExamSite: string | undefined = typeof body.requestedExamSite === 'string' && body.requestedExamSite ? body.requestedExamSite : undefined;
+  if (!requestedExamSite) return c.json({ error: 'requestedExamSite (a published exam/site id) is required' }, 400);
+  const context = body.context && typeof body.context === 'object' ? body.context : {};
+  const attestations = body.attestations && typeof body.attestations === 'object' ? body.attestations : {};
+
+  const engine = await import('./engine');
+  const docStd = engine.isDocumentationStandard(body.documentationStandard) ? body.documentationStandard : 'strict';
+  const allowSignedOff = c.env.ASSESS_ALLOW_SIGNED_OFF === 'true';
+  const performedBy = c.req.header('x-assess-identity') || c.req.header('cf-access-authenticated-user-email') || (typeof body.performedBy === 'string' ? body.performedBy : null);
+  const regressionRunId = typeof body.regressionRunId === 'string' ? body.regressionRunId : null;
+
+  const core = await runExtractionCore(c, { note, context, requestedExamSite });
+
+  // Extraction failed. PII / provider errors: typed error, no audit row (nothing
+  // was assessed and a PII-residual note must not be stored). Gate rejection and
+  // fail-closed national bundle: typed error + an audit row with
+  // validation_failures and no Advisory.
+  if (!core.ok) {
+    if (core.kind === 'gate') {
+      const assessmentId = await writeAssessmentRow(c.env.DB, c.env, {
+        bundleVersions: {}, engineVersion: engine.ENGINE_VERSION, vocabularyVersion: null,
+        promptVersion: core.meta.promptVersion, equivalenceListVersion: core.meta.equivalenceListVersion,
+        modelId: core.meta.modelId, modelProvider: core.meta.provider, documentationStandard: docStd,
+        questionnaireResponse: null, advisory: null, discrepancies: null,
+        validationFailures: { stage: 'extract-gate', failures: core.failures },
+        redactionPatterns: core.meta.redaction.patternsHit, attestations: null, examSiteSelection: null,
+        performedBy, regressionRunId, noteRedacted: core.redacted,
+      });
+      return c.json({ assessmentId, advisory: null, versions: versionsBlock(core.meta, engine.ENGINE_VERSION, null, {}), examSiteSelection: null, discrepancies: [], validation: { passed: false, failures: core.failures } }, 422);
+    }
+    if (core.body?.error === 'national-redflags-unavailable') {
+      const assessmentId = await writeAssessmentRow(c.env.DB, c.env, {
+        bundleVersions: {}, engineVersion: engine.ENGINE_VERSION, vocabularyVersion: null,
+        promptVersion: null, equivalenceListVersion: null, modelId: null, modelProvider: null, documentationStandard: docStd,
+        questionnaireResponse: null, advisory: null, discrepancies: null,
+        validationFailures: { stage: 'extract', error: 'national-redflags-unavailable' },
+        redactionPatterns: null, attestations: null, examSiteSelection: null,
+        performedBy, regressionRunId,
+      });
+      return c.json({ assessmentId, error: 'national-redflags-unavailable', message: core.body.message, advisory: null, validation: { passed: false, failures: ['national-redflags-unavailable'] } }, 503);
+    }
+    return c.json(core.body, core.status as any);
+  }
+
+  // Merge: extracted QR + context + referrer attestations (+ population, slice 8).
+  const mergeMod = await import('./merge');
+  let mergeRes;
+  try {
+    mergeRes = mergeMod.merge({
+      extractedResponse: core.builtQr,
+      context,
+      attestations,
+      attestationLinkIds: core.attestationLinkIds,
+      itemIndex: core.itemIndex,
+    });
+  } catch (e: any) {
+    return c.json({ error: 'merge-failed', message: e.message }, 500);
+  }
+
+  // Evaluate: national layer first (fail closed, AD-19), then the requested exam
+  // and the extractor's candidate exam/sites (AD-20).
+  const nationalLibrary = await resolveNationalRedFlags(c.env.DB, c.env.KV, allowSignedOff);
+  const candidateIds: string[] = core.modelExamSites.filter((e: any) => e?.requested === false && typeof e?.id === 'string' && e.id !== requestedExamSite).map((e: any) => e.id);
+  if (!nationalLibrary) {
+    const assessmentId = await writeAssessmentRow(c.env.DB, c.env, {
+      bundleVersions: {}, engineVersion: engine.ENGINE_VERSION, vocabularyVersion: null,
+      promptVersion: core.meta.promptVersion, equivalenceListVersion: core.meta.equivalenceListVersion,
+      modelId: core.meta.modelId, modelProvider: core.meta.provider, documentationStandard: docStd,
+      questionnaireResponse: mergeRes.questionnaireResponse, advisory: null, discrepancies: mergeRes.discrepancies,
+      validationFailures: { stage: 'evaluate', error: 'national-redflags-unavailable' },
+      redactionPatterns: core.meta.redaction.patternsHit, attestations: mergeRes.attestationsApplied,
+      examSiteSelection: examSiteSelectionOf(core.modelExamSites, requestedExamSite),
+      performedBy, regressionRunId, noteRedacted: core.redacted,
+    });
+    return c.json({ assessmentId, error: 'national-redflags-unavailable', message: 'The national red-flag / ACC safety library has no published bundle; assessment cannot proceed (AD-19 / SR-13).', advisory: null, discrepancies: mergeRes.discrepancies, validation: { passed: false, failures: ['national-redflags-unavailable'] } }, 503);
+  }
+
+  let engineResult: any;
+  try {
+    const requested = await resolveExamForEngine(c.env.DB, c.env.KV, requestedExamSite, allowSignedOff);
+    const candidates = [];
+    for (const id of candidateIds) candidates.push(await resolveExamForEngine(c.env.DB, c.env.KV, id, allowSignedOff));
+    engineResult = await engine.runAssessment({ questionnaireResponse: mergeRes.questionnaireResponse, nationalLibrary, requested, candidates, documentationStandard: docStd });
+  } catch (e: any) {
+    if (e?.code === 'national-redflags-unavailable') return c.json({ error: 'national-redflags-unavailable', message: e.message }, 503);
+    return c.json({ error: 'Engine evaluation failed', message: e.message }, 500);
+  }
+
+  const examSiteSelection = examSiteSelectionOf(core.modelExamSites, requestedExamSite);
+  const versions = versionsBlock(core.meta, engineResult.engineVersion, engineResult.vocabularyVersion ?? null, engineResult.bundleVersions);
+
+  const assessmentId = await writeAssessmentRow(c.env.DB, c.env, {
+    bundleVersions: engineResult.bundleVersions, engineVersion: engineResult.engineVersion, vocabularyVersion: engineResult.vocabularyVersion ?? null,
+    promptVersion: core.meta.promptVersion, equivalenceListVersion: core.meta.equivalenceListVersion,
+    modelId: core.meta.modelId, modelProvider: core.meta.provider, documentationStandard: docStd,
+    questionnaireResponse: mergeRes.questionnaireResponse, advisory: engineResult, discrepancies: mergeRes.discrepancies,
+    validationFailures: null, redactionPatterns: core.meta.redaction.patternsHit, attestations: mergeRes.attestationsApplied,
+    examSiteSelection, performedBy, regressionRunId, noteRedacted: core.redacted,
+  });
+
+  return c.json({
+    assessmentId,
+    advisory: engineResult,
+    versions,
+    examSiteSelection,
+    discrepancies: mergeRes.discrepancies,
+    attestationsApplied: mergeRes.attestationsApplied,
+    unmappedContext: mergeRes.unmappedContext,
+    validation: { passed: true, failures: [] },
+  });
+});
+
+function versionsBlock(meta: ExtractionMeta, engineVersion: string | null, vocabularyVersion: string | null, bundleVersions: any) {
+  return {
+    engine: engineVersion,
+    vocabulary: vocabularyVersion,
+    prompt: meta.promptVersion,
+    equivalenceList: meta.equivalenceListVersion,
+    contract: meta.contractVersion,
+    model: meta.modelId,
+    provider: meta.provider,
+    bundles: bundleVersions ?? {},
+  };
+}
 
 export default {
   fetch: (req: Request, env: Bindings, ctx: any) => app.fetch(req, env as any, ctx),

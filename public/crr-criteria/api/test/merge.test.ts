@@ -138,7 +138,18 @@ describe("merge — attestation category (AD-17)", () => {
     expect(att.status).toBe("documented");
     expect(att.source).toBe("referrer-attestation");
     expect(att.attestedBy).toBe("Dr Smith");
-    expect(r.attestationsApplied).toEqual([{ linkId: "workup.strongSuspicionMalignancy", value: true, attestedBy: "Dr Smith" }]);
+    expect(att.source).toBe("referrer-attestation");
+    expect(r.attestationsApplied).toEqual([{ linkId: "workup.strongSuspicionMalignancy", value: true, attestedBy: "Dr Smith", mode: "referrer" }]);
+  });
+
+  it("triager mode records source 'triager-from-referral'", () => {
+    const r = run({
+      extractedResponse: extractedQr({}),
+      attestations: { "workup.strongSuspicionMalignancy": { value: true, attestedBy: "PCRL Jones", mode: "triager" } },
+    });
+    const att = collect(r.questionnaireResponse).get("workup.strongSuspicionMalignancy")!;
+    expect(att.source).toBe("triager-from-referral");
+    expect(r.attestationsApplied[0].mode).toBe("triager");
   });
 
   it("throws if the extracted response answered a category indicator (the gate should have rejected it)", () => {
