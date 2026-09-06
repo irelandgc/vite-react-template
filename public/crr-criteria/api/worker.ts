@@ -1362,8 +1362,20 @@ app.post('/api/admin/bundles/publish', requireAccess, async (c) => {
   }
 
   const problems: string[] = [];
-  for (const key of ['examSite', 'version', 'state', 'vocabularyVersion', 'source', 'logicHash', 'publishedAt', 'library', 'planDefinition', 'questionnaire', 'testResults']) {
+  // `kind: 'national'` is the national red-flag / ACC layer (AD-19): Library ELM +
+  // the national Questionnaire, no PlanDefinition. examSite must be
+  // `national-redflags`.
+  const isNationalBundle = bundle.kind === 'national';
+  const requiredKeys = ['examSite', 'version', 'state', 'vocabularyVersion', 'source', 'logicHash', 'publishedAt', 'library', 'questionnaire', 'testResults'];
+  if (!isNationalBundle) requiredKeys.push('planDefinition');
+  for (const key of requiredKeys) {
     if (!(key in bundle)) problems.push(`missing required key "${key}"`);
+  }
+  if (isNationalBundle && bundle.examSite !== 'national-redflags') {
+    problems.push(`kind "national" bundle must have examSite "national-redflags", got "${bundle.examSite}"`);
+  }
+  if (isNationalBundle && bundle.planDefinition) {
+    problems.push('kind "national" bundle must not carry a PlanDefinition');
   }
   if (bundle.state && !['transcribed', 'signed-off'].includes(bundle.state)) {
     problems.push(`state "${bundle.state}" must be "transcribed" or "signed-off" (a bundle only becomes "published" via the state-transition route)`);
@@ -1481,10 +1493,25 @@ app.post('/api/admin/bundles/:examSite/state', requireAccess, async (c) => {
 // 4b and 5. The heavy CQL runtime (cql-execution + ELM) is in ./engine.ts and
 // imported lazily so it is off the cold-start path of every other route.
 //
-// Reachability: this route is exposed on the API worker but the user-facing
-// path to it — the main worker's /api/assess/* forward — is gated by
-// ASSESS_PIPELINE_ENABLED (default off, closes at slice 10 along with the
-// public workers.dev origin). Rate-limited like the other public routes.
+// Reachability: this route is internal-only — it requires the `x-assess-internal`
+// shared secret set by the main worker's forward AND ASSESS_PIPELINE_ENABLED on
+// this worker (403 / 404 otherwise), so it is not usable from the public
+// workers.dev origin. Rate-limited like the other public routes.
+//
+// Relationship to FHIR PlanDefinition/$apply (AD-21, AD-15 — kept adapter-
+// compatible, not adopting the operation):
+//   request  { questionnaireResponse }          -> $apply `data` Bundle (the QR is input data)
+//            { requestedExamSite,                -> selects which PlanDefinition(s) $apply is invoked for
+//              candidateExamSites[] }               (the national PlanDefinition is always first — AD-03)
+//            { parameters.documentationStandard } -> $apply `parameters` (Parameters resource, one CQL parameter)
+//   response requestedExam.advisory.determination -> $apply output: a RequestGroup/CarePlan action
+//            requestedExam.advisory.priorityCode     with an activity code + `priority`
+//            alternatives[]                       -> additional output actions (cross-exam recommendations)
+//            national (fired red flags / ACC)     -> the national PlanDefinition's applicability + actions
+//   NOT mapped into $apply output — a separate reporting artefact by design (AD-21b):
+//            advisory.ruleTrace, advisory.missingInformation, unconfirmedExclusions.
+// A thin adapter could translate both directions without changing this contract;
+// the field mapping to an IG package is in AD-21's table.
 
 // Resolves a published exam/site id to the ELM the engine evaluates. Returns a
 // `not-available` marker (never a fallback — invariant 3) when the id is unknown,
@@ -1512,6 +1539,26 @@ async function resolveExamForEngine(
     vocabularyVersion: bundleRow.vocabulary_version ?? bundle.vocabularyVersion ?? null,
     siteElm: bundle.library.site,
   };
+}
+
+// Resolves the national red-flag / ACC layer (bundle key `national-redflags`,
+// AD-19). Returns `null` when there is no evaluable published version — the
+// engine then fails closed (SR-13). The key IS the bundle key: no `exam_sites`
+// row, it is not a site.
+async function resolveNationalRedFlags(
+  db: D1Database,
+  kv: KVNamespace,
+  allowSignedOff: boolean,
+): Promise<{ version: string; elm: any } | null> {
+  const evaluable = allowSignedOff ? ['published', 'signed-off'] : ['published'];
+  const placeholders = evaluable.map(() => '?').join(',');
+  const bundleRow: any = await db.prepare(
+    `SELECT version, state FROM bundles WHERE exam_site = 'national-redflags' AND state IN (${placeholders}) ORDER BY (state = 'published') DESC, id DESC LIMIT 1`
+  ).bind(...evaluable).first();
+  if (!bundleRow) return null;
+  const bundle = await loadBundle(kv, 'national-redflags', bundleRow.version);
+  if (!bundle || !bundle.library?.site) return null;
+  return { version: bundleRow.version, elm: bundle.library.site };
 }
 
 // Purge job for assessment_notes (Cron Trigger, see the default export's
@@ -1578,13 +1625,26 @@ app.post('/api/assess/evaluate', async (c) => {
     : 'strict';
   const allowSignedOff = c.env.ASSESS_ALLOW_SIGNED_OFF === 'true';
 
+  // Fail closed (AD-19, SR-13): the national red-flag / ACC layer must be a
+  // published bundle. No published version -> no assessment, no audit row.
+  const nationalLibrary = await resolveNationalRedFlags(c.env.DB, c.env.KV, allowSignedOff);
+  if (!nationalLibrary) {
+    return c.json({
+      error: 'national-redflags-unavailable',
+      message: 'The national red-flag / ACC safety library has no published bundle; assessment cannot proceed (AD-19 / SR-13).',
+    }, 503);
+  }
+
   let result: any;
   try {
     const requested = await resolveExamForEngine(c.env.DB, c.env.KV, requestedExamSite, allowSignedOff);
     const candidates = [];
     for (const id of candidateExamSites) candidates.push(await resolveExamForEngine(c.env.DB, c.env.KV, id, allowSignedOff));
-    result = await engine.runAssessment({ questionnaireResponse: qr, requested, candidates, documentationStandard: docStd });
+    result = await engine.runAssessment({ questionnaireResponse: qr, nationalLibrary, requested, candidates, documentationStandard: docStd });
   } catch (e: any) {
+    if (e?.code === 'national-redflags-unavailable') {
+      return c.json({ error: 'national-redflags-unavailable', message: e.message }, 503);
+    }
     return c.json({ error: 'Engine evaluation failed', message: e.message }, 500);
   }
 

@@ -34,9 +34,16 @@ if (bundleArgIdx !== -1) {
   if (!bundlePath) { console.log("PROBLEMS:\n - --bundle requires a file path"); process.exit(1); }
   const bundle = JSON.parse(fs.readFileSync(bundlePath, "utf8"));
   const problems = [];
-  for (const key of ["examSite", "version", "state", "vocabularyVersion", "source", "logicHash", "publishedAt", "library", "planDefinition", "questionnaire", "testResults"]) {
+  // `kind: 'national'` is the national red-flag / ACC layer (AD-19): Library ELM +
+  // the national Questionnaire, no PlanDefinition, no population, no overlays.
+  const isNationalBundle = bundle.kind === "national";
+  const requiredKeys = ["examSite", "version", "state", "vocabularyVersion", "source", "logicHash", "publishedAt", "library", "questionnaire", "testResults"];
+  if (!isNationalBundle) requiredKeys.push("planDefinition");
+  for (const key of requiredKeys) {
     if (!(key in bundle)) problems.push(`bundle missing required key "${key}"`);
   }
+  if (isNationalBundle && bundle.examSite !== "national-redflags") problems.push(`kind "national" bundle must have examSite "national-redflags", got "${bundle.examSite}"`);
+  if (isNationalBundle && bundle.planDefinition) problems.push(`kind "national" bundle must not carry a PlanDefinition (the national layer has no timeframe rows to render)`);
   if (!["transcribed", "signed-off"].includes(bundle.state)) problems.push(`state "${bundle.state}" is not "transcribed" or "signed-off"`);
   if (bundle.source) {
     if (!["pdf", "approved-draft"].includes(bundle.source.type)) problems.push(`source.type "${bundle.source.type}" is not "pdf" or "approved-draft"`);
@@ -204,7 +211,23 @@ if (fs.existsSync(examSitesMigrationPath)) {
   const distinctKeys = new Set(rows.map(r => r.bundleKey));
   if (rows.length !== 53) problems.push(`exam_sites seed: expected 53 published ids (AD-01), found ${rows.length}`);
   if (distinctKeys.size !== 38) problems.push(`exam_sites seed: expected 38 distinct bundle keys (AD-01), found ${distinctKeys.size}`);
-  console.log(`AD-01 mapping: ${rows.length} published ids -> ${distinctKeys.size} bundle keys`);
+
+  // Every bundle key in the registry must be either a site key from the AD-01
+  // mapping, or `national-redflags` — the one bundle with no exam/site ids (it is
+  // the national red-flag / ACC layer, AD-19, not a site).
+  const NATIONAL_KEY = "national-redflags";
+  const registryDir = path.join(root, "registry");
+  if (fs.existsSync(registryDir)) {
+    const registryKeys = fs.readdirSync(registryDir, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name);
+    for (const key of registryKeys) {
+      if (key === NATIONAL_KEY) continue;
+      if (!distinctKeys.has(key)) problems.push(`registry/${key}: bundle key is neither in the AD-01 exam_sites mapping nor "${NATIONAL_KEY}"`);
+    }
+    const nationalBundle = fs.existsSync(path.join(registryDir, NATIONAL_KEY, "1.0.0.json"));
+    console.log(`AD-01 mapping: ${rows.length} published ids -> ${distinctKeys.size} bundle keys; registry has ${registryKeys.length} key(s)${nationalBundle ? ` incl. ${NATIONAL_KEY} (kind: national)` : ""}`);
+  } else {
+    console.log(`AD-01 mapping: ${rows.length} published ids -> ${distinctKeys.size} bundle keys`);
+  }
 } else {
   console.log("AD-01 mapping: migration file not found (slice 2 not yet merged) - skipped");
 }

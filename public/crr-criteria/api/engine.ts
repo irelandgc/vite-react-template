@@ -14,18 +14,17 @@
 // per gap analysis §4: the requested exam plus alternatives[] (a candidate that
 // reaches a priority determination while the requested exam does not).
 //
-// Where the ELM comes from (AD-19):
-//   - site + population ELM: the published bundle, loaded by version from KV
-//     (worker.ts loadBundle). Those are the 38 artefacts that vary, are
-//     transcribed and published independently, and carry per-version sign-off
-//     state — "loaded by version at runtime" (invariant 3) is about them.
-//   - the national red-flag library and FHIRHelpers: imported build artefacts of
-//     the slice-1 CQL, deployed with the engine. The red-flag layer is one
-//     artefact, changes rarely, must run on every assessment, and a missing KV
-//     publish of a safety layer would fail silently — deploy-time inclusion is
-//     the safer choice. Its version is read from the ELM identifier and stamped
-//     (invariant 8). If it ever needs to change without an engine redeploy it
-//     moves into the registry under the stable key `national-redflags`.
+// Where the ELM comes from (AD-19, Accepted):
+//   - every CRR library — the national red-flag / ACC layer (`national-redflags`)
+//     and each site — is a published bundle loaded by version from KV (worker.ts
+//     `resolveExamForEngine` / `resolveNationalRedFlags`). "Criteria logic loaded
+//     by version at runtime" (invariant 3) is about all of them equally.
+//   - the engine FAILS CLOSED: if `national-redflags` has no published version,
+//     `runAssessment` throws `NationalLibraryUnavailableError` and no assessment
+//     runs. It never falls back to an imported copy (SR-13).
+//   - FHIRHelpers stays a build import — it is CQL plumbing, not criteria, and a
+//     fixed dependency of the runtime (the same file `run-tests.mjs` and the
+//     SR-10 smoke test use).
 
 // cql-execution / cql-exec-fhir are CJS Node packages with no type declarations;
 // SR-10 verified they load under Workers nodejs_compat.
@@ -34,13 +33,18 @@ import cql from "cql-execution";
 // @ts-expect-error - no types
 import cqlfhir from "cql-exec-fhir";
 import fhirHelpersElm from "../../../tooling/criteria-bundle/elm/FHIRHelpers-4.0.1.json";
-import redFlagsElm from "../../../tooling/criteria-bundle/elm/CRR_RedFlags.json";
 
 export const ENGINE_VERSION = "1.0.0";
 
-// The national red-flag library's version, from its ELM identifier (invariant 8).
-export const RED_FLAGS_LIBRARY_VERSION: string =
-  (redFlagsElm as any).library?.identifier?.version ?? "unknown";
+// Thrown when the national red-flag / ACC layer cannot be located (AD-19, SR-13).
+// The route maps it to a 503 and writes no audit row — nothing was assessed.
+export class NationalLibraryUnavailableError extends Error {
+  readonly code = "national-redflags-unavailable";
+  constructor(message = "The national red-flag / ACC safety library has no published bundle; assessment cannot proceed") {
+    super(message);
+    this.name = "NationalLibraryUnavailableError";
+  }
+}
 
 const DOC_STANDARDS = ["strict", "inferred"] as const;
 export type DocumentationStandard = (typeof DOC_STANDARDS)[number];
@@ -92,21 +96,27 @@ async function runLibrary(elm: unknown, qr: any, documentationStandard: Document
   return patientResult.Advisory;
 }
 
-export async function evaluateNational(qr: any, documentationStandard: DocumentationStandard) {
-  return runLibrary(redFlagsElm, qr, documentationStandard);
+export async function evaluateNational(nationalElm: unknown, qr: any, documentationStandard: DocumentationStandard) {
+  return runLibrary(nationalElm, qr, documentationStandard);
 }
 
 export async function evaluateExam(siteElm: unknown, qr: any, documentationStandard: DocumentationStandard) {
   return runLibrary(siteElm, qr, documentationStandard);
 }
 
-// One resolved (or unresolved) entry from the input examSites[] list.
+// One resolved (or unresolved) exam/site entry.
 export type ExamResolution =
   | { id: string; state: "published" | "signed-off"; version: string; vocabularyVersion: string; siteElm: unknown }
   | { id: string; state: "not-available" };
 
+// The national red-flag / ACC layer, resolved from the `national-redflags` bundle.
+// `null` means no published version — the engine fails closed (SR-13).
+export type NationalResolution = { version: string; elm: unknown } | null;
+
 export interface AssessmentInput {
   questionnaireResponse: any;
+  // The national layer (AD-03) — required; a null/absent value is fail-closed.
+  nationalLibrary: NationalResolution;
   // The requested exam/site (AD-20) and any candidates the note also indicated.
   requested: ExamResolution;
   candidates: ExamResolution[];
@@ -117,11 +127,16 @@ export interface AssessmentInput {
 // values — the same input produces a byte-identical body (NFR-014). The caller
 // (worker.ts) adds the audit row (which does carry an id and timestamp).
 export async function runAssessment(input: AssessmentInput) {
-  const { questionnaireResponse: qr, requested, candidates, documentationStandard } = input;
+  const { questionnaireResponse: qr, nationalLibrary, requested, candidates, documentationStandard } = input;
   const resolutions = [requested, ...candidates];
 
-  const national = await evaluateNational(qr, documentationStandard);
-  const bundleVersions: Record<string, string> = { "national-redflags": RED_FLAGS_LIBRARY_VERSION };
+  // Fail closed (AD-19, SR-13): no national layer -> no assessment. Never an import.
+  if (!nationalLibrary || !nationalLibrary.elm) {
+    throw new NationalLibraryUnavailableError();
+  }
+
+  const national = await evaluateNational(nationalLibrary.elm, qr, documentationStandard);
+  const bundleVersions: Record<string, string> = { "national-redflags": nationalLibrary.version };
 
   const nationalStops =
     national.determination === "ACUTE_ASSESSMENT_REQUIRED" ||
