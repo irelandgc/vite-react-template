@@ -2209,6 +2209,36 @@ function versionsBlock(meta: ExtractionMeta, engineVersion: string | null, vocab
   };
 }
 
+// GET /api/assess/attestation-questions?requestedExamSite=<id> — internal (SD-11).
+// The thin Triage page calls this BEFORE assessment to render the AD-17
+// attestation questions for the requested exam/site (+ national). Two wordings
+// per indicator (AD-23); the page shows the one for the active role-aware view.
+// Model never answers these; unanswered => not sent => null downstream, and the
+// Advisory's missing-information list names the indicator.
+app.get('/api/assess/attestation-questions', async (c) => {
+  const guard = guardInternalAssess(c);
+  if (guard) return guard;
+  const requestedExamSite = c.req.query('requestedExamSite');
+  if (!requestedExamSite) return c.json({ error: 'requestedExamSite (a published exam/site id) is required' }, 400);
+  const allowSignedOff = c.env.ASSESS_ALLOW_SIGNED_OFF === 'true';
+
+  const nationalQ = await loadNationalQuestionnaire(c.env.DB, c.env.KV, allowSignedOff);
+  if (!nationalQ) return c.json({ error: 'national-redflags-unavailable', message: 'The national Questionnaire has no published bundle (AD-19 / SR-13).' }, 503);
+  const questionnaires: any[] = [nationalQ];
+  const bundleKeys: string[] = [];
+  const r = await loadExamSiteQuestionnaire(c.env.DB, c.env.KV, requestedExamSite, allowSignedOff);
+  if (r) questionnaires.push(r.questionnaire);
+  const siteRow: any = await c.env.DB.prepare('SELECT bundle_key FROM exam_sites WHERE id = ?').bind(requestedExamSite).first();
+  if (siteRow?.bundle_key) bundleKeys.push(siteRow.bundle_key);
+
+  const att = await import('./attestation');
+  return c.json({
+    requestedExamSite,
+    vocabularyVersion: att.VOCABULARY_VERSION,
+    questions: att.attestationQuestionsFor(questionnaires, bundleKeys.length ? bundleKeys : undefined),
+  });
+});
+
 export default {
   fetch: (req: Request, env: Bindings, ctx: any) => app.fetch(req, env as any, ctx),
   // Cron Trigger (wrangler.json triggers.crons): purge expired assessment_notes.
