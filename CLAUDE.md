@@ -124,8 +124,16 @@ observing.** If evidence is absent, leave it in `instructions/` and raise it wit
 Gary. Absence of a release-log entry is not evidence work was skipped; equally,
 having written the code is not evidence the outcome was verified.
 
+A slice (or any change) that alters behaviour a referrer, triager, admin,
+operator, or requirement can see adds its rows to `documents/CHANGE-LOG.md`
+**before filing its brief** — status `built` — and the `ARCHITECTURE_DECISIONS.md`
+entry behind the change names those `CL-nn` rows. The change log records *what
+changed and which documents must reflect it*; see `documents/DOCUMENTATION-PLAN.md`.
+
 Add a corresponding entry to `documents/CRR_Release_Log.md` for any change that
-alters deployed behaviour, at the time it happens, not retrospectively.
+alters deployed behaviour, at the time it happens, not retrospectively. (The
+change log records that a behaviour changed; the release log records the date it
+reached users — they are different things.)
 
 ## Before Committing
 - Do not commit secrets, API keys, or credentials
