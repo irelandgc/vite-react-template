@@ -157,6 +157,13 @@ or the fuller equivalence block. MW-009 (item 5) still shows the underlying unre
 localising-features example in the prompt's evidence rules; retrieval of examination findings;
 the AD-17 referrer attestation on the redirect side. Not done here.
 
+**Slice 5 e2e (2026-09-07, `results/2026-09-07-pipeline-e2e-claude-sonnet-4-6.md`).** The full
+`POST /api/assess` pipeline over the two-worker `wrangler dev` reproduced this: MW-009 returned
+`INSUFFICIENT_INFORMATION` (expected `ALTERNATIVE_MANAGEMENT`) because `workup.localisingFeatures`
+was again not extracted; the other three ground-truth notes matched. Pipeline wiring, merge,
+audit row and the AD-17 attestation flow are all correct — this is the same extraction-drift
+finding, unchanged. Still open.
+
 ---
 
 ## 7. "wt 58" read as weight loss · **open (low) — mitigated**
