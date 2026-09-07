@@ -943,7 +943,7 @@ app.post('/api/admin/system-prompt/versions', requireAccess, async (c) => {
 });
 
 // POST /api/admin/extraction-prompt/register — ARCH-MIG-01 slice 4b.
-// Idempotently stores the assembled extraction prompt (currently v3.0.2) in the
+// Idempotently stores the assembled extraction prompt (currently v3.0.3) in the
 // system_prompts table for the audit trail (KI-26) — version comes from
 // prompt.ts (PROMPT_VERSION), so each stored version is a separate row. It is
 // stored `is_active = 0` and NEVER activated here — the live Triage page keeps
@@ -1966,6 +1966,11 @@ type ExtractionCore =
       itemIndex: Map<string, string>;
       examSiteList: { id: string; title: string }[];
       meta: ExtractionMeta;
+      // KI-53 — non-fatal gate outcomes: an examSites entry the gate cleared from
+      // `requested:true` to a candidate for want of a verbatim quote (no-exam
+      // path). Recorded on the row as `validation_failures`; the response still
+      // succeeds.
+      softFailures: string[];
     }
   | { ok: false; kind: 'gate'; status: 422; meta: ExtractionMeta; failures: string[]; redacted: string }
   | { ok: false; kind: 'error'; status: number; body: any };
@@ -2051,12 +2056,18 @@ async function runExtractionCore(
     publishedExamSiteIds: examSiteList.map((e) => e.id),
     attestationLinkIds,
     truncated,
+    examSuppliedByCaller: !!opts.requestedExamSite,
   });
   if (!gateResult.passed) {
     return { ok: false, kind: 'gate', status: 422, meta, redacted, failures: gateResult.failures };
   }
 
-  return { ok: true, redacted, builtQr, modelExamSites, questionnaires, attestationLinkIds, itemIndex, examSiteList, meta };
+  // KI-53 — `runGate` mutated `modelExamSites` in place for each downgrade.
+  const softFailures = gateResult.downgrades.map(
+    (id) => `exam-candidate-no-quote: examSites entry "${id}" was returned requested:true with no verbatim quote and was cleared to a candidate (KI-53)`,
+  );
+
+  return { ok: true, redacted, builtQr, modelExamSites, questionnaires, attestationLinkIds, itemIndex, examSiteList, meta, softFailures };
 }
 
 function examSiteSelectionOf(modelExamSites: any[], requestedExamSite?: string) {
@@ -2430,18 +2441,32 @@ app.post('/api/assess/propose', async (c) => {
   }
 
   const examSiteSelection = examSiteSelectionOf(core.modelExamSites, requestedExamSite);
-  const leading = core.modelExamSites.find((e: any) => e?.requested === true) ?? core.modelExamSites[0] ?? null;
+  // `leading` is the exam shown as "most likely" — only a `requested:true` entry,
+  // never a bare first candidate (KI-53: a downgraded entry is a candidate, not
+  // the lead). Attestation questions are still fetched for the best guess so the
+  // proposal card shows them for the exam its select defaults to.
+  const leading = core.modelExamSites.find((e: any) => e?.requested === true) ?? null;
+  const proposalExam = leading?.id
+    ?? core.modelExamSites.find((e: any) => typeof e?.id === 'string')?.id
+    ?? requestedExamSite
+    ?? null;
   const nationalQ = await loadNationalQuestionnaire(c.env.DB, c.env.KV, allowSignedOff);
-  const attestationQuestions = leading?.id
-    ? await attestationQuestionsForExam(c, leading.id, allowSignedOff, nationalQ)
+  const attestationQuestions = proposalExam
+    ? await attestationQuestionsForExam(c, proposalExam, allowSignedOff, nationalQ)
     : [];
+
+  // KI-53 — an examSites entry the gate cleared to a candidate is recorded on the
+  // row; the proposal still returns (200).
+  const validationFailures = core.softFailures.length
+    ? { stage: 'extract', softFailures: core.softFailures }
+    : null;
 
   const assessmentId = await writeAssessmentRow(c.env.DB, c.env, {
     bundleVersions: {}, engineVersion: engine.ENGINE_VERSION, vocabularyVersion: null,
     promptVersion: core.meta.promptVersion, equivalenceListVersion: core.meta.equivalenceListVersion,
     modelId: core.meta.modelId, modelProvider: core.meta.provider, documentationStandard: docStd,
     questionnaireResponse: core.builtQr, advisory: null, discrepancies: null,
-    validationFailures: null, redactionPatterns: core.meta.redaction.patternsHit,
+    validationFailures, redactionPatterns: core.meta.redaction.patternsHit,
     attestations: null, examSiteSelection,
     performedBy, regressionRunId: null, noteRedacted: core.redacted,
     status: 'proposed',
@@ -2464,6 +2489,9 @@ app.post('/api/assess/propose', async (c) => {
     // refetches for the exam the user confirms; `complete` validates against it.
     attestationQuestions,
     redaction: core.meta.redaction,
+    // `passed` stays true — a KI-53 downgrade is not a rejection; it is recorded
+    // on the row's `validation_failures` and is visible in `candidates` (the
+    // downgraded id is now `requested: false`, `leading: false`).
     validation: { passed: true, failures: [] },
   });
 });
@@ -2497,6 +2525,22 @@ app.post('/api/assess/complete', async (c) => {
   if (!row) return c.json({ error: 'assessment-not-found', message: 'No proposed assessment with that id — it may have expired.' }, 404);
   if (row.status !== 'proposed') return c.json({ error: 'assessment-not-proposed', message: `Assessment ${assessmentId} is ${row.status ?? 'not a two-phase proposal'} and cannot be completed.` }, 409);
 
+  const allowSignedOff = c.env.ASSESS_ALLOW_SIGNED_OFF === 'true';
+
+  // The confirmed exam must have a published criteria bundle. No published
+  // criteria -> 409, before any model call or row update: the row stays
+  // 'proposed' so the referrer can confirm a different exam (two-phase browser
+  // findings). `loadExamSiteQuestionnaire` returns null for an unknown id or one
+  // whose bundle is not published (or, with ASSESS_ALLOW_SIGNED_OFF, signed-off).
+  const confirmedQ = await loadExamSiteQuestionnaire(c.env.DB, c.env.KV, confirmedExamSite, allowSignedOff);
+  if (!confirmedQ) {
+    return c.json({
+      error: 'criteria-not-published',
+      examSite: confirmedExamSite,
+      message: `No published criteria bundle for "${confirmedExamSite}" — its criteria are not yet published. The assessment is still open; confirm a published exam/site.`,
+    }, 409);
+  }
+
   const engine = await import('./engine');
   const proposal = tryParseJson(row.proposal) || {};
   const proposalExamSites: any[] = Array.isArray(proposal.modelExamSites) ? proposal.modelExamSites : [];
@@ -2505,7 +2549,6 @@ app.post('/api/assess/complete', async (c) => {
   const docStd = engine.isDocumentationStandard(body.documentationStandard)
     ? body.documentationStandard
     : (engine.isDocumentationStandard(row.documentation_standard) ? row.documentation_standard : 'strict');
-  const allowSignedOff = c.env.ASSESS_ALLOW_SIGNED_OFF === 'true';
 
   // The note for the site-scoped extraction: the caller's `note`, else the
   // redacted note stored with the proposal (AUDIT_STORE_REDACTED_NOTE), else 400.
@@ -2524,7 +2567,6 @@ app.post('/api/assess/complete', async (c) => {
     return c.json({ assessmentId, error: 'national-redflags-unavailable', message: 'The national Questionnaire has no published bundle; assessment cannot proceed (AD-19 / SR-13).', advisory: null, validation: { passed: false, failures: ['national-redflags-unavailable'] } }, 503);
   }
   const att = await import('./attestation');
-  const confirmedQ = await loadExamSiteQuestionnaire(c.env.DB, c.env.KV, confirmedExamSite, allowSignedOff);
   const siteRow: any = await c.env.DB.prepare('SELECT bundle_key FROM exam_sites WHERE id = ?').bind(confirmedExamSite).first();
   const validAttestationIds = new Set(
     att.attestationQuestionsFor([nationalQ, ...(confirmedQ ? [confirmedQ.questionnaire] : [])], siteRow?.bundle_key ? [siteRow.bundle_key] : undefined).map((q: any) => q.linkId)
