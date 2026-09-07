@@ -15,7 +15,9 @@ import nationalBundleRaw from "../../../../tooling/criteria-bundle/registry/nati
 import ctCapBundleRaw from "../../../../tooling/criteria-bundle/registry/ct-chest-abdomen-pelvis-adult/1.0.0.json?raw";
 
 const INTERNAL_KEY = "test-internal-key";
-const NOTE = "65yo male w/ unexplained wt loss 5% over past 6/12 with no localising symptoms or signs. Hb mildly low. Ex-smoker.";
+// The note names the exam being requested (KI-53: a requested candidate must
+// carry the verbatim requesting words on the no-exam path).
+const NOTE = "65yo male w/ unexplained wt loss 5% over past 6/12 with no localising symptoms or signs. Hb mildly low. Ex-smoker. Request CT chest abdomen pelvis.";
 
 const SITE_ANSWERS = [
   { linkId: "weightloss.present", value: true, status: "documented", quote: "unexplained wt loss 5%" },
@@ -28,9 +30,14 @@ const SITE_ANSWERS = [
 const PASS1 = {
   answers: [],
   examSites: [
-    { id: "ct_cap", requested: true, quote: null },
+    { id: "ct_cap", requested: true, quote: "CT chest abdomen pelvis" },
     { id: "xr_knee", requested: false, quote: "wt loss" },
   ],
+};
+// KI-53 branch 2: the model marked ct_cap requested but returned no quote.
+const PASS1_NO_QUOTE = {
+  answers: [],
+  examSites: [{ id: "ct_cap", requested: true, quote: null }],
 };
 // Phase 2: full site extraction, scoped to the confirmed exam.
 const PASS2 = { answers: SITE_ANSWERS, examSites: [{ id: "ct_cap", requested: true, quote: null }] };
@@ -84,6 +91,11 @@ beforeAll(async () => {
   (env as any).EXTRACTION_PROVIDER = "anthropic";
   await seedBundle("national-redflags", nationalBundleRaw as string);
   await seedBundle("ct-chest-abdomen-pelvis-adult", ctCapBundleRaw as string);
+  // A second published bundle for an exam phase 1 does not surface, so the
+  // referrer-exam-override discrepancy can be exercised without tripping the
+  // criteria-not-published 409 (content reused — the test only asserts the
+  // override discrepancy and a 200).
+  await seedBundle("us-abdomen-adult", ctCapBundleRaw as string);
 });
 
 afterEach(() => vi.unstubAllGlobals());
@@ -159,6 +171,30 @@ describe("POST /api/assess/propose", () => {
     expect(row.status).toBe("proposed");
     expect(JSON.parse(row.validation_failures).stage).toBe("extract-gate");
   });
+
+  // KI-53 — a requested candidate on the no-exam path must carry the verbatim
+  // requesting words; branch 1 (valid quote -> most likely) is covered above.
+  it("KI-53 branch 2 — requested:true with quote null is shown as a candidate, not most likely, and recorded", async () => {
+    stubAnthropic(PASS1_NO_QUOTE);
+    const res = await propose({ note: NOTE, performedBy: "Dr P (GP)" });
+    expect(res.status).toBe(200);
+    const body: any = await res.json();
+
+    const ctCap = body.examSiteSelection.candidates.find((x: any) => x.id === "ct_cap");
+    expect(ctCap.requested).toBe(false);
+    expect(ctCap.leading).toBe(false);
+    expect(body.examSiteSelection.requestedExamSite).toBeNull();
+    // attestation questions are still served for the exam the card defaults to
+    expect(Array.isArray(body.attestationQuestions)).toBe(true);
+
+    const row = await rowById(body.assessmentId);
+    expect(row.status).toBe("proposed");
+    const vf = JSON.parse(row.validation_failures);
+    expect(vf.stage).toBe("extract");
+    expect(vf.softFailures.join(" ")).toMatch(/exam-candidate-no-quote.*ct_cap/);
+    // the phase-1 record keeps the (downgraded) candidate
+    expect(JSON.parse(row.proposal).modelExamSites[0].requested).toBe(false);
+  });
 });
 
 describe("POST /api/assess/complete", () => {
@@ -231,10 +267,10 @@ describe("POST /api/assess/complete", () => {
     expect((await rowById(assessmentId)).status).toBe("proposed");
   });
 
-  it("a confirmed exam phase 1 did not surface -> referrer-exam-override discrepancy", async () => {
+  it("a confirmed exam phase 1 did not surface (but IS published) -> referrer-exam-override discrepancy", async () => {
     const assessmentId = await proposeOk();
-    // us_abdomen has no seeded bundle — a national-only phase-2 QR is enough to
-    // prove the override discrepancy is recorded.
+    // us_abdomen is published in beforeAll but is not one of PASS1's candidates
+    // (ct_cap + xr_knee) — the override discrepancy is recorded.
     stubAnthropic({ answers: [], examSites: [{ id: "us_abdomen", requested: true, quote: null }] });
     const res = await complete({ assessmentId, confirmedExamSite: "us_abdomen", note: NOTE });
     expect(res.status).toBe(200);
@@ -244,6 +280,19 @@ describe("POST /api/assess/complete", () => {
     expect(d.kept.value).toBe("us_abdomen");
     expect(d.superseded.value).toEqual(expect.arrayContaining(["ct_cap", "xr_knee"]));
     expect(JSON.parse((await rowById(assessmentId)).discrepancies).some((x: any) => x.source === "referrer-exam-override")).toBe(true);
+  });
+
+  it("confirmedExamSite with no published bundle -> 409 criteria-not-published, no row update", async () => {
+    const assessmentId = await proposeOk();
+    stubAnthropic(PASS2);
+    // xr_knee resolves to a bundle key that is not seeded/published in this suite.
+    const res = await complete({ assessmentId, confirmedExamSite: "xr_knee", note: NOTE });
+    expect(res.status).toBe(409);
+    const body: any = await res.json();
+    expect(body.error).toBe("criteria-not-published");
+    expect(body.examSite).toBe("xr_knee");
+    // the assessment is untouched — still completable against a published exam
+    expect((await rowById(assessmentId)).status).toBe("proposed");
   });
 
   it("a phase-2 gate rejection -> 422, row becomes completed with validation_failures", async () => {

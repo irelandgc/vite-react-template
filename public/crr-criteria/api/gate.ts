@@ -16,6 +16,10 @@
 //  4. No forbidden field anywhere (contract rule 14); no answer `status:"retrieved"`.
 //  5. Every examSites[] id is in the supplied published list; every candidate
 //     (requested:false) carries a quote; any quote present satisfies rule 1.
+//     On the no-exam path (`examSuppliedByCaller` false — `/api/assess/propose`),
+//     a `requested:true` entry whose quote is missing or not a verbatim span has
+//     `requested` cleared to a candidate and its id returned in `downgrades`
+//     (KI-53) — a soft failure the route records, not a whole-response rejection.
 //  6. AD-17: no answer to an attestation-category indicator.
 //  7. A truncated model response is a gate failure, not a sparse answer.
 
@@ -62,11 +66,22 @@ export interface GateInput {
   publishedExamSiteIds: string[];
   attestationLinkIds: Set<string>;
   truncated: boolean;
+  // true when the caller supplied `requestedExamSite` (a form deep-link, a PMS
+  // embed): the requested entry may then have `quote: null` because the exam did
+  // not come from the note (contract §"Quotes on examSites[]"). false on the
+  // no-exam path (`/api/assess/propose`): a `requested:true` entry must carry the
+  // verbatim requesting words or it is downgraded to a candidate (KI-53).
+  examSuppliedByCaller: boolean;
 }
 
 export interface GateResult {
   passed: boolean;
   failures: string[];
+  // ids of examSites entries the gate cleared from `requested:true` to a
+  // candidate because they carried no verbatim quote on the no-exam path (KI-53).
+  // The entries in `input.response.examSites` are mutated in place. A non-empty
+  // list does NOT fail the gate — the route records `exam-candidate-no-quote`.
+  downgrades: string[];
 }
 
 const normalise = (s: string) => String(s ?? "").replace(/\s+/g, " ").trim().toLowerCase();
@@ -118,6 +133,7 @@ function forbiddenFieldsIn(obj: any, path = "$"): string[] {
 
 export function runGate(input: GateInput): GateResult {
   const failures: string[] = [];
+  const downgrades: string[] = [];
   const note = normalise(input.redactedNote);
   const inNote = (q: unknown) => typeof q === "string" && q.length > 0 && note.includes(normalise(q));
 
@@ -190,9 +206,20 @@ export function runGate(input: GateInput): GateResult {
   if (!examSites.length) failures.push("response.examSites is missing or empty (contract rule 5 / §10)");
   for (const e of examSites) {
     if (!publishedIds.has(e?.id)) failures.push(`examSites entry "${e?.id}" is not in the supplied published exam/site list (contract rule 5)`);
+
+    // KI-53 — on the no-exam path a `requested:true` entry that carries no
+    // verbatim quote is not the caller-supplied null case: it is downgraded to a
+    // candidate in place and recorded, not rejected. Do this before the candidate
+    // quote checks so the (now requested:false) entry is not also hard-failed.
+    if (e?.requested === true && !input.examSuppliedByCaller && (!e.quote || !inNote(e.quote))) {
+      e.requested = false;
+      downgrades.push(e.id);
+      continue;
+    }
+
     if (e?.requested === false && !e?.quote) failures.push(`examSites candidate "${e?.id}" carries no quote (contract rule 5 / §10)`);
     if (e?.quote && !inNote(e.quote)) failures.push(`examSites quote for "${e?.id}" (${JSON.stringify(e.quote)}) is not in the redacted note (contract rule 5)`);
   }
 
-  return { passed: failures.length === 0, failures };
+  return { passed: failures.length === 0, failures, downgrades };
 }

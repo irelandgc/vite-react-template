@@ -25,9 +25,20 @@
 //   #   - repo-root .dev.vars: ASSESS_PIPELINE_ENABLED=true + the SAME
 //   #     ASSESS_INTERNAL_KEY (the main worker injects x-assess-internal)
 //   # then:
-//   npx wrangler dev -c wrangler.json -c public/crr-criteria/wrangler.json --port 8787
+//   npx wrangler dev -c wrangler.json -c public/crr-criteria/wrangler.json --port 8787 \
+//     --persist-to ./public/crr-criteria/.wrangler/state
 //   # and from repo root:
 //   ASSESS_URL=http://localhost:8787 node tooling/criteria-bundle/benchmark/run-pipeline-e2e.mjs
+//
+// IMPORTANT (KI-54): the two wrangler configs default their local state to
+// DIFFERENT directories — `wrangler.json` (repo root) to `./.wrangler/state`,
+// `public/crr-criteria/wrangler.json` to `./public/crr-criteria/.wrangler/state`.
+// The seed steps and this script's `wrangler d1 execute --config
+// public/crr-criteria/wrangler.json` write to the second; a plain
+// `wrangler dev` reads the first. Launch `wrangler dev` with
+// `--persist-to ./public/crr-criteria/.wrangler/state` (as above) so the server,
+// the seeds and this script share one D1 + KV, or the pipeline 503s / 404s on a
+// bundle that was "seeded" into the other database.
 //
 // Writes benchmark/results/<date>-pipeline-e2e-<modelId>.md.
 

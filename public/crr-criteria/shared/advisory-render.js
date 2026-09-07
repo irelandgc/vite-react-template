@@ -13,14 +13,22 @@
 //     published wording; "what to add" = each missingInformation linkId rendered
 //     as the published Questionnaire item text (D6: no suggested wording, no
 //     prose); cross-exam recommendations from alternatives[]; page references;
-//     the AD-17 attestation questions. NO priority codes (GEN-004).
+//     the AD-17 attestation questions, each with the answer the referrer gave
+//     ("— you answered Yes / No / Not assessed"). When a redirect was driven by
+//     an attested exclusion the redirect is preceded by "Because you indicated:
+//     <published item text>"; every attested-Yes item gets "State this in your
+//     referral." The ONLY strings this view shows that do not come from the
+//     bundle / Advisory / Questionnaire are the section labels of the renderer's
+//     own chrome and these three connectives: "you answered", "Because you
+//     indicated:", "State this in your referral." NO priority codes (GEN-004).
 //   triager view — all of the above, plus priority codes, the rule trace,
 //     evidence status + quote per indicator, discrepancies,
-//     inferredExcludedByStrictStandard, unconfirmed exclusions and version stamps.
+//     inferredExcludedByStrictStandard, unconfirmed exclusions and version stamps;
+//     the attestation rows also show the answer and who attested it.
 //
 // Usage:
 //   import { resolveAdvisory, advisoryHtml } from './advisory-render.js';
-//   const model = resolveAdvisory(assessResponse, 'referrer', { attestationQuestions, mergedResponse });
+//   const model = resolveAdvisory(assessResponse, 'referrer', { attestationQuestions, attestationAnswers, mergedResponse });
 //   container.innerHTML = advisoryHtml(model);
 
 const PRIORITY_CODE_SYSTEM = "http://crr.health.nz/fhir/CodeSystem/priority-code";
@@ -187,14 +195,37 @@ export function resolveAdvisory(response, view, opts) {
       })
     : [];
 
+  // linkId -> { source, attestedBy } from the merged QR (AD-23), for the triager
+  // attestation rows and for detecting an attestation-driven redirect.
+  const attEvidence = new Map();
+  for (const r of evidenceRows(opts.mergedResponse)) {
+    if (r.source || r.attestedBy) attEvidence.set(r.linkId, { source: r.source, attestedBy: r.attestedBy });
+  }
+  const answers = (opts && opts.attestationAnswers) || {};
+  const ANSWER_LABEL = { yes: "Yes", no: "No", "not-assessed": "Not assessed" };
+
   const attestationQuestions = Array.isArray(opts.attestationQuestions)
-    ? opts.attestationQuestions.map((q) => ({
-        linkId: q.linkId,
-        // one wording per view — the renderer never shows both
-        text: (q.wording && (isTriager ? q.wording.triager : q.wording.referrer)) || q.text,
-        sourcePages: q.sourcePages || [],
-      }))
+    ? opts.attestationQuestions.map((q) => {
+        const raw = answers[q.linkId] || null;
+        return {
+          linkId: q.linkId,
+          // one wording per view — the renderer never shows both
+          text: (q.wording && (isTriager ? q.wording.triager : q.wording.referrer)) || q.text,
+          // the plain published item text (used for "Because you indicated: …")
+          canonicalText: q.text || (q.wording && q.wording.referrer) || q.linkId,
+          sourcePages: q.sourcePages || [],
+          answer: raw,                                   // 'yes' | 'no' | 'not-assessed' | null
+          answerLabel: raw ? ANSWER_LABEL[raw] || raw : null,
+          attestedBy: (attEvidence.get(q.linkId) || {}).attestedBy || null,
+        };
+      })
     : [];
+
+  // An exclusion the referrer attested "Yes" that produced a redirect — the
+  // referrer view prefaces the redirect list with the published item text.
+  const drivingExclusion = redirects.length
+    ? (attestationQuestions.find((q) => q.linkId.indexOf("excl.") === 0 && q.answer === "yes") || null)
+    : null;
 
   const model = {
     view,
@@ -202,6 +233,9 @@ export function resolveAdvisory(response, view, opts) {
     determination,
     national,
     redirects,
+    // published item text of the attested exclusion that drove the redirect
+    // (referrer view only); null when no redirect or none was attestation-driven.
+    attestationDrivenReason: !isTriager && drivingExclusion ? drivingExclusion.canonicalText : null,
     whatToAdd,
     alternatives,
     attestationQuestions,
@@ -226,7 +260,7 @@ export function advisoryHtml(model) {
   const out = [];
   const section = (label, body) => { if (body) out.push(`<section class="adv-section"><h3>${esc(label)}</h3>${body}</section>`); };
   const list = (items) => items.length ? `<ul>${items.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>` : "";
-  const pageRef = (p) => (p ? ` <span class="adv-page">p${esc(p)}</span>` : "");
+  const pageRef = (p) => (p ? ` <span class="adv-page">page ${esc(p)}</span>` : "");
 
   if (model.national.stopped) {
     section(
@@ -243,7 +277,12 @@ export function advisoryHtml(model) {
   if (model.view === "triager" && model.determination.priorityCode) detBody += `<p class="adv-priority-code">Priority code: ${esc(model.determination.priorityCode)}</p>`;
   section("Determination", detBody);
 
-  if (model.redirects.length) section("Alternative management / redirect", list(model.redirects));
+  if (model.redirects.length) {
+    const because = model.attestationDrivenReason
+      ? `<p class="adv-because">Because you indicated: ${esc(model.attestationDrivenReason)}</p>`
+      : "";
+    section("Alternative management / redirect", because + list(model.redirects));
+  }
 
   if (model.whatToAdd.length) {
     section(
@@ -260,10 +299,18 @@ export function advisoryHtml(model) {
   }
 
   if (model.attestationQuestions.length) {
-    section(
-      "Referrer attestation",
-      `<ul>${model.attestationQuestions.map((q) => `<li data-linkid="${esc(q.linkId)}">${esc(q.text)}</li>`).join("")}</ul>`,
-    );
+    const li = (q) => {
+      if (model.view === "triager") {
+        const ans = q.answerLabel ? ` — ${esc(q.answerLabel)}` : "";
+        const by = q.attestedBy ? ` (attested by ${esc(q.attestedBy)})` : "";
+        return `<li data-linkid="${esc(q.linkId)}">${esc(q.text)}${ans}${by}</li>`;
+      }
+      // referrer — the published question, the answer, and a call to record a Yes
+      const ans = q.answerLabel ? ` — <span class="adv-attn-answer">you answered ${esc(q.answerLabel)}</span>` : "";
+      const say = q.answer === "yes" ? ` <span class="adv-attn-say">State this in your referral.</span>` : "";
+      return `<li data-linkid="${esc(q.linkId)}">${esc(q.text)}${ans}${say}</li>`;
+    };
+    section("Referrer attestation", `<ul>${model.attestationQuestions.map(li).join("")}</ul>`);
   }
 
   if (model.view === "triager") {

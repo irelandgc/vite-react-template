@@ -256,6 +256,9 @@ textarea.note::placeholder{color:#8b919a}
 .adv-timeframe{font-weight:600;color:var(--accent)}
 .adv-priority-code{font-family:var(--mono);font-size:11px;color:var(--mid)}
 .adv-page{font-size:10px;font-weight:700;color:var(--teal);background:var(--lite);padding:1px 5px;border-radius:2px;border:1px solid var(--rule);margin-left:4px}
+.adv-because{font-weight:600;color:var(--navy)}
+.adv-attn-answer{font-weight:600;color:var(--navy)}
+.adv-attn-say{color:var(--accent);font-weight:600}
 .adv-evidence,.adv-trace{width:100%;border-collapse:collapse;font-size:11px}
 .adv-evidence th,.adv-evidence td,.adv-trace td{border:1px solid var(--rule);padding:3px 6px;text-align:left;vertical-align:top}
 .adv-versions{font-size:11px;margin:0}
@@ -3447,11 +3450,12 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const getParam = (n) => { try { return new URL(location.href).searchParams.get(n); } catch { return null; } };
 
 let STATUS = null;
-let EXAM_SITES = [];
+let EXAM_SITES = [];                  // [{ id, title, live }]
 let attestationQuestions = [];        // from /api/assess/attestation-questions
 const attestationAnswers = {};        // linkId -> 'yes' | 'no' | 'not-assessed'
 let currentView = 'referrer';         // referrer | triager
 let lastAssess = null;                // last /api/assess response body
+let pipeMode = null;                  // 'exam' (exam supplied up front) | 'propose' (two-phase)
 
 async function boot() {
   try {
@@ -3474,8 +3478,41 @@ async function boot() {
 async function loadExamSites() {
   try {
     const r = await fetch('/crr-api/api/bundles');
-    if (r.ok) { const j = await r.json(); EXAM_SITES = (j.examSites || []).map((e) => ({ id: e.id, title: e.title })); }
+    if (r.ok) { const j = await r.json(); EXAM_SITES = (j.examSites || []).map((e) => ({ id: e.id, title: e.title, live: e.live === 1 || e.live === true })); }
   } catch { /* the select falls back to a free-text id */ }
+}
+
+// The identity capture (crr-triage-user-name / -role) the legacy page's modal
+// sets. In integrated use the calling application has already recorded it; in
+// standalone use there is none, and the pipeline flow shows an optional field.
+function identityCaptured() {
+  try {
+    return !!((localStorage.getItem('crr-triage-user-name') || '').trim() && (localStorage.getItem('crr-triage-user-role') || '').trim());
+  } catch { return false; }
+}
+
+// performedBy for the assessment. A name typed into the optional pipeline field,
+// else the legacy-captured name (+ role), else a fixed non-name marker — never a
+// placeholder that reads as a person (AD-17).
+function resolvePerformedBy() {
+  let name = '', role = '';
+  try { name = (localStorage.getItem('crr-triage-user-name') || '').trim(); role = (localStorage.getItem('crr-triage-user-role') || '').trim(); } catch {}
+  const el = document.getElementById('pipeIdentity');
+  if (el && el.value.trim()) name = el.value.trim();
+  if (!name) return 'standalone — identity not captured';
+  return role ? `${name} (${role})` : name;
+}
+
+// `<option>` list for an exam/site select. An exam with no published bundle is
+// shown disabled with "(criteria not yet published)" (two-phase browser
+// findings) so it cannot be confirmed.
+function examOptions(list, selectedId) {
+  return list.map((o) => {
+    const dis = o.live === false ? ' disabled' : '';
+    const suffix = o.live === false ? ' — criteria not yet published' : '';
+    const sel = o.id === selectedId ? ' selected' : '';
+    return `<option value="${esc(o.id)}"${sel}${dis}>${esc(o.title)} (${esc(o.id)})${suffix}</option>`;
+  }).join('');
 }
 
 function injectSettings() {
@@ -3487,8 +3524,13 @@ function injectSettings() {
   const box = document.createElement('div');
   box.className = 'pipe-settings';
   const opts = EXAM_SITES.length
-    ? `<select id="pipeExam"><option value="">— none: propose the exam from the note —</option>${EXAM_SITES.map((e) => `<option value="${esc(e.id)}">${esc(e.title)} (${esc(e.id)})</option>`).join('')}</select>`
+    ? `<select id="pipeExam"><option value="">— none: propose the exam from the note —</option>${examOptions(EXAM_SITES, null)}</select>`
     : `<input type="text" id="pipeExam" placeholder="published exam/site id, e.g. ct_cap — or leave blank">`;
+  // Standalone use: an optional name field, remembered on this device. Hidden
+  // when the calling application has already captured an identity.
+  const identity = identityCaptured() ? '' : `
+    <label>Your name <span style="font-weight:400;color:var(--mid)">(optional — remembered on this device)</span></label>
+    <input type="text" id="pipeIdentity" placeholder="Your name">`;
   box.innerHTML = `
     <label>Requested exam / site <span style="font-weight:400;color:var(--mid)">(optional)</span></label>
     ${opts}
@@ -3503,8 +3545,15 @@ function injectSettings() {
       <button data-view="referrer" class="active">Referrer</button>
       <button data-view="triager">Triager</button>
     </div>
+    ${identity}
     <div id="pipeAttn"></div>`;
   host.appendChild(box);
+
+  const idEl = document.getElementById('pipeIdentity');
+  if (idEl) {
+    try { idEl.value = localStorage.getItem('crr-triage-user-name') || ''; } catch {}
+    idEl.addEventListener('input', () => { try { localStorage.setItem('crr-triage-user-name', idEl.value.trim()); } catch {} });
+  }
 
   document.getElementById('pipeExam').addEventListener('change', onExamChange);
   document.querySelectorAll('#pipeRoleToggle button').forEach((b) => b.addEventListener('click', () => {
@@ -3518,6 +3567,7 @@ function injectSettings() {
 
 async function onExamChange() {
   const id = document.getElementById('pipeExam').value.trim();
+  pipeMode = id ? 'exam' : null;
   attestationQuestions = [];
   Object.keys(attestationAnswers).forEach((k) => delete attestationAnswers[k]);
   if (id) {
@@ -3529,21 +3579,39 @@ async function onExamChange() {
   renderAttestations();
 }
 
+// Referrer-view wording (browser findings): the referrer heading carries no
+// "(AD-17)" and no "answered by the named user, never pre-ticked" — that stays
+// in the triager view. Source pages read "National criteria, page N".
+function attnHeading() {
+  return currentView === 'triager'
+    ? 'Referrer attestation — the triager answers from the referral letter; never pre-ticked (AD-17)'
+    : 'Please answer these — they are part of the criteria and are recorded with your assessment.';
+}
+function attnSourceLine(q) {
+  if (!q.sourcePages || !q.sourcePages.length) return '';
+  const pages = q.sourcePages.map((p) => 'page ' + String(p).replace(/^p/i, '')).join(', ');
+  return `<div class="attn-src">National criteria, ${esc(pages)}</div>`;
+}
+function attnQuestionsHtml() {
+  return attestationQuestions.map((q) => {
+    const w = q.wording ? (currentView === 'triager' ? q.wording.triager : q.wording.referrer) : q.text;
+    const cur = attestationAnswers[q.linkId] || '';
+    const opt = (v, lbl) => `<button type="button" data-lid="${esc(q.linkId)}" data-v="${v}" class="${cur === v ? 'active' : ''}">${lbl}</button>`;
+    return `<div class="attn-q">
+        <div class="attn-text">${esc(w)}</div>
+        ${attnSourceLine(q)}
+        <div class="attn-opts">${opt('yes', 'Yes')}${opt('no', 'No')}${opt('not-assessed', 'Not assessed')}</div>
+      </div>`;
+  }).join('');
+}
+
 function renderAttestations() {
   const host = document.getElementById('pipeAttn');
   if (!host) return;
-  if (!attestationQuestions.length) { host.innerHTML = ''; return; }
-  host.innerHTML = `<label>Referrer attestation — answered by the named user, never pre-ticked (AD-17)</label>` +
-    attestationQuestions.map((q) => {
-      const w = q.wording ? (currentView === 'triager' ? q.wording.triager : q.wording.referrer) : q.text;
-      const cur = attestationAnswers[q.linkId] || '';
-      const opt = (v, lbl) => `<button data-lid="${esc(q.linkId)}" data-v="${v}" class="${cur === v ? 'active' : ''}">${lbl}</button>`;
-      return `<div class="attn-q">
-        <div class="attn-text">${esc(w)}</div>
-        ${q.sourcePages && q.sourcePages.length ? `<div class="attn-src">Source: ${q.sourcePages.map(esc).join(', ')}</div>` : ''}
-        <div class="attn-opts">${opt('yes', 'Yes')}${opt('no', 'No')}${opt('not-assessed', 'Not assessed')}</div>
-      </div>`;
-    }).join('');
+  // Two-phase (propose) mode renders the attestation block in the proposal card
+  // only — never also in the left panel (one attestation block).
+  if (pipeMode !== 'exam' || !attestationQuestions.length) { host.innerHTML = ''; return; }
+  host.innerHTML = `<label>${esc(attnHeading())}</label>` + attnQuestionsHtml();
   host.querySelectorAll('.attn-opts button').forEach((b) => b.addEventListener('click', () => {
     attestationAnswers[b.dataset.lid] = b.dataset.v;
     renderAttestations();
@@ -3616,23 +3684,24 @@ function pipelineRunCheck() {
   if (!note) return;
   const requestedExamSite = document.getElementById('pipeExam').value.trim();
   const docStd = document.getElementById('pipeDocStd').value || 'strict';
+  // Identity is optional on the standalone page: from the pipeline name field or
+  // the legacy capture, else a fixed non-name marker (no blocking modal).
+  const performedBy = resolvePerformedBy();
 
-  window.getOrPromptUserIdentity(function (name, role) {
-    const performedBy = role ? `${name} (${role})` : name;
-    if (requestedExamSite) {
-      // Exam supplied — the one-call wrapper, unchanged.
-      submit({
-        note, requestedExamSite,
-        context: collectContext(),
-        attestations: collectAttestations(performedBy),
-        documentationStandard: docStd,
-        performedBy,
-      });
-    } else {
-      // No exam — two-phase: propose the exam from the note, then complete.
-      proposeFlow({ note, context: collectContext(), documentationStandard: docStd, performedBy });
-    }
-  });
+  if (requestedExamSite) {
+    // Exam supplied — the one-call wrapper, unchanged.
+    pipeMode = 'exam';
+    submit({
+      note, requestedExamSite,
+      context: collectContext(),
+      attestations: collectAttestations(performedBy),
+      documentationStandard: docStd,
+      performedBy,
+    });
+  } else {
+    // No exam — two-phase: propose the exam from the note, then complete.
+    proposeFlow({ note, context: collectContext(), documentationStandard: docStd, performedBy });
+  }
 }
 
 async function proposeFlow(body) {
@@ -3647,6 +3716,8 @@ async function proposeFlow(body) {
   }
   if (!res.ok || (json.validation && json.validation.passed === false)) { renderTypedError(res.status, json); return; }
 
+  pipeMode = 'propose';
+  renderAttestations();                // clears the left-panel block for this mode
   lastPropose = { ...json, note: body.note, context: body.context, documentationStandard: body.documentationStandard, performedBy: body.performedBy };
   attestationQuestions = json.attestationQuestions || [];
   Object.keys(attestationAnswers).forEach((k) => delete attestationAnswers[k]);
@@ -3658,6 +3729,10 @@ async function proposeFlow(body) {
 
 function renderProposal(confirmedId, cands) {
   const optList = EXAM_SITES.length ? EXAM_SITES : cands.map((c) => ({ id: c.id, title: c.id }));
+  // Never default the confirm select to an unpublished (disabled) exam.
+  const usable = (id) => { const o = optList.find((x) => x.id === id); return o && o.live !== false; };
+  const firstLive = optList.find((o) => o.live !== false);
+  const selId = usable(confirmedId) ? confirmedId : (firstLive ? firstLive.id : confirmedId);
   const p = document.getElementById('aiPanel');
   p.innerHTML =
     `<div class="panel"><div style="padding:12px 14px">
@@ -3665,7 +3740,7 @@ function renderProposal(confirmedId, cands) {
       ${cands.length ? `<ul style="margin:0 0 10px;padding-left:16px;font-size:12px;line-height:1.6;color:var(--ink)">${cands.map((c) => `<li>${esc((optList.find((o) => o.id === c.id) || {}).title || c.id)}${c.leading ? ' <strong>(most likely)</strong>' : ''}${c.quote ? ` — <span style="color:var(--mid)">&ldquo;${esc(c.quote)}&rdquo;</span>` : ''}</li>`).join('')}</ul>`
         : `<div style="font-size:12px;color:var(--mid);margin-bottom:10px">The note did not point clearly at an exam — choose one.</div>`}
       <label style="font-size:11px;font-weight:600;color:var(--navy);display:block;margin-bottom:3px">Confirm exam / site</label>
-      <select id="pipeConfirmExam" style="width:100%;margin-bottom:10px">${optList.map((o) => `<option value="${esc(o.id)}"${o.id === confirmedId ? ' selected' : ''}>${esc(o.title)} (${esc(o.id)})</option>`).join('')}</select>
+      <select id="pipeConfirmExam" style="width:100%;margin-bottom:10px">${examOptions(optList, selId)}</select>
       <div id="pipeProposalAttn"></div>
       <button class="btn-run-ai" style="margin-top:8px;width:100%" onclick="window.pipelineComplete()">Confirm &amp; assess &rsaquo;</button>
     </div></div>`;
@@ -3690,17 +3765,7 @@ function renderProposalAttestations() {
   const host = document.getElementById('pipeProposalAttn');
   if (!host) return;
   if (!attestationQuestions.length) { host.innerHTML = ''; return; }
-  host.innerHTML = `<label style="font-size:11px;font-weight:600;color:var(--navy);display:block;margin:4px 0 3px">Referrer attestation — answered by ${esc(currentView === 'triager' ? 'the triager, from the letter' : 'the named referrer')}, never pre-ticked (AD-17)</label>` +
-    attestationQuestions.map((q) => {
-      const w = q.wording ? (currentView === 'triager' ? q.wording.triager : q.wording.referrer) : q.text;
-      const cur = attestationAnswers[q.linkId] || '';
-      const opt = (v, lbl) => `<button type="button" data-lid="${esc(q.linkId)}" data-v="${v}" class="${cur === v ? 'active' : ''}">${lbl}</button>`;
-      return `<div class="attn-q">
-        <div class="attn-text">${esc(w)}</div>
-        ${q.sourcePages && q.sourcePages.length ? `<div class="attn-src">Source: ${q.sourcePages.map(esc).join(', ')}</div>` : ''}
-        <div class="attn-opts">${opt('yes', 'Yes')}${opt('no', 'No')}${opt('not-assessed', 'Not assessed')}</div>
-      </div>`;
-    }).join('');
+  host.innerHTML = `<label style="font-size:11px;font-weight:600;color:var(--navy);display:block;margin:4px 0 3px">${esc(attnHeading())}</label>` + attnQuestionsHtml();
   host.querySelectorAll('.attn-opts button').forEach((b) => b.addEventListener('click', () => {
     attestationAnswers[b.dataset.lid] = b.dataset.v;
     renderProposalAttestations();
@@ -3760,7 +3825,7 @@ function renderTypedError(status, json) {
   const failures = (json.validation && json.validation.failures) || [];
   document.getElementById('aiPanel').innerHTML = `<div class="panel"><div style="padding:12px 14px">
     <div style="background:var(--fail-bg);border-left:3px solid #c62828;border-radius:2px;padding:10px 12px;font-size:12px;color:var(--fail);margin-bottom:8px">
-      <strong>Assessment not produced (${esc(status)})</strong><br>${esc(json.error || json.message || 'validation failed')}</div>
+      <strong>Assessment not produced (${esc(status)})</strong><br>${esc(json.message || json.error || 'validation failed')}</div>
     ${failures.length ? `<div style="font-size:11px;color:var(--mid);margin-bottom:4px">Validation failures:</div><ul style="font-size:11px;color:var(--ink);margin:0;padding-left:16px">${failures.map((f) => `<li>${esc(typeof f === 'string' ? f : JSON.stringify(f))}</li>`).join('')}</ul>` : ''}
     <div style="font-size:11px;color:var(--mid);margin-top:8px">Assessment id: <span style="font-family:var(--mono)">${esc(json.assessmentId || '—')}</span> · this failure is recorded.</div>
   </div></div>`;
@@ -3769,6 +3834,7 @@ function renderTypedError(status, json) {
 function renderAdvisory() {
   const model = resolveAdvisory(lastAssess, currentView, {
     attestationQuestions,
+    attestationAnswers,
     mergedResponse: lastAssess.mergedQuestionnaireResponse || null,
   });
   const html = advisoryHtml(model);

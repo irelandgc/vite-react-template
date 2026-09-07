@@ -35,9 +35,13 @@ function gate(vec: any, extra: Partial<Parameters<typeof runGate>[0]> = {}) {
     publishedExamSiteIds: PUBLISHED,
     attestationLinkIds: ATTESTATION,
     truncated: false,
+    examSuppliedByCaller: true,
     ...extra,
   });
 }
+
+const NOTE = "65yo male w/ unexplained wt loss 5% over past 6/12 with no localising symptoms or signs. Hb mildly low. Requesting CT chest abdomen pelvis.";
+const QR_OK = { resourceType: "QuestionnaireResponse", item: [] };
 
 describe("validation gate — 4a vectors", () => {
   for (const vec of vectors) {
@@ -91,5 +95,57 @@ describe("validation gate — truncation", () => {
     const res = gate(JSON.parse(v01 as string), { truncated: true });
     expect(res.passed).toBe(false);
     expect(res.failures.some((f) => f.includes("truncated"))).toBe(true);
+  });
+});
+
+describe("validation gate — KI-53 requested entry without a verbatim quote (no-exam path)", () => {
+  const run = (examSites: any[], examSuppliedByCaller: boolean) =>
+    runGate({
+      response: { examSites, questionnaireResponse: QR_OK },
+      redactedNote: NOTE,
+      questionnaires,
+      publishedExamSiteIds: PUBLISHED,
+      attestationLinkIds: ATTESTATION,
+      truncated: false,
+      examSuppliedByCaller,
+    });
+
+  it("branch 1 — requested:true with a verbatim quote stays requested, no downgrade", () => {
+    const examSites = [{ id: "ct_cap", requested: true, quote: "CT chest abdomen pelvis" }];
+    const res = run(examSites, false);
+    expect(res.passed).toBe(true);
+    expect(res.downgrades).toEqual([]);
+    expect(examSites[0].requested).toBe(true);
+  });
+
+  it("branch 2 — requested:true with quote null is cleared to a candidate and recorded", () => {
+    const examSites = [{ id: "ct_cap", requested: true, quote: null }];
+    const res = run(examSites, false);
+    expect(res.passed).toBe(true); // soft — not a whole-response rejection
+    expect(res.failures).toEqual([]);
+    expect(res.downgrades).toEqual(["ct_cap"]);
+    expect(examSites[0].requested).toBe(false); // mutated in place
+  });
+
+  it("branch 2 — requested:true with a quote that is not in the note is also downgraded", () => {
+    const examSites = [{ id: "ct_cap", requested: true, quote: "MRI whole spine" }];
+    const res = run(examSites, false);
+    expect(res.passed).toBe(true);
+    expect(res.downgrades).toEqual(["ct_cap"]);
+    expect(examSites[0].requested).toBe(false);
+  });
+
+  it("caller supplied the exam — a null quote on the requested entry is left alone (contract)", () => {
+    const examSites = [{ id: "ct_cap", requested: true, quote: null }];
+    const res = run(examSites, true);
+    expect(res.passed).toBe(true);
+    expect(res.downgrades).toEqual([]);
+    expect(examSites[0].requested).toBe(true);
+  });
+
+  it("a downgraded entry is not then hard-failed as a quoteless candidate", () => {
+    const examSites = [{ id: "ct_cap", requested: true, quote: null }];
+    const res = run(examSites, false);
+    expect(res.failures).toEqual([]);
   });
 });
