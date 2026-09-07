@@ -2005,7 +2005,7 @@ type ExtractionCore =
       // succeeds.
       softFailures: string[];
     }
-  | { ok: false; kind: 'gate'; status: 422; meta: ExtractionMeta; failures: string[]; redacted: string }
+  | { ok: false; kind: 'gate'; status: 422; meta: ExtractionMeta; failures: string[]; redacted: string; stage?: 'pre-extract' | 'extract-gate'; message?: string }
   | { ok: false; kind: 'error'; status: number; body: any };
 
 async function runExtractionCore(
@@ -2020,11 +2020,32 @@ async function runExtractionCore(
 
   // 1. PII gate — before prompt assembly and any model call.
   const { redacted, patternsHit } = pii.redact(opts.note);
+  // meta is built now (model fields null) so a pre-extract failure can still
+  // write an `assessments` row — the failure is part of the record (KI-55).
+  const meta: ExtractionMeta = {
+    promptVersion: promptMod.PROMPT_VERSION,
+    equivalenceListVersion: promptMod.EQUIVALENCE_LIST_VERSION,
+    contractVersion: promptMod.CONTRACT_VERSION,
+    requestedExamSiteQuestionnaireVersion: null,
+    modelId: null,
+    provider: null,
+    redaction: { patternsHit },
+  };
   if (pii.residualNhi(redacted).length) {
     return { ok: false, kind: 'error', status: 422, body: { error: 'pii-residual', message: 'An NHI-shaped value survived redaction — the request was not sent.', redaction: { patternsHit } } };
   }
   if (pii.isInsufficientAfterRedaction(redacted)) {
-    return { ok: false, kind: 'error', status: 422, body: { error: 'insufficient-after-redaction', message: 'After removing patient-identifiable information there is not enough clinical detail to extract.', redaction: { patternsHit } } };
+    // KI-55 — split the message: the PII-removal wording only when redaction
+    // actually removed something; otherwise it is just a short note. Either way
+    // a row is written (stage 'pre-extract') so "this failure is recorded" holds.
+    const piiRemoved = patternsHit.length > 0;
+    return {
+      ok: false, kind: 'gate', status: 422, meta, redacted, stage: 'pre-extract',
+      message: piiRemoved
+        ? 'After removing patient-identifiable information there is not enough clinical detail to assess.'
+        : "The note doesn't contain enough clinical detail to assess. Describe the presentation, examination findings and investigations.",
+      failures: [piiRemoved ? 'insufficient-clinical-detail-after-redaction' : 'insufficient-clinical-detail'],
+    };
   }
 
   // 2. Questionnaires — national (fail closed, AD-19) + the requested exam/site.
@@ -2038,6 +2059,7 @@ async function runExtractionCore(
     const r = await loadExamSiteQuestionnaire(c.env.DB, c.env.KV, opts.requestedExamSite, allowSignedOff);
     if (r) { requestedQ = r.questionnaire; requestedQVersion = r.version; }
   }
+  meta.requestedExamSiteQuestionnaireVersion = requestedQVersion;
   const examSiteList = await loadExamSiteList(c.env.DB);
 
   // 3. Strip attestation-category items (AD-17) so the model never sees them,
@@ -2067,15 +2089,8 @@ async function runExtractionCore(
     try { toolInput = JSON.parse(extractJsonObject(modelResult.text)); } catch (_) { toolInput = null; }
   }
   const truncated = providerMod.isTruncated(modelResult.stopReason);
-  const meta: ExtractionMeta = {
-    promptVersion: promptMod.PROMPT_VERSION,
-    equivalenceListVersion: promptMod.EQUIVALENCE_LIST_VERSION,
-    contractVersion: promptMod.CONTRACT_VERSION,
-    requestedExamSiteQuestionnaireVersion: requestedQVersion,
-    modelId: modelResult.modelId,
-    provider: modelResult.provider,
-    redaction: { patternsHit },
-  };
+  meta.modelId = modelResult.modelId;
+  meta.provider = modelResult.provider;
 
   // 6. Build the FHIR QR, then run the gate on it (evidence extension by
   //    construction — SR-09).
@@ -2133,7 +2148,25 @@ app.post('/api/assess/extract', async (c) => {
 
   const core = await runExtractionCore(c, { note, context, requestedExamSite });
   if (!core.ok) {
-    if (core.kind === 'gate') return c.json({ ...core.meta, validation: { passed: false, failures: core.failures } }, 422);
+    if (core.kind === 'gate') {
+      if (core.stage === 'pre-extract') {
+        // terminal failure before the model call — write the row here so
+        // "this failure is recorded" holds (KI-55).
+        const engine = await import('./engine');
+        const assessmentId = await writeAssessmentRow(c.env.DB, c.env, {
+          bundleVersions: {}, engineVersion: engine.ENGINE_VERSION, vocabularyVersion: null,
+          promptVersion: core.meta.promptVersion, equivalenceListVersion: core.meta.equivalenceListVersion,
+          modelId: null, modelProvider: null,
+          documentationStandard: (typeof body.documentationStandard === 'string' && body.documentationStandard) || 'strict',
+          questionnaireResponse: null, advisory: null, discrepancies: null,
+          validationFailures: { stage: 'pre-extract', failures: core.failures },
+          redactionPatterns: core.meta.redaction.patternsHit, attestations: null, examSiteSelection: null,
+          performedBy: c.req.header('x-assess-identity') || null, regressionRunId: null, noteRedacted: core.redacted,
+        });
+        return c.json({ assessmentId, ...core.meta, message: core.message, validation: { passed: false, failures: core.failures } }, 422);
+      }
+      return c.json({ ...core.meta, validation: { passed: false, failures: core.failures } }, 422);
+    }
     return c.json(core.body, core.status as any);
   }
 
@@ -2389,11 +2422,11 @@ app.post('/api/assess', async (c) => {
         promptVersion: core.meta.promptVersion, equivalenceListVersion: core.meta.equivalenceListVersion,
         modelId: core.meta.modelId, modelProvider: core.meta.provider, documentationStandard: docStd,
         questionnaireResponse: null, advisory: null, discrepancies: null,
-        validationFailures: { stage: 'extract-gate', failures: core.failures },
+        validationFailures: { stage: core.stage ?? 'extract-gate', failures: core.failures },
         redactionPatterns: core.meta.redaction.patternsHit, attestations: null, examSiteSelection: null,
         performedBy, regressionRunId, noteRedacted: core.redacted,
       });
-      return c.json({ assessmentId, advisory: null, versions: versionsBlock(core.meta, engine.ENGINE_VERSION, null, {}), examSiteSelection: null, discrepancies: [], validation: { passed: false, failures: core.failures } }, 422);
+      return c.json({ assessmentId, message: core.message, advisory: null, versions: versionsBlock(core.meta, engine.ENGINE_VERSION, null, {}), examSiteSelection: null, discrepancies: [], validation: { passed: false, failures: core.failures } }, 422);
     }
     if (core.body?.error === 'national-redflags-unavailable') {
       const assessmentId = await writeAssessmentRow(c.env.DB, c.env, {
@@ -2466,12 +2499,12 @@ app.post('/api/assess/propose', async (c) => {
         promptVersion: core.meta.promptVersion, equivalenceListVersion: core.meta.equivalenceListVersion,
         modelId: core.meta.modelId, modelProvider: core.meta.provider, documentationStandard: docStd,
         questionnaireResponse: null, advisory: null, discrepancies: null,
-        validationFailures: { stage: 'extract-gate', failures: core.failures },
+        validationFailures: { stage: core.stage ?? 'extract-gate', failures: core.failures },
         redactionPatterns: core.meta.redaction.patternsHit, attestations: null, examSiteSelection: null,
         performedBy, regressionRunId: null, noteRedacted: core.redacted,
         status: 'proposed', proposal: { context, meta: core.meta, modelExamSites: [] },
       });
-      return c.json({ assessmentId, examSiteSelection: null, attestationQuestions: [], redaction: core.meta.redaction, validation: { passed: false, failures: core.failures } }, 422);
+      return c.json({ assessmentId, message: core.message, examSiteSelection: null, attestationQuestions: [], redaction: core.meta.redaction, validation: { passed: false, failures: core.failures } }, 422);
     }
     return c.json(core.body, core.status as any);
   }
@@ -2625,11 +2658,11 @@ app.post('/api/assess/complete', async (c) => {
       await c.env.DB.prepare(
         `UPDATE assessments SET status = 'completed', validation_failures = ?, prompt_version = ?, equivalence_list_version = ?, model_id = ?, model_provider = ?, redaction_patterns = ?, documentation_standard = ?, advisory = 'null' WHERE id = ? AND status = 'proposed'`
       ).bind(
-        JSON.stringify({ stage: 'extract-gate', failures: core.failures }),
+        JSON.stringify({ stage: core.stage ?? 'extract-gate', failures: core.failures }),
         core.meta.promptVersion, core.meta.equivalenceListVersion, core.meta.modelId, core.meta.provider,
         JSON.stringify(core.meta.redaction.patternsHit), docStd, assessmentId,
       ).run();
-      return c.json({ assessmentId, advisory: null, versions: versionsBlock(core.meta, engine.ENGINE_VERSION, null, {}), examSiteSelection: null, discrepancies: [], validation: { passed: false, failures: core.failures } }, 422);
+      return c.json({ assessmentId, message: core.message, advisory: null, versions: versionsBlock(core.meta, engine.ENGINE_VERSION, null, {}), examSiteSelection: null, discrepancies: [], validation: { passed: false, failures: core.failures } }, 422);
     }
     // PII / provider / national errors — the row stays 'proposed' (retryable; it
     // purges if abandoned). Same typed error the wrapper returns.
@@ -2773,7 +2806,7 @@ app.post('/api/assess/compare-extract', async (c) => {
     const core = await runExtractionCore(c, { note, context, requestedExamSite, providerEnv });
     if (!core.ok) {
       const err = core.kind === 'gate'
-        ? { error: 'extract-gate', failures: core.failures }
+        ? { error: core.stage ?? 'extract-gate', failures: core.failures, message: core.message }
         : { error: core.body?.error ?? 'extract-failed', message: core.body?.message };
       return { provider: spec.provider, model: spec.model ?? null, ok: false, ...err, answers: [], determination: null, priorityCode: null, examSites: [] };
     }
