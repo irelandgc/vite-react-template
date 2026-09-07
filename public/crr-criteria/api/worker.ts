@@ -89,6 +89,29 @@ app.get('/api/criteria', async (c) => {
   }
 });
 
+// Locate a published id in the criteria snapshot: a top-level exam, or a site
+// under one, across the adult (`exams`) and paediatric (`paedExams`) cohorts.
+// Used by GET /api/criteria/:id to stamp `examId` + `cohort` on every response
+// (chore/arch-mig-viewer-findings — the Viewer/Triage `?exam=` deep link).
+function locateInSnapshot(
+  data: any,
+  id: string,
+): { cohort: 'adult' | 'paed'; examId: string; exam: any; site: any | null } | null {
+  const lists: [('adult' | 'paed'), any[]][] = [
+    ['adult', data.exams || []],
+    ['paed', data.paedExams || []],
+  ];
+  for (const [cohort, exams] of lists) {
+    for (const exam of exams) {
+      if (exam.id === id) return { cohort, examId: exam.id, exam, site: null };
+      for (const site of (exam.sites || [])) {
+        if (site.id === id) return { cohort, examId: exam.id, exam, site };
+      }
+    }
+  }
+  return null;
+}
+
 // GET /api/criteria/:id — Returns a single exam/site criteria
 // ARCH-MIG-01 slice 2 (AD-01): resolves the published id through `exam_sites`
 // to its bundle key first. If that bundle has a `published` row, serves the
@@ -101,11 +124,22 @@ app.get('/api/criteria/:id', async (c) => {
   const db = c.env.DB;
   const id = c.req.param('id');
 
+  // The published snapshot is the source for the parent-exam / cohort mapping
+  // (AD-01): every deep-linkable id is either a top-level exam or a site under
+  // one, in `exams` (adult) or `paedExams` (paediatric). Resolve it once here so
+  // every response branch carries `examId` + `cohort`, and so a paediatric id
+  // resolves at all (it previously fell straight through to 404 — the loop
+  // below only walked `exams`).
+  const published = await kv.get('criteria:published', 'json');
+  const located = published?.data ? locateInSnapshot(published.data, id) : null;
+
   try {
     const resolved = await loadForExamSiteId(db, kv, id);
     if (resolved) {
       return c.json({
         examSite: { id: resolved.examSiteId, title: resolved.title },
+        examId: located?.examId ?? resolved.examSiteId,
+        cohort: located?.cohort ?? 'adult',
         bundle: {
           key: resolved.bundle.examSite,
           version: resolved.bundle.version,
@@ -124,20 +158,15 @@ app.get('/api/criteria/:id', async (c) => {
     return c.json({ error: 'Failed to resolve bundle', message: e.message }, 500);
   }
 
-  const published = await kv.get('criteria:published', 'json');
   if (!published || !published.data) {
     return c.json({ error: 'No published criteria available' }, 404);
   }
 
-  // Search through exams for the requested ID
-  const data = published.data;
-  for (const exam of (data.exams || [])) {
-    if (exam.id === id) return c.json(exam);
-    if (exam.type === 'multisite') {
-      for (const site of (exam.sites || [])) {
-        if (site.id === id) return c.json({ ...site, examId: exam.id, examTitle: exam.title });
-      }
+  if (located) {
+    if (located.site) {
+      return c.json({ ...located.site, examId: located.examId, examTitle: located.exam.title, cohort: located.cohort });
     }
+    return c.json({ ...located.exam, examId: located.exam.id, cohort: located.cohort });
   }
 
   return c.json({ error: `Criteria '${id}' not found` }, 404);

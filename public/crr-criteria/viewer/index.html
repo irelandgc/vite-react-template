@@ -473,7 +473,9 @@ async function loadCriteriaData() {
   }
 
   var _regionParam = getParam("region");
-  if (_regionParam && REGIONS[_regionParam]) {
+  // ?region= accepts a legacy region id (a REGIONS key) or an HNZ region code
+  // (AD-29); crrRegion() resolves either to the overlay's HNZ key.
+  if (_regionParam && (REGIONS[_regionParam] || /^(northern|te-manawa-taki|central|te-waipounamu)$/.test(_regionParam))) {
     selectedRegion = _regionParam;
     try { localStorage.setItem("crr-region", selectedRegion); } catch(e) {}
   }
@@ -529,16 +531,25 @@ async function loadCriteriaData() {
   var _regionIntParam = getParam("region");
   isIntegration = !!(_examParam && _sitesParam && _regionIntParam);
 
-  if (_examParam && getExamById(_examParam)) {
-    TS.examId = _examParam;
-    if (_sitesParam) {
-      var _siteIds = _sitesParam.split(",");
-      for (var _i = 0; _i < _siteIds.length; _i++) {
-        var _sid = _siteIds[_i].replace(/^\s+|\s+$/g, "");
-        if (_sid) { TS.sites[_sid] = true; integrationSites[_sid] = true; }
+  if (_examParam) {
+    // ?exam= may name a top-level exam (ct / xr / ct_paed …) or a site id
+    // (ct_cap, xr_elbow, ct_head_paed). Resolve it through /api/criteria/:id
+    // (chore/arch-mig-viewer-findings) so a deep link lands whether or not the
+    // site has a bundle, and switch to the paediatric criteria when it is paed.
+    var _resExam = await resolveExamParam(_examParam);
+    if (_resExam) {
+      if (_resExam.cohort === "paed" && !paedMode) togglePaedMode();
+      TS.examId = _resExam.examId;
+      if (_resExam.siteId) TS.sites[_resExam.siteId] = true;
+      if (_sitesParam) {
+        var _siteIds = _sitesParam.split(",");
+        for (var _i = 0; _i < _siteIds.length; _i++) {
+          var _sid = _siteIds[_i].replace(/^\s+|\s+$/g, "");
+          if (_sid) { TS.sites[_sid] = true; integrationSites[_sid] = true; }
+        }
       }
+      TS.urlLaunched = true;
     }
-    TS.urlLaunched = true;
   }
 
   // Integration mode: hide region bar, search, disclaimer banner in header area
@@ -604,6 +615,34 @@ function getActiveExamList() {
 function getExamById(id) {
   var list = getActiveExamList();
   for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+  return null;
+}
+
+// Resolve a ?exam= value (top-level exam id or a site id, adult or paediatric)
+// to { cohort, examId, siteId }. Goes through GET /api/criteria/:id — the AD-01
+// mapping, which now stamps examId + cohort on every response and resolves
+// paediatric ids — and falls back to the already-loaded snapshot if that fails.
+async function resolveExamParam(id) {
+  try {
+    var r = await fetch(API_BASE + "/api/criteria/" + encodeURIComponent(id), { cache: "no-store" });
+    if (r.ok) {
+      var b = await r.json();
+      if (b && b.examId) {
+        return { cohort: b.cohort === "paed" ? "paed" : "adult", examId: b.examId, siteId: (b.examId === id ? null : id) };
+      }
+    }
+  } catch (e) { /* fall through to the local snapshot */ }
+  var lists = [["adult", (DATA && DATA.exams) || []], ["paed", PAED_EXAMS || []]];
+  for (var li = 0; li < lists.length; li++) {
+    var arr = lists[li][1];
+    for (var i = 0; i < arr.length; i++) {
+      if (arr[i].id === id) return { cohort: lists[li][0], examId: id, siteId: null };
+      var sites = arr[i].sites || [];
+      for (var j = 0; j < sites.length; j++) {
+        if (sites[j].id === id) return { cohort: lists[li][0], examId: arr[i].id, siteId: id };
+      }
+    }
+  }
   return null;
 }
 
@@ -2819,15 +2858,31 @@ document.addEventListener('keydown', function(e) {
 import { resolveCriteria, criteriaHtml, buildQuestionnaireResponse } from '/crr-criteria/shared/criteria-render.js';
 import { resolveAdvisory, advisoryHtml } from '/crr-criteria/shared/advisory-render.js';
 
-// regions.json — render-time delivery config (BRD CV-012 / CV-021). Domains are
-// placeholders confirmed per region; it never reaches the rules.
+// Canonical HNZ region vocabulary + render-time delivery config (BRD CV-012 /
+// CV-021; AD-29). This is a copy of tooling/criteria-bundle/fhir/regions.json
+// and must stay in sync with it — that file is the single mapping. Region never
+// reaches the rules.
 const CRR_REGIONS_CONFIG = {
   healthPathwaysUrlTemplate: "https://{domain}/{pageId}",
   regions: [
-    { code: "northern", name: "Northern", healthPathwaysDomain: "TBC.communityhealthpathways.org" },
-    { code: "te-manawa-taki", name: "Te Manawa Taki", healthPathwaysDomain: "TBC.communityhealthpathways.org" },
-    { code: "central", name: "Central", healthPathwaysDomain: "TBC.communityhealthpathways.org" },
-    { code: "te-waipounamu", name: "Te Waipounamu", healthPathwaysDomain: "TBC.communityhealthpathways.org" },
+    { code: "northern", name: "Northern", legacyRegionIds: ["aucklandregion", "northland"], instances: [
+      { legacyRegionId: "aucklandregion", name: "Auckland Region", districts: ["Waitematā", "Auckland", "Counties Manukau"], healthPathwaysDomain: "aucklandregion.communityhealthpathways.org" },
+      { legacyRegionId: "northland", name: "Northland", districts: ["Northland"], healthPathwaysDomain: "northland.communityhealthpathways.org" },
+    ] },
+    { code: "te-manawa-taki", name: "Te Manawa Taki", legacyRegionIds: ["midland"], instances: [
+      { legacyRegionId: "midland", name: "Midland", districts: ["Waikato", "Bay of Plenty", "Lakes", "Tairāwhiti", "Taranaki"], healthPathwaysDomain: "midland.communityhealthpathways.org" },
+    ] },
+    { code: "central", name: "Central", legacyRegionIds: ["hawkesbay", "3d", "ccp"], instances: [
+      { legacyRegionId: "hawkesbay", name: "Hawke's Bay", districts: ["Hawke's Bay"], healthPathwaysDomain: "hawkesbay.communityhealthpathways.org" },
+      { legacyRegionId: "3d", name: "Central (3D)", districts: ["Capital & Coast", "Hutt Valley", "Wairarapa"], healthPathwaysDomain: "3d.communityhealthpathways.org" },
+      { legacyRegionId: "ccp", name: "Whanganui & MidCentral CHP", districts: ["MidCentral", "Whanganui"], healthPathwaysDomain: "ccp.communityhealthpathways.org" },
+    ] },
+    { code: "te-waipounamu", name: "Te Waipounamu", legacyRegionIds: ["canterbury", "southern"], instances: [
+      { legacyRegionId: "canterbury", name: "Waitaha Canterbury", districts: ["Canterbury", "South Canterbury"], healthPathwaysDomain: "canterbury.communityhealthpathways.org" },
+      { legacyRegionId: "southern", name: "Southern", districts: ["Southern"], healthPathwaysDomain: "southern.communityhealthpathways.org" },
+      { legacyRegionId: null, name: "Nelson Marlborough", districts: ["Nelson Marlborough"], healthPathwaysDomain: "TBC.communityhealthpathways.org" },
+      { legacyRegionId: null, name: "West Coast", districts: ["West Coast"], healthPathwaysDomain: "TBC.communityhealthpathways.org" },
+    ] },
   ],
 };
 
@@ -2852,12 +2907,20 @@ window.crrEnsureBundle = function (id) {
 };
 
 function crrRegion() {
-  // the legacy Viewer's region codes (aucklandregion, southern, …) do not map
-  // 1:1 onto the bundle overlay regions (northern / te-manawa-taki / central /
-  // te-waipounamu). Use the ?region= value directly when it matches an overlay
-  // region; otherwise no overlay. (Reported as a transcription-template finding.)
-  const p = (window.getParam && window.getParam('region')) || '';
-  return CRR_REGIONS_CONFIG.regions.some((r) => r.code === p) ? p : null;
+  // ?region= (or the region select — both land in `selectedRegion`) accepts an
+  // HNZ region code (northern / te-manawa-taki / central / te-waipounamu) or a
+  // pre-migration legacy region id (canterbury, midland, 3d, …). The overlay is
+  // keyed by HNZ code; the HealthPathways link uses the matching instance's
+  // domain (AD-29). Returns { code, legacyRegionId }.
+  let p = '';
+  try { p = (typeof selectedRegion !== 'undefined' && selectedRegion) || ''; } catch (e) {}
+  if (!p) p = (window.getParam && window.getParam('region')) || '';
+  if (!p) return { code: null, legacyRegionId: null };
+  for (const r of CRR_REGIONS_CONFIG.regions) {
+    if (r.code === p) return { code: r.code, legacyRegionId: null };
+    if ((r.instances || []).some((i) => i.legacyRegionId === p)) return { code: r.code, legacyRegionId: p };
+  }
+  return { code: null, legacyRegionId: null };
 }
 
 window.crrBundlePanelHtml = function (entry, exam, site, passive) {
@@ -2865,12 +2928,14 @@ window.crrBundlePanelHtml = function (entry, exam, site, passive) {
   const b = entry;
   const title = (exam && exam.title && site) ? (exam.title + ' — ' + (site.label || site.id))
     : (b.examSite && b.examSite.title) || (exam && exam.title) || id;
+  const _rgn = crrRegion();
   const model = resolveCriteria(
     { planDefinition: b.planDefinition, questionnaire: b.questionnaire, overlays: b.overlays || [] },
     {
       context: 'referrer',
       layout: (typeof viewLayout !== 'undefined' && viewLayout === 'urgency') ? 'vocabulary' : 'indication',
-      region: crrRegion(),
+      region: _rgn.code,
+      regionLegacyId: _rgn.legacyRegionId,
       regionsConfig: CRR_REGIONS_CONFIG,
       ticks: CRR_TICKS[id] || {},
       sourceLine: { title: (b.bundle && b.bundle.sectionTitle) || title, pages: (b.bundle && b.bundle.pages) || null },

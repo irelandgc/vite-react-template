@@ -127,9 +127,15 @@ describe("criteria-render — region overlay (delivery info only)", () => {
     expect(withRegion).toContain("Submit via ERMS to the regional CRR Hub");
     expect(noRegion).not.toContain("Regional delivery");
   });
-  it("builds a HealthPathways link from the page id + regional domain", () => {
+  it("builds a HealthPathways link from the page id + regional domain (first real instance when no legacy id given)", () => {
     expect(withRegion).toContain("Local HealthPathways");
-    expect(withRegion).toMatch(/href="https:\/\/TBC\.communityhealthpathways\.org\/TBC-page-id"/);
+    expect(withRegion).toMatch(/href="https:\/\/canterbury\.communityhealthpathways\.org\/TBC-page-id"/);
+  });
+  it("uses the instance for the selected legacy region id (AD-29)", () => {
+    const southern = criteriaHtml(resolveCriteria(bundle, {
+      context: "referrer", layout: "indication", region: "te-waipounamu", regionLegacyId: "southern", regionsConfig,
+    }));
+    expect(southern).toMatch(/href="https:\/\/southern\.communityhealthpathways\.org\/TBC-page-id"/);
   });
 });
 

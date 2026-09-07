@@ -3474,7 +3474,24 @@ async function boot() {
   wireOverrides();
   markProvenanceModal();
   const pre = getParam('exam');
-  if (pre) { const sel = document.getElementById('pipeExam'); if (sel) { sel.value = pre; onExamChange(); } }
+  if (pre) {
+    const sel = document.getElementById('pipeExam');
+    const match = EXAM_SITES.find((e) => e.id === pre);
+    if (sel && match && match.live === false) {
+      // criteria not yet published — the <option> is disabled and cannot become
+      // the select's value, so a bare `sel.value = pre` silently no-ops. Show
+      // the referrer why (chore/arch-mig-viewer-findings), mirroring the
+      // "criteria not yet published" the proposal card shows.
+      const note = document.createElement('div');
+      note.id = 'pipeExamNotice';
+      note.style.cssText = 'font-size:11px;color:var(--mid);margin:4px 0 2px;line-height:1.4';
+      note.textContent = `Requested exam: ${match.title} (${pre}) — criteria not yet published. Paste the note below and the tool will propose an exam.`;
+      sel.insertAdjacentElement('afterend', note);
+    } else if (sel) {
+      sel.value = pre;
+      onExamChange();
+    }
+  }
 }
 
 async function loadExamSites() {
