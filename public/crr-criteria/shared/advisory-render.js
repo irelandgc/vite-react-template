@@ -70,6 +70,59 @@ function questionnaireText(questionnaire) {
 
 // Find the top-level PlanDefinition action whose condition names `defineName`,
 // returning its title, priority-code display, and source page.
+// Each action carrying an `indication-theme` (a pathway — CT CAP's criterion A,
+// B1, B2, B3): its theme, and the set of input linkIds anywhere in its subtree,
+// with the closest action title for each (so "what to add" can name the
+// published wording, not the internal fact).
+function pathwayIndexOf(planDefinition) {
+  const THEME_EXT = "http://crr.health.nz/fhir/StructureDefinition/indication-theme";
+  const out = [];
+  if (!planDefinition || !Array.isArray(planDefinition.action)) return out;
+  const themeOf = (a) => {
+    const e = (a.extension || []).find((x) => x.url === THEME_EXT);
+    const c = e && e.valueCodeableConcept && e.valueCodeableConcept.coding && e.valueCodeableConcept.coding[0];
+    return c ? { code: c.code, display: c.display || c.code } : null;
+  };
+  const inputsOf = (a) => (a.input || []).flatMap((i) => (i.profile || []).map((p) => String(p).split("#")[1]).filter(Boolean));
+  const walk = (actions, pathway) => {
+    for (const a of actions || []) {
+      const t = themeOf(a) || pathway;
+      let pw = null;
+      if (t) {
+        pw = out.find((x) => x.code === t.code);
+        if (!pw) { pw = { code: t.code, display: t.display, linkIds: new Set(), titleByLinkId: new Map() }; out.push(pw); }
+      }
+      if (pw) for (const id of inputsOf(a)) { pw.linkIds.add(id); if (!pw.titleByLinkId.has(id)) pw.titleByLinkId.set(id, a.title || null); }
+      walk(a.action, t);
+    }
+  };
+  walk(planDefinition.action, null);
+  return out;
+}
+
+// Group "what to add" by pathway; the pathway needing the fewest additional
+// facts (smallest count of missing linkIds that belong to it) comes first, then
+// PlanDefinition theme order, then the ungrouped items last.
+function groupWhatToAdd(items, missing, pathways) {
+  const missingSet = new Set(missing);
+  const groups = new Map();
+  for (const it of items) {
+    if (!groups.has(it.pathwayKey)) groups.set(it.pathwayKey, { pathway: it.pathway, key: it.pathwayKey, items: [] });
+    groups.get(it.pathwayKey).items.push(it);
+  }
+  const themeOrder = pathways.map((p) => p.code);
+  return [...groups.values()].sort((a, b) => {
+    if (a.key === "_none") return 1;
+    if (b.key === "_none") return -1;
+    const am = pathways.find((p) => p.code === a.key);
+    const bm = pathways.find((p) => p.code === b.key);
+    const aShort = am ? [...am.linkIds].filter((x) => missingSet.has(x)).length : 99;
+    const bShort = bm ? [...bm.linkIds].filter((x) => missingSet.has(x)).length : 99;
+    if (aShort !== bShort) return aShort - bShort;
+    return themeOrder.indexOf(a.key) - themeOrder.indexOf(b.key);
+  });
+}
+
 function planActionFor(planDefinition, defineName) {
   if (!planDefinition || !Array.isArray(planDefinition.action)) return null;
   for (const a of planDefinition.action) {
@@ -174,9 +227,22 @@ export function resolveAdvisory(response, view, opts) {
   // Redirects (published wording, already strings in the Advisory)
   const redirects = exam && Array.isArray(exam.activeRedirects) ? exam.activeRedirects.slice() : [];
 
-  // "What to add" — every missingInformation linkId as the published item text
+  // "What to add" — each missingInformation linkId rendered from the
+  // PlanDefinition action title where the linkId maps to an action, else the
+  // (now clean) Questionnaire item text (slice 6 D4). Grouped by pathway
+  // (indication-theme), the pathway that is fewest facts short listed first.
   const missing = exam && Array.isArray(exam.missingInformation) ? exam.missingInformation : [];
-  const whatToAdd = missing.map((linkId) => ({ linkId, text: qText.get(linkId) || linkId }));
+  const pathways = pathwayIndexOf(requestedArtefact && requestedArtefact.planDefinition);
+  const whatToAdd = missing.map((linkId) => {
+    const p = pathways.find((pw) => pw.linkIds.has(linkId));
+    return {
+      linkId,
+      text: (p && p.titleByLinkId.get(linkId)) || qText.get(linkId) || linkId,
+      pathway: p ? p.display : null,
+      pathwayKey: p ? p.code : "_none",
+    };
+  });
+  const whatToAddGroups = groupWhatToAdd(whatToAdd, missing, pathways);
 
   // Cross-exam recommendations
   const alternatives = Array.isArray(agg.alternatives)
@@ -237,6 +303,7 @@ export function resolveAdvisory(response, view, opts) {
     // (referrer view only); null when no redirect or none was attestation-driven.
     attestationDrivenReason: !isTriager && drivingExclusion ? drivingExclusion.canonicalText : null,
     whatToAdd,
+    whatToAddGroups,
     alternatives,
     attestationQuestions,
     unconfirmedExclusions: exam && Array.isArray(exam.unconfirmedExclusions) ? exam.unconfirmedExclusions.slice() : [],
@@ -285,10 +352,12 @@ export function advisoryHtml(model) {
   }
 
   if (model.whatToAdd.length) {
-    section(
-      "What to add",
-      `<ul>${model.whatToAdd.map((w) => `<li data-linkid="${esc(w.linkId)}">${esc(w.text)}</li>`).join("")}</ul>`,
-    );
+    const groups = (model.whatToAddGroups && model.whatToAddGroups.length) ? model.whatToAddGroups : [{ pathway: null, items: model.whatToAdd }];
+    const body = groups.map((g) =>
+      (g.pathway && groups.length > 1 ? `<div class="adv-wta-pathway">${esc(g.pathway)}</div>` : "") +
+      `<ul>${g.items.map((w) => `<li data-linkid="${esc(w.linkId)}">${esc(w.text)}</li>`).join("")}</ul>`,
+    ).join("");
+    section("What to add", body);
   }
 
   if (model.alternatives.length) {

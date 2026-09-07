@@ -179,6 +179,12 @@ const siteLocalItems = [];
     if (isSiteLocal) siteLocalItems.push(i);
     else if (!vocabByLinkId.has(i.linkId)) problems.push(`Questionnaire item "${i.linkId}" is neither in the national vocabulary nor declared site-local (add extension "${SITE_LOCAL_EXT}": true if this is genuinely site-specific)`);
   }
+  // slice 6 D4: `item.text` is published wording only. A model-facing hint
+  // ("true = …", a linkId reference) belongs in an `extraction-hint` extension
+  // that prompt.ts folds in for the model and no renderer ever displays.
+  if (typeof i.text === "string" && /\btrue\s*=|\blinkId\b/i.test(i.text)) {
+    problems.push(`Questionnaire item "${i.linkId}": item.text carries a model-facing hint ("${i.text.match(/\btrue\s*=[^)]*|\blinkId\b[^)]*/i)?.[0]}") — move it to an "http://crr.health.nz/fhir/StructureDefinition/extraction-hint" extension (slice 6 D4)`);
+  }
   walkQ(i.item);
 } })(q.item);
 for (const i of siteLocalItems) {

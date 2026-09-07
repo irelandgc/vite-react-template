@@ -88,6 +88,31 @@ export function stripAttestationItems(questionnaire: any, attestationLinkIds: Se
   return { ...questionnaire, item: walk(questionnaire.item) };
 }
 
+export const EXTRACTION_HINT_EXT = "http://crr.health.nz/fhir/StructureDefinition/extraction-hint";
+
+// The Questionnaire `item.text` is published wording only — no renderer shows a
+// model-facing hint (slice 6 D4). A hint lives in an `extraction-hint`
+// extension. For the model's copy of the Questionnaire, fold each hint back into
+// the item text (parenthetical, as it read before the split) so the extractor
+// sees it exactly as it did; the extension is dropped from the model's copy.
+// The bundle's Questionnaire is untouched.
+export function applyExtractionHints(questionnaire: any): any {
+  function walk(items: any[]): any[] {
+    return (items || []).map((item) => {
+      const copy = { ...item };
+      const hint = (item.extension || []).find((e: any) => e.url === EXTRACTION_HINT_EXT)?.valueString;
+      if (hint) {
+        copy.text = `${item.text} (${hint})`;
+        copy.extension = (item.extension || []).filter((e: any) => e.url !== EXTRACTION_HINT_EXT);
+        if (!copy.extension.length) delete copy.extension;
+      }
+      if (Array.isArray(item.item)) copy.item = walk(item.item);
+      return copy;
+    });
+  }
+  return { ...questionnaire, item: walk(questionnaire.item) };
+}
+
 function contextBlock(ctx: AssessmentContext): string {
   const lines: string[] = [];
   // Only the demographic items the caller actually supplies are off-limits to the

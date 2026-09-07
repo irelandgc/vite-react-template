@@ -220,6 +220,7 @@ export function resolveCriteria(bundle, opts) {
 
   const model = {
     context: opts.context === "triager" ? "triager" : "referrer",
+    readOnly: !!opts.readOnly,
     layout,
     sourceLine: opts.sourceLine ? { title: opts.sourceLine.title || null, pages: opts.sourceLine.pages || null } : null,
     guidance: guidanceAction ? {
@@ -352,11 +353,11 @@ export function criteriaHtml(model) {
     if (model.layout === "indication") {
       for (const g of block.themes) {
         if (g.display) body += `<div class="theme-group-hd">${esc(g.display)}</div>`;
-        body += g.rows.map((r) => renderRow(r, model.context)).join("");
+        body += g.rows.map((r) => renderRow(r, model.context, model.readOnly)).join("");
       }
     } else {
       if (block.selection) body += `<div class="cr-sel">${esc(block.selection)}</div>`;
-      body += block.children.map((r) => renderRow(r, model.context)).join("");
+      body += block.children.map((r) => renderRow(r, model.context, model.readOnly)).join("");
     }
     body += notesHtml(block.notes) + deliveryHtml(block.delivery);
     out.push(`<div class="cr-block">${hd}<div class="cr-block-body">${body}</div></div>`);
@@ -399,21 +400,25 @@ function priorityClass(code) {
   return m[code] || "pri-p2";
 }
 
-function renderRow(r, context) {
+function renderRow(r, context, readOnly) {
   const badges = r.badges.map((b) => `<span class="${badgeClass(b.code)}">${esc(b.display)}</span>`).join(" ");
   const page = r.page != null ? ` <span class="cr-page">page ${esc(r.page)}</span>` : "";
   const sel = (r.selectionKind && r.children.length) ? `<div class="cr-sel">${esc(SEL_LABEL[r.selectionKind] || "")}</div>` : "";
-  const childHtml = r.children.map((c) => renderRow(c, context)).join("");
+  const childHtml = r.children.map((c) => renderRow(c, context, readOnly)).join("");
   const del = (r.delivery && (r.delivery.description || (r.delivery.notes && r.delivery.notes.length)))
     ? `<div class="cr-delivery"><div class="cr-delivery-hd">Regional delivery</div>${r.delivery.description ? `<div>${esc(r.delivery.description)}</div>` : ""}${(r.delivery.notes || []).map((n) => `<div>${esc(n)}</div>`).join("")}</div>`
     : "";
   const notes = (r.notes && r.notes.length) ? `<div class="footnote-block"><div class="footnote-hd">Notes</div>${r.notes.map((n) => `<div class="cr-note">${esc(n)}</div>`).join("")}</div>` : "";
 
-  if (r.linkId) {
+  if (r.linkId && !readOnly) {
     // tickable leaf (checkbox rendered by the host page; the module emits the row)
     return `<label class="crit-card${r.ticked ? " ticked" : ""}${badgeCardClass(r.badges)}" data-linkid="${esc(r.linkId)}">` +
       `<div class="crit-card-header"><input type="checkbox" class="crit-card-check" data-linkid="${esc(r.linkId)}"${r.ticked ? " checked" : ""}>` +
       `<span class="crit-card-label">${esc(r.text)}${badges ? " " + badges : ""}${page}</span></div>${notes}${del}</label>`;
+  }
+  if (r.linkId) {
+    // read-only reference (Triage reference column): the same wording, no checkbox
+    return `<div class="cr-row" data-linkid="${esc(r.linkId)}"><div class="cr-row-title">${esc(r.text)}${badges ? " " + badges : ""}${page}</div>${notes}${del}</div>`;
   }
   // structural / compound row
   return `<div class="cr-row" data-action="${esc(r.id)}"><div class="cr-row-title">${esc(r.text)}${badges ? " " + badges : ""}${page}</div>${sel}${childHtml}${notes}${del}</div>`;

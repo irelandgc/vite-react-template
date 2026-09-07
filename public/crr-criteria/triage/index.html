@@ -257,6 +257,7 @@ textarea.note::placeholder{color:#8b919a}
 .adv-priority-code{font-family:var(--mono);font-size:11px;color:var(--mid)}
 .adv-page{font-size:10px;font-weight:700;color:var(--teal);background:var(--lite);padding:1px 5px;border-radius:2px;border:1px solid var(--rule);margin-left:4px}
 .adv-because{font-weight:600;color:var(--navy)}
+.adv-wta-pathway{font-size:11px;font-weight:700;color:var(--navy);margin:6px 0 2px}
 .adv-attn-answer{font-weight:600;color:var(--navy)}
 .adv-attn-say{color:var(--accent);font-weight:600}
 .adv-evidence,.adv-trace{width:100%;border-collapse:collapse;font-size:11px}
@@ -3445,6 +3446,7 @@ document.getElementById('noteInput').addEventListener('keydown', function(e){ if
      post-processing validation, or call the model. -->
 <script type="module">
 import { resolveAdvisory, advisoryHtml } from '/crr-criteria/shared/advisory-render.js';
+import { resolveCriteria, criteriaHtml } from '/crr-criteria/shared/criteria-render.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const getParam = (n) => { try { return new URL(location.href).searchParams.get(n); } catch { return null; } };
@@ -3561,7 +3563,7 @@ function injectSettings() {
     document.querySelectorAll('#pipeRoleToggle button').forEach((x) => x.classList.toggle('active', x === b));
     renderAttestations();
     renderProposalAttestations();
-    if (lastAssess) renderAdvisory();
+    if (lastAssess) { renderAdvisory(); renderCriteriaRef(); }
   }));
 }
 
@@ -3848,19 +3850,25 @@ function renderAdvisory() {
      </div></div>`;
 }
 
+// TA-018 (slice 6 D4): the reference column renders the published *criteria
+// structure* from the same PlanDefinition the Viewer uses — not the Questionnaire
+// fact list. Referrer context, so no priority codes (GEN-004); read-only.
 function renderCriteriaRef() {
   const arts = (lastAssess && lastAssess.bundleArtefacts) || {};
   const reqId = lastAssess.examSiteSelection && lastAssess.examSiteSelection.requestedExamSite;
   const art = reqId && arts[reqId];
   const panel = document.getElementById('criteriaPanel');
-  if (!art || !art.questionnaire) { panel.innerHTML = '<div class="panel"><div class="result-empty" style="padding:24px 14px"><p>No published bundle for this exam/site.</p></div></div>'; return; }
-  const rows = [];
-  const walk = (items) => { for (const i of items || []) { if (i && i.linkId && i.text) rows.push(i); if (Array.isArray(i && i.item)) walk(i.item); } };
-  walk(art.questionnaire.item);
-  panel.innerHTML = `<div class="panel"><div style="padding:10px 12px">
-    <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px">${esc((art.questionnaire.title) || reqId)}</div>
-    <ul style="margin:0;padding-left:16px;font-size:11px;line-height:1.5;color:var(--ink)">${rows.map((i) => `<li data-linkid="${esc(i.linkId)}">${esc(i.text)}</li>`).join('')}</ul>
-  </div></div>`;
+  if (!art || !art.planDefinition) { panel.innerHTML = '<div class="panel"><div class="result-empty" style="padding:24px 14px"><p>No published bundle for this exam/site.</p></div></div>'; return; }
+  const model = resolveCriteria(
+    { planDefinition: art.planDefinition, questionnaire: art.questionnaire, overlays: [] },
+    {
+      context: currentView === 'triager' ? 'triager' : 'referrer',
+      layout: 'indication',
+      readOnly: true,
+      sourceLine: { title: (art.planDefinition && art.planDefinition.title) || reqId, pages: null },
+    },
+  );
+  panel.innerHTML = `<div class="panel"><div style="padding:10px 12px" class="tool-criteria">${criteriaHtml(model)}</div></div>`;
 }
 
 function logUsage(json, body) {
