@@ -97,16 +97,47 @@ describe("criteria-render — referrer view (GEN-004)", () => {
     // funding.unfitOrUnwilling never gets a checkbox / data-linkid
     expect(html).not.toContain('data-linkid="funding.unfitOrUnwilling"');
   });
-  it("only single-boolean leaves are tickable; compound rows (B1, B3) are not", () => {
-    // criterion-A's five boolean leaves + the six lab booleans are checkboxes
+  it("single-boolean leaves are checkboxes; a compound criterion (B1, B3) is not one tick but a typed input per linkId (AD-27)", () => {
+    // criterion-A's five boolean leaves + the six lab booleans are single-tick cards
     for (const id of ["workup.bloods", "workup.urinalysis", "workup.cxr", "workup.strongSuspicionMalignancy", "workup.localisingFeatures", "lab.crp.raised", "lab.hb.low", "lab.alp.high"]) {
       expect(html).toContain(`<input type="checkbox" class="crit-card-check" data-linkid="${id}"`);
     }
-    // B1 (age + sex + % + period) and B3 (advice + name) are compound — no single checkbox
-    expect(html).not.toContain('data-linkid="patient.age"');
-    expect(html).not.toContain('data-linkid="advice.adviserNameRole"');
-    // …but their published wording still renders
+    // B1 / B3 are never a single tick over the whole criterion
+    expect(html).not.toContain('data-linkid="b1"');
+    expect(html).not.toContain('data-linkid="b3"');
+    // B1: number for age, select for sex, checkbox for present/measured, number for weights/period/percent
+    expect(html).toMatch(/<input type="number"[^>]*data-linkid="patient\.age"/);
+    expect(html).toMatch(/<select data-linkid="patient\.sex">/);
+    expect(html).toContain('<option value="male">Male</option>');
+    expect(html).toMatch(/<input type="checkbox" data-linkid="weightloss\.present"/);
+    expect(html).toMatch(/<input type="checkbox" data-linkid="weightloss\.measured"/);
+    for (const id of ["weightloss.weightBefore", "weightloss.weightNow", "weightloss.periodMonths", "weightloss.percent"]) {
+      expect(html).toMatch(new RegExp(`<input type="number"[^>]*data-linkid="${id.replace(".", "\\.")}"`));
+    }
+    // the fallback (percent) is the last of the weight-loss inputs (PlanDefinition order)
+    expect(html.indexOf('data-linkid="weightloss.weightBefore"')).toBeLessThan(html.indexOf('data-linkid="weightloss.percent"'));
+    // B3: checkbox for the advice boolean, text for the adviser name/role
+    expect(html).toMatch(/<input type="checkbox" data-linkid="advice\.urgentCTRecommended"/);
+    expect(html).toMatch(/<input type="text" data-linkid="advice\.adviserNameRole"/);
+    // published wording of the criterion still leads the row
     expect(html).toContain("Male over 50 years of age or female over 60 years");
+    // unit chips come from the Questionnaire's questionnaire-unit extension
+    expect(html).toContain('<span class="cr-unit">kg</span>');
+    expect(html).toContain('<span class="cr-unit">years</span>');
+  });
+
+  it("read-only (Triage reference column): compound inputs show the value from the merged QR, no entry", () => {
+    const ro = criteriaHtml(resolveCriteria(bundle, {
+      context: "referrer", layout: "indication", readOnly: true,
+      ticks: { "patient.age": 62, "patient.sex": "male", "weightloss.weightBefore": 84, "weightloss.weightNow": 77, "weightloss.periodMonths": 4, "weightloss.present": true },
+    }));
+    expect(ro).not.toContain('<input type="number"');
+    expect(ro).not.toContain("<select");
+    expect(ro).toContain('<span class="cr-input-value">84 kg</span>');
+    expect(ro).toContain('<span class="cr-input-value">62 years</span>');
+    expect(ro).toContain('<span class="cr-input-value">Male</span>');
+    // a boolean shows a disabled checked box, not editable
+    expect(ro).toMatch(/<input type="checkbox" disabled checked>/);
   });
 });
 

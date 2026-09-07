@@ -3854,6 +3854,26 @@ function renderAdvisory() {
 // TA-018 (slice 6 D4): the reference column renders the published *criteria
 // structure* from the same PlanDefinition the Viewer uses — not the Questionnaire
 // fact list. Referrer context, so no priority codes (GEN-004); read-only.
+// linkId -> value from a QuestionnaireResponse (boolean / number / coding code /
+// string). Used read-only in the reference column so the compound-criterion
+// inputs (B1, B3) show what the assessment extracted — no entry here.
+function flattenQrValues(qr) {
+  const out = {};
+  if (!qr || !Array.isArray(qr.item)) return out;
+  (function walk(items) {
+    for (const i of items || []) {
+      if (Array.isArray(i.item)) walk(i.item);
+      if (!i.linkId || !Array.isArray(i.answer) || !i.answer[0]) continue;
+      const a = i.answer[0];
+      const vk = Object.keys(a).find((k) => k.startsWith('value'));
+      let v = vk ? a[vk] : undefined;
+      if (v && typeof v === 'object' && 'code' in v) v = v.code;
+      out[i.linkId] = v;
+    }
+  })(qr.item);
+  return out;
+}
+
 function renderCriteriaRef() {
   const arts = (lastAssess && lastAssess.bundleArtefacts) || {};
   const reqId = lastAssess.examSiteSelection && lastAssess.examSiteSelection.requestedExamSite;
@@ -3866,6 +3886,7 @@ function renderCriteriaRef() {
       context: currentView === 'triager' ? 'triager' : 'referrer',
       layout: 'indication',
       readOnly: true,
+      ticks: flattenQrValues(lastAssess.mergedQuestionnaireResponse),
       sourceLine: { title: (art.planDefinition && art.planDefinition.title) || reqId, pages: null },
     },
   );

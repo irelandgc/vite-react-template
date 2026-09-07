@@ -11,7 +11,10 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { env, SELF } from "cloudflare:test";
 import { purgeExpiredNotes } from "../worker";
 // @ts-expect-error -- ?raw import, no type declaration
-import ctCapBundleRaw from "../../../../tooling/criteria-bundle/registry/ct-chest-abdomen-pelvis-adult/2.0.0.json?raw";
+import ctCapBundleRaw from "../../../../tooling/criteria-bundle/registry/ct-chest-abdomen-pelvis-adult/2.3.0.json?raw";
+// @ts-expect-error -- plain .js ESM module, no type declarations
+import { buildQuestionnaireResponse } from "../../shared/criteria-render.js";
+import ctCapQ from "../../../../tooling/criteria-bundle/fhir/Questionnaire-CRR-CT-CAP-Adult.json";
 // @ts-expect-error -- ?raw import, no type declaration
 import nationalBundleRaw from "../../../../tooling/criteria-bundle/registry/national-redflags/1.0.0.json?raw";
 import altElm from "./fixtures/CRR_TestAltSite.elm.json";
@@ -209,6 +212,33 @@ describe("POST /api/assess/evaluate — validation", () => {
   });
 });
 
+describe("POST /api/assess/evaluate — Viewer self-check reaches Pathway B1 from recorded weights (AD-27)", () => {
+  it("62yo male, 84 -> 77 kg over 4 months (present + measured ticked) -> Pathway B1 met; the engine computes the percentage", async () => {
+    await publishNationalRedFlags();
+    await publishCtCap();
+    // the ticks a referrer sets on B1's typed inputs, through the same
+    // buildQuestionnaireResponse the Viewer self-check uses (CV-015)
+    const qr = buildQuestionnaireResponse(ctCapQ, {
+      "patient.age": 62,
+      "patient.sex": "male",
+      "weightloss.present": true,
+      "weightloss.measured": true,
+      "weightloss.weightBefore": 84,
+      "weightloss.weightNow": 77,
+      "weightloss.periodMonths": 4,
+      // weightloss.percent left blank — the engine computes it from the weights
+    });
+    const res = await evaluate({ questionnaireResponse: qr, requestedExamSite: "ct_cap", parameters: { documentationStandard: "strict" } });
+    expect(res.status).toBe(200);
+    const trace = (await res.json()).requestedExam.advisory.ruleTrace;
+    expect(trace.weightLossPercentByRecordedWeights).toBeCloseTo(8.333, 2);
+    expect(trace.weightLossPercent).toBeCloseTo(8.333, 2);
+    expect(trace.weightLossCriterion).toBe(true);
+    expect(trace.b1AgeSexThreshold).toBe(true);
+    expect(trace.pathwayB1).toBe(true);
+  });
+});
+
 describe("POST /api/assess/evaluate — CT CAP scenarios reproduced over HTTP", () => {
   const cases = scenarios.filter((s: any) => !s.record && !s.runWith);
 
@@ -288,7 +318,7 @@ describe("POST /api/assess/evaluate — multi-bundle aggregation (gap §4, AD-20
     expect(body.alternatives).toHaveLength(1);
     expect(body.alternatives[0].id).toBe("us_abdomen");
     expect(body.alternatives[0].advisory.determination).toBe("P2_URGENT");
-    expect(body.bundleVersions).toMatchObject({ "national-redflags": "1.0.0", ct_cap: "2.0.0", us_abdomen: "1.0.0" });
+    expect(body.bundleVersions).toMatchObject({ "national-redflags": "1.0.0", ct_cap: "2.3.0", us_abdomen: "1.0.0" });
   });
 
   it("no alternative when the requested exam is itself a priority determination", async () => {
@@ -353,7 +383,7 @@ describe("POST /api/assess/evaluate — stamping, determinism, audit", () => {
     expect(body.engineVersion).toBe("1.0.0");
     expect(body.vocabularyVersion).toBe("1.0.0");
     expect(body.documentationStandard).toBe("strict");
-    expect(body.bundleVersions).toEqual({ "national-redflags": "1.0.0", ct_cap: "2.0.0" });
+    expect(body.bundleVersions).toEqual({ "national-redflags": "1.0.0", ct_cap: "2.3.0" });
   });
 
   it("is deterministic — same input, byte-identical body apart from assessmentId", async () => {
@@ -376,7 +406,7 @@ describe("POST /api/assess/evaluate — stamping, determinism, audit", () => {
     const row: any = await env.DB.prepare("SELECT * FROM assessments WHERE id = ?").bind(body.assessmentId).first();
     expect(row.engine_version).toBe("1.0.0");
     expect(row.documentation_standard).toBe("strict");
-    expect(JSON.parse(row.bundle_versions).ct_cap).toBe("2.0.0");
+    expect(JSON.parse(row.bundle_versions).ct_cap).toBe("2.3.0");
     expect(row.prompt_version).toBeNull();
     const noteRow: any = await env.DB.prepare("SELECT COUNT(*) n FROM assessment_notes WHERE assessment_id = ?").bind(body.assessmentId).first();
     expect(noteRow.n).toBe(0);

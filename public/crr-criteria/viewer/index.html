@@ -2961,16 +2961,25 @@ window.crrBundlePanelHtml = function (entry, exam, site, passive) {
   return h;
 };
 
-// Ticks: the checkbox rows criteria-render.js emits carry data-linkid.
+// Ticks + typed inputs: the rows criteria-render.js emits carry data-linkid on
+// checkboxes (criterion A leaves) and on the number/select/text inputs of a
+// compound criterion (B1, B3 — AD-27).
 document.addEventListener('change', function (e) {
-  const cb = e.target.closest && e.target.closest('.crit-card-check[data-linkid]');
-  if (!cb) return;
-  const panel = cb.closest('[data-crid]');
+  const el = e.target;
+  if (!el || !el.matches || !el.matches('input[data-linkid], select[data-linkid]')) return;
+  const panel = el.closest('[data-crid]');
   if (!panel) return;
   const id = panel.getAttribute('data-crid');
+  const linkId = el.getAttribute('data-linkid');
   CRR_TICKS[id] = CRR_TICKS[id] || {};
-  CRR_TICKS[id][cb.getAttribute('data-linkid')] = cb.checked;
-  if (typeof toolRender === 'function') toolRender();
+  let value;
+  if (el.type === 'checkbox') value = el.checked;
+  else if (el.type === 'number') value = el.value === '' ? '' : Number(el.value);
+  else value = el.value; // select / text
+  CRR_TICKS[id][linkId] = value;
+  // A checkbox can reveal/hide rows; a value input does not, so only the
+  // checkbox forces a re-render (the self-check reads CRR_TICKS at click time).
+  if (el.type === 'checkbox' && typeof toolRender === 'function') toolRender();
 });
 
 document.addEventListener('click', function (e) {

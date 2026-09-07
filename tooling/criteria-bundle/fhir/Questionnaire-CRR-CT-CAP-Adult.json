@@ -2,7 +2,7 @@
   "resourceType": "Questionnaire",
   "id": "CRR-CT-CAP-Adult",
   "url": "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "name": "CRR_CTChestAbdomenPelvis_Adult_Indicators",
   "title": "CT Chest, Abdomen and Pelvis - Adult: referral indicators",
   "status": "draft",
@@ -29,7 +29,13 @@
           "linkId": "patient.age",
           "text": "Age in years at referral",
           "type": "integer",
-          "required": true
+          "required": true,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unit",
+              "valueCoding": { "system": "http://unitsofmeasure.org", "code": "a", "display": "years" }
+            }
+          ]
         },
         {
           "linkId": "patient.sex",
@@ -144,6 +150,10 @@
                 "language": "text/cql-identifier",
                 "expression": "Weight Loss Percent"
               }
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unit",
+              "valueCoding": { "system": "http://unitsofmeasure.org", "code": "%", "display": "%" }
             }
           ]
         },
@@ -158,18 +168,34 @@
                 "language": "text/cql-identifier",
                 "expression": "Weight Loss Period Months"
               }
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unit",
+              "valueCoding": { "system": "http://unitsofmeasure.org", "code": "mo", "display": "months" }
             }
           ]
         },
         {
           "linkId": "weightloss.weightBefore",
           "text": "Earlier recorded weight in kilograms (the weight being compared from)",
-          "type": "decimal"
+          "type": "decimal",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unit",
+              "valueCoding": { "system": "http://unitsofmeasure.org", "code": "kg", "display": "kg" }
+            }
+          ]
         },
         {
           "linkId": "weightloss.weightNow",
           "text": "Current recorded weight in kilograms (the weight being compared to)",
-          "type": "decimal"
+          "type": "decimal",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unit",
+              "valueCoding": { "system": "http://unitsofmeasure.org", "code": "kg", "display": "kg" }
+            }
+          ]
         }
       ]
     },
