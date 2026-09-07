@@ -1,3 +1,7 @@
+> **[COMPLETE — 2026-09-07]** slice 6 built on `feature/arch-mig-slice6-viewer`: `indication-theme` + `extraction-hint` PlanDefinition/Questionnaire extensions (AD-26), shared `criteria-render.js`, the Viewer and the Triage reference column on the CT CAP bundle, `EMBEDDED_DATA` removed, "what to add" from action titles, `checkSafetyText()` not carried into the bundle path.
+> Verification: verified — api-worker 200 tests, tooling `npm test`/`npm run check`, root `npm run check`, both `wrangler deploy --dry-run` all green; `criteria-render.test.ts` + `advisory-render.test.ts` + `prompt.test.ts` cover the new behaviour. not independently verified: no headless browser was available (DOM-dump parity only — `documents/reference/slice6-parity-ct-cap.md`); flags off, not deployed; `checkSafetyText()` fate and the CT CAP bundle sign-off/publish are review-pack D1 / slice 10 items; the overlay region-code vs legacy region-code mismatch is recorded as a transcription-template finding, not resolved.
+> Filed by: Claude Code
+
 # Claude Code Brief: ARCH-MIG-01 slice 6 — Criteria Viewer on bundles, and the shared criteria renderer
 
 **Model:** Claude Sonnet · **Branch:** `feature/arch-mig-slice6-viewer` from main · **Scope:** plan slice 6, plus the shared PlanDefinition renderer that the Triage page's reference column must also use (TA-018). The Triage page's current reference column renders the Questionnaire — the internal fact list — and that is wrong; this slice replaces it.

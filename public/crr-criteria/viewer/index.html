@@ -661,6 +661,13 @@ function isLabValue(label) {
   return false;
 }
 
+// KI-51 / AD-05 — this hard-coded, unsourced, substring (negation-blind)
+// safety-alert list is NOT carried into the bundle-rendered path (slice 6 D3/D4):
+// criteria-render.js emits only bundle strings, and the safety layer is the
+// national red-flag library. This legacy function stays only for sites still on
+// the JSON path, and only until review-pack decision D1 rules on whether these
+// four concepts become a governed national safety define or are dropped. Do not
+// port the indexOf match anywhere. (slice 6 open item — see arch-mig-plan.md.)
 function checkSafetyText(text) {
   var t = (text||"").toLowerCase();
   var checks = [
@@ -2295,7 +2302,10 @@ function setRadio(id, val) { TS.radios[id] = val; toolRender(); toolUpdatePrevie
 function onNotes() {
   var el = document.getElementById("toolNotes"); if (el) TS.notes = el.value;
   toolUpdatePreview();
-  var sa = document.getElementById("safetyAlertArea"); if (sa) sa.innerHTML = checkSafetyText(TS.notes||"");
+  // KI-51: legacy safety check runs only on the JSON path — never for a
+  // bundle-rendered site (the national red-flag library is the safety layer there).
+  var _bundleActive = window.crrBundleFor && (window.crrBundleFor(TS.examId) || Object.keys(TS.sites || {}).some(function (k) { return TS.sites[k] && window.crrBundleFor(k); }));
+  var sa = document.getElementById("safetyAlertArea"); if (sa) sa.innerHTML = _bundleActive ? "" : checkSafetyText(TS.notes||"");
 }
 
 function countSite(site) {
