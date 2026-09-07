@@ -2933,7 +2933,7 @@ window.crrBundlePanelHtml = function (entry, exam, site, passive) {
     { planDefinition: b.planDefinition, questionnaire: b.questionnaire, overlays: b.overlays || [] },
     {
       context: 'referrer',
-      layout: (typeof viewLayout !== 'undefined' && viewLayout === 'urgency') ? 'vocabulary' : 'indication',
+      layout: (typeof viewLayout !== 'undefined' && viewLayout === 'urgency') ? 'urgency' : 'indication',
       region: _rgn.code,
       regionLegacyId: _rgn.legacyRegionId,
       regionsConfig: CRR_REGIONS_CONFIG,
@@ -2946,6 +2946,9 @@ window.crrBundlePanelHtml = function (entry, exam, site, passive) {
   h += "<div class='crit-panel-hd'><span class='crit-panel-hd-left'>&#128196; Criteria Reference</span>";
   h += "<span class='crit-panel-hd-right'>" + esc(title) + "</span></div>";
   h += "<div class='card-bd'>";
+  // By indication / By urgency toggle (CV-027) — the bundle render responds to
+  // viewLayout the same way the legacy path does.
+  if (typeof renderViewToggle === 'function') h += renderViewToggle();
   h += "<div id='crPanel_" + escAttr(id) + "' data-crid='" + escAttr(id) + "'>" + criteriaHtml(model) + "</div>";
   if (!passive) {
     if (showCheck) {

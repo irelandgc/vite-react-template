@@ -184,7 +184,10 @@ export function resolveCriteria(bundle, opts) {
   const pd = (bundle && bundle.planDefinition) || {};
   const q = (bundle && bundle.questionnaire) || {};
   const isTriager = opts.context === "triager";
-  const layout = opts.layout === "vocabulary" ? "vocabulary" : "indication";
+  // "indication" — pathways grouped by indication-theme (default).
+  // "urgency" — pathways in printed order under each timeframe block (CV-027).
+  // "vocabulary" — printed order + the Questionnaire's own groups (flagged).
+  const layout = opts.layout === "vocabulary" || opts.layout === "urgency" ? opts.layout : "indication";
   const ticks = opts.ticks || {};
   const { text: qText, type: qType } = questionnaireMaps(q);
   const overlays = overlayIndex(bundle && bundle.overlays, opts.region);

@@ -49,7 +49,7 @@ function untraceable(html: string): string[] {
 
 describe("criteria-render — every displayed string traces to a bundle artefact", () => {
   for (const ctx of ["referrer", "triager"] as const) {
-    for (const layout of ["indication", "vocabulary"] as const) {
+    for (const layout of ["indication", "urgency", "vocabulary"] as const) {
       it(`${ctx} / ${layout}`, () => {
         const model = resolveCriteria(bundle, {
           context: ctx, layout, region: "te-waipounamu", regionsConfig,
@@ -107,6 +107,22 @@ describe("criteria-render — referrer view (GEN-004)", () => {
     expect(html).not.toContain('data-linkid="advice.adviserNameRole"');
     // …but their published wording still renders
     expect(html).toContain("Male over 50 years of age or female over 60 years");
+  });
+});
+
+describe("criteria-render — by-urgency layout (CV-027)", () => {
+  const html = criteriaHtml(resolveCriteria(bundle, { context: "referrer", layout: "urgency" }));
+  it("does not theme-group and does not append the Questionnaire vocabulary groups", () => {
+    expect(html).not.toContain("theme-group-hd");
+    // the vocabulary-group dump (only for layout: 'vocabulary')
+    expect(html).not.toContain("Yellow flag symptoms (context only; do not affect eligibility)");
+  });
+  it("still renders the timeframe block and the compound selection labels, in printed order", () => {
+    expect(html).toContain("Urgent: non-deferrable imaging or intervention that must be completed within 2 weeks");
+    expect(html).toContain("All of the following:");
+    expect(html).toContain("One or more of the following:");
+    // criterion A wording precedes B3 wording (PlanDefinition order)
+    expect(html.indexOf("Following full clinical assessment")).toBeLessThan(html.indexOf("advises referral for urgent CT Chest"));
   });
 });
 
