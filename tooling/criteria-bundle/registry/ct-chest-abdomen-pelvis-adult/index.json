@@ -14,7 +14,14 @@
       "publishedAt": "2026-09-06T20:34:38.317Z",
       "logicHash": "sha256:1fd6c2bb85459619cd0d202a6c6347e1a74153cd25f48c695445f3dbe9424261",
       "dependencies": []
+    },
+    {
+      "version": "2.1.0",
+      "state": "transcribed",
+      "publishedAt": "2026-09-07T02:29:50.264Z",
+      "logicHash": "sha256:1fd6c2bb85459619cd0d202a6c6347e1a74153cd25f48c695445f3dbe9424261",
+      "dependencies": []
     }
   ],
-  "latestPublished": "2.0.0"
+  "latestPublished": "2.1.0"
 }

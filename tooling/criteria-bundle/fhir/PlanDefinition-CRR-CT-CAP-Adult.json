@@ -2,7 +2,7 @@
   "resourceType": "PlanDefinition",
   "id": "CRR-CT-CAP-Adult",
   "url": "http://crr.health.nz/fhir/PlanDefinition/CRR-CT-CAP-Adult",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "name": "CRR_CTChestAbdomenPelvis_Adult",
   "title": "CT Chest, Abdomen and Pelvis - Adult",
   "type": {
@@ -16,7 +16,7 @@
   },
   "status": "draft",
   "experimental": true,
-  "date": "2026-09-05",
+  "date": "2026-09-07",
   "publisher": "Health New Zealand | Te Whatu Ora - Community Referred Radiology Programme",
   "description": "Published structure and wording of the CT Chest, Abdomen and Pelvis (Adult) national referral criteria, with each criterion bound to a named expression in the CQL library. This resource carries everything the Criteria Viewer renders (grouping, published text, timeframe, badges, guidance, sources); the Library carries the logic; the Questionnaire carries the input contract. The three are published together as one versioned bundle.",
   "useContext": [
@@ -128,7 +128,7 @@
       "documentation": [
         {
           "type": "documentation",
-          "label": "National criteria v2.0, p.10 \u2014 Guidance box",
+          "label": "National criteria v2.0, p.10 — Guidance box",
           "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=10",
           "extension": [
             {
@@ -263,7 +263,7 @@
           "documentation": [
             {
               "type": "documentation",
-              "label": "National criteria v2.0, p.10 \u2014 P2 Urgent row, first bullet",
+              "label": "National criteria v2.0, p.10 — P2 Urgent row, first bullet",
               "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=10",
               "extension": [
                 {
@@ -271,6 +271,20 @@
                   "valueInteger": 10
                 }
               ]
+            }
+          ],
+          "extension": [
+            {
+              "url": "http://crr.health.nz/fhir/StructureDefinition/indication-theme",
+              "valueCodeableConcept": {
+                "coding": [
+                  {
+                    "system": "http://crr.health.nz/fhir/CodeSystem/indication-theme",
+                    "code": "suspected-occult-malignancy",
+                    "display": "Suspected occult malignancy"
+                  }
+                ]
+              }
             }
           ]
         },
@@ -320,7 +334,7 @@
               "documentation": [
                 {
                   "type": "documentation",
-                  "label": "National criteria v2.0, p.10 \u2014 P2 Urgent row, sub-bullet 1",
+                  "label": "National criteria v2.0, p.10 — P2 Urgent row, sub-bullet 1",
                   "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=10",
                   "extension": [
                     {
@@ -328,6 +342,20 @@
                       "valueInteger": 10
                     }
                   ]
+                }
+              ],
+              "extension": [
+                {
+                  "url": "http://crr.health.nz/fhir/StructureDefinition/indication-theme",
+                  "valueCodeableConcept": {
+                    "coding": [
+                      {
+                        "system": "http://crr.health.nz/fhir/CodeSystem/indication-theme",
+                        "code": "suspected-occult-malignancy",
+                        "display": "Suspected occult malignancy"
+                      }
+                    ]
+                  }
                 }
               ]
             },
@@ -371,7 +399,7 @@
                   "documentation": [
                     {
                       "type": "documentation",
-                      "label": "National criteria v2.0, p.11 \u2014 P2 Urgent row, sub-bullet 2",
+                      "label": "National criteria v2.0, p.11 — P2 Urgent row, sub-bullet 2",
                       "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
                       "extension": [
                         {
@@ -379,6 +407,20 @@
                           "valueInteger": 11
                         }
                       ]
+                    }
+                  ],
+                  "extension": [
+                    {
+                      "url": "http://crr.health.nz/fhir/StructureDefinition/indication-theme",
+                      "valueCodeableConcept": {
+                        "coding": [
+                          {
+                            "system": "http://crr.health.nz/fhir/CodeSystem/indication-theme",
+                            "code": "suspected-occult-malignancy",
+                            "display": "Suspected occult malignancy"
+                          }
+                        ]
+                      }
                     }
                   ]
                 },
@@ -472,7 +514,7 @@
                   "documentation": [
                     {
                       "type": "documentation",
-                      "label": "National criteria v2.0, p.11 \u2014 P2 Urgent row, sub-bullet 2, 'AND two or more...'",
+                      "label": "National criteria v2.0, p.11 — P2 Urgent row, sub-bullet 2, 'AND two or more...'",
                       "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
                       "extension": [
                         {
@@ -481,13 +523,27 @@
                         }
                       ]
                     }
+                  ],
+                  "extension": [
+                    {
+                      "url": "http://crr.health.nz/fhir/StructureDefinition/indication-theme",
+                      "valueCodeableConcept": {
+                        "coding": [
+                          {
+                            "system": "http://crr.health.nz/fhir/CodeSystem/indication-theme",
+                            "code": "suspected-occult-malignancy",
+                            "display": "Suspected occult malignancy"
+                          }
+                        ]
+                      }
+                    }
                   ]
                 }
               ],
               "documentation": [
                 {
                   "type": "documentation",
-                  "label": "National criteria v2.0, p.11 \u2014 P2 Urgent row, sub-bullet 2",
+                  "label": "National criteria v2.0, p.11 — P2 Urgent row, sub-bullet 2",
                   "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
                   "extension": [
                     {
@@ -495,6 +551,20 @@
                       "valueInteger": 11
                     }
                   ]
+                }
+              ],
+              "extension": [
+                {
+                  "url": "http://crr.health.nz/fhir/StructureDefinition/indication-theme",
+                  "valueCodeableConcept": {
+                    "coding": [
+                      {
+                        "system": "http://crr.health.nz/fhir/CodeSystem/indication-theme",
+                        "code": "suspected-occult-malignancy",
+                        "display": "Suspected occult malignancy"
+                      }
+                    ]
+                  }
                 }
               ]
             },
@@ -516,7 +586,7 @@
               "documentation": [
                 {
                   "type": "documentation",
-                  "label": "National criteria v2.0, p.11 \u2014 P2 Urgent row, sub-bullet 3",
+                  "label": "National criteria v2.0, p.11 — P2 Urgent row, sub-bullet 3",
                   "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
                   "extension": [
                     {
@@ -552,6 +622,20 @@
                     "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#advice.adviserNameRole"
                   ]
                 }
+              ],
+              "extension": [
+                {
+                  "url": "http://crr.health.nz/fhir/StructureDefinition/indication-theme",
+                  "valueCodeableConcept": {
+                    "coding": [
+                      {
+                        "system": "http://crr.health.nz/fhir/CodeSystem/indication-theme",
+                        "code": "specialist-endorsed-referral",
+                        "display": "Specialist-endorsed referral"
+                      }
+                    ]
+                  }
+                }
               ]
             }
           ]
@@ -560,7 +644,7 @@
       "documentation": [
         {
           "type": "documentation",
-          "label": "National criteria v2.0, p.10 \u2014 P2 Urgent row",
+          "label": "National criteria v2.0, p.10 — P2 Urgent row",
           "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=10",
           "extension": [
             {
@@ -610,7 +694,7 @@
           "documentation": [
             {
               "type": "documentation",
-              "label": "National criteria v2.0, p.11 \u2014 Alternative management row, bullet 1",
+              "label": "National criteria v2.0, p.11 — Alternative management row, bullet 1",
               "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
               "extension": [
                 {
@@ -636,7 +720,7 @@
           "documentation": [
             {
               "type": "documentation",
-              "label": "National criteria v2.0, p.11 \u2014 Alternative management row, bullet 2",
+              "label": "National criteria v2.0, p.11 — Alternative management row, bullet 2",
               "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
               "extension": [
                 {
@@ -662,7 +746,7 @@
           "documentation": [
             {
               "type": "documentation",
-              "label": "National criteria v2.0, p.11 \u2014 Alternative management row, bullet 3",
+              "label": "National criteria v2.0, p.11 — Alternative management row, bullet 3",
               "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
               "extension": [
                 {
@@ -688,7 +772,7 @@
           "documentation": [
             {
               "type": "documentation",
-              "label": "National criteria v2.0, p.11 \u2014 Alternative management row, bullet 4",
+              "label": "National criteria v2.0, p.11 — Alternative management row, bullet 4",
               "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
               "extension": [
                 {
@@ -714,7 +798,7 @@
           "documentation": [
             {
               "type": "documentation",
-              "label": "National criteria v2.0, p.11 \u2014 Alternative management row, bullet 5",
+              "label": "National criteria v2.0, p.11 — Alternative management row, bullet 5",
               "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
               "extension": [
                 {
@@ -740,7 +824,7 @@
           "documentation": [
             {
               "type": "documentation",
-              "label": "National criteria v2.0, p.11 \u2014 Alternative management row, bullet 6",
+              "label": "National criteria v2.0, p.11 — Alternative management row, bullet 6",
               "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
               "extension": [
                 {
@@ -755,7 +839,7 @@
       "documentation": [
         {
           "type": "documentation",
-          "label": "National criteria v2.0, p.11 \u2014 Alternative management or HealthPathway recommended row",
+          "label": "National criteria v2.0, p.11 — Alternative management or HealthPathway recommended row",
           "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
           "extension": [
             {
@@ -797,7 +881,7 @@
       "documentation": [
         {
           "type": "documentation",
-          "label": "National criteria v2.0, p.11 \u2014 Not routinely funded row",
+          "label": "National criteria v2.0, p.11 — Not routinely funded row",
           "url": "https://crr.health.nz/criteria/National_Community_Referral_Criteria_for_Imaging_Part_I_v2.0.pdf#page=11",
           "extension": [
             {

@@ -134,6 +134,22 @@ for (const f of fs.readdirSync(path.join(root, "fhir")).filter(f => f.startsWith
   pages(a.action);
 } })(pd.action);
 
+// 7b. Indication themes (ARCH-MIG-01 slice 6, brief D1): every logic-carrying
+// action inside an indication block carries an `indication-theme` so the Viewer's
+// indication-first grouping is in the artefact, not in page code keyed to retired
+// ids. "Logic-carrying" is rule 7's sense (has a `condition`); the block action
+// itself (coded `criteria-block: indication`) is exempt — it spans themes.
+const INDICATION_THEME_EXT = "http://crr.health.nz/fhir/StructureDefinition/indication-theme";
+const isIndicationBlock = (a) => (a.code || []).some(c => (c.coding || []).some(cd => cd.system?.endsWith("criteria-block") && cd.code === "indication"));
+const hasTheme = (a) => (a.extension || []).some(e => e.url === INDICATION_THEME_EXT && e.valueCodeableConcept?.coding?.[0]?.code && e.valueCodeableConcept.coding[0].display);
+(function themes(actions, inIndication) { for (const a of actions || []) {
+  const here = inIndication || isIndicationBlock(a);
+  if (here && !isIndicationBlock(a) && a.condition && !hasTheme(a)) {
+    problems.push(`PlanDefinition action ${a.id}: logic-carrying action inside an indication block has no valid indication-theme extension (slice 6 D1)`);
+  }
+  themes(a.action, here);
+} })(pd.action, false);
+
 // 8. Vocabulary resolution (ARCH-MIG-01 slice 1 session 2, plan §2 slice 1 item 1).
 const vocab = JSON.parse(fs.readFileSync(path.join(root, "vocabulary", "indicators.json"), "utf8"));
 const vocabByLinkId = new Map(vocab.indicators.map(i => [i.linkId, i]));
