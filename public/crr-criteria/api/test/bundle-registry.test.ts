@@ -2,8 +2,8 @@
 // manually verified live against `wrangler dev` in PR #5 into a CI-runnable
 // suite (chore/arch-mig-test-harness). See vitest.config.ts for why this
 // uses @cloudflare/vitest-plugin, not @cloudflare/vitest-pool-workers.
-import { describe, expect, it } from "vitest";
-import { SELF } from "cloudflare:test";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { SELF, env } from "cloudflare:test";
 // @ts-expect-error -- ?raw import, no type declaration
 import realBundleJson from "../../../../tooling/criteria-bundle/registry/ct-chest-abdomen-pelvis-adult/1.0.0.json?raw";
 
@@ -184,6 +184,10 @@ describe("state transitions", () => {
     expect(body.questionnaire).toBeTruthy();
     expect(Array.isArray(body.overlays)).toBe(true); // slice 6 D3 — overlays for the Viewer's region
     expect(body.source).toBeTruthy();
+    // examId + cohort on the bundle branch too (no snapshot seeded here, so the
+    // fallback applies — the id itself, adult)
+    expect(body.examId).toBe("ct_cap");
+    expect(body.cohort).toBe("adult");
 
     // 18. xr_elbow (live=0, no published bundle for its key) stays on the legacy fallback
     res = await SELF.fetch("http://worker/api/criteria/xr_elbow");
@@ -193,5 +197,65 @@ describe("state transitions", () => {
     res = await SELF.fetch("http://worker/api/bundle/ct-chest-abdomen-pelvis-adult/latest");
     const bundleBody: any = await res.json();
     expect(bundleBody.state).toBe("published");
+  });
+});
+
+// chore/arch-mig-viewer-findings — every published id resolves through
+// GET /api/criteria/:id (the Viewer/Triage `?exam=` deep link), adult and
+// paediatric, bundle or not, each carrying `examId` + `cohort`.
+describe("GET /api/criteria/:id — examId + cohort mapping", () => {
+  const SNAPSHOT = {
+    version: "test-4.1.2",
+    exams: [
+      { id: "ct", type: "multisite", title: "CT", sites: [
+        { id: "ct_cap", label: "Chest/Abdomen/Pelvis" },
+        { id: "ct_head", label: "Head" },
+      ] },
+      { id: "xr", type: "multisite", title: "X-Ray", sites: [
+        { id: "xr_elbow", label: "Elbow" },
+        { id: "xr_spine", label: "Spine" },
+      ] },
+    ],
+    paedExams: [
+      { id: "ct_paed", type: "multisite", title: "CT (Paediatric)", sites: [
+        { id: "ct_head_paed", label: "Head" },
+      ] },
+      { id: "xr_paed", type: "multisite", title: "X-Ray (Paediatric)", sites: [
+        { id: "xr_elbow_paed", label: "Elbow" },
+      ] },
+    ],
+  };
+
+  beforeAll(async () => { await env.KV.put("criteria:published", JSON.stringify({ data: SNAPSHOT })); });
+  afterAll(async () => { await env.KV.delete("criteria:published"); });
+
+  it("resolves every id in exams and paedExams — none 404, every response carries examId + cohort", async () => {
+    const cases: { id: string; cohort: "adult" | "paed"; examId: string }[] = [];
+    for (const [cohort, list] of [["adult", SNAPSHOT.exams], ["paed", SNAPSHOT.paedExams]] as const) {
+      for (const exam of list) {
+        cases.push({ id: exam.id, cohort, examId: exam.id });
+        for (const site of exam.sites) cases.push({ id: site.id, cohort, examId: exam.id });
+      }
+    }
+    for (const tc of cases) {
+      const res = await SELF.fetch("http://worker/api/criteria/" + tc.id);
+      expect(res.status, `GET /api/criteria/${tc.id}`).toBe(200);
+      const body: any = await res.json();
+      expect(body.examId, `examId for ${tc.id}`).toBe(tc.examId);
+      expect(body.cohort, `cohort for ${tc.id}`).toBe(tc.cohort);
+    }
+  });
+
+  it("a paediatric site id resolves (it previously 404'd — the loop only walked exams)", async () => {
+    const res = await SELF.fetch("http://worker/api/criteria/ct_head_paed");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({
+      id: "ct_head_paed", examId: "ct_paed", examTitle: "CT (Paediatric)", cohort: "paed",
+    });
+  });
+
+  it("an unknown id still 404s", async () => {
+    const res = await SELF.fetch("http://worker/api/criteria/not_a_real_id");
+    expect(res.status).toBe(404);
   });
 });

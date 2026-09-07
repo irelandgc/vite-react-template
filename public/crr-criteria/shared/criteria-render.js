@@ -154,12 +154,22 @@ function healthPathwaysPageId(pd) {
   }
   return null;
 }
-function healthPathwaysUrl(pageId, region, regionsConfig) {
+function healthPathwaysUrl(pageId, region, regionsConfig, regionLegacyId) {
   if (!pageId || !regionsConfig) return null;
   const r = (regionsConfig.regions || []).find((x) => x.code === region);
-  if (!r || !r.healthPathwaysDomain) return null;
+  if (!r) return null;
+  // One HNZ region can be served by several HealthPathways instances (AD-29).
+  // Use the instance for the selected legacy region id; else the first with a
+  // real (non-TBC) domain; else the first. Back-compatible with the flat
+  // `{ code, healthPathwaysDomain }` shape.
+  const insts = r.instances || (r.healthPathwaysDomain ? [{ healthPathwaysDomain: r.healthPathwaysDomain }] : []);
+  const pick =
+    (regionLegacyId && insts.find((i) => i.legacyRegionId === regionLegacyId)) ||
+    insts.find((i) => i.healthPathwaysDomain && !/^TBC\b/i.test(i.healthPathwaysDomain)) ||
+    insts[0];
+  if (!pick || !pick.healthPathwaysDomain) return null;
   const tmpl = regionsConfig.healthPathwaysUrlTemplate || "https://{domain}/{pageId}";
-  return tmpl.replace("{domain}", r.healthPathwaysDomain).replace("{pageId}", pageId);
+  return tmpl.replace("{domain}", pick.healthPathwaysDomain).replace("{pageId}", pageId);
 }
 
 const SEL_LABEL = {
@@ -174,7 +184,10 @@ export function resolveCriteria(bundle, opts) {
   const pd = (bundle && bundle.planDefinition) || {};
   const q = (bundle && bundle.questionnaire) || {};
   const isTriager = opts.context === "triager";
-  const layout = opts.layout === "vocabulary" ? "vocabulary" : "indication";
+  // "indication" — pathways grouped by indication-theme (default).
+  // "urgency" — pathways in printed order under each timeframe block (CV-027).
+  // "vocabulary" — printed order + the Questionnaire's own groups (flagged).
+  const layout = opts.layout === "vocabulary" || opts.layout === "urgency" ? opts.layout : "indication";
   const ticks = opts.ticks || {};
   const { text: qText, type: qType } = questionnaireMaps(q);
   const overlays = overlayIndex(bundle && bundle.overlays, opts.region);
@@ -216,7 +229,7 @@ export function resolveCriteria(bundle, opts) {
   const notFundedAction = topActions.find((x) => x.kind === "not-funded");
 
   const hpPageId = healthPathwaysPageId(pd);
-  const hpUrl = healthPathwaysUrl(hpPageId, opts.region, opts.regionsConfig);
+  const hpUrl = healthPathwaysUrl(hpPageId, opts.region, opts.regionsConfig, opts.regionLegacyId);
 
   const model = {
     context: opts.context === "triager" ? "triager" : "referrer",

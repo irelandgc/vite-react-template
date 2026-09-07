@@ -156,12 +156,33 @@ describe("POST /api/assess/extract — PII gate", () => {
     expect(body.redaction.patternsHit).toContain("NAME");
   });
 
-  it("422 insufficient-after-redaction when almost everything was PII", async () => {
+  it("422 + a recorded row when redaction leaves too little clinical detail (PII wording, KI-55)", async () => {
     stubAnthropic(GOOD_TOOL_INPUT);
     const res = await extract({ note: "Patient Name: Kerry Smith. NHI: ZZZ0094." });
     expect(res.status).toBe(422);
     const body: any = await res.json();
-    expect(body.error).toBe("insufficient-after-redaction");
+    expect(body.validation.passed).toBe(false);
+    expect(body.validation.failures).toContain("insufficient-clinical-detail-after-redaction");
+    // redaction removed something -> the PII wording
+    expect(body.message).toMatch(/After removing patient-identifiable information/);
+    // and the failure is actually recorded (assessmentId + a row with stage pre-extract)
+    expect(typeof body.assessmentId).toBe("string");
+    const row: any = await env.DB.prepare("SELECT validation_failures, advisory FROM assessments WHERE id = ?").bind(body.assessmentId).first();
+    expect(row).toBeTruthy();
+    expect(JSON.parse(row.validation_failures).stage).toBe("pre-extract");
+  });
+
+  it("422 + a recorded row for a short note with no PII — no PII wording (KI-55)", async () => {
+    stubAnthropic(GOOD_TOOL_INPUT);
+    const res = await extract({ note: "CT chest abdomen pelvis" });
+    expect(res.status).toBe(422);
+    const body: any = await res.json();
+    expect(body.validation.failures).toContain("insufficient-clinical-detail");
+    expect(body.message).toBe("The note doesn't contain enough clinical detail to assess. Describe the presentation, examination findings and investigations.");
+    expect(body.message).not.toMatch(/patient-identifiable/);
+    expect(typeof body.assessmentId).toBe("string");
+    const row: any = await env.DB.prepare("SELECT validation_failures FROM assessments WHERE id = ?").bind(body.assessmentId).first();
+    expect(JSON.parse(row.validation_failures)).toEqual({ stage: "pre-extract", failures: ["insufficient-clinical-detail"] });
   });
 });
 

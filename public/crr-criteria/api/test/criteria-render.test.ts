@@ -49,7 +49,7 @@ function untraceable(html: string): string[] {
 
 describe("criteria-render — every displayed string traces to a bundle artefact", () => {
   for (const ctx of ["referrer", "triager"] as const) {
-    for (const layout of ["indication", "vocabulary"] as const) {
+    for (const layout of ["indication", "urgency", "vocabulary"] as const) {
       it(`${ctx} / ${layout}`, () => {
         const model = resolveCriteria(bundle, {
           context: ctx, layout, region: "te-waipounamu", regionsConfig,
@@ -110,6 +110,22 @@ describe("criteria-render — referrer view (GEN-004)", () => {
   });
 });
 
+describe("criteria-render — by-urgency layout (CV-027)", () => {
+  const html = criteriaHtml(resolveCriteria(bundle, { context: "referrer", layout: "urgency" }));
+  it("does not theme-group and does not append the Questionnaire vocabulary groups", () => {
+    expect(html).not.toContain("theme-group-hd");
+    // the vocabulary-group dump (only for layout: 'vocabulary')
+    expect(html).not.toContain("Yellow flag symptoms (context only; do not affect eligibility)");
+  });
+  it("still renders the timeframe block and the compound selection labels, in printed order", () => {
+    expect(html).toContain("Urgent: non-deferrable imaging or intervention that must be completed within 2 weeks");
+    expect(html).toContain("All of the following:");
+    expect(html).toContain("One or more of the following:");
+    // criterion A wording precedes B3 wording (PlanDefinition order)
+    expect(html.indexOf("Following full clinical assessment")).toBeLessThan(html.indexOf("advises referral for urgent CT Chest"));
+  });
+});
+
 describe("criteria-render — triager view", () => {
   const html = criteriaHtml(resolveCriteria(bundle, { context: "triager", layout: "indication" }));
   it("shows the priority code on the timeframe row", () => {
@@ -127,9 +143,15 @@ describe("criteria-render — region overlay (delivery info only)", () => {
     expect(withRegion).toContain("Submit via ERMS to the regional CRR Hub");
     expect(noRegion).not.toContain("Regional delivery");
   });
-  it("builds a HealthPathways link from the page id + regional domain", () => {
+  it("builds a HealthPathways link from the page id + regional domain (first real instance when no legacy id given)", () => {
     expect(withRegion).toContain("Local HealthPathways");
-    expect(withRegion).toMatch(/href="https:\/\/TBC\.communityhealthpathways\.org\/TBC-page-id"/);
+    expect(withRegion).toMatch(/href="https:\/\/canterbury\.communityhealthpathways\.org\/TBC-page-id"/);
+  });
+  it("uses the instance for the selected legacy region id (AD-29)", () => {
+    const southern = criteriaHtml(resolveCriteria(bundle, {
+      context: "referrer", layout: "indication", region: "te-waipounamu", regionLegacyId: "southern", regionsConfig,
+    }));
+    expect(southern).toMatch(/href="https:\/\/southern\.communityhealthpathways\.org\/TBC-page-id"/);
   });
 });
 

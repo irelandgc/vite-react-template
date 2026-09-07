@@ -210,6 +210,14 @@ input, textarea, select, button { font-family: inherit; }
 .cr-sel { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #5f6b7c; margin: 8px 0 2px; }
 .cr-row { padding: 4px 0 4px 10px; border-left: 2px solid var(--rule); margin: 3px 0; }
 .cr-row-title { font-size: 12px; line-height: 1.55; color: var(--ink); }
+/* Bundle criteria render: a leaf checkbox row already sits inside the block body
+   and nested compound-row rails; its own left border stacked up as a ladder of
+   stray vertical lines. Drop it here — the badges and the ticked tint carry the
+   cue. (Legacy interactive view keeps .crit-card's rail.) */
+.cr-block-body .crit-card,
+.cr-block-body .crit-card.ticked,
+.cr-block-body .crit-card.gateway-card,
+.cr-block-body .crit-card.lab-card { border-left: 0; }
 .cr-list { margin: 4px 0; padding-left: 18px; font-size: 12px; line-height: 1.6; }
 .cr-list li { margin-bottom: 2px; }
 .cr-note { font-size: 11px; color: #5a6068; line-height: 1.5; }
@@ -221,6 +229,28 @@ input, textarea, select, button { font-family: inherit; }
 .cr-advisory-loading { font-size: 12px; color: #5f6b7c; }
 .cr-advisory-err { font-size: 12px; color: var(--fail); background: var(--fail-bg); border-radius: 6px; padding: 8px 10px; }
 .cr-bundle-note { font-size: 10px; color: #8b919a; margin-top: 10px; font-style: italic; }
+
+/* ─── ADVISORY RENDERER (shared/advisory-render.js) ──────────────────── */
+/* Used by the Triage Advisor result panel and the Criteria Viewer self-check;
+   one place so the two render identically. */
+.adv-section { border: 1px solid var(--rule); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; background: #fff; }
+.adv-section h3 { font-size: 10px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--mid); margin: 0 0 6px; }
+.adv-section ul { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.5; color: var(--ink); }
+.adv-section p { margin: 2px 0; font-size: 12px; line-height: 1.5; color: var(--ink); }
+.adv-determination { font-weight: 700; color: var(--navy); font-size: 13px; }
+.adv-timeframe { font-weight: 600; color: var(--accent); }
+.adv-priority-code { font-family: var(--mono); font-size: 11px; color: var(--mid); }
+.adv-page { font-size: 10px; font-weight: 700; color: var(--teal); background: var(--lite); padding: 1px 5px; border-radius: 2px; border: 1px solid var(--rule); margin-left: 4px; }
+.adv-because { font-weight: 600; color: var(--navy); }
+.adv-wta-pathway { font-size: 11px; font-weight: 700; color: var(--navy); margin: 6px 0 2px; }
+.adv-attn-answer { font-weight: 600; color: var(--navy); }
+.adv-attn-say { color: var(--accent); font-weight: 600; }
+.adv-evidence, .adv-trace { width: 100%; border-collapse: collapse; font-size: 11px; }
+.adv-evidence th, .adv-evidence td, .adv-trace td { border: 1px solid var(--rule); padding: 3px 6px; text-align: left; vertical-align: top; }
+.adv-versions { font-size: 11px; margin: 0; }
+.adv-versions div { display: flex; gap: 8px; padding: 1px 0; }
+.adv-versions dt { color: var(--mid); min-width: 130px; }
+.adv-versions dd { margin: 0; font-family: var(--mono); }
 
 /* ─── SAFETY CRITICAL ────────────────────────────────────────────────── */
 .safety-critical { background: #fff0f0; border: 2px solid #dc2626; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }

@@ -62,29 +62,55 @@ describe("resolveAdvisory / advisoryHtml — referrer view", () => {
   const model = resolveAdvisory(insufficientResponse(missing), "referrer");
   const html = advisoryHtml(model);
 
-  it('"what to add" renders from the PlanDefinition action title where the linkId maps to one, else the clean item text (slice 6 D4)', () => {
+  it('"what to add" is one line per missing indicator in the Questionnaire item text; the pathway heading is the action title, once', () => {
     expect(model.whatToAdd.map((w: any) => w.linkId)).toEqual(missing);
-    // workup.bloods -> action a-bloods "Initial investigations: bloods"
+    // each line is the Questionnaire item text, byte-for-byte — never the action title
     const bloods = model.whatToAdd.find((w: any) => w.linkId === "workup.bloods");
-    expect(bloods.text).toBe("Initial investigations: bloods");
-    expect(html).toContain("Initial investigations: bloods");
-    // weightloss.percent -> the B1 action title (a compound criterion)
+    expect(bloods.text).toBe(Q.get("workup.bloods"));
+    expect(bloods.text).toBe("Blood tests completed as part of initial investigations");
     const pct = model.whatToAdd.find((w: any) => w.linkId === "weightloss.percent");
-    expect(pct.text).toContain("Male over 50 years of age or female over 60 years");
-    // every "what to add" string still traces to an artefact (PD title or Q text)
-    const artefacts = (JSON.stringify(ctCapPd) + JSON.stringify(ctCapQ)).toLowerCase();
-    for (const w of model.whatToAdd) expect(artefacts).toContain(String(w.text).toLowerCase());
+    expect(pct.text).toBe(Q.get("weightloss.percent"));
+    expect(pct.text).not.toContain("Male over 50 years of age"); // the B1 sentence is a heading, not a line
+    for (const w of model.whatToAdd) expect(w.text).toBe(Q.get(w.linkId));
+    // the pathway heading is the pathway action's own title (b1 here), and it is
+    // a heading (<div class="adv-wta-pathway">), not a list item
+    const wtaSection = (html.match(/<h3>What to add<\/h3>([\s\S]*?)<\/section>/) || [])[1] || "";
+    expect(wtaSection).toContain('<div class="adv-wta-pathway">Male over 50 years of age or female over 60 years');
+    expect(wtaSection).not.toMatch(/<li[^>]*>Male over 50 years of age/);
+    // no duplicate lines
+    const lis = [...wtaSection.matchAll(/<li[^>]*>(.*?)<\/li>/g)].map((m) => m[1]);
+    expect(new Set(lis).size).toBe(lis.length);
+    // every line still traces to the Questionnaire
+    const qJson = JSON.stringify(ctCapQ).toLowerCase();
+    for (const w of model.whatToAdd) expect(qJson).toContain(String(w.text).toLowerCase());
   });
 
   it('"what to add" groups by pathway, fewest-facts-short first', () => {
-    // one pathway missing 1 fact, another missing 2 -> the 1-short pathway first
+    // b3 is 1 fact short (advice.urgentCTRecommended); criterion A is 2 short -> b3 first
     const m2 = resolveAdvisory(insufficientResponse(["advice.urgentCTRecommended", "workup.bloods", "workup.cxr"]), "referrer");
     const keys = m2.whatToAddGroups.map((g: any) => g.pathway);
-    expect(keys[0]).toBe("Specialist-endorsed referral"); // B3: only advice.urgentCTRecommended short
-    expect(keys).toContain("Suspected occult malignancy");
+    expect(keys[0]).toContain("advises referral for urgent CT Chest, Abdomen and Pelvis"); // b3 title
+    expect(keys[1]).toContain("Following full clinical assessment and examination"); // criterion A title
     const h2 = advisoryHtml(m2);
-    expect(h2).toContain("Specialist-endorsed referral");
-    expect(h2.indexOf("Specialist-endorsed referral")).toBeLessThan(h2.indexOf("Suspected occult malignancy"));
+    expect(h2.indexOf("advises referral for urgent CT Chest")).toBeLessThan(h2.indexOf("Following full clinical assessment"));
+    // headings render as headings, lines as lines
+    expect(h2).toMatch(/<div class="adv-wta-pathway">[^<]*advises referral for urgent CT Chest/);
+    expect(h2).toContain(`<li data-linkid="workup.bloods">${Q.get("workup.bloods")}</li>`);
+  });
+
+  it("the B1 pathway, four indicators short, renders the heading once and four distinct lines (was: the B1 title four times)", () => {
+    const b1 = ["patient.age", "patient.sex", "weightloss.percent", "weightloss.periodMonths"];
+    const m = resolveAdvisory(insufficientResponse(b1), "referrer");
+    const h = advisoryHtml(m);
+    const wta = (h.match(/<h3>What to add<\/h3>([\s\S]*?)<\/section>/) || [])[1] || "";
+    // heading (the B1 action title) appears exactly once, as a heading
+    const headings = [...wta.matchAll(/<div class="adv-wta-pathway">(.*?)<\/div>/g)];
+    expect(headings).toHaveLength(1);
+    expect(headings[0][1]).toContain("Male over 50 years of age or female over 60 years");
+    // four list items, each the Questionnaire item text, all distinct
+    const lis = [...wta.matchAll(/<li[^>]*>(.*?)<\/li>/g)].map((x) => x[1]);
+    expect(lis).toEqual(b1.map((id) => Q.get(id)));
+    expect(new Set(lis).size).toBe(4);
   });
 
   it("contains no priority code string (GEN-004)", () => {

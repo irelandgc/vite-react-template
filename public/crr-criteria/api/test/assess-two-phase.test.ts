@@ -172,6 +172,19 @@ describe("POST /api/assess/propose", () => {
     expect(JSON.parse(row.validation_failures).stage).toBe("extract-gate");
   });
 
+  it("KI-55 — a note too short to assess -> 422 with the short-note message and a recorded row (stage pre-extract)", async () => {
+    stubAnthropic(PASS1); // never reached — the failure is before the model call
+    const res = await propose({ note: "CT chest abdomen pelvis", performedBy: "Dr P (GP)" });
+    expect(res.status).toBe(422);
+    const body: any = await res.json();
+    expect(body.message).toBe("The note doesn't contain enough clinical detail to assess. Describe the presentation, examination findings and investigations.");
+    expect(body.message).not.toMatch(/patient-identifiable/);
+    expect(body.validation.passed).toBe(false);
+    const row = await rowById(body.assessmentId);
+    expect(row).toBeTruthy();
+    expect(JSON.parse(row.validation_failures)).toEqual({ stage: "pre-extract", failures: ["insufficient-clinical-detail"] });
+  });
+
   // KI-53 — a requested candidate on the no-exam path must carry the verbatim
   // requesting words; branch 1 (valid quote -> most likely) is covered above.
   it("KI-53 branch 2 — requested:true with quote null is shown as a candidate, not most likely, and recorded", async () => {

@@ -248,24 +248,8 @@ textarea.note::placeholder{color:#8b919a}
 .attn-opts{display:flex;gap:5px}
 .attn-opts button{border:1px solid var(--rule);background:#fff;border-radius:4px;padding:4px 10px;font-family:var(--sans);font-size:11px;font-weight:600;color:var(--mid);cursor:pointer}
 .attn-opts button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.adv-section{border:1px solid var(--rule);border-radius:6px;padding:10px 12px;margin-bottom:8px;background:#fff}
-.adv-section h3{font-size:10px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:var(--mid);margin:0 0 6px}
-.adv-section ul{margin:0;padding-left:18px;font-size:12px;line-height:1.5;color:var(--ink)}
-.adv-section p{margin:2px 0;font-size:12px;line-height:1.5;color:var(--ink)}
-.adv-determination{font-weight:700;color:var(--navy);font-size:13px}
-.adv-timeframe{font-weight:600;color:var(--accent)}
-.adv-priority-code{font-family:var(--mono);font-size:11px;color:var(--mid)}
-.adv-page{font-size:10px;font-weight:700;color:var(--teal);background:var(--lite);padding:1px 5px;border-radius:2px;border:1px solid var(--rule);margin-left:4px}
-.adv-because{font-weight:600;color:var(--navy)}
-.adv-wta-pathway{font-size:11px;font-weight:700;color:var(--navy);margin:6px 0 2px}
-.adv-attn-answer{font-weight:600;color:var(--navy)}
-.adv-attn-say{color:var(--accent);font-weight:600}
-.adv-evidence,.adv-trace{width:100%;border-collapse:collapse;font-size:11px}
-.adv-evidence th,.adv-evidence td,.adv-trace td{border:1px solid var(--rule);padding:3px 6px;text-align:left;vertical-align:top}
-.adv-versions{font-size:11px;margin:0}
-.adv-versions div{display:flex;gap:8px;padding:1px 0}
-.adv-versions dt{color:var(--mid);min-width:130px}
-.adv-versions dd{margin:0;font-family:var(--mono)}
+/* .adv-* (advisory renderer) now live in shared/crr-design-system.css so the
+   Triage result panel and the Criteria Viewer self-check render identically. */
 .pipe-badge{font-size:9px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:#fff;background:var(--teal);padding:2px 6px;border-radius:3px;margin-left:6px}
 </style>
 
@@ -3474,7 +3458,24 @@ async function boot() {
   wireOverrides();
   markProvenanceModal();
   const pre = getParam('exam');
-  if (pre) { const sel = document.getElementById('pipeExam'); if (sel) { sel.value = pre; onExamChange(); } }
+  if (pre) {
+    const sel = document.getElementById('pipeExam');
+    const match = EXAM_SITES.find((e) => e.id === pre);
+    if (sel && match && match.live === false) {
+      // criteria not yet published — the <option> is disabled and cannot become
+      // the select's value, so a bare `sel.value = pre` silently no-ops. Show
+      // the referrer why (chore/arch-mig-viewer-findings), mirroring the
+      // "criteria not yet published" the proposal card shows.
+      const note = document.createElement('div');
+      note.id = 'pipeExamNotice';
+      note.style.cssText = 'font-size:11px;color:var(--mid);margin:4px 0 2px;line-height:1.4';
+      note.textContent = `Requested exam: ${match.title} (${pre}) — criteria not yet published. Paste the note below and the tool will propose an exam.`;
+      sel.insertAdjacentElement('afterend', note);
+    } else if (sel) {
+      sel.value = pre;
+      onExamChange();
+    }
+  }
 }
 
 async function loadExamSites() {
@@ -3829,7 +3830,7 @@ function renderTypedError(status, json) {
     <div style="background:var(--fail-bg);border-left:3px solid #c62828;border-radius:2px;padding:10px 12px;font-size:12px;color:var(--fail);margin-bottom:8px">
       <strong>Assessment not produced (${esc(status)})</strong><br>${esc(json.message || json.error || 'validation failed')}</div>
     ${failures.length ? `<div style="font-size:11px;color:var(--mid);margin-bottom:4px">Validation failures:</div><ul style="font-size:11px;color:var(--ink);margin:0;padding-left:16px">${failures.map((f) => `<li>${esc(typeof f === 'string' ? f : JSON.stringify(f))}</li>`).join('')}</ul>` : ''}
-    <div style="font-size:11px;color:var(--mid);margin-top:8px">Assessment id: <span style="font-family:var(--mono)">${esc(json.assessmentId || '—')}</span> · this failure is recorded.</div>
+    <div style="font-size:11px;color:var(--mid);margin-top:8px">${json.assessmentId ? `Assessment id: <span style="font-family:var(--mono)">${esc(json.assessmentId)}</span> · this failure is recorded.` : 'Nothing was assessed — this attempt was not recorded.'}</div>
   </div></div>`;
 }
 

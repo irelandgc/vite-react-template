@@ -1,27 +1,95 @@
 {
-  "description": "Regional delivery configuration. Region is a render-time concern selected by URL parameter (BRD CV-021); it never reaches the rules. HealthPathways domains are placeholders to be confirmed with each region.",
+  "description": "Canonical HNZ region vocabulary and the render-time delivery config. Region is selected by URL parameter (BRD CV-021) and never reaches the rules. Each HNZ region maps to the pre-migration Criteria Viewer's legacy region ids, the HNZ districts it covers, and the HealthPathways instance(s) serving it. A bundle's regional overlay is keyed by the HNZ region `code` (authoring granularity: region — one overlay per HNZ region for CT CAP; AD-29). `?region=` accepts either an HNZ `code` or a legacy `legacyRegionId`; the overlay applies by HNZ `code`, the HealthPathways link uses the matching instance's domain. Domains are lifted from the pre-migration Viewer's REGIONS where it carried a real value, and left `TBC` where it did not.",
   "healthPathwaysUrlTemplate": "https://{domain}/{pageId}",
   "regions": [
     {
       "code": "northern",
       "name": "Northern",
-      "healthPathwaysDomain": "TBC.communityhealthpathways.org"
+      "legacyRegionIds": ["aucklandregion", "northland"],
+      "instances": [
+        {
+          "legacyRegionId": "aucklandregion",
+          "name": "Auckland Region",
+          "districts": ["Waitematā", "Auckland", "Counties Manukau"],
+          "healthPathwaysDomain": "aucklandregion.communityhealthpathways.org"
+        },
+        {
+          "legacyRegionId": "northland",
+          "name": "Northland",
+          "districts": ["Northland"],
+          "healthPathwaysDomain": "northland.communityhealthpathways.org"
+        }
+      ]
     },
     {
       "code": "te-manawa-taki",
       "name": "Te Manawa Taki",
-      "healthPathwaysDomain": "TBC.communityhealthpathways.org"
+      "legacyRegionIds": ["midland"],
+      "instances": [
+        {
+          "legacyRegionId": "midland",
+          "name": "Midland",
+          "districts": ["Waikato", "Bay of Plenty", "Lakes", "Tairāwhiti", "Taranaki"],
+          "healthPathwaysDomain": "midland.communityhealthpathways.org"
+        }
+      ]
     },
     {
       "code": "central",
       "name": "Central",
-      "healthPathwaysDomain": "TBC.communityhealthpathways.org"
+      "legacyRegionIds": ["hawkesbay", "3d", "ccp"],
+      "instances": [
+        {
+          "legacyRegionId": "hawkesbay",
+          "name": "Hawke's Bay",
+          "districts": ["Hawke's Bay"],
+          "healthPathwaysDomain": "hawkesbay.communityhealthpathways.org"
+        },
+        {
+          "legacyRegionId": "3d",
+          "name": "Central (3D)",
+          "districts": ["Capital & Coast", "Hutt Valley", "Wairarapa"],
+          "healthPathwaysDomain": "3d.communityhealthpathways.org"
+        },
+        {
+          "legacyRegionId": "ccp",
+          "name": "Whanganui & MidCentral CHP",
+          "districts": ["MidCentral", "Whanganui"],
+          "healthPathwaysDomain": "ccp.communityhealthpathways.org"
+        }
+      ]
     },
     {
       "code": "te-waipounamu",
       "name": "Te Waipounamu",
-      "healthPathwaysDomain": "TBC.communityhealthpathways.org"
+      "legacyRegionIds": ["canterbury", "southern"],
+      "instances": [
+        {
+          "legacyRegionId": "canterbury",
+          "name": "Waitaha Canterbury",
+          "districts": ["Canterbury", "South Canterbury"],
+          "healthPathwaysDomain": "canterbury.communityhealthpathways.org"
+        },
+        {
+          "legacyRegionId": "southern",
+          "name": "Southern",
+          "districts": ["Southern"],
+          "healthPathwaysDomain": "southern.communityhealthpathways.org"
+        },
+        {
+          "legacyRegionId": null,
+          "name": "Nelson Marlborough",
+          "districts": ["Nelson Marlborough"],
+          "healthPathwaysDomain": "TBC.communityhealthpathways.org"
+        },
+        {
+          "legacyRegionId": null,
+          "name": "West Coast",
+          "districts": ["West Coast"],
+          "healthPathwaysDomain": "TBC.communityhealthpathways.org"
+        }
+      ]
     }
   ],
-  "note": "Seven HealthPathways instances share a common page ID structure (BRD CV-012). Map each instance to the region(s) it serves here; more than one instance per region is allowed."
+  "note": "Seven HealthPathways instances share a common page ID structure (BRD CV-012). Nelson Marlborough and West Coast have no dedicated legacy HealthPathways instance in the pre-migration Viewer; their domain is TBC pending confirmation, not folded into Canterbury. The districts column is the 20 HNZ districts under the four regions — HNZ organisational structure, not clinical content; it is a programme reference, still to be confirmed against the authoritative HNZ list."
 }
