@@ -97,6 +97,17 @@ describe("criteria-render — referrer view (GEN-004)", () => {
     // funding.unfitOrUnwilling never gets a checkbox / data-linkid
     expect(html).not.toContain('data-linkid="funding.unfitOrUnwilling"');
   });
+  it("only single-boolean leaves are tickable; compound rows (B1, B3) are not", () => {
+    // criterion-A's five boolean leaves + the six lab booleans are checkboxes
+    for (const id of ["workup.bloods", "workup.urinalysis", "workup.cxr", "workup.strongSuspicionMalignancy", "workup.localisingFeatures", "lab.crp.raised", "lab.hb.low", "lab.alp.high"]) {
+      expect(html).toContain(`<input type="checkbox" class="crit-card-check" data-linkid="${id}"`);
+    }
+    // B1 (age + sex + % + period) and B3 (advice + name) are compound — no single checkbox
+    expect(html).not.toContain('data-linkid="patient.age"');
+    expect(html).not.toContain('data-linkid="advice.adviserNameRole"');
+    // …but their published wording still renders
+    expect(html).toContain("Male over 50 years of age or female over 60 years");
+  });
 });
 
 describe("criteria-render — triager view", () => {

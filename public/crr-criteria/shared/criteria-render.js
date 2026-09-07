@@ -100,21 +100,33 @@ function linkIdsOf(action) {
   }
   return ids;
 }
-function isTickable(action, blockKind) {
-  // a leaf a referrer ticks: has a linkId, and is not a not-funded row (GEN-005).
-  return blockKind !== "not-funded" && linkIdsOf(action).length > 0;
+// A leaf a referrer ticks with one click: exactly ONE input linkId, that item is
+// a `boolean` in the Questionnaire, and it is not a not-funded row (GEN-005). A
+// compound action with several heterogeneous inputs (e.g. CT CAP's B1 — age +
+// sex + weight-loss % + period) renders as a plain criterion row, never a single
+// checkbox: there is nothing sound for one tick to set (transcription-template
+// finding — see the slice 6 report).
+function tickableLinkId(action, blockKind, qType) {
+  if (blockKind === "not-funded") return null;
+  const ids = linkIdsOf(action);
+  if (ids.length !== 1) return null;
+  return qType.get(ids[0]) === "boolean" ? ids[0] : null;
 }
 
-// Questionnaire linkId -> item text.
-function questionnaireText(q) {
-  const map = new Map();
+// Questionnaire linkId -> item text / type.
+function questionnaireMaps(q) {
+  const text = new Map();
+  const type = new Map();
   (function walk(items) {
     for (const i of (items || [])) {
-      if (i && i.linkId && typeof i.text === "string") map.set(i.linkId, i.text);
+      if (i && i.linkId) {
+        if (typeof i.text === "string") text.set(i.linkId, i.text);
+        if (i.type) type.set(i.linkId, i.type);
+      }
       walk(i && i.item);
     }
   })(q && q.item);
-  return map;
+  return { text, type };
 }
 
 // The regional overlay for `region` (bundle carries `overlays[]`); target action id -> overlay action.
@@ -164,13 +176,13 @@ export function resolveCriteria(bundle, opts) {
   const isTriager = opts.context === "triager";
   const layout = opts.layout === "vocabulary" ? "vocabulary" : "indication";
   const ticks = opts.ticks || {};
-  const qText = questionnaireText(q);
+  const { text: qText, type: qType } = questionnaireMaps(q);
   const overlays = overlayIndex(bundle && bundle.overlays, opts.region);
 
   // Build a renderable row for an action, recursively.
   function row(action, blockKind, depth) {
     const linkIds = linkIdsOf(action);
-    const tickable = isTickable(action, blockKind);
+    const tickLinkId = tickableLinkId(action, blockKind, qType);
     const ov = overlays.get(action.id);
     return {
       id: action.id,
@@ -184,9 +196,9 @@ export function resolveCriteria(bundle, opts) {
       priority: priorityOf(action),
       page: pageOf(action),
       notes: notesOf(action),
-      linkId: tickable ? linkIds[0] : null,
+      linkId: tickLinkId,
       linkIds,
-      ticked: tickable ? !!ticks[linkIds[0]] : false,
+      ticked: tickLinkId ? !!ticks[tickLinkId] : false,
       theme: themeOf(action),
       hasCondition: Array.isArray(action.condition) && action.condition.length > 0,
       delivery: ov ? { title: ov.title || null, description: ov.description || null, notes: notesOf(ov), hpPageId: (ov.documentation || []).flatMap((d) => (d.extension || [])).find((e) => e.url === HP_PAGE_ID_EXT)?.valueString || null } : null,

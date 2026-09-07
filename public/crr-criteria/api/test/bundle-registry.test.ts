@@ -182,6 +182,8 @@ describe("state transitions", () => {
     expect(body.bundle.key).toBe("ct-chest-abdomen-pelvis-adult");
     expect(body.planDefinition).toBeTruthy();
     expect(body.questionnaire).toBeTruthy();
+    expect(Array.isArray(body.overlays)).toBe(true); // slice 6 D3 — overlays for the Viewer's region
+    expect(body.source).toBeTruthy();
 
     // 18. xr_elbow (live=0, no published bundle for its key) stays on the legacy fallback
     res = await SELF.fetch("http://worker/api/criteria/xr_elbow");

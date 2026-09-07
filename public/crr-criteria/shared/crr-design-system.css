@@ -214,6 +214,13 @@ input, textarea, select, button { font-family: inherit; }
 .cr-list li { margin-bottom: 2px; }
 .cr-note { font-size: 11px; color: #5a6068; line-height: 1.5; }
 .cr-delivery { background: var(--accent-light); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; padding: 6px 10px; margin: 6px 0 2px; font-size: 11px; color: var(--ink); line-height: 1.5; }
+.cr-check-btn { font-family: inherit; font-size: 12px; font-weight: 600; padding: 7px 14px; border: 1px solid var(--accent); background: var(--accent); color: #fff; border-radius: 6px; cursor: pointer; }
+.cr-check-btn:hover { filter: brightness(0.95); }
+.cr-advisory { margin-top: 10px; }
+.cr-advisory-hd { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #5f6b7c; margin-bottom: 6px; }
+.cr-advisory-loading { font-size: 12px; color: #5f6b7c; }
+.cr-advisory-err { font-size: 12px; color: var(--fail); background: var(--fail-bg); border-radius: 6px; padding: 8px 10px; }
+.cr-bundle-note { font-size: 10px; color: #8b919a; margin-top: 10px; font-style: italic; }
 
 /* ─── SAFETY CRITICAL ────────────────────────────────────────────────── */
 .safety-critical { background: #fff0f0; border: 2px solid #dc2626; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }

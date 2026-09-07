@@ -112,8 +112,12 @@ app.get('/api/criteria/:id', async (c) => {
           sectionTitle: resolved.bundle.planDefinition?.title ?? null,
           pages: resolved.bundle.source?.pages ?? resolved.bundle.source?.draftRef ?? null,
         },
+        source: resolved.bundle.source ?? null,
         planDefinition: resolved.bundle.planDefinition,
         questionnaire: resolved.bundle.questionnaire,
+        // regional overlays (delivery notes only — the Viewer applies the one
+        // matching its `?region=` param; slice 6 D3, CV-021)
+        overlays: resolved.bundle.overlays ?? [],
       });
     }
   } catch (e: any) {
