@@ -8,6 +8,7 @@ import {
   assembleSystemPrompt,
   assembleUserContent,
   stripAttestationItems,
+  applyExtractionHints,
   findCriteriaLeaks,
 } from "../prompt";
 import promptV3 from "../../../../tooling/criteria-bundle/extraction/prompt-v3.0.3.json";
@@ -79,6 +80,31 @@ describe("prompt — attestation items are stripped (AD-17)", () => {
     expect(before).toContain("workup.strongSuspicionMalignancy");
     // input object not mutated
     expect(JSON.stringify(ctCapQ)).toBe(before);
+  });
+});
+
+describe("prompt — extraction-hint split (slice 6 D4)", () => {
+  it("CT CAP Questionnaire carries no model hint in item.text; workup.localisingFeatures has an extraction-hint extension", () => {
+    const find = (id: string) => {
+      let hit: any = null;
+      (function w(items: any[]) { for (const i of items || []) { if (i.linkId === id) hit = i; w(i.item); } })((ctCapQ as any).item);
+      return hit;
+    };
+    const lf = find("workup.localisingFeatures");
+    expect(lf.text).toBe("Focal pathology, localising signs/symptoms, or a potential biopsy site has been identified");
+    expect(lf.text).not.toMatch(/\btrue\s*=/);
+    const hint = (lf.extension || []).find((e: any) => e.url === "http://crr.health.nz/fhir/StructureDefinition/extraction-hint");
+    expect(hint.valueString).toContain("true = identified");
+  });
+
+  it("applyExtractionHints folds the hint back into the model's copy and drops the extension", () => {
+    const withHints = applyExtractionHints(ctCapQ);
+    const find = (q: any, id: string) => { let hit: any = null; (function w(items: any[]) { for (const i of items || []) { if (i.linkId === id) hit = i; w(i.item); } })(q.item); return hit; };
+    const lf = find(withHints, "workup.localisingFeatures");
+    expect(lf.text).toBe("Focal pathology, localising signs/symptoms, or a potential biopsy site has been identified (true = identified; this is a redirect to the relevant system-specific pathway)");
+    expect((lf.extension || []).some((e: any) => e.url.endsWith("extraction-hint"))).toBe(false);
+    // input not mutated
+    expect(find(ctCapQ, "workup.localisingFeatures").text).not.toMatch(/true =/);
   });
 });
 

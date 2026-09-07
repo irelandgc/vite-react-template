@@ -62,12 +62,29 @@ describe("resolveAdvisory / advisoryHtml — referrer view", () => {
   const model = resolveAdvisory(insufficientResponse(missing), "referrer");
   const html = advisoryHtml(model);
 
-  it('"what to add" text equals the Questionnaire item text byte-for-byte', () => {
+  it('"what to add" renders from the PlanDefinition action title where the linkId maps to one, else the clean item text (slice 6 D4)', () => {
     expect(model.whatToAdd.map((w: any) => w.linkId)).toEqual(missing);
-    for (const w of model.whatToAdd) {
-      expect(w.text).toBe(Q.get(w.linkId));
-      expect(html).toContain(Q.get(w.linkId)!.replace(/&/g, "&amp;"));
-    }
+    // workup.bloods -> action a-bloods "Initial investigations: bloods"
+    const bloods = model.whatToAdd.find((w: any) => w.linkId === "workup.bloods");
+    expect(bloods.text).toBe("Initial investigations: bloods");
+    expect(html).toContain("Initial investigations: bloods");
+    // weightloss.percent -> the B1 action title (a compound criterion)
+    const pct = model.whatToAdd.find((w: any) => w.linkId === "weightloss.percent");
+    expect(pct.text).toContain("Male over 50 years of age or female over 60 years");
+    // every "what to add" string still traces to an artefact (PD title or Q text)
+    const artefacts = (JSON.stringify(ctCapPd) + JSON.stringify(ctCapQ)).toLowerCase();
+    for (const w of model.whatToAdd) expect(artefacts).toContain(String(w.text).toLowerCase());
+  });
+
+  it('"what to add" groups by pathway, fewest-facts-short first', () => {
+    // one pathway missing 1 fact, another missing 2 -> the 1-short pathway first
+    const m2 = resolveAdvisory(insufficientResponse(["advice.urgentCTRecommended", "workup.bloods", "workup.cxr"]), "referrer");
+    const keys = m2.whatToAddGroups.map((g: any) => g.pathway);
+    expect(keys[0]).toBe("Specialist-endorsed referral"); // B3: only advice.urgentCTRecommended short
+    expect(keys).toContain("Suspected occult malignancy");
+    const h2 = advisoryHtml(m2);
+    expect(h2).toContain("Specialist-endorsed referral");
+    expect(h2.indexOf("Specialist-endorsed referral")).toBeLessThan(h2.indexOf("Suspected occult malignancy"));
   });
 
   it("contains no priority code string (GEN-004)", () => {

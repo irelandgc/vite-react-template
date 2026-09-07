@@ -2,7 +2,7 @@
   "resourceType": "Questionnaire",
   "id": "CRR-CT-CAP-Adult",
   "url": "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "name": "CRR_CTChestAbdomenPelvis_Adult_Indicators",
   "title": "CT Chest, Abdomen and Pelvis - Adult: referral indicators",
   "status": "draft",
@@ -89,8 +89,14 @@
         },
         {
           "linkId": "workup.localisingFeatures",
-          "text": "Focal pathology, localising signs/symptoms, or a potential biopsy site has been identified (true = identified; this is a redirect to the relevant system-specific pathway)",
-          "type": "boolean"
+          "text": "Focal pathology, localising signs/symptoms, or a potential biopsy site has been identified",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "http://crr.health.nz/fhir/StructureDefinition/extraction-hint",
+              "valueString": "true = identified; this is a redirect to the relevant system-specific pathway"
+            }
+          ]
         }
       ]
     },

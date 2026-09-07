@@ -85,7 +85,25 @@ Effort is relative (S/M/L) — no dates were given (D1). Dependencies name the s
 **Addendum (2026-09-07 · `chore/arch-mig-two-phase-assess`):** `POST /api/assess` split into `POST /api/assess/propose` + `POST /api/assess/complete` (AD-25). `propose` runs a national-only extraction and returns the exam candidates (each with a quote) + the leading candidate's attestation questions; `complete` runs the full site-scoped extraction against the confirmed exam, then merge → evaluate → Advisory, and UPDATEs the same row. Migration `0011_assess_two_phase.sql` adds `assessments.status` (`proposed`/`completed`) and `assessments.proposal`; stale `proposed` rows are purged at the note retention (`purgeExpiredProposals`). `requestedExamSite` is now optional on `/api/assess/extract` and (with a candidate) `/api/assess/evaluate`; the one-call `/api/assess` still requires it. Thin Triage page runs the two phases when no exam is supplied — shows the proposed exam + quote + a change control + attestation questions, completes on confirm. `complete` rejects an attestation not on the confirmed exam's Questionnaire; a confirmed exam the extractor did not surface is recorded as a `referrer-exam-override` discrepancy. Tests: `test/assess-two-phase.test.ts` + no-exam cases in the evaluate/extract suites (api-worker **169/169**); `run-pipeline-e2e.mjs` gains a two-phase pass over the four ground-truth notes. AD-25; CL-27, CL-28. Flags off; not deployed.
 
 ### Slice 6 — Criteria Viewer on bundles · M–L · Sonnet · after 2; parallel with 3–5
-**Status: not started.**
+**Status: built (`feature/arch-mig-slice6-viewer`), flags off, not deployed.**
+- `indication-theme` PlanDefinition extension (AD-26); CT CAP PlanDefinition
+  retrofitted, 2.0.0 → 2.1.0; `check` rule 7b. Shared `criteria-render.js`
+  (PlanDefinition + Questionnaire + overlay → DOM) with the same
+  "every displayed string comes from an artefact" test as `advisory-render.js`.
+- Viewer renders CT CAP from its published bundle; every other site unchanged on
+  the JSON path; `EMBEDDED_DATA` removed (KI-19); ticks → QuestionnaireResponse;
+  "Check against criteria" → `/api/assess/evaluate` when the pipeline is on.
+- Triage reference column renders the PlanDefinition structure, not the
+  Questionnaire (TA-018); `extraction-hint` extension splits model hints out of
+  `item.text` (Questionnaire 2.1.0 → 2.2.0); "what to add" from PlanDefinition
+  action titles, grouped by pathway.
+- **Open (blocks the slice 6 "Done" fully):** `checkSafetyText()` — **not carried
+  forward** into any bundle-rendered path; left on the legacy JSON path only with
+  a KI-51 / AD-05 comment. Its removal or replacement by a governed national
+  safety define is **pending review-pack decision D1** (AD-05). Owner: Gary / NAIAEAG.
+- **Not done here:** the bundle overlay-region model (`northern` / `te-manawa-taki`
+  / `central` / `te-waipounamu`) does not map onto the legacy Viewer's
+  HealthPathways region codes — reported as a transcription-template finding.
 - Viewer loads PlanDefinition + Questionnaire by `latest-published` for each exam/site that has one; falls back to the current published JSON for sites without a published bundle (this is the only permitted "fallback" and it is the *current* source, not an embedded copy); `EMBEDDED_DATA` removed (KI-19).
 - Compound rendering (CV-014) from `selectionBehavior` nesting; badges from action codes; page references; regional overlay rendering from `regions.json` + overlays (region from URL param, CV-021); output text from action `description` (CV-017).
 - Ticks produce a QuestionnaireResponse (kept client-side); optional "Check against criteria" button calls `/api/assess/evaluate` with the ticked response (no LLM) and shows the Advisory — a deterministic self-check for referrers.

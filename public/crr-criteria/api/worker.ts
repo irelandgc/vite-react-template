@@ -112,8 +112,12 @@ app.get('/api/criteria/:id', async (c) => {
           sectionTitle: resolved.bundle.planDefinition?.title ?? null,
           pages: resolved.bundle.source?.pages ?? resolved.bundle.source?.draftRef ?? null,
         },
+        source: resolved.bundle.source ?? null,
         planDefinition: resolved.bundle.planDefinition,
         questionnaire: resolved.bundle.questionnaire,
+        // regional overlays (delivery notes only — the Viewer applies the one
+        // matching its `?region=` param; slice 6 D3, CV-021)
+        overlays: resolved.bundle.overlays ?? [],
       });
     }
   } catch (e: any) {
@@ -2007,10 +2011,13 @@ async function runExtractionCore(
   }
   const examSiteList = await loadExamSiteList(c.env.DB);
 
-  // 3. Strip attestation-category items (AD-17) so the model never sees them.
+  // 3. Strip attestation-category items (AD-17) so the model never sees them,
+  //    then fold any `extraction-hint` extension back into the item text for the
+  //    model's copy (slice 6 D4 — renderers only ever see the clean text).
   const attestationLinkIds = new Set<string>(promptMod.ATTESTATION_LINK_IDS);
-  const questionnaires = [promptMod.stripAttestationItems(nationalQ, attestationLinkIds)];
-  if (requestedQ) questionnaires.push(promptMod.stripAttestationItems(requestedQ, attestationLinkIds));
+  const prep = (qq: any) => promptMod.applyExtractionHints(promptMod.stripAttestationItems(qq, attestationLinkIds));
+  const questionnaires = [prep(nationalQ)];
+  if (requestedQ) questionnaires.push(prep(requestedQ));
 
   // 4. Assemble and call the provider (forced call to the output tool).
   const system = promptMod.assembleSystemPrompt();

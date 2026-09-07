@@ -269,6 +269,26 @@ Criteria Viewer QA submissions from content validators.
 
 ---
 
+## Bundle states as the Criteria Viewer sees them (ARCH-MIG-01 slice 6)
+
+Each exam/site bundle has a state in the `bundles` D1 table
+(`transcribed` → `signed-off` → `published`, AD-10/AD-12). The Viewer renders a
+site from its **published** bundle and from nothing else:
+
+| Bundle state for the site's key | What the Viewer shows |
+|---|---|
+| no bundle row, or highest row is `transcribed` / `signed-off` | the current editable criteria JSON (`/api/criteria`), rendered by the legacy Viewer code path — **unchanged** |
+| highest row is `published` | the frozen bundle (`/crr-api/api/criteria/:id`), rendered by `shared/criteria-render.js`: exam title + source-document section and pages, per-row page references, explicit compound structure, badges from the action codes, redirects and not-funded as rows, and — when `ASSESS_PIPELINE_ENABLED` is on — a "Check against criteria" self-check button |
+
+Publishing a bundle (`POST /api/admin/bundles/:examSite/state` → `published`, never
+raw SQL) is therefore what switches that one exam/site over in the Viewer and the
+Triage reference column at the same time; rolling the state back switches it
+straight back to the JSON path. The `bundle:<key>:latest-published` KV key and the
+`bundles.state` D1 value are both consulted (`GET /api/criteria/:id` overlays the
+live D1 state per AD-12). Only `ct_cap` maps to a published bundle today; every
+other id is on the JSON path.
+
+
 ## Deployment
 
 Both workers are deployed from the project root:

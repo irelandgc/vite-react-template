@@ -134,6 +134,22 @@ for (const f of fs.readdirSync(path.join(root, "fhir")).filter(f => f.startsWith
   pages(a.action);
 } })(pd.action);
 
+// 7b. Indication themes (ARCH-MIG-01 slice 6, brief D1): every logic-carrying
+// action inside an indication block carries an `indication-theme` so the Viewer's
+// indication-first grouping is in the artefact, not in page code keyed to retired
+// ids. "Logic-carrying" is rule 7's sense (has a `condition`); the block action
+// itself (coded `criteria-block: indication`) is exempt — it spans themes.
+const INDICATION_THEME_EXT = "http://crr.health.nz/fhir/StructureDefinition/indication-theme";
+const isIndicationBlock = (a) => (a.code || []).some(c => (c.coding || []).some(cd => cd.system?.endsWith("criteria-block") && cd.code === "indication"));
+const hasTheme = (a) => (a.extension || []).some(e => e.url === INDICATION_THEME_EXT && e.valueCodeableConcept?.coding?.[0]?.code && e.valueCodeableConcept.coding[0].display);
+(function themes(actions, inIndication) { for (const a of actions || []) {
+  const here = inIndication || isIndicationBlock(a);
+  if (here && !isIndicationBlock(a) && a.condition && !hasTheme(a)) {
+    problems.push(`PlanDefinition action ${a.id}: logic-carrying action inside an indication block has no valid indication-theme extension (slice 6 D1)`);
+  }
+  themes(a.action, here);
+} })(pd.action, false);
+
 // 8. Vocabulary resolution (ARCH-MIG-01 slice 1 session 2, plan §2 slice 1 item 1).
 const vocab = JSON.parse(fs.readFileSync(path.join(root, "vocabulary", "indicators.json"), "utf8"));
 const vocabByLinkId = new Map(vocab.indicators.map(i => [i.linkId, i]));
@@ -162,6 +178,12 @@ const siteLocalItems = [];
     const isSiteLocal = (i.extension || []).some(e => e.url === SITE_LOCAL_EXT && e.valueBoolean === true);
     if (isSiteLocal) siteLocalItems.push(i);
     else if (!vocabByLinkId.has(i.linkId)) problems.push(`Questionnaire item "${i.linkId}" is neither in the national vocabulary nor declared site-local (add extension "${SITE_LOCAL_EXT}": true if this is genuinely site-specific)`);
+  }
+  // slice 6 D4: `item.text` is published wording only. A model-facing hint
+  // ("true = …", a linkId reference) belongs in an `extraction-hint` extension
+  // that prompt.ts folds in for the model and no renderer ever displays.
+  if (typeof i.text === "string" && /\btrue\s*=|\blinkId\b/i.test(i.text)) {
+    problems.push(`Questionnaire item "${i.linkId}": item.text carries a model-facing hint ("${i.text.match(/\btrue\s*=[^)]*|\blinkId\b[^)]*/i)?.[0]}") — move it to an "http://crr.health.nz/fhir/StructureDefinition/extraction-hint" extension (slice 6 D4)`);
   }
   walkQ(i.item);
 } })(q.item);
