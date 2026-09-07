@@ -70,39 +70,39 @@ function questionnaireText(questionnaire) {
 
 // Find the top-level PlanDefinition action whose condition names `defineName`,
 // returning its title, priority-code display, and source page.
-// Each action carrying an `indication-theme` (a pathway — CT CAP's criterion A,
-// B1, B2, B3): its theme, and the set of input linkIds anywhere in its subtree,
-// with the closest action title for each (so "what to add" can name the
-// published wording, not the internal fact).
+// A "pathway" is an action that carries an `indication-theme` and whose nearest
+// themed ancestor is none — CT CAP's criterion A, B1, B2, B3 (B2's own sub-rows
+// roll up into B2). Each pathway carries its heading (the action's own title)
+// and the set of input linkIds anywhere in its subtree, so "what to add" groups
+// the missing indicators under the pathway wording, once.
 function pathwayIndexOf(planDefinition) {
   const THEME_EXT = "http://crr.health.nz/fhir/StructureDefinition/indication-theme";
   const out = [];
   if (!planDefinition || !Array.isArray(planDefinition.action)) return out;
-  const themeOf = (a) => {
-    const e = (a.extension || []).find((x) => x.url === THEME_EXT);
-    const c = e && e.valueCodeableConcept && e.valueCodeableConcept.coding && e.valueCodeableConcept.coding[0];
-    return c ? { code: c.code, display: c.display || c.code } : null;
-  };
+  const hasTheme = (a) => (a.extension || []).some((x) => x.url === THEME_EXT);
   const inputsOf = (a) => (a.input || []).flatMap((i) => (i.profile || []).map((p) => String(p).split("#")[1]).filter(Boolean));
-  const walk = (actions, pathway) => {
+  const collectInputs = (a, acc) => {
+    for (const id of inputsOf(a)) acc.add(id);
+    for (const c of a.action || []) collectInputs(c, acc);
+  };
+  const walk = (actions, inThemed) => {
     for (const a of actions || []) {
-      const t = themeOf(a) || pathway;
-      let pw = null;
-      if (t) {
-        pw = out.find((x) => x.code === t.code);
-        if (!pw) { pw = { code: t.code, display: t.display, linkIds: new Set(), titleByLinkId: new Map() }; out.push(pw); }
+      const themed = hasTheme(a);
+      if (themed && !inThemed) {
+        const linkIds = new Set();
+        collectInputs(a, linkIds);
+        out.push({ key: a.id, title: a.title || a.id, linkIds });
       }
-      if (pw) for (const id of inputsOf(a)) { pw.linkIds.add(id); if (!pw.titleByLinkId.has(id)) pw.titleByLinkId.set(id, a.title || null); }
-      walk(a.action, t);
+      walk(a.action, inThemed || themed);
     }
   };
-  walk(planDefinition.action, null);
+  walk(planDefinition.action, false);
   return out;
 }
 
 // Group "what to add" by pathway; the pathway needing the fewest additional
 // facts (smallest count of missing linkIds that belong to it) comes first, then
-// PlanDefinition theme order, then the ungrouped items last.
+// PlanDefinition order, then the ungrouped items last.
 function groupWhatToAdd(items, missing, pathways) {
   const missingSet = new Set(missing);
   const groups = new Map();
@@ -110,16 +110,16 @@ function groupWhatToAdd(items, missing, pathways) {
     if (!groups.has(it.pathwayKey)) groups.set(it.pathwayKey, { pathway: it.pathway, key: it.pathwayKey, items: [] });
     groups.get(it.pathwayKey).items.push(it);
   }
-  const themeOrder = pathways.map((p) => p.code);
+  const order = pathways.map((p) => p.key);
   return [...groups.values()].sort((a, b) => {
     if (a.key === "_none") return 1;
     if (b.key === "_none") return -1;
-    const am = pathways.find((p) => p.code === a.key);
-    const bm = pathways.find((p) => p.code === b.key);
+    const am = pathways.find((p) => p.key === a.key);
+    const bm = pathways.find((p) => p.key === b.key);
     const aShort = am ? [...am.linkIds].filter((x) => missingSet.has(x)).length : 99;
     const bShort = bm ? [...bm.linkIds].filter((x) => missingSet.has(x)).length : 99;
     if (aShort !== bShort) return aShort - bShort;
-    return themeOrder.indexOf(a.key) - themeOrder.indexOf(b.key);
+    return order.indexOf(a.key) - order.indexOf(b.key);
   });
 }
 
@@ -227,19 +227,19 @@ export function resolveAdvisory(response, view, opts) {
   // Redirects (published wording, already strings in the Advisory)
   const redirects = exam && Array.isArray(exam.activeRedirects) ? exam.activeRedirects.slice() : [];
 
-  // "What to add" — each missingInformation linkId rendered from the
-  // PlanDefinition action title where the linkId maps to an action, else the
-  // (now clean) Questionnaire item text (slice 6 D4). Grouped by pathway
-  // (indication-theme), the pathway that is fewest facts short listed first.
+  // "What to add" — one line per missing indicator, the published Questionnaire
+  // item text (no prose, no action title as the line — D6). Grouped under its
+  // pathway, the heading being the pathway action's own title, shown once; the
+  // pathway that is fewest facts short listed first (chore/arch-mig-viewer-findings).
   const missing = exam && Array.isArray(exam.missingInformation) ? exam.missingInformation : [];
   const pathways = pathwayIndexOf(requestedArtefact && requestedArtefact.planDefinition);
   const whatToAdd = missing.map((linkId) => {
     const p = pathways.find((pw) => pw.linkIds.has(linkId));
     return {
       linkId,
-      text: (p && p.titleByLinkId.get(linkId)) || qText.get(linkId) || linkId,
-      pathway: p ? p.display : null,
-      pathwayKey: p ? p.code : "_none",
+      text: qText.get(linkId) || linkId,
+      pathway: p ? p.title : null,
+      pathwayKey: p ? p.key : "_none",
     };
   });
   const whatToAddGroups = groupWhatToAdd(whatToAdd, missing, pathways);
@@ -354,7 +354,7 @@ export function advisoryHtml(model) {
   if (model.whatToAdd.length) {
     const groups = (model.whatToAddGroups && model.whatToAddGroups.length) ? model.whatToAddGroups : [{ pathway: null, items: model.whatToAdd }];
     const body = groups.map((g) =>
-      (g.pathway && groups.length > 1 ? `<div class="adv-wta-pathway">${esc(g.pathway)}</div>` : "") +
+      (g.pathway ? `<div class="adv-wta-pathway">${esc(g.pathway)}</div>` : "") +
       `<ul>${g.items.map((w) => `<li data-linkid="${esc(w.linkId)}">${esc(w.text)}</li>`).join("")}</ul>`,
     ).join("");
     section("What to add", body);
