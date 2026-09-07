@@ -2,7 +2,7 @@
   "resourceType": "PlanDefinition",
   "id": "CRR-CT-CAP-Adult",
   "url": "http://crr.health.nz/fhir/PlanDefinition/CRR-CT-CAP-Adult",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "name": "CRR_CTChestAbdomenPelvis_Adult",
   "title": "CT Chest, Abdomen and Pelvis - Adult",
   "type": {
@@ -321,13 +321,37 @@
                 {
                   "type": "QuestionnaireResponse",
                   "profile": [
-                    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#weightloss.percent"
+                    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#weightloss.present"
+                  ]
+                },
+                {
+                  "type": "QuestionnaireResponse",
+                  "profile": [
+                    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#weightloss.measured"
+                  ]
+                },
+                {
+                  "type": "QuestionnaireResponse",
+                  "profile": [
+                    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#weightloss.weightBefore"
+                  ]
+                },
+                {
+                  "type": "QuestionnaireResponse",
+                  "profile": [
+                    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#weightloss.weightNow"
                   ]
                 },
                 {
                   "type": "QuestionnaireResponse",
                   "profile": [
                     "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#weightloss.periodMonths"
+                  ]
+                },
+                {
+                  "type": "QuestionnaireResponse",
+                  "profile": [
+                    "http://crr.health.nz/fhir/Questionnaire/CRR-CT-CAP-Adult#weightloss.percent"
                   ]
                 }
               ],

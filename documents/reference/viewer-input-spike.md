@@ -1,6 +1,14 @@
 # ARCH-MIG-01 — Viewer input spike: getting past B1
 
-**Date:** 2026-09-07 · **Branch:** `chore/arch-mig-viewer-findings` · **Status:** spike — nothing shipped
+**Date:** 2026-09-07 · **Branch:** `chore/arch-mig-viewer-findings` · **Status:** spike
+
+> **Outcome (2026-09-07, `feature/arch-mig-viewer-inputs`):** option **(a)** built and accepted
+> (AD-27 → Accepted; AD-18 dated note — LHC-Forms not adopted). One change from the
+> checklist below: for the weight-loss inputs the referrer enters the **two recorded
+> weights + the period** and the engine computes the percentage (AD-24); `weightloss.percent`
+> is the last, fallback field. `weightloss.present` / `weightloss.measured` are surfaced too
+> (the `Weight Loss Criterion` CQL reads them). CT CAP bundle republished once at `2.3.0`.
+> See CL-45.
 
 ## The problem
 

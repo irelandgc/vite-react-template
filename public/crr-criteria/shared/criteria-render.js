@@ -113,20 +113,34 @@ function tickableLinkId(action, blockKind, qType) {
   return qType.get(ids[0]) === "boolean" ? ids[0] : null;
 }
 
-// Questionnaire linkId -> item text / type.
+// Questionnaire linkId -> item text / type / unit (questionnaire-unit) / answer options.
+const QUESTIONNAIRE_UNIT_EXT = "http://hl7.org/fhir/StructureDefinition/questionnaire-unit";
 function questionnaireMaps(q) {
   const text = new Map();
   const type = new Map();
+  const unit = new Map();
+  const options = new Map();
   (function walk(items) {
     for (const i of (items || [])) {
       if (i && i.linkId) {
         if (typeof i.text === "string") text.set(i.linkId, i.text);
         if (i.type) type.set(i.linkId, i.type);
+        const u = (i.extension || []).find((e) => e.url === QUESTIONNAIRE_UNIT_EXT);
+        if (u && u.valueCoding && (u.valueCoding.display || u.valueCoding.code)) {
+          unit.set(i.linkId, u.valueCoding.display || u.valueCoding.code);
+        }
+        if (Array.isArray(i.answerOption) && i.answerOption.length) {
+          options.set(i.linkId, i.answerOption
+            .map((o) => (o.valueCoding
+              ? { code: o.valueCoding.code, display: o.valueCoding.display || o.valueCoding.code }
+              : { code: String(o.valueString ?? ""), display: String(o.valueString ?? "") }))
+            .filter((o) => o.code));
+        }
       }
       walk(i && i.item);
     }
   })(q && q.item);
-  return { text, type };
+  return { text, type, unit, options };
 }
 
 // The regional overlay for `region` (bundle carries `overlays[]`); target action id -> overlay action.
@@ -189,7 +203,7 @@ export function resolveCriteria(bundle, opts) {
   // "vocabulary" — printed order + the Questionnaire's own groups (flagged).
   const layout = opts.layout === "vocabulary" || opts.layout === "urgency" ? opts.layout : "indication";
   const ticks = opts.ticks || {};
-  const { text: qText, type: qType } = questionnaireMaps(q);
+  const { text: qText, type: qType, unit: qUnit, options: qOptions } = questionnaireMaps(q);
   const overlays = overlayIndex(bundle && bundle.overlays, opts.region);
 
   // Build a renderable row for an action, recursively.
@@ -197,6 +211,22 @@ export function resolveCriteria(bundle, opts) {
     const linkIds = linkIdsOf(action);
     const tickLinkId = tickableLinkId(action, blockKind, qType);
     const ov = overlays.get(action.id);
+    // A compound action (CT CAP's B1, B3) — several input linkIds, or one
+    // non-boolean input, and no sub-actions — renders one typed control per
+    // input, inline (AD-27): number for integer/decimal/quantity (label + unit
+    // from the Questionnaire item), select for choice (from answerOption),
+    // checkbox for boolean, text for string. Not for a not-funded / acute row.
+    const compoundInputs = !tickLinkId && linkIds.length >= 1 && !(action.action || []).length
+      && blockKind !== "not-funded" && blockKind !== "acute-assessment"
+      ? linkIds.map((id) => ({
+          linkId: id,
+          type: qType.get(id) || "string",
+          text: qText.get(id) || id,
+          unit: qUnit.get(id) || null,
+          options: qOptions.get(id) || null,
+          value: ticks[id],
+        }))
+      : [];
     return {
       id: action.id,
       // published wording verbatim: the action title (Questionnaire text is the
@@ -211,6 +241,7 @@ export function resolveCriteria(bundle, opts) {
       notes: notesOf(action),
       linkId: tickLinkId,
       linkIds,
+      inputs: compoundInputs,
       ticked: tickLinkId ? !!ticks[tickLinkId] : false,
       theme: themeOf(action),
       hasCondition: Array.isArray(action.condition) && action.condition.length > 0,
@@ -433,8 +464,54 @@ function renderRow(r, context, readOnly) {
     // read-only reference (Triage reference column): the same wording, no checkbox
     return `<div class="cr-row" data-linkid="${esc(r.linkId)}"><div class="cr-row-title">${esc(r.text)}${badges ? " " + badges : ""}${page}</div>${notes}${del}</div>`;
   }
+  // compound-input row (AD-27): the criterion wording, then one typed control
+  // per input linkId (or, read-only, the value)
+  if (r.inputs && r.inputs.length) {
+    const inputsHtml = r.inputs.map((inp) => renderInput(inp, readOnly)).join("");
+    return `<div class="cr-row cr-inputs-row" data-action="${esc(r.id)}"><div class="cr-row-title">${esc(r.text)}${badges ? " " + badges : ""}${page}</div>${sel}<div class="cr-inputs">${inputsHtml}</div>${notes}${del}</div>`;
+  }
   // structural / compound row
   return `<div class="cr-row" data-action="${esc(r.id)}"><div class="cr-row-title">${esc(r.text)}${badges ? " " + badges : ""}${page}</div>${sel}${childHtml}${notes}${del}</div>`;
+}
+
+// One control for a compound action's input linkId. Entry (Viewer) or, read-only
+// (Triage reference column), the value from the merged QuestionnaireResponse.
+// Every displayed string is the Questionnaire item text, an answerOption display,
+// or the questionnaire-unit — no renderer constants.
+function renderInput(inp, readOnly) {
+  const label = `<span class="cr-input-label">${esc(inp.text)}</span>`;
+  const has = inp.value !== undefined && inp.value !== null && inp.value !== "";
+  const isNum = inp.type === "integer" || inp.type === "decimal" || inp.type === "quantity";
+
+  if (readOnly) {
+    let shown;
+    if (inp.type === "boolean") {
+      shown = `<input type="checkbox" disabled${inp.value === true ? " checked" : ""}>`;
+    } else if (inp.type === "choice") {
+      const o = (inp.options || []).find((x) => x.code === String(inp.value));
+      shown = `<span class="cr-input-value">${o ? esc(o.display) : (has ? esc(String(inp.value)) : "")}</span>`;
+    } else {
+      shown = `<span class="cr-input-value">${has ? esc(String(inp.value)) + (inp.unit ? " " + esc(inp.unit) : "") : ""}</span>`;
+    }
+    return `<div class="cr-input" data-linkid="${esc(inp.linkId)}">${label}${shown}</div>`;
+  }
+
+  if (inp.type === "boolean") {
+    return `<label class="cr-input" data-linkid="${esc(inp.linkId)}"><input type="checkbox" data-linkid="${esc(inp.linkId)}"${inp.value === true ? " checked" : ""}>${label}</label>`;
+  }
+  if (inp.type === "choice") {
+    const opts = `<option value=""></option>` + (inp.options || [])
+      .map((o) => `<option value="${esc(o.code)}"${String(inp.value) === o.code ? " selected" : ""}>${esc(o.display)}</option>`).join("");
+    return `<label class="cr-input" data-linkid="${esc(inp.linkId)}">${label}<select data-linkid="${esc(inp.linkId)}">${opts}</select></label>`;
+  }
+  if (isNum) {
+    const step = inp.type === "integer" ? "1" : "any";
+    return `<label class="cr-input" data-linkid="${esc(inp.linkId)}">${label}<span class="cr-input-field">` +
+      `<input type="number" step="${step}" inputmode="decimal" data-linkid="${esc(inp.linkId)}" value="${has ? esc(String(inp.value)) : ""}">` +
+      (inp.unit ? `<span class="cr-unit">${esc(inp.unit)}</span>` : "") + `</span></label>`;
+  }
+  // string / text
+  return `<label class="cr-input" data-linkid="${esc(inp.linkId)}">${label}<input type="text" data-linkid="${esc(inp.linkId)}" value="${has ? esc(String(inp.value)) : ""}"></label>`;
 }
 
 function badgeClass(code) {
